@@ -1,0 +1,226 @@
+======= Exercises =======
+
+===== Exercise: Stabilizing the Crank-Nicolson method by Rannacher time stepping =====
+label{diffu:exer:CN:Rannacher}
+
+It is well known that the Crank-Nicolson method may give rise to
+non-physical oscillations in the solution of diffusion equations
+if the initial data exhibit jumps (see Section ref{diffu:pde1:analysis:CN}).
+Rannacher cite{Rannacher_1984} suggested a stabilizing technique
+consisting of using the Backward Euler scheme for the first two
+time steps with step length $\half\Delta t$. One can generalize
+this idea to taking $2m$ time steps of size $\half\Delta t$ with
+the Backward Euler method and then continuing with the
+Crank-Nicolson method, which is of second-order in time.
+The idea is that the high frequencies of the initial solution are
+quickly damped out, and the Backward Euler scheme treats these
+high frequencies correctly. Thereafter, the high frequency content of
+the solution is gone and the Crank-Nicolson method will do well.
+
+Test this idea for $m=1,2,3$ on a diffusion problem with a
+discontinuous initial condition. Measure the convergence rate using
+the solution (ref{diffu:analysis:pde1:step:erf:sol}) with the boundary
+conditions
+(ref{diffu:analysis:pde1:p1:erf:uL})-(ref{diffu:analysis:pde1:p1:erf:uR})
+for $t$ values such that the conditions are in the vicinity of $\pm 1$.
+For example, $t< 5a 1.6\cdot 10^{-2}$ makes the solution diffusion from
+a step to almost a straight line. The
+program `diffu_erf_sol.py` shows how to compute the analytical
+solution.
+
+
+===== Project: Energy estimates for diffusion problems =====
+label{diffu:exer:energy:estimates}
+file=diffu_energy
+
+idx{energy estimates (diffusion)}
+
+This project concerns so-called *energy estimates* for diffusion problems
+that can be used for qualitative analytical insight and for
+verification of implementations.
+
+!bsubex
+We start with a 1D homogeneous diffusion equation with zero Dirichlet
+conditions:
+
+!bt
+\begin{align}
+u_t &= \alpha u_xx, & x\in \Omega =(0,L),\ t\in (0,T],
+label{diffu:exer:estimates:p1:pdf} \\
+u(0,t) = u(L,t) &= 0, & t\in (0,T],
+label{diffu:exer:estimates:p1:bc}\\
+u(x,0) &= I(x), & x\in [0,L]
+label{diffu:exer:estimates:p1:ic}
+\tp
+\end{align}
+!et
+The energy estimate for this problem reads
+
+!bt
+\begin{equation}
+||u||_{L^2} \leq ||I||_{L^2},
+label{diffu:exer:estimates:p1:result}
+\end{equation}
+!et
+where the $||\cdot ||_{L^2}$ norm is defined by
+
+!bt
+\begin{equation}
+||g||_{L^2} = \sqrt{\int_0^L g^2dx}\tp
+label{diffu:exer:estimates:L2}
+\end{equation}
+!et
+The quantify  $||u||_{L^2}$ or $\half ||u||_{L^2}$ is known
+as the *energy* of the solution, although it is not the physical
+energy of the system. A mathematical tradition has introduced the
+notion *energy* in this context.
+
+The estimate (ref{diffu:exer:estimates:p1:result}) says that the
+"size of $u$" never exceeds that of the initial condition, or
+more equivalently, that the area under the $u$ curve decreases
+with time.
+
+To show (ref{diffu:exer:estimates:p1:result}), multiply the PDE
+by $u$ and integrate from $0$ to $L$. Use that $uu_t$ can be
+expressed as the time derivative of $u^2$ and that $u_xxu$ can
+integrated by parts to form an integrand $u_x^2$. Show that
+the time derivative of $||u||_{L^2}^2$ must be less than or equal
+to zero. Integrate this expression and derive
+(ref{diffu:exer:estimates:p1:result}).
+
+# http://www.ann.jussieu.fr/~frey/cours/UdC/ma691/ma691_ch6.pdf
+!esubex
+
+!bsubex
+Now we address a slightly different problem,
+
+!bt
+\begin{align}
+u_t &= \alpha u_xx + f(x,t), & x\in \Omega =(0,L),\ t\in (0,T],
+label{diffu:exer:estimates:p2:pdf} \\
+u(0,t) = u(L,t) &= 0, & t\in (0,T],
+label{diffu:exer:estimates:p2:bc}\\
+u(x,0) &= 0, & x\in [0,L]
+label{diffu:exer:estimates:p2:ic}
+\tp
+\end{align}
+!et
+The associated energy estimate is
+
+!bt
+\begin{equation}
+||u||_{L^2} \leq ||f||_{L^2}\tp
+label{diffu:exer:estimates:p2:result}
+\end{equation}
+!et
+(This result is more difficult to derive.)
+
+Now consider the compound problem with an initial condition $I(x)$ and
+a right-hand side $f(x,t)$:
+
+!bt
+\begin{align}
+u_t &= \alpha u_xx + f(x,t), & x\in \Omega =(0,L),\ t\in (0,T],
+label{diffu:exer:estimates:p3:pdf} \\
+u(0,t) = u(L,t) &= 0, & t\in (0,T],
+label{diffu:exer:estimates:p3:bc}\\
+u(x,0) &= I(x), & x\in [0,L]
+label{diffu:exer:estimates:p3:ic}
+\tp
+\end{align}
+!et
+Show that if $w_1$ fulfills
+(ref{diffu:exer:estimates:p1:pdf})-(ref{diffu:exer:estimates:p1:ic})
+and $w_2$ fulfills
+(ref{diffu:exer:estimates:p2:pdf})-(ref{diffu:exer:estimates:p2:ic}),
+then $u=w_1 + w_2$ is the solution of
+(ref{diffu:exer:estimates:p3:pdf})-(ref{diffu:exer:estimates:p3:ic}).
+Using the triangle inequality for norms,
+
+!bt
+\[ ||a + b|| \leq ||a|| + ||b||,\]
+!et
+show that the energy estimate for
+(ref{diffu:exer:estimates:p3:pdf})-(ref{diffu:exer:estimates:p3:ic})
+becomes
+
+!bt
+\begin{equation}
+||u||_{L^2} \leq ||I||_{L^2} + ||f||_{L^2}\tp
+label{diffu:exer:estimates:p3:result}
+\end{equation}
+!et
+!esubex
+
+!bsubex
+One application of (ref{diffu:exer:estimates:p3:result}) is to prove uniqueness
+of the solution.
+Suppose $u_1$ and $u_2$ both fulfill
+(ref{diffu:exer:estimates:p3:pdf})-(ref{diffu:exer:estimates:p3:ic}).
+Show that $u=u_1 - u_2$ then fulfills
+(ref{diffu:exer:estimates:p3:pdf})-(ref{diffu:exer:estimates:p3:ic})
+with $f=0$ and $I=0$. Use (ref{diffu:exer:estimates:p3:result})
+to deduce that the energy must be zero for all times and therefore
+that $u_1=u_2$, which proves that the solution is unique.
+!esubex
+
+!bsubex
+Generalize (ref{diffu:exer:estimates:p3:result}) to a 2D/3D
+diffusion equation $u_t = \nabla\cdot (\alpha \nabla u)$ for $x\in\Omega$.
+
+!bhint
+Use integration by parts in multi dimensions:
+
+!bt
+\[ \int_\Omega u \nabla\cdot (\alpha\nabla u)\dx =
+- \int_\Omega \alpha \nabla u\cdot\nabla u\dx
++ \int_{\partial\Omega} u \alpha\frac{\partial u}{\partial n},\]
+!et
+where $\frac{\partial u}{\partial n} = \bm{n}\cdot\nabla u$,
+$\bm{n}$ being the outward unit normal to the boundary $\partial\Omega$
+of the domain $\Omega$.
+!ehint
+!esubex
+
+!bsubex
+Now we also consider the multi-dimensional PDE $u_t =
+\nabla\cdot (\alpha \nabla u)$. Integrate both sides over $\Omega$
+and use Gauss' divergence theorem, $\int_\Omega \nabla\cdot\bm{q}\dx
+= \int_{\partial\Omega}\bm{q}\cdot\bm{n}\ds$ for a vector field
+$\bm{q}$. Show that if we have homogeneous Neumann conditions
+on the boundary, $\partial u/\partial n=0$, area under the
+$u$ surface remains constant in time and
+
+!bt
+\begin{equation}
+\int_{\Omega} u\dx = \int_{\Omega} I\dx
+\tp
+label{diffu:exer:estimates:p4:result}
+\end{equation}
+!et
+!esubex
+
+!bsubex
+Establish a code in 1D, 2D, or 3D that can solve a diffusion equation with a
+source term $f$, initial condition $I$, and zero Dirichlet or
+Neumann conditions on the whole boundary.
+
+We can use (ref{diffu:exer:estimates:p3:result})
+and (ref{diffu:exer:estimates:p4:result}) as a partial verification
+of the code. Choose some functions $f$ and $I$ and
+check that (ref{diffu:exer:estimates:p3:result}) is obeyed at any
+time when zero Dirichlet conditions are used.
+Iterate over the same $I$ functions and check that
+(ref{diffu:exer:estimates:p4:result}) is fulfilled
+when using zero Neumann conditions.
+!esubex
+
+!bsubex
+Make a list of some possible bugs in the code, such as indexing errors
+in arrays, failure to set the correct boundary conditions,
+evaluation of a term at a wrong time level, and similar.
+For each of the bugs, see if the verification tests from the previous
+subexercise pass or fail. This investigation shows how strong
+the energy estimates and the estimate (ref{diffu:exer:estimates:p4:result})
+are for pointing out errors in the implementation.
+!esubex

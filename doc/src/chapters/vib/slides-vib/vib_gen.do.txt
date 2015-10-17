@@ -1,0 +1,279 @@
+!split
+======= Generalization: damping, nonlinear spring, and external excitation =======
+label{vib:model2}
+
+!bt
+\[
+mu'' + f(u') + s(u) = F(t),\quad u(0)=I,\ u'(0)=V,\ t\in (0,T]
+\]
+!et
+Input data: $m$, $f(u')$, $s(u)$, $F(t)$, $I$, $V$, and $T$.
+
+Typical choices of $f$ and $s$:
+
+ * linear damping $f(u')=bu$, or
+ * quadratic damping $f(u')=bu'|u'|$
+ * linear spring $s(u)=cu$
+ * nonlinear spring $s(u)\sim \sin(u)$ (pendulum)
+
+!split
+===== A centered scheme for linear damping =====
+label{vib:ode2:fdm:flin}
+
+!bt
+\[
+[mD_tD_t u + f(D_{2t}u) + s(u) = F]^n
+\]
+!et
+Written out
+
+!bt
+\[
+m\frac{u^{n+1}-2u^n + u^{n-1}}{\Delta t^2}
++ f(\frac{u^{n+1}-u^{n-1}}{2\Delta t}) + s(u^n) = F^n
+\]
+!et
+Assume $f(u')$ is linear in $u'=v$:
+
+!bt
+\[
+u^{n+1} = \left(2mu^n + (\frac{b}{2}\Delta t - m)u^{n-1} +
+\Delta t^2(F^n - s(u^n))
+\right)(m + \frac{b}{2}\Delta t)^{-1}
+\]
+!et
+
+!split
+===== Initial conditions =====
+
+$u(0)=I$, $u'(0)=V$:
+
+!bt
+\begin{align*}
+\lbrack u &=I\rbrack^0\quad\Rightarrow\quad u^0=I\\
+\lbrack D_{2t}u &=V\rbrack^0\quad\Rightarrow\quad u^{-1} = u^{1} - 2\Delta t V
+\end{align*}
+!et
+End result:
+
+!bt
+\[
+u^1 = u^0 + \Delta t\, V
++ \frac{\Delta t^2}{2m}(-bV - s(u^0) + F^0)
+\]
+!et
+Same formula for $u^1$ as when using a centered scheme for $u''+\omega u=0$.
+
+!split
+===== Linearization via a geometric mean approximation =====
+label{vib:ode2:fdm:fquad}
+
+ * $f(u')=bu'|u'|$ leads to a quadratic equation for $u^{n+1}$
+ * Instead of solving the quadratic equation, we use a geometric mean
+   approximation
+
+In general, the geometric mean approximation reads
+!bt
+\[ (w^2)^n \approx w^{n-\half}w^{n+\half}\tp\]
+!et
+For $|u'|u'$ at $t_n$:
+
+!bt
+\[ [u'|u'|]^n \approx u'(t_n+{\half})|u'(t_n-{\half})|\tp\]
+!et
+For $u'$ at $t_{n\pm 1/2}$ we use centered difference:
+
+!bt
+\[
+u'(t_{n+1/2})\approx [D_t u]^{n+\half},\quad u'(t_{n-1/2})\approx [D_t u]^{n-\half}
+\]
+!et
+
+!split
+===== A centered scheme for quadratic damping =====
+
+After some algebra:
+
+!bt
+\begin{align*}
+u^{n+1} &=  \left( m + b|u^n-u^{n-1}|\right)^{-1}\times \\
+& \qquad \left(2m u^n - mu^{n-1} + bu^n|u^n-u^{n-1}| + \Delta t^2 (F^n - s(u^n))
+\right)
+\end{align*}
+!et
+
+!split
+===== Initial condition for quadratic damping =====
+
+Simply use that $u'=V$ in the scheme when $t=0$ ($n=0$):
+
+!bt
+\[
+[mD_tD_t u + bV|V| + s(u) = F]^0
+\]
+!et
+
+which gives
+
+!bt
+\[
+u^1 = u^0 + \Delta t V + \frac{\Delta t^2}{2m}\left(-bV|V| - s(u^0) + F^0\right)
+\]
+!et
+
+!split
+===== Algorithm =====
+
+  o $u^0=I$
+  o compute $u^1$ (formula depends on linear/quadratic damping)
+  o for $n=1,2,\ldots,N_t-1$:
+    o compute $u^{n+1}$ from formula (depends on linear/quadratic damping)
+
+!split
+===== Implementation =====
+
+!bc pycod
+def solver(I, V, m, b, s, F, dt, T, damping='linear'):
+    dt = float(dt); b = float(b); m = float(m) # avoid integer div.
+    Nt = int(round(T/dt))
+    u = zeros(Nt+1)
+    t = linspace(0, Nt*dt, Nt+1)
+
+    u[0] = I
+    if damping == 'linear':
+        u[1] = u[0] + dt*V + dt**2/(2*m)*(-b*V - s(u[0]) + F(t[0]))
+    elif damping == 'quadratic':
+        u[1] = u[0] + dt*V + \
+               dt**2/(2*m)*(-b*V*abs(V) - s(u[0]) + F(t[0]))
+
+    for n in range(1, Nt):
+        if damping == 'linear':
+            u[n+1] = (2*m*u[n] + (b*dt/2 - m)*u[n-1] +
+                      dt**2*(F(t[n]) - s(u[n])))/(m + b*dt/2)
+        elif damping == 'quadratic':
+            u[n+1] = (2*m*u[n] - m*u[n-1] + b*u[n]*abs(u[n] - u[n-1])
+                      + dt**2*(F(t[n]) - s(u[n])))/\
+                      (m + b*abs(u[n] - u[n-1]))
+    return u, t
+!ec
+
+
+!split
+===== Verification =====
+label{vib:ode2:verify}
+
+ * Constant solution $\uex = I$ ($V=0$) fulfills the ODE problem
+   and the discrete equations. Ideal for debugging!
+ * Linear solution $\uex = Vt+I$ fulfills the ODE problem and
+   the discrete equations.
+ * Quadratic solution $\uex = bt^2 + Vt + I$ fulfills the ODE
+   problem and the discrete equations with linear damping, but not
+   for quadratic damping.
+   A special discrete source term can allow $\uex$ to also fulfill
+   the discrete equations with quadratic damping.
+
+!split
+===== Demo program =====
+
+"`vib.py`": "${src_vib}/vib.py" supports input via the command line:
+
+!bc sys
+Terminal> python vib.py --s 'sin(u)' --F '3*cos(4*t)' --c 0.03
+!ec
+This results in a "moving window following the function":
+"${doc_notes}/mov-vib/vib_generalized_dt0.05/index.html" on the screen.
+
+FIGURE: [fig-vib/vib_gen_demo, width=600 frac=0.9]
+
+!split
+===== Euler-Cromer formulation =====
+
+We rewrite
+
+!bt
+\[
+mu'' + f(u') + s(u) = F(t),\quad u(0)=I,\ u'(0)=V,\ t\in (0,T]
+\]
+!et
+as a first-order ODE system
+
+!bt
+\begin{align*}
+u' &= v
+\\
+v' &= m^{-1}\left(F(t) - f(v) - s(u)\right)
+\end{align*}
+!et
+
+!split
+===== Staggered grid =====
+
+ * $u$ is unknown at $t_n$: $u^n$
+ * $v$ is unknown at $t_{n+1/2}$: $v^{n+\half}$
+ * All derivatives are approximated by centered differences
+
+!bt
+\begin{align*}
+\lbrack D_t u &= v\rbrack^{n-\half}
+\\
+\lbrack D_tv &= m^{-1}\left(F(t) - f(v) - s(u)\right)\rbrack^n
+\end{align*}
+!et
+
+Written out,
+
+!bt
+\begin{align*}
+\frac{u^n - u^{n-1}}{\Delta t} &= v^{n-\half}\\
+\frac{v^{n+\half} - v^{n-\half}}{\Delta t}
+&= m^{-1}\left(F^n - f(v^n) - s(u^n)\right)
+\end{align*}
+!et
+
+Problem: $f(v^n)$
+
+!split
+===== Linear damping =====
+
+With $f(v)=bv$, we can use an arithmetic mean for $bv^n$ a la
+Crank-Nicolson schemes.
+
+!bt
+\begin{align*}
+u^n & = u^{n-1} + {\Delta t}v^{n-\half},\\
+v^{n+\half} &= \left(1 + \frac{b}{2m}\Delta t\right)^{-1}\left(
+v^{n-\half} + {\Delta t}
+m^{-1}\left(F^n - {\half}f(v^{n-\half}) - s(u^n)\right)\right)\tp
+\end{align*}
+!et
+
+!split
+===== Quadratic damping =====
+
+With $f(v)=b|v|v$, we can use a geometric mean
+
+!bt
+\[
+b|v^n|v^n\approx b|v^{n-\half}|v^{n+\half},
+\]
+!et
+resulting in
+
+!bt
+\begin{align*}
+u^n & = u^{n-1} + {\Delta t}v^{n-\half},\\
+v^{n+\half} &= (1 + \frac{b}{m}|v^{n-\half}|\Delta t)^{-1}\left(
+v^{n-\half} + {\Delta t}
+m^{-1}\left(F^n - s(u^n)\right)\right)\tp
+\end{align*}
+!et
+
+!split
+===== Initial conditions =====
+
+!bt
+\begin{align*}
+u^0 &= I\\
+v^{\half} &= V - \half\Delta t\omega^2I
+\end{align*}
+!et

@@ -1,0 +1,486 @@
+======= Implementation =======
+label{wave:2D3D:impl}
+
+idx{wave equation!2D, implementation}
+
+We shall now describe in detail various Python implementations
+for solving a standard 2D, linear wave equation with constant
+wave velocity and $u=0$ on the
+boundary. The wave equation is to be solved
+in the space-time domain $\Omega\times (0,T]$,
+where $\Omega = (0,L_x)\times (0,L_y)$ is a rectangular spatial
+domain. More precisely,
+the complete initial-boundary value problem is defined by
+
+!bt
+\begin{align}
+u_{tt} &= c^2(u_{xx} + u_{yy}) + f(x,y,t),\quad &(x,y)\in \Omega,\ t\in (0,T],\\
+u(x,y,0) &= I(x,y),\quad &(x,y)\in\Omega,\\
+u_t(x,y,0) &= V(x,y),\quad &(x,y)\in\Omega,\\
+u &= 0,\quad &(x,y)\in\partial\Omega,\ t\in (0,T],
+\end{align}
+!et
+where $\partial\Omega$ is the boundary of $\Omega$, in this case
+the four sides of the rectangle $\Omega = [0,L_x]\times [0,L_y]$:
+$x=0$, $x=L_x$, $y=0$, and $y=L_y$.
+
+The PDE is discretized as
+!bt
+\[ [D_t D_t u = c^2(D_xD_x u + D_yD_y u) + f]^n_{i,j},
+\]
+!et
+which leads to an explicit updating formula to be implemented in a
+program:
+
+!bt
+\begin{align}
+u^{n+1} &= -u^{n-1}_{i,j} + 2u^n_{i,j} + \nonumber\\
+&\quad C_x^2(
+u^{n}_{i+1,j} - 2u^{n}_{i,j} + u^{n}_{i-1,j}) + C_y^2
+(u^{n}_{i,j+1} - 2u^{n}_{i,j} + u^{n}_{i,j-1}) + \Delta t^2 f_{i,j}^n,
+label{wave:2D3D:impl1:2Du0:ueq:discrete}
+\end{align}
+!et
+for all interior mesh points $i\in\seti{\Ix}$ and
+$j\in\seti{\Iy}$, and for $n\in\setr{\It}$.
+The constants $C_x$ and $C_y$ are defined as
+
+!bt
+\[ C_x = c\frac{\Delta t}{\Delta x},\quad C_x = c\frac{\Delta t}{\Delta y}
+\tp
+\]
+!et
+
+At the boundary, we simply set $u^{n+1}_{i,j}=0$ for
+$i=0$, $j=0,\ldots,N_y$; $i=N_x$, $j=0,\ldots,N_y$;
+$j=0$, $i=0,\ldots,N_x$; and $j=N_y$, $i=0,\ldots,N_x$.
+For the first step, $n=0$, (ref{wave:2D3D:impl1:2Du0:ueq:discrete})
+is combined with the discretization of the initial condition $u_t=V$,
+$[D_{2t} u = V]^0_{i,j}$ to obtain a special formula for
+$u^1_{i,j}$ at the interior mesh points:
+
+!bt
+\begin{align}
+u^{1} &= u^0_{i,j} + \Delta t V_{i,j} + \nonumber\\
+&\quad {\half}C_x^2(
+u^{0}_{i+1,j} - 2u^{0}_{i,j} + u^{0}_{i-1,j}) + {\half}C_y^2
+(u^{0}_{i,j+1} - 2u^{0}_{i,j} + u^{0}_{i,j-1}) + \half\Delta t^2f_{i,j}^n,
+label{wave:2D3D:impl1:2Du0:ueq:n0:discrete}
+\end{align}
+!et
+
+The algorithm is very similar to the one in 1D:
+
+ o Set initial condition $u^0_{i,j}=I(x_i,y_j)$
+ o Compute $u^1_{i,j}$ from (ref{wave:2D3D:impl1:2Du0:ueq:discrete})
+ o Set $u^1_{i,j}=0$ for the boundaries $i=0,N_x$, $j=0,N_y$
+ o For $n=1,2,\ldots,N_t$:
+  o Find $u^{n+1}_{i,j}$ from (ref{wave:2D3D:impl1:2Du0:ueq:discrete})
+    for all internal mesh points, $i\in\seti{\Ix}$, $j\in\seti{\Iy}$
+  o Set $u^{n+1}_{i,j}=0$ for the boundaries $i=0,N_x$, $j=0,N_y$
+
+===== Scalar computations =====
+label{wave2D3D:impl:scalar}
+
+The `solver` function for a 2D case with constant wave velocity and
+boundary condition $u=0$ is analogous to the 1D case with similar parameter
+values (see `wave1D_u0.py`), apart from a few necessary
+extensions. The code is found in the program
+"`wave2D_u0.py`": "${src_wave}/wave2D_u0/wave2D_u0.py".
+
+=== Domain and mesh ===
+
+The spatial domain is now $[0,L_x]\times [0,L_y]$, specified
+by the arguments `Lx` and `Ly`. Similarly, the number of mesh
+points in the $x$ and $y$ directions,
+$N_x$ and $N_y$, become the arguments `Nx` and `Ny`.
+In multi-dimensional problems it makes less sense to specify a
+Courant number since the wave velocity is a vector and mesh spacings
+may differ in the various spatial directions.
+We therefore give $\Delta t$ explicitly. The signature of
+the `solver` function is then
+
+!bc pycod
+def solver(I, V, f, c, Lx, Ly, Nx, Ny, dt, T,
+           user_action=None, version='scalar'):
+!ec
+Key parameters used in the calculations are created as
+!bc pycod
+x = linspace(0, Lx, Nx+1)                  # mesh points in x dir
+y = linspace(0, Ly, Ny+1)                  # mesh points in y dir
+dx = x[1] - x[0]
+dy = y[1] - y[0]
+Nt = int(round(T/float(dt)))
+t = linspace(0, N*dt, N+1)                 # mesh points in time
+Cx2 = (c*dt/dx)**2;  Cy2 = (c*dt/dy)**2    # help variables
+dt2 = dt**2
+!ec
+
+=== Solution arrays ===
+
+We store $u^{n+1}_{i,j}$, $u^{n}_{i,j}$, and
+$u^{n-1}_{i,j}$ in three two-dimensional arrays,
+
+!bc pycod
+u   = zeros((Nx+1,Ny+1))   # solution array
+u_1 = zeros((Nx+1,Ny+1))   # solution at t-dt
+u_2 = zeros((Nx+1,Ny+1))   # solution at t-2*dt
+!ec
+where $u^{n+1}_{i,j}$ corresponds to `u[i,j]`,
+$u^{n}_{i,j}$ to `u_1[i,j]`, and
+$u^{n-1}_{i,j}$ to `u_2[i,j]`
+
+idx{index set notation}
+
+=== Index sets ===
+
+It is also convenient to introduce the index sets (cf. Section
+ref{wave:indexset})
+
+!bc pycod
+Ix = range(0, u.shape[0])
+Iy = range(0, u.shape[1])
+It = range(0, t.shape[0])
+!ec
+
+=== Computing the solution ===
+
+Inserting the initial
+condition `I` in `u_1` and making a callback to the user in terms of
+the `user_action` function is a straightforward generalization of
+the 1D code from Section ref{wave:string:impl}:
+
+!bc pycod
+for i in Ix:
+    for j in Iy:
+        u_1[i,j] = I(x[i], y[j])
+
+if user_action is not None:
+    user_action(u_1, x, xv, y, yv, t, 0)
+!ec
+The `user_action` function has additional arguments compared to the
+1D case. The arguments `xv` and `yv` will be commented
+upon in Section ref{wave2D3D:impl:vectorized}.
+
+The key finite difference formula (ref{wave:2D3D:models:unp1})
+for updating the solution at
+a time level is implemented in a separate function as
+
+@@@CODE src-wave/wave2D_u0/wave2D_u0.py fromto: def advance_scalar@def advance_ve
+The `step1` variable has been introduced to allow the formula to be
+reused for first step $u^1_{i,j}$:
+
+!bc pycod
+u = advance_scalar(u, u_1, u_2, f, x, y, t,
+                   n, Cx2, Cy2, dt, V, step1=True)
+!ec
+Below, we will make many alternative implementations of the
+`advance_scalar` function to speed up the code since most of
+the CPU time in simulations is spent in this function.
+
+Finally, we remark that the `solver` function in the `wave2D_u0.py` code
+updates arrays for the next time step by switching references as
+described in Section ref{wave:pde1:impl:ref:switch}. If the solution
+`u` is returned from `solver`, which it is not, it is important to
+set `u = u_1` after the time loop, otherwise `u` actually contains `u_2`.
+
+===== Vectorized computations =====
+label{wave2D3D:impl:vectorized}
+
+The scalar code above turns out to be extremely slow for large 2D
+meshes, and probably useless in 3D beyond debugging of small test cases.
+Vectorization is therefore a must for multi-dimensional
+finite difference computations in Python. For example,
+with a mesh consisting of $30\times 30$ cells, vectorization
+brings down the CPU time by a factor of 70 (!).
+
+In the vectorized case, we must be able to evaluate user-given functions
+like $I(x,y)$ and $f(x,y,t)$ for the entire mesh in one operation (without
+loops). These user-given functions are
+provided as Python functions `I(x,y)`
+and `f(x,y,t)`, respectively.
+Having the one-dimensional coordinate arrays `x` and `y` is not
+sufficient when calling `I` and `f` in a vectorized way.
+We must extend `x` and `y` to their vectorized versions `xv` and `yv`:
+
+!bc pycod
+from numpy import newaxis
+xv = x[:,newaxis]
+yv = y[newaxis,:]
+# or
+xv = x.reshape((x.size, 1))
+yv = y.reshape((1, y.size))
+!ec
+This is a standard required technique when evaluating functions over
+a 2D mesh, say `sin(xv)*cos(xv)`, which then gives a result with shape
+`(Nx+1,Ny+1)`. Calling `I(xv, yv)` and `f(xv, yv, t[n])` will now
+return `I` and `f` values for the entire set of mesh points.
+
+With the `xv` and `yv` arrays for vectorized computing,
+setting the initial condition is just a matter of
+
+!bc pycod
+u_1[:,:] = I(xv, yv)
+!ec
+One could also have written `u_1 = I(xv, yv)` and let `u_1` point
+to a new object, but vectorized operations often make use of
+direct insertion in the original array through `u_1[:,:]`, because
+sometimes not all of the array is to be filled by such a function
+evaluation. This is the case with the computational scheme for $u^{n+1}_{i,j}$:
+
+@@@CODE src-wave/wave2D_u0/wave2D_u0.py fromto: def advance_vec@import nose\.tools
+
+Array slices in 2D are more complicated to understand than those in
+1D, but the logic from 1D applies to each dimension separately.
+For example, when doing $u^{n}_{i,j} - u^{n}_{i-1,j}$ for $i\in\setr{\Ix}$,
+we just keep `j` constant and make a slice in the first index:
+`u_1[1:,j] - u_1[:-1,j]`, exactly as in 1D. The `1:` slice
+specifies all the indices $i=1,2,\ldots,N_x$ (up to the last
+valid index),
+while `:-1` specifies the relevant indices for the second term:
+$0,1,\ldots,N_x-1$ (up to, but not including the last index).
+
+In the above code segment, the situation is slightly more complicated,
+because each displaced slice in one direction is
+accompanied by a `1:-1` slice in the other direction. The reason is
+that we only work with the internal points for the index that is
+kept constant in a difference.
+
+The boundary conditions along the four sides makes use of
+a slice consisting of all indices along a boundary:
+
+!bc pycod
+u[: ,0] = 0
+u[:,Ny] = 0
+u[0 ,:] = 0
+u[Nx,:] = 0
+!ec
+
+In the vectorized update of `u` (above), the function `f` is first computed
+as an array over all mesh points:
+!bc
+f_a = f(xv, yv, t[n])
+!ec
+We could, alternatively, have used the call `f(xv, yv, t[n])[1:-1,1:-1]`
+in the last term of the update statement, but other implementations
+in compiled languages benefit from having `f` available in an array
+rather than calling our Python function `f(x,y,t)` for
+every point.
+
+Also in the `advance_vectorized` function we have introduced a
+boolean `step1` to reuse the formula for the first time step
+in the same way as we did with `advance_scalar`.
+We refer to the `solver` function in `wave2D_u0.py`
+for the details on how the overall algorithm is implemented.
+
+The callback function now has the arguments
+`u, x, xv, y, yv, t, n`. The inclusion of `xv` and `yv` makes it
+easy to, e.g., compute an exact 2D solution in the callback function
+and compute errors, through an expression like
+`u - u_exact(xv, yv, t[n])`.
+
+===== Verification =====
+label{wave2D3D:impl:verify}
+
+=== Testing a quadratic solution ===
+
+The 1D solution from Section ref{wave:pde2:fd:verify:quadratic} can be
+generalized to multi-dimensions and provides a test case where the
+exact solution also fulfills the discrete equations, such that we know
+(to machine precision) what numbers the solver function should
+produce. In 2D we use the following generalization of
+(ref{wave:pde2:fd:verify:quadratic:uex}):
+
+!bt
+\begin{equation}
+\uex(x,y,t) = x(L_x-x)y(L_y-y)(1+{\half}t)
+\tp
+label{wave2D3D:impl:verify:quadratic}
+\end{equation}
+!et
+This solution fulfills the PDE problem if $I(x,y)=\uex(x,y,0)$,
+$V=\half\uex(x,y,0)$, and $f=2c^2(1+{\half}t)(y(L_y-y) +
+x(L_x-x))$. To show that $\uex$ also solves the discrete equations,
+we start with the general results $[D_t D_t 1]^n=0$, $[D_t D_t t]^n=0$,
+and $[D_t D_t t^2]=2$, and use these to compute
+
+!bt
+\begin{align*}
+[D_xD_x \uex]^n_{i,j} &= [y(L_y-y)(1+{\half}t) D_xD_x x(L_x-x)]^n_{i,j}\\
+&= y_j(L_y-y_j)(1+{\half}t_n)(-2)\tp
+\end{align*}
+!et
+A similar calculation must be carried out for the $[D_yD_y
+\uex]^n_{i,j}$ and $[D_tD_t \uex]^n_{i,j}$ terms.  One must also show
+that the quadratic solution fits the special formula for
+$u^1_{i,j}$. The details are left as Exercise
+ref{wave:exer:quadratic:2D}.
+The `test_quadratic` function in the
+"`wave2D_u0.py`": "${src_wave}/wave2D_u0/wave2D_u0.py"
+program implements this verification as a nose test.
+
+
+======= Using classes to implement a simulator =======
+
+ * Introduce classes `Mesh`, `Function`, `Problem`, `Solver`, `Visualizer`,
+   `File`
+
+# communicate with compiled code by ensuring that classes work with arrays
+
+#===== Callbacks to Python from Fortran or C =====
+
+# 5631 projects:
+# Drop f_a, call py from f77
+# Call py with cpdef f from Cython, but hardcode function name
+# As above, but transfer function to Cython
+# Instant
+# test_quadratic for all
+# Think of extensions: Neumann with modified stencil or ghost cells,
+#   variable coefficients, damping, ...
+
+======= Exercises =======
+
+===== Exercise: Check that a solution fulfills the discrete model =====
+label{wave:exer:quadratic:2D}
+file=check_quadratic_solution
+
+Carry out all mathematical details to show that
+(ref{wave2D3D:impl:verify:quadratic}) is indeed a solution of the
+discrete model for a 2D wave equation with $u=0$ on the boundary.
+One must check the boundary conditions, the initial conditions,
+the general discrete equation at a time level and the special
+version of this equation for the first time level.
+
+===== Project: Calculus with 2D mesh functions =====
+label{wave:exer:mesh3D:calculus}
+file=mesh_calculus_2D
+
+The goal of this project is to redo
+Project ref{wave:exer:mesh1D:calculus} with 2D
+mesh functions ($f_{i,j}$).
+
+__Differentiation.__
+The differentiation results in a discrete gradient
+function, which in the 2D case can be represented by a three-dimensional
+array `df[d,i,j]` where `d` represents the direction of
+the derivative, and `i,j` is a mesh point in 2D.
+Use centered differences for
+the derivative at inner points and one-sided forward or backward
+differences at the boundary points. Construct unit tests and
+write a corresponding test function.
+
+__Integration.__
+The integral of a 2D mesh function $f_{i,j}$ is defined as
+
+!bt
+\[ F_{i,j} = \int_{y_0}^{y_j} \int_{x_0}^{x_i} f(x,y)dxdy,\]
+!et
+where $f(x,y)$ is a function that takes on the values of the
+discrete mesh function $f_{i,j}$ at the mesh points, but can also
+be evaluated in between the mesh points. The particular variation
+between mesh points can be taken as bilinear, but this is not
+important as we will use a product Trapezoidal rule to approximate
+the integral over a cell in the mesh and then we only need to
+evaluate $f(x,y)$ at the mesh points.
+
+Suppose $F_{i,j}$ is computed. The calculation of $F_{i+1,j}$
+is then
+
+!bt
+\begin{align*}
+F_{i+1,j} &= F_{i,j} + \int_{x_i}^{x_{i+1}}\int_{y_0}^{y_j} f(x,y)dydx\\
+& \approx \Delta x \half\left(
+\int_{y_0}^{y_j} f(x_{i},y)dy
++ \int_{y_0}^{y_j} f(x_{i+1},y)dy\right)
+\end{align*}
+!et
+The integrals in the $y$ direction can be approximated by a Trapezoidal
+rule. A similar idea can be used to compute $F_{i,j+1}$. Thereafter,
+$F_{i+1,j+1}$ can be computed by adding the integral over the final
+corner cell to $F_{i+1,j} + F_{i,j+1} - F_{i,j}$. Carry out the
+details of these computations and implement a function that can
+return $F_{i,j}$ for all mesh indices $i$ and $j$. Use the
+fact that the Trapezoidal rule is exact for linear functions and
+write a test function.
+
+===== Exercise: Implement Neumann conditions in 2D =====
+label{wave:app:exer:wave2D:Neumann}
+file=wave2D_dn
+
+Modify the "`wave2D_u0.py`": "${src_wave}/wave2D_u0/wave2D_u0.py"
+program, which solves the 2D wave equation $u_{tt}=c^2(u_{xx}+u_{yy})$
+with constant wave velocity $c$ and $u=0$ on the boundary, to have
+Neumann boundary conditions: $\partial u/\partial n=0$.
+Include both scalar code (for debugging and reference) and
+vectorized code (for speed).
+
+To test the code, use $u=1.2$ as solution ($I(x,y)=1.2$, $V=f=0$, and
+$c$ arbitrary), which should be exactly reproduced with any mesh
+as long as the stability criterion is satisfied.
+Another test is to use the plug-shaped pulse
+in the `pulse` function from Section ref{wave:pde2:software}
+and the "`wave1D_dn_vc.py`": "${src_wave}/wave1D/wave1D_dn_vc.py"
+program. This pulse
+is exactly propagated in 1D if $c\Delta t/\Delta x=1$. Check
+that also the 2D program can propagate this pulse exactly
+in $x$ direction ($c\Delta t/\Delta x=1$, $\Delta y$ arbitrary)
+and $y$ direction ($c\Delta t/\Delta y=1$, $\Delta x$ arbitrary).
+
+# #ifdef OLD
+===== Exercise: Implement a convergence test for a 2D code =====
+file=wave2D_n2
+
+Use the following manufactured solution to verify a 2D code
+for $u_{tt}=c^2(u_{xx}+u_{yy})$ in the spatial domain
+$[0,L_x]\times [0,L_y]$, with $\partial u/\partial n$ on the boundary
+(cf. Exercise ref{wave:app:exer:wave2D:Neumann}):
+
+!bt
+\begin{equation}
+\uex(x,y,t)=\cos(m_xx\pi/L_x)\cos(m_yy\pi/L_y)\cos (\omega t),
+label{wave:app:exer:standing:waves}
+\end{equation}
+!et
+Here, $m_x$ and $m_y$ are freely chosen integers such that
+the wave lengths in the $x$ and $y$ directions become $2L_x/m_x$ and
+$2L_y/m_y$, respectively. The parameter $\omega$ is calculated
+by inserting (ref{wave:app:exer:standing:waves}) in the wave equation.
+The solution
+(ref{wave:app:exer:standing:waves}) is a *standing wave*
+with $\partial u/\partial n=0$.
+This $\uex$ is not an exact solution of the discrete equations so the
+test must be based on empirical analysis of the convergence.
+The error $E$ is assumed to behave like
+
+!bt
+\[
+E = C_t\Delta t^2 + C_x\Delta x^2 + C_y\Delta y^2,
+\]
+!et
+for some constants $C_t$, $C_x$, and $C_y$.
+Choose $\Delta t=F_th$, $\Delta x =F_xh$, and $\Delta y=F_yh$, where
+$h$ is a common discretization parameter to be varied ($h\rightarrow 0$)
+and $F_t$, $F_x$, and $F_y$ are freely chosen constant factors
+compatible with the stability criterion in 2D. The error can then
+be expressed as
+
+!bt
+\[
+E = Ch^2,
+\]
+!et
+where $C=C_xF_t^2 + C_yF_x^2 + C_tF_t^2$.
+Perform experiments with decreasing $h$, compute $E$, and verify that
+$E/h^2$ is approximately constant.
+
+# #endif
+
+===== Exercise: Test the efficiency of compiled loops in 3D =====
+label{wave:exer:3D:f77:cy:efficiency}
+file=wave3D_u0
+
+Extend the `wave2D_u0.py` code and the Cython, Fortran, and C versions to 3D.
+Set up an efficiency experiment to determine the relative efficiency of
+pure scalar Python code, vectorized code, Cython-compiled loops,
+Fortran-compiled loops, and C-compiled loops.
+Normalize the CPU time for each mesh by the fastest version.

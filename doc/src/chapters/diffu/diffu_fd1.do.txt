@@ -1,0 +1,817 @@
+
+======= The 1D diffusion equation =======
+
+idx{diffusion equation, 1D}
+idx{heat equation, 1D}
+
+The famous *diffusion equation*, also known as the *heat equation*,
+reads
+
+!bt
+\[ \frac{\partial u}{\partial t} =
+\dfc \frac{\partial^2 u}{\partial x^2},
+\]
+!et
+where $u(x,t)$ is the unknown function to be solved for, $x$ is a coordinate
+in space, and $t$ is time. The coefficient $\dfc$ is the *diffusion
+coefficient* and determines how fast $u$ changes in time. A quick
+short form for the diffusion equation is $u_t = \dfc u_{xx}$.
+
+Compared to the wave equation, $u_{tt}=c^2u_{xx}$, which looks very similar,
+but the diffusion equation features solutions that are very different from
+those of the wave equation. Also, the diffusion equation
+makes quite different demands to the numerical
+methods.
+
+idx{stationary solution}
+
+Typical diffusion problems may experience rapid change in the very
+beginning, but then the evolution of $u$ becomes slower and slower.
+The solution is usually very smooth, and after some time, one cannot
+recognize the initial shape of $u$. This is in sharp contrast to solutions
+of the wave equation where the initial shape is preserved - the solution
+is basically a moving initial condition. The standard wave equation
+$u_{tt}=c^2u_{xx}$ has solutions that propagates with speed $c$ forever,
+without  changing shape, while the diffusion equation converges to
+a *stationary solution* $\bar u(x)$ as $t\rightarrow\infty$. In this
+limit, $u_t=0$, and $\bar u$ is governed by $\bar u''(x)=0$.
+This stationary limit of the diffusion equation is called
+the *Laplace* equation and arises in a very wide range of applications
+throughout the sciences.
+
+It is possible to solve for $u(x,t)$ using a explicit scheme,
+but the time step restrictions soon become much less favorable than for
+an explicit scheme for the wave equation. And of more importance,
+since the solution $u$ of the diffusion equation is very smooth and changes
+slowly, small time steps are not convenient and not
+required by accuracy as the diffusion process converges to a stationary
+state.
+
+===== The initial-boundary value problem for 1D diffusion =====
+
+To obtain a unique solution of the diffusion equation, or equivalently,
+to apply numerical methods, we need initial and boundary conditions.
+The diffusion equation goes with one initial condition $u(x,0)=I(x)$, where
+$I$ is a prescribed function. One boundary condition is required at
+each point on the boundary, which in 1D means that $u$ must be known,
+$u_x$ must be known, or some combination of them.
+
+We shall start
+with the simplest boundary condition: $u=0$. The complete
+initial-boundary value diffusion problem in one
+space dimension can then be specified as
+
+# #if FORMAT in ("latex", "pdflatex")
+!bt
+\begin{alignat}{3}
+\frac{\partial u}{\partial t} &=
+\dfc \frac{\partial^2 u}{\partial x^2}, \quad & x\in (0,L),\ t\in (0,T]
+label{diffu:pde1}\\
+u(x,0) &= I(x), \quad & x\in [0,L]
+label{diffu:pde1:ic:u}\\
+u(0,t) & = 0, \quad & t>0,
+label{diffu:pde1:bc:0}\\
+u(L,t) & = 0, \quad & t>0
+\tp
+label{diffu:pde1:bc:L}
+\end{alignat}
+!et
+# #else
+!bt
+\begin{align}
+\frac{\partial u}{\partial t} &=
+\dfc \frac{\partial^2 u}{\partial x^2}, \quad x\in (0,L),\ t\in (0,T]
+label{diffu:pde1}\\
+u(x,0) &= I(x), \quad  x\in [0,L]
+label{diffu:pde1:ic:u}\\
+u(0,t) & = 0, \quad  t>0,
+label{diffu:pde1:bc:0}\\
+u(L,t) & = 0, \quad  t>0\tp
+label{diffu:pde1:bc:L}
+\end{align}
+!et
+# #endif
+Equation (ref{diffu:pde1}) is known as a one-dimensional
+*diffusion equation*, also often referred to as a
+*heat equation*. With only a first-order derivative in time,
+only one *initial condition* is needed, while the second-order
+derivative in space leads to a demand for two *boundary conditions*.
+The parameter $\dfc$ must be given and is referred to as the
+*diffusion coefficient*.
+
+Diffusion equations like (ref{diffu:pde1}) have a wide range of
+applications throughout physical, biological, and financial sciences.
+One of the most common applications is propagation of heat, where
+$u(x,t)$ represents the temperature of some substance at point $x$ and
+time $t$.
+## Section ref{diffu:app} goes into several widely occurring applications.
+
+===== Forward Euler scheme =====
+label{diffu:pde1:FE}
+idx{explicit discretization methods}
+
+The first step in the discretization procedure is to replace the
+domain $[0,L]\times [0,T]$ by a set of mesh points. Here we apply
+equally spaced mesh points
+
+!bt
+\begin{equation*} x_i=i\Delta x,\quad i=0,\ldots,N_x,\end{equation*}
+!et
+and
+
+!bt
+\begin{equation*} t_n=n\Delta t,\quad n=0,\ldots,N_t \tp  \end{equation*}
+!et
+Moreover, $u^n_i$ denotes the mesh function that
+approximates $u(x_i,t_n)$ for $i=0,\ldots,N_x$ and $n=0,\ldots,N_t$.
+Requiring the PDE (ref{diffu:pde1}) to be fulfilled at a mesh point $(x_i,t_n)$
+leads to the equation
+
+!bt
+\begin{equation}
+\frac{\partial}{\partial t} u(x_i, t_n) =
+\dfc\frac{\partial^2}{\partial x^2} u(x_i, t_n),
+label{diffu:pde1:step2}
+\end{equation}
+!et
+The next step is to replace the derivatives by finite difference approximations.
+The computationally simplest method arises from
+using a forward difference in time and a central difference in
+space:
+
+!bt
+\begin{equation}
+[D_t^+ u = \dfc D_xD_x u]^n_i \tp
+label{diffu:pde1:step3a}
+\end{equation}
+!et
+Written out,
+
+!bt
+\begin{equation}
+\frac{u^{n+1}_i-u^n_i}{\Delta t} = \dfc \frac{u^{n}_{i+1} - 2u^n_i + u^n_{i-1}}{\Delta x^2} \tp
+label{diffu:pde1:step3b}
+\end{equation}
+!et
+We have turned the PDE into algebraic equations, also often called
+discrete equations. The key property of the equations is that they
+are algebraic, which makes them easy to solve.
+As usual, we anticipate that $u^n_i$ is already computed such that
+$u^{n+1}_i$ is the only unknown in (ref{diffu:pde1:step3b}).
+Solving with respect to this unknown is easy:
+
+!bt
+\begin{equation}
+u^{n+1}_i = u^n_i + F\left(
+u^{n}_{i+1} - 2u^n_i + u^n_{i-1}\right)\tp
+label{diffu:pde1:step4}
+\end{equation}
+!et
+
+!bnotice $F$ is the key parameter in the discrete diffusion equation
+Note that $F$ is a *dimensionless* number that lumps the key physical
+parameter in the problem, $\dfc$, and the discretization parameters
+$\Delta x$ and $\Delta t$ into a single parameter. All the properties
+of the numerical method are critically dependent upon the value of
+$F$ (see Section ref{diffu:pde1:analysis} for details).
+!enotice
+
+The computational algorithm then becomes
+
+  o compute $u^0_i=I(x_i)$for $i=0,\ldots,N_x$
+  o for $n=0,1,\ldots,N_t$:
+    o apply (ref{diffu:pde1:step4}) for all the internal
+      spatial points $i=1,\ldots,N_x-1$
+    o set the boundary values
+      $u^{n+1}_i=0$ for $i=0$ and $i=N_x$
+
+The algorithm is compactly fully specified in Python:
+
+!bc pycod
+x = linspace(0, L, Nx+1)    # mesh points in space
+dx = x[1] - x[0]
+t = linspace(0, T, Nt+1)    # mesh points in time
+dt = t[1] - t[0]
+F = a*dt/dx**2
+u   = zeros(Nx+1)           # unknown u at new time level
+u_1 = zeros(Nx+1)           # u at the previous time level
+
+# Set initial condition u(x,0) = I(x)
+for i in range(0, Nx+1):
+    u_1[i] = I(x[i])
+
+for n in range(0, Nt):
+    # Compute u at inner mesh points
+    for i in range(1, Nx):
+        u[i] = u_1[i] + F*(u_1[i-1] - 2*u_1[i] + u_1[i+1])
+
+    # Insert boundary conditions
+    u[0] = 0;  u[Nx] = 0
+
+    # Update u_1 before next step
+    u_1[:]= u
+!ec
+
+The program "`diffu1D_u0.py`": "${src_diffu}/diffu1D_u0.py"
+contains a function `solver_FE` for solving the 1D diffusion equation
+with $u=0$ on the boundary. The functions `plug` and `gaussian`
+runs the case with $I(x)$ as a discontinuous plug or a smooth
+Gaussian function, respectively. Experiments with these two functions
+reveal some important observations:
+
+ * The Forward Euler scheme leads to growing solutions if $F>\half$.
+ * $I(x)$ as a discontinuous plug leads to a saw tooth-like noise
+   for $F=\half$, see "movie": "${doc_notes}/mov-diffu/diffu1D_u0_FE_plug/movie.ogg", which is absent for $F\leq\frac{1}{4}$, see
+   "movie": "${doc_notes}/mov-diffu/diffu1D_u0_FE_plug_F025/movie.ogg".
+ * The smooth Gaussian initial function leads to a smooth solution,
+   see "movie": "${doc_notes}/mov-diffu/diffu1D_u0_FE_plug_gaussian1/movie.ogg"
+   for $F=\half$.
+
+===== Backward Euler scheme =====
+label{diffu:pde1:BE}
+
+idx{implicit discretization methods}
+
+We now apply a backward difference in time in (ref{diffu:pde1:step2}),
+but the same central difference in space:
+
+!bt
+\begin{equation}
+[D_t^- u = D_xD_x u]^n_i,
+label{diffu:pde1:step3aBE}
+\end{equation}
+!et
+which written out reads
+
+!bt
+\begin{equation}
+\frac{u^{n}_i-u^{n-1}_i}{\Delta t} = \dfc\frac{u^{n}_{i+1} - 2u^n_i + u^n_{i-1}}{\Delta x^2} \tp
+label{diffu:pde1:step3bBE}
+\end{equation}
+!et
+Now we assume $u^{n-1}_i$ is computed, but all quantities at the "new"
+time level $n$ are unknown. This time it is not possible to solve
+with respect to $u_i^{n}$ because this value couples to its neighbors
+in space, $u^n_{i-1}$ and $u^n_{i+1}$, which are also unknown.
+Let us examine this fact for the case when $N_x=3$. Equation (ref{diffu:pde1:step3bBE}) written for $i=1,\ldots,Nx-1= 1,2$ becomes
+
+!bt
+\begin{align}
+\frac{u^{n}_1-u^{n-1}_1}{\Delta t} &= \dfc\frac{u^{n}_{2} - 2u^n_1 + u^n_{0}}{\Delta x^2}\\
+\frac{u^{n}_2-u^{n-1}_2}{\Delta t} &= \dfc\frac{u^{n}_{3} - 2u^n_2 + u^n_{1}}{\Delta x^2}
+\end{align}
+!et
+The boundary values $u^n_0$ and $u^n_3$ are known as zero. Collecting the
+unknown new values $u^n_1$ and $u^n_2$ on the left-hand side gives
+
+!bt
+\begin{align}
+\left(1+  2F\right) u^{n}_1 - F u^{n}_{2}    &= u^{n-1}_1,\\
+- F u^{n}_{1} + \left(1+  2F\right) u^{n}_2  &= u^{n-1}_2\tp
+\end{align}
+!et
+This is a coupled $2\times 2$ system of algebraic equations for
+the unknowns $u^n_1$ and $u^n_2$. The equivalent matrix form is
+
+!bt
+\[ \left(\begin{array}{cc}
+1+  2F &   - F\\
+- F    & 1+  2F
+\end{array}\right)
+\left(\begin{array}{c}
+u^{n}_1\\
+u^{n}_{2}\\
+\end{array}\right)
+=
+\left(\begin{array}{c}
+u^{n-1}_1\\
+u^{n-1}_2
+\end{array}\right)
+\]
+!et
+
+!bnotice Implicit vs. explicit methods
+Discretization methods that lead to a coupled system of equations
+for the unknown function at a new time level are said to be
+*implicit methods*.
+The counterpart, *explicit methods*, refers to discretization
+methods where there is a simple explicit formula for the values of
+the unknown function at each of the spatial mesh points at the new
+time level. From an implementational point of view, implicit methods
+are more comprehensive to code since they require
+the solution of coupled equations, i.e., a matrix system, at each time level.
+!enotice
+
+In the general case, (ref{diffu:pde1:step3bBE}) gives rise to
+a coupled $(Nx-1)\times (Nx-1)$ system of algebraic equations for
+all the unknown $u^n_i$ at the interior spatial points $i=1,\ldots,Nx-1$.
+Collecting the unknowns on the left-hand side,
+(ref{diffu:pde1:step3bBE}) can be written
+
+!bt
+\begin{equation}
+- F u^n_{i-1} + \left(1+  2F \right) u^{n}_i - F u^n_{i+1} =
+u_{i-1}^{n-1},
+label{diffu:pde1:step4BE}
+\end{equation}
+!et
+for $i=1,\ldots,Nx-1$. Here,
+we have introduced the *mesh Fourier number*
+
+!bt
+\begin{equation}
+F = \dfc\frac{\Delta t}{\Delta x^2}\tp
+\end{equation}
+!et
+
+One can either view these equations as a system for where the
+$u^{n}_i$ values at the internal mesh points, $i=1,\ldots,N_x-1$, are
+unknown, or we may append the boundary values $u^n_0$ and $u^n_{N_x}$
+to the system. In the latter case, all $u^n_i$ for $i=0,\ldots,N_x$
+are unknown and we must add the boundary equations to
+the $N_x-1$ equations in (ref{diffu:pde1:step4BE}):
+
+!bt
+\begin{align}
+u_0^n &= 0,label{diffu:pde1:step4BE:BC:0}\\
+u_{N_x}^n &= 0\tp
+label{diffu:pde1:step4BE:BC:L}
+\end{align}
+!et
+
+A coupled system of algebraic equations can be written on matrix form,
+and this is important if we want to call up ready-made software for
+solving the system.  The equations (ref{diffu:pde1:step4BE})
+and (ref{diffu:pde1:step4BE:BC:0})--(ref{diffu:pde1:step4BE:BC:L})
+correspond to the matrix equation
+
+!bt
+\begin{equation*} AU = b\end{equation*}
+!et
+where $U=(u^n_0,\ldots,u^n_{N_x})$, and
+the matrix $A$ has the following structure:
+
+!bt
+\begin{equation}
+A =
+\left(
+\begin{array}{cccccccccc}
+A_{0,0} & A_{0,1} & 0
+&\cdots &
+\cdots & \cdots & \cdots &
+\cdots & 0 \\
+A_{1,0} & A_{1,1} & 0 & \ddots &   & &  & &  \vdots \\
+0 & A_{2,1} & A_{2,2} & A_{2,3} &
+\ddots & &  &  & \vdots \\
+\vdots & \ddots &  & \ddots & \ddots & 0 &  & & \vdots \\
+\vdots &  & \ddots & \ddots & \ddots & \ddots & \ddots & & \vdots \\
+\vdots & &  & 0 & A_{i,i-1} & A_{i,i} & A_{i,i+1} & \ddots & \vdots \\
+\vdots & & &  & \ddots & \ddots & \ddots &\ddots  & 0 \\
+\vdots & & & &  &\ddots  & \ddots &\ddots  & A_{N_x-1,N_x} \\
+0 &\cdots & \cdots &\cdots & \cdots & \cdots  & 0 & A_{N_x,N_x-1} & A_{N_x,N_x}
+\end{array}
+\right)
+label{diffu:pde1:matrix:sparsity}
+\end{equation}
+!et
+The nonzero elements are given by
+
+!bt
+\begin{align}
+A_{i,i-1} &= -F\\
+A_{i,i} &= 1+ 2F\\
+A_{i,i+1} &= -F
+\end{align}
+!et
+for the equations for internal points, $i=1,\ldots,N_x-1$. The equations
+for the boundary points correspond to
+
+!bt
+\begin{align}
+A_{0,0} &= 1,\\
+A_{0,1} &= 0,\\
+A_{N_x,N_x-1} &= 0,\\
+A_{N_x,N_x} &= 1\tp
+\end{align}
+!et
+The right-hand side $b$ is written as
+
+!bt
+\begin{equation}
+b = \left(\begin{array}{c}
+b_0\\
+b_1\\
+\vdots\\
+b_i\\
+\vdots\\
+b_{N_x}
+\end{array}\right)
+\end{equation}
+!et
+with
+
+!bt
+\begin{align}
+b_0 &= 0,\\
+b_i &= u^{n-1}_i,\quad i=1,\ldots,N_x-1,\\
+b_{N_x} &= 0 \tp  \end{align}
+!et
+
+We observe that the matrix $A$ contains quantities that do not change
+in time. Therefore, $A$ can be formed once and for all before we enter
+the recursive formulas for the time evolution.
+The right-hand side $b$, however, must be updated at each time step.
+This leads to the following computational algorithm, here sketched
+with Python code:
+
+!bc pycod
+x = linspace(0, L, Nx+1)   # mesh points in space
+dx = x[1] - x[0]
+t = linspace(0, T, N+1)    # mesh points in time
+u   = zeros(Nx+1)          # unknown u at new time level
+u_1 = zeros(Nx+1)          # u at the previous time level
+
+# Data structures for the linear system
+A = zeros((Nx+1, Nx+1))
+b = zeros(Nx+1)
+
+for i in range(1, Nx):
+    A[i,i-1] = -F
+    A[i,i+1] = -F
+    A[i,i] = 1 + 2*F
+A[0,0] = A[Nx,Nx] = 1
+
+# Set initial condition u(x,0) = I(x)
+for i in range(0, Nx+1):
+    u_1[i] = I(x[i])
+
+import scipy.linalg
+
+for n in range(0, Nt):
+    # Compute b and solve linear system
+    for i in range(1, Nx):
+        b[i] = -u_1[i]
+    b[0] = b[Nx] = 0
+    u[:] = scipy.linalg.solve(A, b)
+
+    # Update u_1 before next step
+    u_1[:] = u
+!ec
+
+===== Sparse matrix implementation =====
+label{diffu:pde1:impl:sparse}
+
+We have seen from (ref{diffu:pde1:matrix:sparsity}) that the matrix $A$
+is tridiagonal. The code segment above used a full, dense matrix
+representation of $A$, which stores a lot of values we know are zero
+beforehand, and worse, the solution algorithm computes with all these zeros.
+With $N_x+1$ unknowns, the work by the solution algorithm is $\frac{1}{3}
+(N_x+1)^3$ and the storage requirements $(N_x+1)^2$. By utilizing
+the fact that $A$ is tridiagonal and employing corresponding software
+tools, the work and storage demands can be proportional to $N_x$ only.
+
+The key idea is to apply a data structure for a
+tridiagonal or sparse matrix. The `scipy.sparse` package has
+relevant utilities. For example, we can store the nonzero diagonals of
+a matrix. The package also has linear system solvers that operate on
+sparse matrix data structures. The code below illustrates how we
+can store only the main diagonal and the upper and lower diagonals.
+
+!bc pycod
+# Representation of sparse matrix and right-hand side
+main  = zeros(Nx+1)
+lower = zeros(Nx-1)
+upper = zeros(Nx-1)
+b     = zeros(Nx+1)
+
+# Precompute sparse matrix
+main[:] = 1 + 2*F
+lower[:] = -F  #1
+upper[:] = -F  #1
+# Insert boundary conditions
+main[0] = 1
+main[Nx] = 1
+
+A = scipy.sparse.diags(
+    diagonals=[main, lower, upper],
+    offsets=[0, -1, 1], shape=(Nx+1, Nx+1),
+    format='csr')
+print A.todense()  # Check that A is correct
+
+# Set initial condition
+for i in range(0,Nx+1):
+    u_1[i] = I(x[i])
+
+for n in range(0, Nt):
+    b = u_1
+    b[0] = b[-1] = 0.0  # boundary conditions
+    u[:] = scipy.sparse.linalg.spsolve(A, b)
+    u_1[:] = u
+!ec
+The `scipy.sparse.linalg.spsolve` function utilizes the sparse storage
+structure of `A` and performs in this case a very efficient Gaussian
+elimination solve.
+
+The program "`diffu1D_u0.py`": "${src_diffu}/diffu1D_u0.py"
+contains a function `solver_BE`, which implements the Backward Euler scheme
+sketched above.
+As mentioned in Section ref{diffu:pde1:FE},
+the functions `plug` and `gaussian`
+runs the case with $I(x)$ as a discontinuous plug or a smooth
+Gaussian function. All experiments point to two characteristic
+features of the Backward Euler scheme: 1) it is always stable, and
+2) it always gives a smooth, decaying solution.
+
+===== Crank-Nicolson scheme =====
+label{diffu:pde1:CN}
+
+The idea in the Crank-Nicolson scheme is to apply centered
+differences in space and time, combined with an average in time.
+We demand the PDE to be fulfilled at the spatial mesh points, but
+in between the points in the time mesh:
+
+!bt
+\[
+\frac{\partial}{\partial t} u(x_i, t_{n+\half}) =
+\dfc\frac{\partial^2}{\partial x^2}u(x_i, t_{n+\half}).
+\]
+!et
+for $i=1,\ldots,N_x-1$ and $n=0,\ldots, N_t-1$.
+
+With centered differences in space and time, we get
+
+!bt
+\[ [D_t u = \dfc D_xD_x u]^{n+\half}_i\tp\]
+!et
+On the right-hand side we get an expression
+
+!bt
+\[ \frac{1}{\Delta x^2}\left(u^{n+\half}_{i-1} - 2u^{n+\half}_i + u^{n+\half}_{i+1}\right)\tp\]
+!et
+This expression is problematic since $u^{n+\half}_i$ is not one of
+the unknown we compute. A possibility is to replace $u^{n+\half}_i$
+by an arithmetic average:
+
+!bt
+\[ u^{n+\half}_i\approx
+\half\left(u^{n}_i +u^{n+1}_{i}\right)\tp
+\]
+!et
+In the compact notation, we can use the arithmetic average
+notation $\overline{u}^t$:
+
+!bt
+\[ [D_t u = \dfc D_xD_x \overline{u}^t]^{n+\half}_i\tp\]
+!et
+
+After writing out the differences and average, multiplying by $\Delta t$,
+and collecting all unknown terms on the left-hand side, we get
+
+!bt
+\begin{equation}
+u^{n+1}_i - \half F(u^{n+1}_{i-1} - 2u^{n+1}_i + u^{n+1}_{i+1})
+= u^{n}_i + \half F(u^{n}_{i-1} - 2u^{n}_i + u^{n}_{i+1})\tp
+\end{equation}
+!et
+
+Also here, as in the Backward Euler scheme, the new unknowns
+$u^{n+1}_{i-1}$, $u^{n+1}_{i}$, and $u^{n+1}_{i+1}$ are coupled
+in a linear system $AU=b$, where $A$ has the same structure
+as in (ref{diffu:pde1:matrix:sparsity}), but with slightly
+different entries:
+
+!bt
+\begin{align}
+A_{i,i-1} &= -\half F\\
+A_{i,i} &= \half + F\\
+A_{i,i+1} &= -\half F
+\end{align}
+!et
+for the equations for internal points, $i=1,\ldots,N_x-1$. The equations
+for the boundary points correspond to
+
+!bt
+\begin{align}
+A_{0,0} &= 1,\\
+A_{0,1} &= 0,\\
+A_{N_x,N_x-1} &= 0,\\
+A_{N_x,N_x} &= 1\tp
+\end{align}
+!et
+The right-hand side $b$ has entries
+
+
+!bt
+\begin{align}
+b_0 &= 0,\\
+b_i &= u^{n-1}_i,\quad i=1,\ldots,N_x-1,\\
+b_{N_x} &= 0 \tp  \end{align}
+!et
+
+===== The $\theta$ rule =====
+label{diffu:pde1:theta}
+
+For the eqution
+
+!bt
+\[ \frac{\partial u}{\partial t} = G(u),\]
+!et
+where $G(u)$ is some
+a spatial differential operator, the $\theta$-rule
+looks like
+
+!bt
+\[ \frac{u^{n+1}_i - u^n_}{\Delta t} =
+\theta G(u^{n+1}_i) + (1-\theta) G(u^{n}_i)\tp\]
+!et
+The important feature of this time discretization scheme is that
+we can implement one formula and then generate a family of
+well-known and widely used schemes:
+
+ * $\theta=0$ gives the Forward Euler scheme in time
+ * $\theta=1$ gives the Backward Euler scheme in time
+ * $\theta=\half$ gives the Crank-Nicolson scheme in time
+
+Applied to the 1D diffusion problem, the $\theta$-rule gives
+
+!bt
+\[ \frac{u^{n+1}_i-u^n_i}{\Delta t} =
+\dfc\left( \theta \frac{u^{n+1}_{i+1} - 2u^{n+1}_i + u^{n+1}_{i-1}}{\Delta x^2}
++ (1-\theta) \frac{u^{n}_{i+1} - 2u^n_i + u^n_{i-1}}{\Delta x^2}\right)
+\tp
+\]
+!et
+This scheme also leads to a matrix system with entries
+
+!bt
+\[ A_{i,i-1} = -F\theta,\quad A_{i,i} = 1+2F\theta\quad,
+A_{i,i+1} = -F\theta,\]
+!et
+while right-hand side entry $b_i$ is
+
+!bt
+\[ b_i = u^n_{i} + F(1-\theta)
+\frac{u^{n}_{i+1} - 2u^n_i + u^n_{i-1}}{\Delta x^2}
+\]
+!et
+The corresponding entries for the boundary points are as in the Backward
+Euler and Crank-Nicolson schemes listed earlier.
+
+# #ifdef EXTRA
+!bt
+\begin{equation}
+[D_t u = \dfc D_xD_x \overline{u}^{t,\theta}]^n_i
+\end{equation}
+!et
+# #endif
+
+===== The Laplace and Poisson equation =====
+
+The Laplace equation, $\nabla^2 u = 0$, or the Poisson equation,
+$-\nabla^2 u = f$, occur in numerous applications throughout science and
+engineering. In 1D these equations read
+$u''(x)=0$ and $-u''(x)=f(x)$, respectively.
+We can solve 1D variants of the Laplace equations with the listed
+software, because we can interpret $u_{xx}=0$ as the limiting solution
+of $u_t = \dfc u_{xx}$ when $u$ reach a steady state limit where
+$u_t\rightarrow 0$.
+Similarly, Poisson's equation $-u_{xx}=f$ arises from solving
+$u_t = u_{xx} + f$ and letting $t\rightarrow$ so $u_t\rightarrow 0$.
+
+Technically in a program, we can simulate $t\rightarrow\infty$
+by just taking one large time step,
+or equivalently, set $\dfc$ to a large value. All we need is to have
+$F$ large. As $F\rightarrow\infty$, we can from the schemes see that
+the limiting discrete equation becomes
+
+!bt
+\[ \frac{u^{n+1}_{i+1} - 2u^{n+1}_i + u^{n+1}_{i-1}}{\Delta x^2} = 0,\]
+!et
+which is nothing but the discretization $[D_xD_x u]^{n+1}_i=0$ of
+$u_{xx}=0$.
+
+The Backward Euler scheme can solve the limit equation directly and
+hence produce a solution of the 1D Laplace equation.
+With the Forward Euler scheme we must do the time stepping since $F > 1/2$
+is illegal and leads to instability. We may interpret this time stepping
+as solving the equation system from $u_{xx}$ by iterating on a time
+pseudo time variable.
+
+===== Extensions =====
+
+These extensions are performed exactly as for a wave equation as they
+only affect the spatial derivatives (which are the same as in the
+wave equation).
+
+ * Variable coefficients
+ * Neumann and Robin conditions
+ * 2D and 3D
+
+Future versions of this document will for completeness and
+independence of the wave equation document feature info on the three
+points. The Robin condition is new, but straightforward to handle:
+
+!bt
+\[ -\dfc\frac{\partial u}{\partial n} = h_T(u-U_s),\quad
+[-\dfc D_x u = h_T(u-U_s)]^n_i
+\]
+!et
+
+# #ifdef 2DO
+
+===== Implementation =====
+label{diffu:pde1:impl}
+
+
+===== Adaptive Time Stepping =====
+
+Intuitive approach based on strategies from ODE decay equation and
+a very discrete Fourier composition of analytical components.
+What about $||u_t|| < \epsilon_L \Rightarrow \Delta t$ doubled,
+$||u_t|| > \epsilon_U \Rightarrow \Delta t$ halved? Google...
+
+
+
+===== Variable Diffusion Coefficient =====
+
+
+!bt
+\begin{equation}
+\frac{\partial u}{\partial t} =
+\frac{\partial}{\partial x}\left(
+\dfc(x) \frac{\partial u}{\partial x}\right)
+\end{equation}
+!et
+
+It is always very useful to have analytical solutions to PDEs.
+For the variable coefficient diffusion equation this is difficult
+to find unless we add a source term and apply the method of
+manufactured solutions. In the  limit $t\rightarrow\infty$, however,
+we can derive an analytical solution.
+The limit problem for the stationary solution
+$v(x) = \lim_{t\rightarrow \infty} u(x,t)$,
+assuming $\partial u/\partial t\rightarrow 0$, becomes
+
+!bt
+\begin{equation}
+\frac{\partial}{\partial x}\left(
+\dfc(x) \frac{\partial u}{\partial x}\right)
+= 0,\quad v(0)=u_L,\ v(L)=u_R \tp  \end{equation}
+!et
+Integrating twice results in
+
+!bt
+\begin{equation*} v = C_2 + C_1\int_0^x \frac{1}{\dfc(\xi)} d\xi \tp  \end{equation*}
+!et
+The two integration constants $C_1$ and $C_2$ are determined from
+the boundary conditions, and $v(x)$ becomes
+
+!bt
+\begin{equation}
+v(x) = u_L + (u_R - u_L)
+\frac{\int_0^x\frac{d\xi}{a(\xi)}}{\int_0^L\frac{d\xi}{a(\xi)}}
+\end{equation}
+!et
+
+Evaluation of $v$ on a mesh with points $x_i$, $i=0,\ldots,N_x$,
+can be performed using the Trapezoidal rule.
+Defining $g(x) = \int_0^x (\dfc(\xi))^{-1}d\xi$, $g_j$ can be
+computed as
+
+!bt
+\begin{equation}
+g_i = \left\lbrace\begin{array}{ll}
+\half \Delta x /\dfc_i, & i = 0,\\
+g_{i-1} + \Delta x /\dfc_i, & 0 < i < N_x,\\
+g_{i-1} + \half\Delta x /\dfc_i, & i = N_x \tp  \end{array}\right.
+\end{equation}
+!et
+Then
+
+!bt
+\begin{equation}
+v_i = u_L + (u_R - u_L)g_i/g_{N_x} \tp  \end{equation}
+!et
+The corresponding implementation can be written
+
+!bc pycod
+def u_exact_stationary(x, a, u_L, u_R):
+    Nx = x.size - 1
+    g = zeros(Nx+1)    # integral of 1/a from 0 to x
+    dx = x[1] - x[0]   # assumed constant
+    i = 0
+    g[i] = 0.5*dx/a[i]
+    for i in range(1, Nx):
+        g[i] = g[i-1] + dx/a[i]
+    i = Nx
+    g[i] = g[i-1] + 0.5*dx/a[i]
+    v = u_L + (u_R - u_L)*g/g[-1]
+    return v
+!ec
+
+
+
+======= Two-Dimensional Diffusion =======
+label{diffu:2D}
+
+# #endif

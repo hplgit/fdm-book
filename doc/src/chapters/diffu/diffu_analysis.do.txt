@@ -1,0 +1,952 @@
+
+======= Analysis of schemes for the diffusion equation =======
+label{diffu:pde1:analysis}
+
+
+===== Properties of the solution =====
+label{diffu:pde1:analysis:uex}
+
+A particular characteristic of diffusive processes, governed
+by an equation like
+
+!bt
+\begin{equation}
+u_t = \alpha u_{xx},
+label{diffu:pde1:eq}
+\end{equation}
+!et
+is that the
+initial shape $u(x,0)=I(x)$ spreads out in space with time,
+along with a decaying amplitude.
+Three different examples will illustrate the spreading of $u$ in
+space and the decay in time.
+
+=== Similarity solution ===
+
+The diffusion equation (ref{diffu:pde1:eq}) admits solutions
+that depend on $\eta = (x-c)/\sqrt{4\alpha t}$ for a given value
+of $c$. One particular solution
+is
+
+!bt
+\begin{equation}
+u(x,t) = a\,\mbox{erf}(\eta) + b,
+label{diffu:pdf1:erf:sol}
+\end{equation}
+!et
+where
+
+!bt
+\begin{equation}
+\mbox{erf}(\eta) = \frac{2}{\sqrt{\pi}}\int_0^\eta e^{-\zeta^2}d\zeta,
+label{diffu:analysis:erf:def}
+\end{equation}
+!et
+is the *error function*, and $a$ and $b$ are arbitrary constants.
+The error function lies in $(-1,1)$, is odd around $\eta =0$, and
+goes relatively quickly to $\pm 1$:
+
+!bt
+\begin{align*}
+\lim_{\eta\rightarrow -\infty}\mbox{erf}(\eta) &=-1,\\
+\lim_{\eta\rightarrow \infty}\mbox{erf}(\eta) &=1,\\
+\mbox{erf}(\eta) &= -\mbox{erf}(-\eta),\\
+\mbox{erf}(0) &=0,\\
+\mbox{erf}(2) &=0.99532227,\\
+\mbox{erf}(3) &=0.99997791
+\tp
+\end{align*}
+!et
+
+As $t\rightarrow 0$, the error function approaches a step function centered
+at $x=c$. For a diffusion problem posed on the unit interval $[0,1]$,
+we may choose the step at $x=1/2$ (meaning $c=1/2$), $a=-1/2$, $b=1/2$.
+Then
+
+!bt
+\begin{equation}
+u(x,t) = \half\left(1 -
+\mbox{erf}\left(\frac{x-\half}{\sqrt{4\alpha t}}\right)\right) =
+\half\mbox{erfc}\left(\frac{x-\half}{\sqrt{4\alpha t}}\right),
+label{diffu:analysis:pde1:step:erf:sol}
+\end{equation}
+!et
+where we have introduced the *complementary error function*
+$\mbox{erfc}(\eta) = 1-\mbox{erf}(\eta)$.
+The solution (ref{diffu:analysis:pde1:step:erf:sol})
+implies the boundary conditions
+
+!bt
+\begin{align}
+u(0,t) &= \half\left(1 - \mbox{erf}\left(\frac{-1/2}{\sqrt{4\alpha t}}\right)\right),
+label{diffu:analysis:pde1:p1:erf:uL} \\
+u(1,t) &= \half\left(1 - \mbox{erf}\left(\frac{1/2}{\sqrt{4\alpha t}}\right)\right)
+label{diffu:analysis:pde1:p1:erf:uR}
+\tp
+\end{align}
+!et
+For small enough $t$, $u(0,t)\approx 1$ and $u(1,t)\approx 1$, but as
+$t\rightarrow\infty$, $u(x,t)\rightarrow 1/2$ on $[0,1]$.
+
+=== Solution for a Gaussian pulse ===
+
+The standard diffusion equation $u_t = \alpha u_{xx}$ admits a
+Gaussian function as solution:
+
+!bt
+\begin{equation}
+u(x,t) = \frac{1}{\sqrt{4\pi\alpha t}} \exp{\left({-\frac{(x-c)^2}{4\alpha t}}\right)}
+label{diffu:pde1:sol:Gaussian}
+\tp
+\end{equation}
+!et
+At $t=0$ this is a Dirac delta function, so for computational
+purposes one must start to view the solution at some time $t=t_\epsilon>0$.
+Replacing $t$ by $t_\epsilon +t$ in (ref{diffu:pde1:sol:Gaussian})
+makes it easy to operate with a (new) $t$ that starts at $t=0$
+with an initial condition with a finite width.
+The important feature of (ref{diffu:pde1:sol:Gaussian}) is that
+the standard deviation $\sigma$ of a sharp initial Gaussian pulse
+increases in time according to $\sigma = \sqrt{2\alpha t}$, making
+the pulse diffuse and flatten out.
+
+# Mention combinations of such kernels to build up a general analytical sol?
+# Or maybe an exercise for verification.
+
+=== Solution for a sine component ===
+
+For example, (ref{diffu:pde1:eq})
+admits a solution of the form
+
+!bt
+\begin{equation}
+u(x,t) = Qe^{-at}\sin\left( kx\right)
+label{diffu:pde1:sol1}
+\tp
+\end{equation}
+!et
+The parameters $Q$ and $k$ can be freely chosen, while
+inserting (ref{diffu:pde1:sol1}) in (ref{diffu:pde1:eq}) gives the constraint
+
+!bt
+\begin{equation*} a = -\alpha k^2
+\tp
+\end{equation*}
+!et
+
+
+A very important feature is that the initial shape $I(x)=Q\sin kx$
+undergoes a damping $\exp{(-\alpha k^2t)}$, meaning that
+rapid oscillations in space, corresponding to large $k$, are very much
+faster dampened than slow oscillations in space, corresponding to small
+$k$. This feature leads to a smoothing of the initial condition with time.
+
+The following examples illustrates the damping properties of (ref{diffu:pde1:sol1}). We consider the specific problem
+
+!bt
+\begin{align*}
+u_t &= u_{xx},\quad x\in (0,1),\ t\in (0,T],\\
+u(0,t) &= u(1,t) = 0,\quad t\in (0,T],\\
+u(x,0) & = \sin (\pi x) + 0.1\sin(100\pi x)
+\tp
+\end{align*}
+!et
+The initial condition has been chosen such that adding
+two solutions like (ref{diffu:pde1:sol1}) constructs
+an analytical solution to the problem:
+
+!bt
+\begin{equation}
+u(x,t) = e^{-\pi^2 t}\sin (\pi x) + 0.1e^{-\pi^2 10^4 t}\sin (100\pi x)
+label{diffu:pde1:sol2}
+\tp
+\end{equation}
+!et
+Figure ref{diffu:pde1:fig:damping} illustrates the rapid damping of
+rapid oscillations $\sin (100\pi x)$ and the very much slower damping of the
+slowly varying $\sin (\pi x)$ term. After about $t=0.5\cdot10^{-4}$ the rapid
+oscillations do not have a visible amplitude, while we have to wait
+until $t\sim 0.5$ before the amplitude of the long wave $\sin (\pi x)$
+becomes very small.
+
+FIGURE: [fig-diffu/diffusion_damping, width=800] Evolution of the solution of a diffusion problem: initial condition (upper left), 1/100 reduction of the small waves (upper right), 1/10 reduction of the long wave (lower left), and 1/100 reduction of the long wave (lower right). label{diffu:pde1:fig:damping}
+
+# x/sqrt(t) solution, kernel with integral
+
+===== Example: Diffusion of a discontinues profile =====
+
+We shall see how different schemes predict the evolution of a
+discontinuous initial condition:
+
+!bt
+\[
+u(x,0)=\left\lbrace
+\begin{array}{ll}
+U_L, & x < L/2\\
+U_R,& x\geq L/2
+\end{array}\right.
+\]
+!et
+Such a discontinuous initial condition may arise when two insulated
+blocks of metals at different temperature are brought in contact at
+$t=0$. Alternatively, signaling in the brain is based on release
+of a huge ion concentration on one side of a synapse, which implies
+diffusive transport of a discontinuous concentration function.
+
+_More to be written..._
+
+===== Analysis of discrete equations =====
+
+A counterpart to (ref{diffu:pde1:sol1}) is the complex representation
+of the same function:
+
+!bt
+\[ u(x,t) = Qe^{-at}e^{ikx},\]
+!et
+where $i=\sqrt{-1}$ is the imaginary unit.
+We can add such functions, often referred to as wave components,
+to make a Fourier representation
+of a general solution of the diffusion equation:
+
+!bt
+\begin{equation}
+u(x,t) \approx \sum_{k\in K} b_k e^{-\alpha k^2t}e^{ikx},
+label{diffu:pde1:u:Fourier}
+\end{equation}
+!et
+where $K$ is a set of an infinite number of $k$ values needed to construct
+the solution. In practice, however, the series is truncated and
+$K$ is a finite set of $k$ values
+need build a good approximate solution.
+Note that (ref{diffu:pde1:sol2}) is a special case of
+(ref{diffu:pde1:u:Fourier}) where $K=\{\pi, 100\pi\}$, $b_{\pi}=1$,
+and $b_{100\pi}=0.1$.
+
+The amplitudes $b_k$ of the individual Fourier waves must be determined
+from the initial condition. At $t=0$ we have $u\approx\sum_kb_k\exp{(ikx)}$
+and find $K$ and $b_k$ such that
+
+!bt
+\begin{equation}
+I(x) \approx \sum_{k\in K} b_k e^{ikx}\tp
+\end{equation}
+!et
+(The relevant formulas for $b_k$ come from Fourier analysis, or
+equivalently, a least-squares method for approximating $I(x)$
+in a function space with basis $\exp{(ikx)}$.)
+
+Much insight about the behavior of numerical methods can be obtained
+by investigating how a wave component $\exp{(-\alpha k^2 t)}\exp{(ikx)}$
+is treated by the numerical scheme. It appears that such wave
+components are also solutions of the schemes, but the damping
+factor $\exp{(-\alpha k^2 t)}$ varies among the schemes.
+To ease the forthcoming algebra, we write the damping factor
+as $A^n$. The exact amplification factor corresponding to $A$
+is $\Aex = \exp{(-\alpha k^2\Delta t)}$.
+
+
+===== Analysis of the finite difference schemes =====
+label{diffu:pde1:analysis}
+
+We have seen that a general solution of the diffusion equation
+can be built as a linear combination of basic components
+
+!bt
+\begin{equation*} e^{-\alpha k^2t}e^{ikx} \tp  \end{equation*}
+!et
+A fundamental question is whether such components are also solutions of
+the finite difference schemes. This is indeed the case, but the
+amplitude $\exp{(-\alpha k^2t)}$ might be modified (which also happens when
+solving the ODE counterpart $u'=-\alpha u$).
+We therefore look for numerical solutions of the form
+
+!bt
+\begin{equation}
+u^n_q = A^n e^{ikq\Delta x} = A^ne^{ikx},
+label{diffu:pde1:analysis:uni}
+\end{equation}
+!et
+where the amplification factor $A$
+must be determined by inserting the component into an actual scheme.
+
+=== Stability ===
+
+The exact amplification factor is $\Aex=\exp{(-\alpha^2 k^2\Delta t)}$.
+We should therefore require $|A| < 1$ to have a decaying numerical
+solution as well. If
+$-1\leq A<0$, $A^n$ will change sign from time level to
+time level, and we get stable, non-physical oscillations in the numerical
+solutions that are not present in the exact solution.
+
+idx{amplification factor}
+
+=== Accuracy ===
+
+To determine how accurately a finite difference scheme treats one
+wave component (ref{diffu:pde1:analysis:uni}), we see that the basic
+deviation from the exact solution is reflected in how well
+$A^n$ approximates $\Aex^n$,
+or how well $A$ approximates $\Aex$.
+We can plot $\Aex$ and the various expressions for $A$, and we can
+make Taylor expansions of $A/\Aex$ to see the error more analytically.
+
+#We shall in particular investigate the error $\Aex - A$ in the
+#amplification factor.
+
+
+===== Analysis of the Forward Euler scheme =====
+label{diffu:pde1:analysis:FE}
+
+# 2DO: refer to vib and wave
+
+
+The Forward Euler finite difference scheme for $u_t = \alpha u_{xx}$ can
+be written as
+
+!bt
+\begin{equation*} [D_t^+ u = \alpha D_xD_x u]^n_q\tp  \end{equation*}
+!et
+Inserting a wave component (ref{diffu:pde1:analysis:uni})
+in the scheme demands calculating the terms
+
+!bt
+\[ e^{ikq\Delta x}[D_t^+ A]^n = e^{ikq\Delta x}A^n\frac{A-1}{\Delta t},\]
+!et
+and
+
+!bt
+\[ A^nD_xD_x [e^{ikx}]_q = A^n\left( - e^{ikq\Delta x}\frac{4}{\Delta x^2}
+\sin^2\left(\frac{k\Delta x}{2}\right)\right)
+\tp  \]
+!et
+Inserting these terms in the discrete equation and
+dividing by $A^n e^{ikq\Delta x}$ leads to
+
+
+!bt
+\begin{equation*}
+\frac{A-1}{\Delta t} = -\alpha \frac{4}{\Delta x^2}\sin^2\left(
+\frac{k\Delta x}{2}\right),
+\end{equation*}
+!et
+and consequently
+
+!bt
+\begin{equation}
+A = 1 -4F\sin^2\left(
+\frac{k\Delta x}{2}\right),
+\end{equation}
+!et
+where
+
+!bt
+\begin{equation}
+F = \frac{\alpha\Delta t}{\Delta x^2}
+\end{equation}
+!et
+is the *numerical Fourier number*.
+The complete numerical solution is then
+
+!bt
+\begin{equation}
+u^n_q = \left(1 -4F\sin^2\left(
+\frac{k\Delta x}{2}\right)\right)^ne^{ikq\Delta x}
+\tp
+\end{equation}
+!et
+
+=== Stability ===
+
+We easily see that $A\leq 1$. However, the $A$ can be less than $-1$,
+which will lead
+to growth of a numerical wave component. The criterion $A\geq -1$ implies
+
+!bt
+\[ 4F\sin^2 (p/2)\leq 2
+\tp
+\]
+!et
+The worst case is when $\sin^2 (p/2)=1$, so a sufficient criterion for
+stability is
+
+!bt
+\begin{equation}
+F\leq {\half},
+\end{equation}
+!et
+or expressed as a condition on $\Delta t$:
+
+!bt
+\begin{equation}
+\Delta t\leq \frac{\Delta x^2}{2\alpha}\tp
+\end{equation}
+!et
+Note that halving the spatial mesh size, $\Delta x \rightarrow {\half}
+\Delta x$, requires $\Delta t$ to be reduced by a factor of $1/4$.
+The method hence becomes very expensive for fine spatial meshes.
+
+# 2DO: verification based on exact solutions
+
+=== Accuracy ===
+
+Since $A$ is expressed in terms of $F$ and the parameter we now call
+$p=k\Delta x/2$, we should also express $\Aex$ by $F$ and $p$. The exponent
+in $\Aex$ is $-\dfc k^2\Delta t$, which equals $-F k^2\Delta x^2=-F4p^2$.
+Consequently,
+
+!bt
+\[ \Aex = \exp{(-\alpha k^2\Delta t)} = \exp{(-4Fp^2)}
+\tp \]
+!et
+All our $A$ expressions as well as $\Aex$ are now functions of the two
+dimensionless parameters $F$ and $p$.
+
+Computing
+the Taylor series expansion of $A/\Aex$ in terms of $F$
+can easily be done with aid of `sympy`:
+
+!bc pycod
+def A_exact(F, p):
+    return exp(-4*F*p**2)
+
+def A_FE(F, p):
+    return 1 - 4*F*sin(p)**2
+
+from sympy import *
+F, p = symbols('F p')
+A_err_FE = A_FE(F, p)/A_exact(F, p)
+print A_err_FE.series(F, 0, 6)
+!ec
+The result is
+
+!bt
+\[ \frac{A}{\Aex} = 1 - 4 F \sin^{2}p + 2F p^{2} - 16F^{2} p^{2} \sin^{2}p + 8 F^{2} p^{4} + \cdots
+\]
+!et
+Recalling that $F=\alpha\Delta t/\Delta x$, $p=k\Delta x/2$, and that
+$\sin^2p\leq 1$, we
+realize that the dominating error terms are at most
+
+!bt
+\[ 1 - 4\alpha \frac{\Delta t}{\Delta x^2} +
+\alpha\Delta t - 4\alpha^2\Delta t^2
++ \alpha^2 \Delta t^2\Delta x^2 + \cdots
+\tp
+\]
+!et
+
+
+===== Analysis of the Backward Euler scheme =====
+label{diffu:pde1:analysis:BE}
+
+Discretizing $u_t = \alpha u_{xx}$ by a Backward Euler scheme,
+
+!bt
+\begin{equation*} [D_t^- u = \alpha D_xD_x u]^n_q,\end{equation*}
+!et
+and inserting a wave component (ref{diffu:pde1:analysis:uni}),
+leads to calculations similar to those arising from the Forward Euler scheme,
+but since
+
+!bt
+\[ e^{ikq\Delta x}[D_t^- A]^n = A^ne^{ikq\Delta x}\frac{1 - A^{-1}}{\Delta t},\]
+!et
+we get
+
+!bt
+\begin{equation*}
+\frac{1-A^{-1}}{\Delta t} = -\alpha \frac{4}{\Delta x^2}\sin^2\left(
+\frac{k\Delta x}{2}\right),
+\end{equation*}
+!et
+and then
+
+!bt
+\begin{equation}
+A = \left(1  + 4F\sin^2p\right)^{-1}
+label{diffu:pde1:analysis:BE:A}
+\tp
+\end{equation}
+!et
+The complete numerical solution can be written
+
+!bt
+\begin{equation}
+u^n_q = \left(1  + 4F\sin^2 p\right)^{-n}
+e^{ikq\Delta x} \tp
+\end{equation}
+!et
+
+=== Stability ===
+
+We see from (ref{diffu:pde1:analysis:BE:A}) that $0<A<1$, which means
+that all numerical wave components are stable and non-oscillatory
+for any $\Delta t >0$.
+
+
+
+===== Analysis of the Crank-Nicolson scheme =====
+label{diffu:pde1:analysis:CN}
+
+The Crank-Nicolson scheme can be written as
+
+!bt
+\[ [D_t u = \alpha D_xD_x \overline{u}^x]^{n+\half}_q, \]
+!et
+or
+
+!bt
+\[ [D_t u]^{n+\half}_q = \half\alpha\left( [D_xD_x u]^{n}_q +
+[D_xD_x u]^{n+1}_q\right)
+\tp
+\]
+!et
+Inserting (ref{diffu:pde1:analysis:uni}) in the time derivative approximation
+leads to
+
+!bt
+\[ [D_t A^n e^{ikq\Delta x}]^{n+\half} = A^{n+\half} e^{ikq\Delta x}\frac{A^{\half}-A^{-\half}}{\Delta t} = A^ne^{ikq\Delta x}\frac{A-1}{\Delta t}
+\tp \]
+!et
+Inserting (ref{diffu:pde1:analysis:uni}) in the other terms
+and dividing by
+$A^ne^{ikq\Delta x}$ gives the relation
+
+!bt
+\[
+\frac{A-1}{\Delta t} = -\half\alpha\frac{4}{\Delta x^2}
+\sin^2\left(\frac{k\Delta x}{2}\right)
+(1 + A),
+\]
+!et
+and after some more algebra,
+
+!bt
+\begin{equation}
+A = \frac{ 1 - 2F\sin^2p}{1 + 2F\sin^2p}
+\tp
+\end{equation}
+!et
+The exact numerical solution is hence
+
+!bt
+\begin{equation}
+u^n_q = \left(\frac{ 1 - 2F\sin^2p}{1 + 2F\sin^2p}\right)^ne^{ikp\Delta x}
+\tp
+\end{equation}
+!et
+
+=== Stability ===
+
+The criteria $A>-1$ and $A<1$ are fulfilled for any $\Delta t >0$.
+
+===== Summary of accuracy of amplification factors =====
+
+We can plot the various amplification factors against $p=k\Delta x/2$ for
+different choices of the $F$ parameter. Figures ref{diffu:pde1:fig:A:err:C20},
+ref{diffu:pde1:fig:A:err:C0.5}, and ref{diffu:pde1:fig:A:err:C0.1}
+show how long and small waves are damped by the various schemes compared
+to the exact damping. As long as all schemes are stable, the amplification
+factor is positive, except for Crank-Nicolson when $F>0.5$.
+
+FIGURE: [fig-diffu/diffusion_A_F20_F2, width=800] Amplification factors for large time steps. label{diffu:pde1:fig:A:err:C20}
+
+FIGURE: [fig-diffu/diffusion_A_F05_F025, width=800] Amplification factors for time steps around the Forward Euler stability limit. label{diffu:pde1:fig:A:err:C0.5}
+
+FIGURE: [fig-diffu/diffusion_A_F01_F001, width=800] Amplification factors for small time steps. label{diffu:pde1:fig:A:err:C0.1}
+
+The effect of negative amplification factors is that $A^n$ changes sign
+from one time level to the next, thereby giving rise to oscillations in
+time in an animation of the solution. We see from Figure ref{diffu:pde1:fig:A:err:C20} that for $F=20$, waves with $p\geq \pi/2$ undergo a damping close to
+$-1$, which means that the amplitude does not decay and that the wave component
+jumps up and down in time. For $F=2$ we have a damping of a factor of 0.5
+from one time level to the next, which is very much smaller than the
+exact damping. Short waves will therefore fail to be effectively dampened.
+These waves will manifest themselves as high frequency
+oscillatory noise in the solution.
+
+A value $p=\pi/4$ corresponds to
+four mesh points per wave length of $e^{ikx}$, while
+$p=\pi/2$ implies only two points per wave length, which is the smallest number
+of points we can have to represent the wave on the mesh.
+
+To demonstrate the oscillatory behavior of the Crank-Nicolson scheme, we
+choose an initial condition that leads to short waves with
+significant amplitude. A discontinuous $I(x)$ will in particular serve
+this purpose.
+
+Run $F=...$...
+
+
+
+
+
+
+
+
+
+
+
+# #ifdef OLD
+#Case from Elements book where $C=0.45$ with $\Delta x=1/20, 1/60$,
+#$t=0.1$ and two clearly different plots. Wrong or correct? Formulate
+#problem. How long does it take to reach the level $u=1E-4$? Test two
+#grids, two significantly different times. Investigate with analysis.}
+#Say we simulate up to a time point $t$ and examine the amplitude:
+
+!bt
+\begin{equation*} A = \left(1 -4C\sin^2\left(\frac{k\Delta x}{2}\right)\right)^{n}\end{equation*}
+!et
+
+!bt
+\begin{equation*} A = \left(1 -4C\sin^2\left(\frac{k\Delta x}{2}\right)\right)^{t/\Delta t}\end{equation*}
+!et
+
+!bt
+\begin{equation*} A = \left(1 -4C\sin^2\left(\frac{k\Delta x}{2}\right)\right)^{t/(C\Delta x^2)}\end{equation*}
+!et
+Expanding this in $\Delta x$ is too complicated for sympy.
+Better to plot this numerical A as function of $\Delta x$ and compare with
+the constant value from the exact expression:
+
+!bt
+\begin{equation*} A = e^{-\alpha k^2t}\end{equation*}
+!et
+FE.py plots the two and show how the numerical amplitude falls off
+as $\Delta x$ increases. Maybe this should make it into the text!
+It's yet another good example on a plot that looks strange.
+Maybe it would be good to embed the problem in a more real problem
+where something is decaying and then use the analysis to explain, using
+sine variation in space. With $k=3\pi$ we speak about a fairly smooth
+thing. There is probably a lot to explore along these lines.
+
+OK, here is the problem: some diffusion problem, big and small
+grid, simulate to a certain time, measure the level of the peak,
+see that the differences are substantial. Wrong implementation or
+a feature of the method? In the analysis we can look at FE, BE and CN.
+
+I'm not sure the rest is of value. NO!
+
+!bt
+\begin{equation*} = e^{-alpha k^2 nC\Delta x^2} = (e^{-alpha k^2 C\Delta x^2})^n\end{equation*}
+!et
+FE.py says this error is
+
+!bt
+\begin{equation*} \half C^2\Delta x^4 k^4\end{equation*}
+!et
+But it is the power $n$ that is important, it is large/small for fine/coarse
+grid.
+
+Logarithms:
+
+!bt
+\begin{equation*} \ln A = \frac{t}{C\Delta x^2}\ln \left(1 -4C\sin^2\left(\frac{k\Delta x}{2}\right)\right)\end{equation*}
+!et
+
+!bt
+\begin{equation*} \ln A = -\alpha k^2t\end{equation*}
+!et
+FE.py didn't bring me to a clear answer. The error in $A$ is not enough,
+because coarse/fine grid has small/large $n$.
+
+
+
+Say we want to reduce $u$ by a factor of $r$:
+
+!bt
+\begin{equation*} \left(1 -4C\sin^2\left(\frac{k\Delta x}{2}\right)\right)^n = r\end{equation*}
+!et
+
+!bt
+\begin{equation*} n = \ln r /\ln \left(1 -4C\sin^2\left(\frac{k\Delta x}{2}\right)\right)\end{equation*}
+!et
+
+!bt
+\begin{equation*} t = \Delta t\ln r /\ln \left(1 -4C\sin^2\left(\frac{k\Delta x}{2}\right)\right)\end{equation*}
+!et
+
+!bt
+\begin{equation*} t = C\Delta x^2\ln r /\ln \left(1 -4C\sin^2\left(\frac{k\Delta x}{2}\right)\right)\end{equation*}
+!et
+
+
+
+=== The Backward Euler Scheme ===
+
+Inserting (ref{diffu:pde1:analysis:uni})
+in
+
+!bt
+\begin{equation*} [D_t^- u = \alpha D_xD_x u]^n_j,\end{equation*}
+!et
+and dividing by $A^n e^{ikx}$ results in
+
+!bt
+\begin{equation*}
+\frac{1-A^{-1}}{\Delta t} = -\alpha \frac{4}{\Delta x^2}\sin^2\left(
+\frac{k\Delta x}{2}\right) \tp
+\end{equation*}
+!et
+Solving with respect to $A$ gives an amplification factor of
+
+
+=== The $\theta$ Rule ===
+
+The analysis of the
+$\theta$ rule becomes easy if we express the scheme
+as
+
+!bt
+\begin{equation*} [D_t u]^{n+\halfi}_j = \alpha\theta [D_xD_x]^{n}_j +
+\alpha(1-\theta)[D_xD_x]^{n-1}_j \tp  \end{equation*}
+!et
+Inserting (ref{diffu:pde1:analysis:uni}) and dividing by
+$A^n e^{ikx}$ gives the equation
+
+!bt
+\begin{equation*} \frac{A-1}{\Delta t} =
+\alpha 4C\sin^2\left(
+\frac{k\Delta x}{2}\right)\left( \theta A +
+(1-\theta)\right),\end{equation*}
+!et
+which leads to
+
+!bt
+\begin{equation}
+A = \frac{1 - \alpha (1-\theta)}{1+\alpha\theta}
+C\sin^2\left(
+\frac{k\Delta x}{2}\right),
+\end{equation}
+!et
+and
+
+!bt
+\begin{equation}
+u^n_j = \left(\frac{1 - \alpha (1-\theta)}{1+\alpha\theta}
+C\sin^2\left(
+\frac{k\Delta x}{2}\right)\right)^n e^{ikj\Delta x} \tp  \end{equation}
+!et
+
+Use these in tests....
+# #endif
+
+===== Exercise: Explore symmetry in a 1D problem =====
+label{diffu:exer:1D:gaussian:symmetric}
+file=diffu_symmetric_gaussian
+
+This exercise simulates the exact solution (ref{diffu:pde1:sol:Gaussian}).
+Suppose for simplicity that $c=0$.
+
+!bsubex
+Formulate an initial-boundary value problem that has
+(ref{diffu:pde1:sol:Gaussian}) as solution in the domain $[-L,L]$.
+Use the exact solution (ref{diffu:pde1:sol:Gaussian}) as Dirichlet
+condition at the boundaries.
+Simulate the diffusion of the Gaussian peak. Observe that the
+solution is symmetric around $x=0$.
+!esubex
+
+!bsubex
+Show from (ref{diffu:pde1:sol:Gaussian}) that $u_x(c,t)=0$.
+Since the solution is symmetric around $x=c=0$, we can solve the
+numerical problem in half of the domain, using a *symmetry boundary condition*
+$u_x=0$ at $x=0$. Set up the
+initial-boundary value problem in this case. Simulate the
+diffusion problem in $[0,L]$ and compare with the solution in a).
+
+!bsol
+!bt
+\begin{align*}
+u_t &= \dfc u_xx,\\
+u_x(0,t) &= 0,\\
+u(L,t)& =\frac{1}{\sqrt{4\pi\alpha t}} \exp{\left({-\frac{x^2}{4\alpha t}}\right)}\tp
+\end{align*}
+!et
+!esol
+
+!esubex
+
+===== Exercise: Investigate approximation errors from a $u_x=0$ boundary condition =====
+label{diffu:exer:1D:ux:onesided}
+file=diffu_onesided_fd
+
+We consider the problem solved in Exercise ref{diffu:exer:1D:gaussian:symmetric}
+part b). The boundary condition $u_x(0,t)=0$ can be implemented in
+two ways: 1) by a standard symmetric finite difference $[D_{2x}u]_i^n=0$,
+or 2) by a one-sided difference $[D^+u=0]^n_i=0$.
+Investigate the effect of these two conditions on the
+convergence rate in space.
+
+!bhint
+If you use a Forward Euler scheme, choose a discretization parameter
+$h=\Delta t = \Delta x^2$ and assume the error goes like $E\sim h^r$.
+The error in the scheme is $\Oof{\Delta t,\Delta x^2}$ so one should
+expect that the estimated $r$ approaches 1. The question is if
+a one-sided difference approximation to $u_x(0,t)=0$ destroys this
+convergence rate.
+!ehint
+
+
+===== Exercise: Experiment with open boundary conditions in 1D =====
+label{diffu:exer:1D:openBC}
+file=diffu_open_BC
+
+We address diffusion of a Gaussian function
+as in Exercise ref{diffu:exer:1D:gaussian:symmetric},
+in the domain $[0,L]$,
+but now we shall explore different types of boundary
+conditions on $x=L$. In real-life problems we do not know
+the exact solution on $x=L$ and must use something simpler.
+
+!bsubex
+Imagine that we want to solve the problem numerically on
+$[0,L]$, with a symmetry boundary condition $u_x=0$ at $x=0$,
+but we do not know the exact solution and cannot of that
+reason assign a correct Dirichlet condition at $x=L$.
+One idea is to simply set $u(L,t)=0$ since this will be an
+accurate approximation before the diffused pulse reaches $x=L$
+and even thereafter it might be a satisfactory condition if the exact $u$ has
+a small value.
+Let $\uex$ be the exact solution and let $u$ be the solution
+of $u_t=\alpha u_{xx}$ with an initial Gaussian pulse and
+the boundary conditions $u_x(0,t)=u(L,t)=0$. Derive a diffusion
+problem for the error $e=\uex - u$. Solve this problem
+numerically using an exact Dirichlet condition at $x=L$.
+Animate the evolution of the error and make a curve plot of
+the error measure
+
+!bt
+\[ E(t)=\sqrt{\frac{\int_0^L e^2dx}{\int_0^L udx}}\tp \]
+!et
+Is this a suitable error measure for the present problem?
+!esubex
+
+!bsubex
+Instead of using $u(L,t)=0$ as approximate boundary condition for
+letting the diffused Gaussian pulse move out of our finite domain,
+one may try $u_x(L,t)=0$ since the solution for large $t$ is
+quite flat. Argue that this condition gives a completely wrong
+asymptotic solution as $t\rightarrow 0$. To do this,
+integrate the diffusion equation from $0$ to $L$, integrate
+$u_{xx}$ by parts (or use Gauss' divergence theorem in 1D) to
+arrive at the important property
+
+!bt
+\[ \frac{d}{dt}\int_{0}^L u(x,t)dx = 0,\]
+!et
+implying that $\int_0^Ludx$ must be constant in time, and therefore
+
+!bt
+\[ \int_{0}^L u(x,t)dx = \int_{0}^LI(x)dx\tp \]
+!et
+The integral of the initial pulse is 1.
+!esubex
+
+!bsubex
+Another idea for an artificial boundary condition at $x=L$
+is to use a cooling law
+
+!bt
+\begin{equation}
+-\alpha u_x = q(u - u_S),
+label{diffu:pde1:Gaussian:xL:cooling}
+\end{equation}
+!et
+where $q$ is an unknown heat transfer coefficient and $u_S$ is
+the surrounding temperature in the medium outside of $[0,L]$.
+(Note that arguing that $u_S$ is approximately $u(L,t)$ gives
+the $u_x=0$ condition from the previous subexercise that is
+qualitatively wrong for large $t$.)
+Develop a diffusion problem for the error in the solution using
+(ref{diffu:pde1:Gaussian:xL:cooling}) as boundary condition.
+Assume one can take $u_S=0$ ``outside the domain'' since
+$\uex\rightarrow 0$ as $x\rightarrow\infty$.
+Find a function $q=q(t)$ such that the exact solution
+obeys the condition (ref{diffu:pde1:Gaussian:xL:cooling}).
+Test some constant values of $q$ and animate how the corresponding
+error function behaves. Also compute $E(t)$ curves as defined above.
+!esubex
+
+
+===== Exercise: Simulate a diffused Gaussian peak in 2D/3D =====
+file=diffu_symmetric_gaussian_2D
+
+!bsubex
+Generalize (ref{diffu:pde1:sol:Gaussian}) to multi dimensions by
+assuming that one-dimensional solutions can be multiplied to solve
+$u_t = \alpha\nabla^2 u$. Set $c=0$ such that the peak of
+the Gaussian is at the origin.
+!esubex
+
+!bsubex
+One can from the exact solution show
+that $u_x=0$ on $x=0$, $u_y=0$ on $y=0$, and $u_z=0$ on $z=0$.
+The approximately correct condition $u=0$ can be set
+on the remaining boundaries (say $x=L$, $y=L$, $z=L$), cf. Exercise
+ref{diffu:exer:1D:openBC}.
+Simulate a 2D case and make an animation of the diffused Gaussian peak.
+!esubex
+
+!bsubex
+The formulation in b) makes use of symmetry of the solution such that we
+can solve the problem in the first quadrant (2D) or octant (3D) only.
+To check that the symmetry assumption is correct, formulate the problem
+without symmetry in a domain $[-L,L]\times [L,L]$ in 2D. Use $u=0$ as
+approximately correct boundary condition. Simulate the same case as
+in b), but in a four times as large domain. Make an animation and compare
+it with the one in b).
+!esubex
+
+===== Exercise: Examine stability of a diffusion model with a source term =====
+label{diffu:exer:uterm}
+file=diffu_stability_uterm
+
+Consider a diffusion equation with a linear $u$ term:
+
+!bt
+\[ u_t = \alpha u_{xx} + \beta u\tp\]
+!et
+
+!bsubex
+Derive in detail a Forward Euler scheme, a Backward Euler scheme,
+and a Crank-Nicolson for this type of diffusion model.
+Thereafter, formulate a $\theta$-rule to summarize the three schemes.
+!esubex
+
+!bsubex
+Assume a solution like (ref{diffu:pde1:sol1}) and find the relation
+between $a$, $k$, $\alpha$, and $\beta$.
+
+!bhint
+Insert (ref{diffu:pde1:sol1}) in the PDE problem.
+!ehint
+!esubex
+
+!bsubex
+Calculate the stability of the Forward Euler scheme. Design
+numerical experiments to confirm the results.
+
+!bhint
+Insert the discrete counterpart to (ref{diffu:pde1:sol1}) in the
+numerical scheme. Run experiments at the stability limit and slightly above.
+!ehint
+!esubex
+
+!bsubex
+Repeat c) for the Backward Euler scheme.
+!esubex
+
+!bsubex
+Repeat c) for the Crank-Nicolson scheme.
+!esubex
+
+!bsubex
+How does the extra term $bu$ impact the accuracy of the three schemes?
+
+!bhint
+For analysis of the accuracy,
+compare the numerical and exact amplification factors, in
+graphs and/or by Taylor series expansion.
+!ehint
+!esubex

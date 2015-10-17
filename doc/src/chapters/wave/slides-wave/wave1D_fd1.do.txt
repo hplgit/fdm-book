@@ -1,0 +1,576 @@
+!split
+======= Finite difference methods for waves on a string =======
+label{wave:string}
+idx{waves!on a string}
+idx{wave equation!1D}
+
+Waves on a string can be modeled by the *wave equation*
+
+!bt
+\[ \frac{\partial^2 u}{\partial t^2} = c^2 \frac{\partial^2 u}{\partial x^2} \]
+!et
+
+$u(x,t)$ is the displacement of the string
+
+"Demo of waves on a string": "http://phet.colorado.edu/sims/wave-on-a-string/wave-on-a-string_en.html".
+
+!split
+===== The complete initial-boundary value problem =====
+
+!bt
+\begin{align}
+\frac{\partial^2 u}{\partial t^2} &=
+c^2 \frac{\partial^2 u}{\partial x^2}, \quad &x\in (0,L),\ t\in (0,T]
+label{wave:pde1}\\
+u(x,0) &= I(x), \quad &x\in [0,L]
+label{wave:pde1:ic:u}\\
+\frac{\partial}{\partial t}u(x,0) &= 0, \quad &x\in [0,L]
+label{wave:pde1:ic:ut}\\
+u(0,t) & = 0, \quad  &t\in (0,T]
+label{wave:pde1:bc:0}\\
+u(L,t) & = 0, \quad  &t\in (0,T]
+label{wave:pde1:bc:L}
+\end{align}
+!et
+
+!split
+===== Input data in the problem =====
+
+ * Initial condition $u(x,0)=I(x)$: initial string shape
+ * Initial condition $u_t(x,0)=0$: string starts from rest
+ * $c=\sqrt{T/\varrho}$: velocity of waves on the string
+ * ($T$ is the tension in the string, $\varrho$ is density of the string)
+ * Two boundary conditions on $u$: $u=0$ means fixed ends (no displacement)
+
+Rule for number of initial and boundary conditions:
+
+ * $u_{tt}$ in the PDE: two initial conditions, on $u$ and $u_t$
+ * $u_{t}$ (and no $u_{tt}$) in the PDE: one initial conditions, on $u$
+ * $u_{xx}$ in the PDE: one boundary condition on $u$ at each boundary point
+
+!split
+===== Demo of a vibrating string ($C=0.8$) =====
+
+# #if FORMAT not in ("pdflatex", "latex")
+MOVIE: [mov-wave/guitar_C0.8/movie.ogg]
+# #endif
+
+ * Our numerical method is sometimes exact (!)
+ * Our numerical method is sometimes subject to serious
+   non-physical effects
+
+!split
+===== Demo of a vibrating string ($C=1.0012$) =====
+
+# #if FORMAT not in ("pdflatex", "latex")
+MOVIE: [mov-wave/guitar_C1.0012/movie.ogg]
+# #endif
+
+Ooops!
+
+!split
+===== Step 1: Discretizing the domain =====
+label{wave:string:mesh}
+
+idx{mesh!finite differences}
+
+Mesh in time:
+
+!bt
+\begin{equation}
+0 = t_0 < t_1 < t_2 < \cdots < t_{N_t-1} < t_{N_t} = T   \end{equation}
+!et
+
+Mesh in space:
+
+!bt
+\begin{equation}
+0 = x_0 < x_1 < x_2 < \cdots < x_{N_x-1} < x_{N_x} = L   \end{equation}
+!et
+
+Uniform mesh with constant mesh spacings $\Delta t$ and $\Delta x$:
+
+!bt
+\begin{equation}
+x_i = i\Delta x,\ i=0,\ldots,N_x,\quad
+t_i = n\Delta t,\ n=0,\ldots,N_t
+\end{equation}
+!et
+
+
+!split
+===== The discrete solution =====
+label{wave:string:numerical:sol}
+
+idx{stencil!1D wave equation}
+idx{mesh function}
+
+ * The numerical solution is a mesh function: $u_i^n \approx \uex(x_i,t_n)$
+ * Finite difference stencil (or scheme): equation for $u^n_i$ involving
+   neighboring space-time points
+
+FIGURE: [mov-wave/wave1D_PDE_Dirichlet_stencil_gpl/stencil_n_interior, width=500]
+
+!split
+===== Step 2: Fulfilling the equation at the mesh points =====
+label{wave:string:samplingPDE}
+
+Let the PDE be satisfied at all *interior* mesh points:
+
+!bt
+\begin{equation}
+\frac{\partial^2}{\partial t^2} u(x_i, t_n) =
+c^2\frac{\partial^2}{\partial x^2} u(x_i, t_n),
+label{wave:pde1:step2}
+\end{equation}
+!et
+for $i=1,\ldots,N_x-1$ and $n=1,\ldots,N_t-1$.
+
+For $n=0$ we have the initial conditions $u=I(x)$ and $u_t=0$,
+and at the boundaries $i=0,N_x$ we have the boundary condition $u=0$.
+
+!split
+===== Step 3: Replacing derivatives by finite differences =====
+label{wave:string:fd}
+
+Widely used finite difference formula for
+the second-order derivative:
+
+!bt
+\[ \frac{\partial^2}{\partial t^2}u(x_i,t_n)\approx
+\frac{u_i^{n+1} - 2u_i^n + u^{n-1}_i}{\Delta t^2}= [D_tD_t u]^n_i\]
+!et
+
+and
+
+!bt
+\[ \frac{\partial^2}{\partial x^2}u(x_i,t_n)\approx
+\frac{u_{i+1}^{n} - 2u_i^n + u^{n}_{i-1}}{\Delta x^2} = [D_xD_x u]^n_i
+\]
+!et
+
+!split
+===== Step 3: Algebraic version of the PDE =====
+
+Replace derivatives by differences:
+
+!bt
+\begin{equation}
+\frac{u_i^{n+1} - 2u_i^n + u^{n-1}_i}{\Delta t^2} =
+c^2\frac{u_{i+1}^{n} - 2u_i^n + u^{n}_{i-1}}{\Delta x^2},
+label{wave:pde1:step3b}
+\end{equation}
+!et
+
+In operator notation:
+
+!bt
+\begin{equation}
+[D_tD_t u = c^2 D_xD_x]^{n}_i
+label{wave:pde1:step3a}
+\end{equation}
+!et
+
+!split
+===== Step 3: Algebraic version of the initial conditions =====
+
+ * Need to replace the derivative in the initial condition
+   $u_t(x,0)=0$ by a finite difference approximation
+ * The differences for $u_{tt}$ and $u_{xx}$ have second-order accuracy
+ * Use a centered difference for $u_t(x,0)$
+
+!bt
+\[ [D_{2t} u]^n_i = 0,\quad n=0\quad\Rightarrow\quad
+u^{n-1}_i=u^{n+1}_i,\quad i=0,\ldots,N_x\]
+!et
+
+The other initial condition $u(x,0)=I(x)$ can be computed by
+
+!bt
+\[ u_i^0 = I(x_i),\quad i=0,\ldots,N_x\]
+!et
+
+!split
+===== Step 4: Formulating a recursive algorithm =====
+label{wave:string:alg}
+
+ * Nature of the algorithm: compute $u$ in space at $t=\Delta t, 2\Delta t, 3\Delta t,...$
+ * Three time levels are involved in the general discrete equation:
+   $n+1$, $n$, $n-1$
+ * $u^n_i$ and $u^{n-1}_i$ are then already computed for $i=0,\ldots,N_x$,
+   and $u^{n+1}_i$ is the unknown quantity
+
+Write out $[D_tD_t u = c^2 D_xD_x]^{n}_i$
+and solve for $u^{n+1}_i$,
+
+!bt
+\begin{equation}
+u^{n+1}_i = -u^{n-1}_i + 2u^n_i + C^2
+\left(u^{n}_{i+1}-2u^{n}_{i} + u^{n}_{i-1}\right)
+label{wave:pde1:step4}
+\end{equation}
+!et
+
+!split
+===== The Courant number =====
+
+!bt
+\begin{equation}
+C = c\frac{\Delta t}{\Delta x},
+\end{equation}
+!et
+is known as the (dimensionless) *Courant number*
+
+!bnotice Observe
+There is only one parameter, $C$, in the discrete model:
+$C$ lumps mesh parameters $\Delta t$ and $\Delta x$
+with the only physical parameter, the wave velocity $c$.
+The value $C$ and the smoothness of $I(x)$
+govern the quality of the numerical solution.
+!enotice
+
+!split
+===== The finite difference stencil =====
+
+FIGURE: [mov-wave/wave1D_PDE_Dirichlet_stencil_gpl/stencil_n_interior, width=500]
+
+
+!split
+===== The stencil for the first time level =====
+
+ * Problem: the stencil for $n=1$ involves $u^{-1}_i$, but time
+   $t=-\Delta t$ is outside the mesh
+ * Remedy: use the initial condition $u_t=0$ together with the
+   stencil to eliminate $u^{-1}_i$
+
+Initial condition:
+
+!bt
+\[ [D_{2t}u=0]^0_i\quad\Rightarrow\quad u^{-1}_i=u^1_i\]
+!et
+
+Insert in stencil $[D_tD_tu = c^2D_xD_x]^0_i$ to get
+
+!bt
+\begin{equation}
+u_i^1 = u^0_i - \half
+C^2\left(u^{n}_{i+1}-2u^{n}_{i} + u^{n}_{i-1}\right)
+label{wave:pde1:step4:1}
+\end{equation}
+!et
+
+!split
+===== The algorithm =====
+
+ o Compute $u^0_i=I(x_i)$ for $i=0,\ldots,N_x$
+ o Compute $u^1_i$ by (ref{wave:pde1:step4:1}) and set $u_i^1=0$
+   for the boundary points $i=0$ and $i=N_x$, for $n=1,2,\ldots,N-1$,
+ o For each time level $n=1,2,\ldots,N_t-1$
+   o apply (ref{wave:pde1:step4}) to find $u^{n+1}_i$ for $i=1,\ldots,N_x-1$
+   o set $u^{n+1}_i=0$ for the boundary points $i=0$, $i=N_x$.
+
+!split
+===== Moving finite difference stencil =====
+
+# #if FORMAT not in ("pdflatex", "latex")
+MOVIE: [mov-wave/wave1D_PDE_Dirichlet_stencil_gpl/movie.ogg]
+# #endif
+
+"web page":
+"${doc_notes}/mov-wave/wave1D_PDE_Dirichlet_stencil_gpl/index.html"
+or a "movie file": "${doc_notes}/mov-wave/wave1D_PDE_Dirichlet_stencil_gpl/movie.ogg".
+
+!split
+===== Sketch of an implementation (1) =====
+label{wave:string:impl}
+
+ * Arrays:
+   * `u[i]` stores $u^{n+1}_i$
+   * `u_1[i]` stores $u^n_i$
+   * `u_2[i]` stores $u^{n-1}_i$
+
+!bnotice Naming convention
+`u` is the unknown to be computed (a spatial mesh
+function), `u_k` is the computed spatial mesh function `k`
+time steps back in time.
+!enotice
+
+!split
+===== PDE solvers should save memory =====
+
+!bwarning Important to minimize the memory usage
+The algorithm only needs to access the
+*three most recent time levels*, so we need only three arrays for
+$u_i^{n+1}$, $u_i^n$, and $u_i^{n-1}$, $i=0,\ldots,N_x$.
+Storing all the solutions in a two-dimensional array of
+size $(N_x+1)\times (N_t+1)$
+would be possible in this simple one-dimensional PDE problem, but not
+in large 2D problems and not even in small 3D problems.
+!ewarning
+
+!split
+===== Sketch of an implementation (2) =====
+
+!bc pycod
+# Given mesh points as arrays x and t (x[i], t[n])
+dx = x[1] - x[0]
+dt = t[1] - t[0]
+C = c*dt/dx            # Courant number
+Nt = len(t)-1
+C2 = C**2              # Help variable in the scheme
+
+# Set initial condition u(x,0) = I(x)
+for i in range(0, Nx+1):
+    u_1[i] = I(x[i])
+
+# Apply special formula for first step, incorporating du/dt=0
+for i in range(1, Nx):
+    u[i] = u_1[i] - 0.5*C**2(u_1[i+1] - 2*u_1[i] + u_1[i-1])
+u[0] = 0;  u[Nx] = 0   # Enforce boundary conditions
+
+# Switch variables before next step
+u_2[:], u_1[:] = u_1, u
+
+for n in range(1, Nt):
+    # Update all inner mesh points at time t[n+1]
+    for i in range(1, Nx):
+        u[i] = 2u_1[i] - u_2[i] - \
+               C**2(u_1[i+1] - 2*u_1[i] + u_1[i-1])
+
+    # Insert boundary conditions
+    u[0] = 0;  u[Nx] = 0
+
+    # Switch variables before next step
+    u_2[:], u_1[:] = u_1, u
+!ec
+
+!split
+======= Verification =======
+
+ * Think about testing and verification before you start implementing
+   the algorithm!
+ * Powerful testing tool: method of manufactured solutions and
+   computation of convergence rates
+ * Will need a source term in the PDE and $u_t(x,0)\neq 0$
+ * Even more powerful method: exact solution of the scheme
+
+!split
+===== A slightly generalized model problem =====
+label{wave:pde2:fd}
+
+Add source term $f$ and nonzero initial condition $u_t(x,0)$:
+
+!bt
+\begin{align}
+u_{tt} &= c^2 u_{xx} + f(x,t),
+label{wave:pde2}\\
+u(x,0) &= I(x), \quad &x\in [0,L]
+label{wave:pde2:ic:u}\\
+u_t(x,0) &= V(x), \quad &x\in [0,L]
+label{wave:pde2:ic:ut}\\
+u(0,t) & = 0, \quad & t>0,
+label{wave:pde2:bc:0}\\
+u(L,t) & = 0, \quad  &t>0
+label{wave:pde2:bc:L}
+\end{align}
+!et
+
+!split
+===== Discrete model for the generalized model problem =====
+
+!bt
+\begin{equation}
+[D_tD_t u = c^2 D_xD_x + f]^{n}_i
+label{wave:pde2:fdop}
+\end{equation}
+!et
+
+Writing out and solving for the unknown $u^{n+1}_i$:
+
+!bt
+\begin{equation}
+u^{n+1}_i = -u^{n-1}_i + 2u^n_i + C^2
+(u^{n}_{i+1}-2u^{n}_{i} + u^{n}_{i-1}) + \Delta t^2 f^n_i
+label{wave:pde2:step3b}
+\end{equation}
+!et
+
+!split
+===== Modified equation for the first time level =====
+
+Centered difference for $u_t(x,0) = V(x)$:
+
+!bt
+\[ [D_{2t}u = V]^0_i\quad\Rightarrow\quad u^{-1}_i = u^{1}_i - 2\Delta t V_i,\]
+!et
+
+Inserting this in the stencil (ref{wave:pde2:step3b}) for $n=0$ leads to
+
+!bt
+\begin{equation}
+u^{1}_i = u^0_i - \Delta t V_i + {\half}
+C^2
+\left(u^{n}_{i+1}-2u^{n}_{i} + u^{n}_{i-1}\right) + \half\Delta t^2 f^n_i
+label{wave:pde2:step3c}
+\end{equation}
+!et
+
+!split
+===== Using an analytical solution of physical significance =====
+
+ * Standing waves occur in real life on a string
+ * Can be analyzed mathematically (known exact solution)
+
+!bt
+\begin{equation}
+\uex(x,y,t)) = A\sin\left(\frac{\pi}{L}x\right)
+\cos\left(\frac{\pi}{L}ct\right)
+label{wave:pde2:test:ue}
+\end{equation}
+!et
+
+ * PDE data: $f=0$, boundary conditions
+   $\uex(0,t)=\uex(L,0)=0$, initial
+   conditions $I(x)=A\sin\left(\frac{\pi}{L}x\right)$ and $V=0$
+ * Note: $u_i^{n+1}\neq\uex(x_i,t_{n+1}$, and we do not know
+   the error, so testing must aim at reproducing the expected
+   convergence rates
+
+
+!split
+===== Manufactured solution: principles =====
+
+ * Disadvantage with the previous physical solution:
+   it does not test $V\neq 0$ and $f\neq 0$
+ * Method of manufactured solution:
+   * Choose some $\uex(x,t)$
+   * Insert in PDE and fit $f$
+   * Set boundary and initial conditions compatible with the chosen $\uex(x,t)$
+
+!split
+===== Manufactured solution: example =====
+
+!bt
+\[ \uex(x,t) = x(L-x)\sin t\]
+!et
+
+PDE $u_{tt}=c^2u_{xx}+f$:
+
+!bt
+\[ -x(L-x)\sin t = -2\sin t + f\quad\Rightarrow f = (2 - x(L-x))\sin t\]
+!et
+
+Implied initial conditions:
+
+!bt
+\begin{align*}
+u(x,0) &= I(x) = 0\\
+u_t(x,0) &= V(x) = - x(L-x)
+\end{align*}
+!et
+
+Boundary conditions:
+
+!bt
+\[ u(x,0) = u(x,L) = 0 \]
+!et
+
+!split
+===== Testing a manufactured solution =====
+
+ * Introduce common mesh parameter: $h=\Delta t$, $\Delta x =ch/C$
+ * This $h$ keeps $C$ and $\Delta t/\Delta x$ constant
+ * Select coarse mesh $h$: $h_0$
+ * Run experiments with $h_i=2^{-i}h_0$ (halving the cell size), $i=0,\ldots,m$
+ * Record the error $E_i$ and $h_i$ in each experiment
+ * Compute pariwise convergence rates $r_i=
+   \ln E_{i+1}/E_{i}/\ln h_{i+1}/h_{i}$
+ * Verification: $r_i\rightarrow 2$ as $i$ increases
+
+!split
+===== Constructing an exact solution of the discrete equations =====
+
+ * Manufactured solution with computation of
+   convergence rates: much manual work
+ * Simpler and more powerful: use an exact solution for $u^{n}_i$
+ * A linear or quadratic $\uex$ in $x$ and $t$ is often a good candidate
+
+!split
+===== Analytical work with the PDE problem =====
+
+Here, choose $\uex$ such that $\uex(x,0)=\uex(L,0)=0$:
+
+!bt
+\[ \uex (x,t) = x(L-x)(1+{\half}t), \]
+!et
+
+Insert in the PDE and find $f$:
+
+!bt
+\[ f(x,t)=2(1+t)c^2\]
+!et
+
+Initial conditions:
+
+!bt
+\[ I(x) = x(L-x),\quad V(x)={\half}x(L-x) \]
+!et
+
+!split
+===== Analytical work with the discrete equations (1) =====
+
+We want to show that $\uex$ also solves the discrete equations!
+
+Useful preliminary result:
+!bt
+\begin{align}
+\lbrack D_tD_t t^2\rbrack^n &= \frac{t_{n+1}^2 - 2t_n^2 + t_{n-1}^2}{\Delta t^2}
+= (n+1)^2 -n^2 + (n-1)^2 = 2\\
+\lbrack D_tD_t t\rbrack^n &= \frac{t_{n+1} - 2t_n + t_{n-1}}{\Delta t^2}
+= \frac{((n+1) -n + (n-1))\Delta t}{\Delta t^2} = 0
+\end{align}
+!et
+
+Hence,
+!bt
+\[ [D_tD_t \uex]^n_i = x_i(L-x_i)[D_tD_t (1+{\half}t)]^n =
+x_i(L-x_i){\half}[D_tD_t t]^n = 0\]
+!et
+
+!split
+===== Analytical work with the discrete equations (1) =====
+
+!bt
+\begin{align*}
+\lbrack D_xD_x \uex\rbrack^n_i &=
+(1+{\half}t_n)\lbrack D_xD_x (xL-x^2)\rbrack_i =
+(1+{\half}t_n)\lbrack LD_xD_x x - D_xD_x x^2\rbrack_i \\
+&= -2(1+{\half}t_n)
+\end{align*}
+!et
+
+Now, $f^n_i = 2(1+{\half}t_n)c^2$ and we get
+
+!bt
+\[ [D_tD_t \uex - c^2D_xD_x\uex - f]^n_i = 0 - c^2(-1)2(1 + {\half}t_n
++ 2(1+{\half}t_n)c^2 = 0\]
+!et
+
+Moreover, $\uex(x_i,0)=I(x_i)$,
+$\partial \uex/\partial t = V(x_i)$ at $t=0$, and
+$\uex(x_0,t)=\uex(x_{N_x},0)=0$. Also the modified scheme for the
+first time step is fulfilled by $\uex(x_i,t_n)$.
+
+!split
+===== Testing with the exact discrete solution =====
+
+ * We have established that $u^{n+1}_i = \uex(x_i,t_{n+1})=x_i(L-x_i)(1+t_{n+1}/2)$
+ * Run *one* simulation with one choice of $c$, $\Delta t$, and $\Delta x$
+ * Check that $\max_i |u^{n+1}_i - \uex(x_i,t_{n+1})|<\epsilon$,
+   $\epsilon\sim 10^{-14}$ (machine precision + some round-off errors)
+ * This is the simplest and best verification test
+
+!bpop
+Later we show that the exact solution of the discrete equations
+can be obtained by $C=1$ (!)
+!epop

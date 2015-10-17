@@ -1,0 +1,1246 @@
+# mech systems: horizontal, vertical/hanging
+# box with mu*M*g*v/|v| friction force, treat nonlinearity with geometric mean
+# pendulum
+# elastic pendulum
+# bouncing ball (just move text from exercise)
+# bumpy road
+# moored ship
+# electrical circuits, see ode2.p.tex
+# 0D blood flow?
+# waves: 1D blood flow
+# general particle laws and velocity verlet, make exercises
+# see http://en.wikipedia.org/wiki/Velocity_Verlet
+
+======= Applications of vibration models =======
+label{vib:app}
+
+The following text derives some of the most well-known physical problems
+that lead to
+second-order ODE models of the type addressed in this ${DOCUMENT}.
+We consider a simple spring-mass system; thereafter extended with
+nonlinear spring, damping, and external excitation; a spring-mass system
+with sliding friction; a simple and a physical (classical) pendulum;
+and an elastic pendulum.
+
+===== Oscillating mass attached to a spring =====
+label{vib:app:mass_spring}
+
+FIGURE: [fig-vib/oscillator_spring, width=500 frac=0.7] Simple oscillating mass. label{vib:app:mass_spring:fig}
+
+The most fundamental mechanical vibration system is depicted in Figure
+ref{vib:app:mass_spring:fig}. A body with mass $m$ is attached to a
+spring and can move horizontally without friction (in the wheels). The
+position of the body is given by the vector $\rpos(t) = u(t)\ii$, where
+$\ii$ is a unit vector in $x$ direction.
+There is
+only one force acting on the body: a spring force $\F_s =-ku\ii$, where
+$k$ is a constant. The point $x=0$, where $u=0$, must therefore
+correspond to the body's position
+where the spring is neither extended nor compressed, so the force
+vanishes.
+
+The basic physical principle that governs the motion of the body is
+Newton's second law of motion: $\F=m\acc$, where
+$\F$ is the sum of forces on the body, $m$ is its mass, and $\acc=\ddot\rpos$
+is the acceleration. We use the dot for differentiation with respect
+to time, which is
+usual in mechanics. Newton's second law simplifies here
+to $-\F_s=m\ddot u\ii$, which translates to
+
+!bt
+\[ -ku = m\ddot u\tp\]
+!et
+Two initial conditions are needed: $u(0)=I$, $\dot u(0)=V$.
+The ODE problem is normally written as
+
+!bt
+\begin{equation}
+m\ddot u + ku = 0,\quad u(0)=I,\ \dot u(0)=V\tp
+label{vib:app:mass_spring:eqx}
+\end{equation}
+!et
+It is
+not uncommon to divide by $m$
+and introduce the frequency $\omega = \sqrt{k/m}$:
+
+!bt
+\begin{equation}
+\ddot u + \omega^2 u = 0,\quad u(0)=I,\  \dot u(0)=V\tp
+label{vib:app:mass_spring:equ}
+\end{equation}
+!et
+This is the model problem in the first part of this chapter, with the
+small difference that we write the time derivative of $u$ with a dot
+above, while we used $u^{\prime}$ and $u^{\prime\prime}$ in previous
+parts of the ${DOCUMENT}.
+
+idx{DOF (degree of freedom)}
+
+Since only one scalar mathematical quantity, $u(t)$, describes the
+complete motion, we say that the mechanical system has one degree of freedom
+(DOF).
+
+=== Scaling ===
+
+For numerical simulations it is very convenient to scale (ref{vib:app:mass_spring:equ}) and thereby get rid of the problem of finding relevant values
+for all the parameters $m$, $k$, $I$, and $V$.
+Since the amplitude of the oscillations are dictated by $I$ and $V$
+(or more precisely, $V/\omega$), we scale $u$ by $I$ (or $V/omega$ if
+$I=0$):
+
+!bt
+\[ \bar u = \frac{u}{I},\quad \bar t = \frac{t}{t_c}\tp\]
+!et
+The time scale $t_c$ is normally chosen as the inverse period $2\pi/\omega$ or
+angular frequency $1/\omega$, most often as $t_c=1/\omega$.
+Inserting the dimensionless quantities $\bar u$ and $\bar t$ in
+(ref{vib:app:mass_spring:equ}) results in the scaled problem
+
+!bt
+\[ \frac{d^2\bar u}{d\bar t^2} + \bar u = 0,\quad \bar u(0)=1,\ \frac{\bar u}{\bar t}(0)=\beta = \frac{V}{I\omega},\]
+!et
+where $\beta$ is a dimensionless number. Any motion that starts from rest
+($V=0$) is free of parameters in the scaled model!
+
+=== The physics ===
+
+The typical physics of the system in Figure ref{vib:app:mass_spring:fig} can
+be described as follows.
+Initially, we displace the body to some position $I$, say at rest
+($V=0$). After releasing the body, the spring, which is extended, will
+act with a force $-kI\ii$ and pull the body to the left. This force
+causes an acceleration and therefore increases velocity. The body passes
+the point $x=0$, where $u=0$,
+and the spring will then be compressed and act with a
+force $kx\ii$ against the motion and cause retardation. At some point,
+the motion stops and the velocity is zero, before the spring force
+$kx\ii$ accelerates the body in positive direction. The result is that
+the body accelerates back and forth. As long as there is no friction
+forces to damp the motion, the oscillations will continue forever.
+
+===== General mechanical vibrating system =====
+label{vib:app:mass_gen}
+
+FIGURE: [fig-vib/oscillator_general, width=500 frac=0.7] General oscillating system. label{vib:app:mass_gen:fig}
+
+The mechanical system in Figure ref{vib:app:mass_spring:fig} can easily be
+extended to the more general system in Figure ref{vib:app:mass_gen:fig},
+where the body is attached to a spring and a dashpot, and also subject
+to an environmental force $F(t)\ii$. The system has still only one
+degree of freedom since the body can only move back and forth parallel to
+the $x$ axis. The spring force was linear, $\F_s=-ku\ii$,
+in Section ref{vib:app:mass_spring}, but in more general cases it can
+depend nonlinearly on the position. We therefore set $\F_s=s(u)\ii$.
+The dashpot, which acts
+as a damper, results in a force $\F_d$ that depends on the body's
+velocity $\dot u$ and that always acts against the motion.
+The mathematical model of the force is written $\F_d =f(\dot u)\ii$.
+A positive $\dot u$ must result in a force acting in the positive $x$
+direction.
+Finally, we have the external environmental force $\F_e = F(t)\ii$.
+
+Newton's second law of motion now involves three forces:
+
+!bt
+\[ F(t)\ii + f(\dot u)ii - s(u)\ii = m\ddot u \ii\tp\]
+!et
+The common mathematical form of the ODE problem is
+
+!bt
+\begin{equation}
+m\ddot u + f(\dot u) + s(u) = F(t),\quad u(0)=I,\ \dot u(0)=V\tp
+label{vib:app:mass_gen:equ}
+\end{equation}
+!et
+This is the generalized problem treated in the last part of the
+present chapter, but with prime denoting the derivative instead of the dot.
+
+The most common models for the spring and dashpot are linear: $f(\dot u)
+=b\dot u$ with a constant $b\geq 0$, and $s(u)=ku$ for a constant $k$.
+
+=== Scaling ===
+
+A specific scaling requires specific choices of $f$, $s$, and $F$.
+Suppose we have
+
+!bt
+\[ f(\dot u) = b|\dot u|\dot u,\quad s(u)=ku,\quad F(t)=A\sin(\phi t)\tp\]
+!et
+We introduce dimensionless variables as usual, $\bar u = u/u_c$ and
+$\bar t = t/t_c$. The scale $u_c$ depends both on the initial conditions
+and $F$, but as time grows, the effect of the initial conditions die out
+and $F$ will drive the motion. Inserting $\bar u$ and $\bar t$ in the
+ODE gives
+
+!bt
+\[ m\frac{u_c}{t_c^2}\frac{d^2\bar u}{d\bar t^2}
++ b\frac{u_c^2}{t_c^2}\left\vert\frac{d\bar u}{d\bar t}\right\vert
+\frac{d\bar u}{d\bar t} + ku_c\bar u = A\sin(\phi t_c\bar t)\tp\]
+!et
+We divide by $u_c/t_c^2$ and demand the coefficients of the
+$\bar u$ and the forcing term from $F(t)$ to have unit coefficients.
+This leads to the scales
+
+!bt
+\[ t_c = \sqrt{\frac{m}{k}},\quad u_c = \frac{A}{k}\tp\]
+!et
+The scaled ODE becomes
+
+!bt
+\begin{equation}
+\frac{d^2\bar u}{d\bar t^2}
++ 2\beta\left\vert\frac{d\bar u}{d\bar t}\right\vert
+\frac{d\bar u}{d\bar t} + \bar u = \sin(\gamma\bar t),
+label{vib:app:mass_gen:scaled}
+\end{equation}
+!et
+where there are two dimensionless numbers:
+
+!bt
+\[ \beta = \frac{Ab}{2mk},\quad\gamma =\phi\sqrt{\frac{m}{k}}\tp\]
+!et
+The $\beta$ number measures the size of the damping term (relative to unity)
+and is assumed to be small, basically because $b$ is small. The $\phi$
+number is the ratio of the time scale of free vibrations and the time scale
+of the forcing.
+The scaled initial conditions have two other dimensionless numbers
+as values:
+
+!bt
+\[ \bar u(0) = \frac{Ik}{A},\quad \frac{d\bar u}{d\bar t}=\frac{t_c}{u_c}V = \frac{V}{A}\sqrt{mk}\tp\]
+!et
+
+
+
+
+===== A sliding mass attached to a spring =====
+label{vib:app:mass_sliding}
+
+Consider a variant of the oscillating body in Section ref{vib:app:mass_spring}
+and Figure ref{vib:app:mass_spring:fig}: the body rests on a flat
+surface, and there is sliding friction between the body and the surface.
+Figure ref{vib:app:mass_sliding:fig} depicts the problem.
+
+FIGURE: [fig-vib/oscillator_sliding, width=500 frac=0.7] Sketch of a body sliding on a surface. label{vib:app:mass_sliding:fig}
+
+The body is attached to a spring with spring force $-s(u)\ii$.
+The friction force is proportional to the normal force on the surface,
+$-mg\jj$, and given by $-f(\dot u)\ii$, where
+
+!bt
+\[ f(\dot u) = \left\lbrace\begin{array}{ll}
+-\mu mg,& \dot u < 0,\\
+\mu mg, & \dot u > 0,\\
+0,      & \dot u=0
+\end{array}\right.\]
+!et
+Here, $\mu$ is a friction coefficient. With the signum function
+
+!bt
+\[ \mbox{sign(x)} = \left\lbrace\begin{array}{ll}
+-1,& x < 0,\\
+1, & x > 0,\\
+0, & x=0
+\end{array}\right.\]
+!et
+we can simply write $f(\dot u) = \mu mg\,\hbox{sign}(\dot u)$
+(the sign function is implemented by `numpy.sign`).
+
+The equation of motion becomes
+
+!bt
+\begin{equation}
+m\ddot u + \mu mg\hbox{sign}(\dot u) + s(u) = 0,\quad u(0)=I,\ \dot u(0)=V\tp
+label{vib:app:mass_sliding:equ}
+\end{equation}
+!et
+
+===== A jumping washing machine =====
+label{vib:app:washmach}
+
+A washing machine is placed on four springs with efficient dampers.
+If the machine contains just a few clothes, the circular motion of
+the machine induces a sinusoidal external force and the machine will
+jump up and down if the frequency of the external force is close to
+the natural frequency of the machine and its spring-damper system.
+
+[hpl: Not finished. This is a good example on resonance.]
+
+
+
+===== Motion of a pendulum =====
+label{vib:app:pendulum}
+
+A classical problem in mechanics is the motion of a pendulum. We first
+consider a "simple pendulum" : "https://en.wikipedia.org/wiki/Pendulum":
+a small body of mass $m$ is attached to a massless wire and can oscillate back and forth
+in the gravity field. Figure ref{vib:app:pendulum:fig_problem} shows
+a sketch of the problem.
+
+FIGURE: [fig-vib/pendulum_problem, width=300 frac=0.4] Sketch of a simple pendulum. label{vib:app:pendulum:fig_problem}
+
+The motion is governed by Newton's 2nd law, so we need to find expressions
+for the forces and the acceleration. Three forces on the body are
+considered: an unknown force $S$ from the wire, the gravity force $mg$,
+and an air resistance force, $\frac{1}{2}C_D\varrho A |v|v$,
+hereafter called the drag force,
+directed against the velocity of the body. Here, $C_D$ is a drag coefficient,
+$\varrho$ is the density of air, $A$ is the cross section area of the body,
+and $v$ is the velocity.
+
+We introduce a coordinate system with polar coordinates and unit
+vectors $\ir$ and $\ith$ as shown in Figure ref{vib:app:pendulum:fig_forces}.
+The position of the center of mass of the body is
+
+!bt
+\[ \rpos(t) = x_0\ii + y_0\jj + L\ir,\]
+!et
+where $\ii$ and $\jj$ are unit vectors in the corresponding Cartesian
+coordinate system in the $x$ and $y$ directions, respectively. We have
+that $\ir = \cos\theta\ii +\sin\theta\jj$.
+
+FIGURE: [fig-vib/pendulum_forces, width=400 frac=0.5] Forces acting on a simple pendulum. label{vib:app:pendulum:fig_forces}
+
+The forces are now expressed as follows.
+
+ * Wire force: $-S\ir$
+ * Gravity force: $-mg\jj = mg(-\sin\theta\ith + \cos\theta\ir)$
+ * Drag force: $-\frac{1}{2}C_D\varrho A |v|v\ith$
+
+Since a positive velocity means movement in the direction of $\ith$,
+the drag force must be directed along $-\ith$.
+
+The velocity of the body is found from $\rpos$:
+
+!bt
+\[ \v(t) = \dot\rpos (t) = \frac{d}{d\theta}(x_0\ii + y_0\jj + L\ir)\frac{d\theta}{dt} = L\dot\theta\ith,\]
+!et
+since $\frac{d}{d\theta}\ir = \ith$. It follows that $v=|\v|=L\dot\theta$.
+The acceleration is
+
+!bt
+\[ \acc(t) = \dot\v(r) = \frac{d}{dt}(L\dot\theta\ith)
+= L\ddot\theta\ith + L\dot\theta\frac{d\ith}{d\theta}\dot\theta =
+= L\ddot\theta\ith - L\dot\theta^2\ir,\]
+!et
+since $\frac{d}{d\theta}\ith = -\ir$.
+
+Newton's 2nd law of motion becomes
+
+!bt
+\[ -S\ir + mg(-\sin\theta\ith + \cos\theta\ir) -
+\frac{1}{2}C_D\varrho AL^2|\dot\theta|\dot\theta\ith
+= mL\ddot\theta\dot\theta\ith - L\dot\theta^2\ir,\]
+!et
+leading to two component equations
+
+!bt
+\begin{align}
+-S + mg\cos\theta &= -L\dot\theta^2,
+label{vib:app:pendulum:ir}\\
+-mg\sin\theta - \frac{1}{2}C_D\varrho AL^2|\dot\theta|\dot\theta
+&= mL\ddot\theta\tp
+label{vib:app:pendulum:ith}
+\end{align}
+!et
+From (ref{vib:app:pendulum:ir}) we get an expression for
+$S=mg\cos\theta + L\dot\theta^2$, and from (ref{vib:app:pendulum:ith})
+we get a differential equation for the angle $\theta(t)$. This latter
+equation is ordered as
+
+!bt
+\begin{equation}
+m\ddot\theta + + \frac{1}{2}C_D\varrho AL|\dot\theta|\dot\theta
++ \frac{mg}{L}\sin\theta = 0\tp
+label{vib:app:pendulum:thetaeq}
+\end{equation}
+!et
+Two initial conditions are needed: $\theta=\Theta$ and $\dot\theta = \Omega$.
+Normally, the pendulum motion is started from rest, which means $\Omega =0$.
+
+Equation (ref{vib:app:pendulum:thetaeq}) fits the general model
+used in (ref{vib:ode2}) in Section ref{vib:model2} if we define
+$u=\theta$, $f(u^{\prime}) = \frac{1}{2}C_D\varrho AL|\dot\theta|\dot\theta$,
+$s(u) = L^{-1}mg\sin u$, and $F=0$.
+If the body is a sphere with radius $R$, we can take $C_D=0.4$ and $A=\pi R^2$.
+
+The motion of a compound or physical pendulum where the wire is a rod with
+mass, can be modeled very similarly. The governing equation is
+$I\acc = \bm{T}$ where $I$ is the moment of inertia of the entire body about
+the point $(x_0,y_0)$, and $\bm{T}$ is the sum of moments of the forces
+with respect to $(x_0,y_0)$. The vector equation reads
+
+!bt
+\[ \rpos\times(-S\ir + mg(-\sin\theta\ith + \cos\theta\ir) -
+\frac{1}{2}C_D\varrho AL^2|\dot\theta|\dot\theta\ith)
+= I(L\ddot\theta\dot\theta\ith - L\dot\theta^2\ir)\tp\]
+!et
+The component equation in $\ith$ direction gives the equation of motion
+for $\theta(t)$:
+
+!bt
+\begin{equation}
+I\ddot\theta + \frac{1}{2}C_D\varrho AL^3|\dot\theta|\dot\theta
++ mgL\sin\theta = 0\tp
+label{vib:app:pendulum:thetaeq_physical}
+\end{equation}
+!et
+
+[hpl: Scale the equations to arrive at the model problem with $\sin\theta$
+spring.]
+
+===== Motion of an elastic pendulum =====
+label{vib:app:pendulum_elastic}
+
+Consider a pendulum as in Figure ref{vib:app:pendulum:fig_problem}, but
+this time the wire is elastic. The length of the wire when it is not
+stretched is $L_0$, while $L(t)$ is the stretched
+length at time $t$ during the motion.
+
+Stretching the elastic wire a distance $\Delta L$
+gives rise to a spring force $k\Delta L$ in the opposite direction of the
+stretching. Let $\normalvec$ be a unit normal vector along the wire
+from the point $\rpos_0=(x_0,y_0)$ and in the direction of $\ith$,
+see Figure ref{vib:app:pendulum:fig_forces} for definition of
+$(x_0,y_0)$ and $\ith$. Obviously, we have $\normalvec=\ith$, but in
+this modeling of an elastic pendulum we do not need polar coordinates.
+Instead, it is more straightforward to develop the equation in
+Cartesian coordinates.
+
+A mathematical expression for $\normalvec$ is
+
+!bt
+\[ \normalvec = \frac{\rpos-\rpos_0}{L(t)},\]
+!et
+where $L(t)=||\rpos-\rpos_0||$ is the current length of the elastic wire.
+The position vector $\rpos$ in Cartesian coordinates reads
+$\rpos(t) = x(t)\ii + y(t)\jj$, where $\ii$ and $\jj$ are unit vectors
+in the $x$ and $y$ directions, respectively.
+It is convenient to introduce the Cartesian components $n_x$ and $n_y$
+of the normal vector:
+
+!bt
+\[ \normalvec = \frac{\rpos-\rpos_0}{L(t)} = \frac{x(t)-x_0}{L(t)}\ii + \frac{y(t)-y_0}{L(t)}\jj = n_x\ii + n_y\jj\tp\]
+!et
+
+The stretch $\Delta L$ in the wire is
+
+!bt
+\[ \Delta t = L(t) - L_0\tp\]
+!et
+The force in the wire is then $-S\normalvec=-k\Delta L\normalvec$.
+
+The other forces are the gravity and the air resistance, just
+as in Figure ref{vib:app:pendulum:fig_forces}. The main difference
+is that we have a *model* for $S$ in terms of the motion (as soon as
+we have expressed $\Delta L$ by $\rpos$). For simplicity, we drop
+the air resistance term (but Exercise ref{vib:exer:pendulum_elastic_drag}
+asks you to include it).
+
+Newton's second law of motion applied to the body now results in
+
+!bt
+\begin{equation}
+m\ddot\rpos = -k(L-L_0)\normalvec - mg\jj
+label{vib:app:pendulum_elastic:eq1}
+\end{equation}
+!et
+The two components of
+(ref{vib:app:pendulum_elastic:eq1}) are
+
+!bt
+\begin{align}
+\ddot x &= -\frac{k}{m}(L-L_0)n_x,\\
+label{vib:app:pendulum_elastic:eq2a} \\
+\ddot y &= - \frac{k}{m}(L-L_0)n_y - g
+label{vib:app:pendulum_elastic:eq2b}\tp
+\end{align}
+!et
+
+=== Remarks about an elastic vs a non-elastic pendulum ===
+
+Note that the derivation of the ODEs for an elastic pendulum is more
+straightforward than for a classical, non-elastic pendulum,
+since we avoid the details
+with polar coordinates, but instead work with Newton's second law
+directly in Cartesian coordinates. The reason why we can do this is that
+the elastic pendulum undergoes a general two-dimensional motion where
+all the forces are known or expressed as functions of $x(t)$ and $y(t)$,
+such that we get two ordinary differential equations.
+The motion of the non-elastic pendulum, on the other hand, is constrained:
+the body has to move along a circular path, and the force $S$ in the
+wire is unknown.
+
+The non-elastic pendulum therefore leads to
+a *differential-algebraic* equation, i.e., ODEs for $x(t)$ and $y(t)$
+combined with an extra constraint $(x-x_0)^2 + (y-y_0)^2 = L^2$
+ensuring that the motion takes place along a circular path.
+The extra constraint (equation) is compensated by an extra unknown force
+$-S\normalvec$. Differential-algebraic equations are normally hard
+to solve, especially with pen and paper.
+Fortunately, for the non-elastic pendulum we can do a
+trick: in polar coordinates the unknown force $S$ appears only in the
+radial component of Newton's second law, while the unknown
+degree of freedom for describing the motion, the angle $\theta(t)$,
+is completely governed by the asimuthal component. This allows us to
+decouple the unknowns $S$ and $\theta$. But this is a kind of trick and
+not a widely applicable method. With an elastic pendulum we use straightforward
+reasoning with Newton's 2nd law and arrive at a standard ODE problem that
+(after scaling) is easy solve on a computer.
+
+=== Initial conditions ===
+
+What is the initial position of the body? We imagine that first the
+pendulum hangs in equilibrium in its vertical position, and then it is
+displaced an angle $\Theta$. The equilibrium position is governed
+by the ODEs with the accelerations set to zero.
+The $x$ component leads to $x(t)=x_0$, while the $y$ component gives
+
+!bt
+\[ 0 = - \frac{k}{m}(L-L_0)n_y - g = \frac{k}{m}(L(0)-L_0) - g\quad\Rightarrow\quad
+L(0) = L_0 + mg/k,\]
+!et
+since $n_y=-11$ in this position. The corresponding $y$ value is then
+from $n_y=-1$:
+
+!bt
+\[ y(t) = y_0 - L(0) = y_0 - (L_0 + mg/k)\tp\]
+!et
+Let us now choose $(x_0,y_0)$ such that the body is at the origin
+in the equilibrium position:
+
+!bt
+\[ x_0 =0,\quad y_0 = L_0 + mg/k\tp\]
+!et
+
+Displacing the body an angle $\Theta$ to the right leads to the
+initial position
+
+!bt
+\[ x(0)=(L_0+mg/k)\sin\Theta,\quad y(0)=(L_0+mg/k)(1-\cos\Theta)\tp\]
+!et
+The initial velocities can be set to zero: $x'(0)=y'(0)=0$.
+
+=== The complete ODE problem ===
+
+We can summarize all the equations as follows:
+
+!bt
+\begin{align*}
+\ddot x &= -\frac{k}{m}(L-L_0)n_x,
+\\
+\ddot y &= -\frac{k}{m}(L-L_0)n_y - g,
+\\
+L &= \sqrt{(x-x_0)^2 + (y-y_0)^2},
+\\
+n_x &= \frac{x-x_0}{L},
+\\
+n_y &= \frac{y-y_0}{L},
+\\
+x(0) &= (L_0+mg/k)\sin\Theta,
+\\
+x'(0) &= 0,
+\\
+y(0) & =(L_0+mg/k)(1-\cos\Theta),
+\\
+y'(0) &= 0\tp
+\end{align*}
+!et
+We insert $n_x$ and $n_y$  in the ODEs:
+
+!bt
+\begin{align}
+\ddot x &= -\frac{k}{m}\left(1 -\frac{L_0}{L}\right)(x-x_0),
+label{vib:app:pendulum_elastic:x}\\
+\ddot y &= -\frac{k}{m}\left(1 -\frac{L_0}{L}\right)(y-y_0) - g,
+label{vib:app:pendulum_elastic:y}\\
+L &= \sqrt{(x-x_0)^2 + (y-y_0)^2},
+label{vib:app:pendulum_elastic:L}\\
+x(0) &= (L_0+mg/k)\sin\Theta,
+label{vib:app:pendulum_elastic:x0}\\
+x'(0) &= 0,
+label{vib:app:pendulum_elastic:vx0}\\
+y(0) & =(L_0+mg/k)(1-\cos\Theta),
+label{vib:app:pendulum_elastic:y0}\\
+y'(0) &= 0\tp
+label{vib:app:pendulum_elastic:vy0}
+\end{align}
+!et
+
+=== Scaling ===
+
+The elastic pendulum model can be used to study both an elastic pendulum
+and a classic, non-elastic pendulum. The latter problem is obtained
+by letting $k\rightarrow\infty$. Unfortunately,
+a serious problem with the ODEs
+(ref{vib:app:pendulum_elastic:x})-(ref{vib:app:pendulum_elastic:y}) is that for large $k$, we have a very large factor $k/m$ multiplied by a
+very small number $1-L_0/L$, since for large $k$, $L\approx L_0$ (very
+small deformations of the wire). The product is subject to
+significant round-off errors for many relevant physical values of
+the parameters. To circumvent the problem, we introduce a scaling. This
+will also remove physical parameters from the problem such that we end
+up with only one dimensionless parameter,
+closely related to the elasticity of the wire. Simulations can then be
+done by setting just this dimensionless parameter.
+
+The characteristic length can be taken such that in equilibrium, the
+scaled length is unity, i.e., the characteristic length is $L_0+mg/k$:
+
+!bt
+\[ \bar x = \frac{x}{L_0+mg/k},\quad \bar y = \frac{y}{L_0+mg/k}\tp\]
+!et
+We must then also work with the scaled length $\bar L = L/(L_0+mg/k)$.
+
+Introducing $\bar t=t/t_c$, where $t_c$ is a characteristic time we
+have to decide upon later, one gets
+
+!bt
+\begin{align*}
+\frac{d^2\bar x}{d\bar t^2} &=
+-t_c^2\frac{k}{m}\left(1 -\frac{L_0}{L_0+mg/k}\frac{1}{\bar L}\right)\bar x,\\
+\frac{d^2\bar y}{d\bar t^2} &=
+-t_c^2\frac{k}{m}\left(1 -\frac{L_0}{L_0+mg/k}\frac{1}{\bar L}\right)(\bar y-1)
+-t_c^2\frac{g}{L_0 + mg/k},\\
+\bar L &= \sqrt{\bar x^2 + (\bar y-1)^2},\\
+\bar x(0) &= \sin\Theta,\\
+\bar x'(0) &= 0,\\
+\bar y(0) & = 1 - \cos\Theta,\\
+\bar y'(0) &= 0\tp
+\end{align*}
+!et
+For a non-elastic pendulum with small angles, we know that the
+frequency of the oscillations are $\omega = \sqrt{L/g}$. It is therefore
+natural to choose a similar expression here, either the length in
+the equilibrium position,
+
+!bt
+\[ t_c^2 = \frac{L_0+mg/k}{g}\tp\]
+!et
+or simply the unstretched length,
+
+!bt
+\[ t_c^2 = \frac{L_0}{g}\tp\]
+!et
+These quantities are not very different (since the elastic model
+is valid only for quite small elongations), so we take the latter as it is
+the simplest one.
+
+The ODEs become
+
+!bt
+\begin{align*}
+\frac{d^2\bar x}{d\bar t^2} &=
+-\frac{L_0k}{mg}\left(1 -\frac{L_0}{L_0+mg/k}\frac{1}{\bar L}\right)\bar x,\\
+\frac{d^2\bar y}{d\bar t^2} &=
+-\frac{L_0k}{mg}\left(1 -\frac{L_0}{L_0+mg/k}\frac{1}{\bar L}\right)(\bar y-1)
+-\frac{L_0}{L_0 + mg/k},\\
+\bar L &= \sqrt{\bar x^2 + (\bar y-1)^2}\tp
+\end{align*}
+!et
+We can now identify a dimensionless number
+
+!bt
+\[ \beta = \frac{L_0}{L_0 + mg/k} = \frac{1}{1+\frac{mg}{L_0k}},\]
+!et
+which is the ratio of the unstretched length and the
+stretched length in equilibrium. The non-elastic pendulum will have
+$\beta =1$ ($k\rightarrow\infty$).
+With $\beta$ the ODEs read
+
+!bt
+\begin{align}
+\frac{d^2\bar x}{d\bar t^2} &=
+-\frac{\beta}{1-\beta}\left(1- \frac{\beta}{\bar L}\right)\bar x,
+label{vib:app:pendulum_elastic:x:s}\\
+\frac{d^2\bar y}{d\bar t^2} &=
+-\frac{\beta}{1-\beta}\left(1- \frac{\beta}{\bar L}\right)(\bar y-1)
+-\beta,
+label{vib:app:pendulum_elastic:y:s}\\
+\bar L &= \sqrt{\bar x^2 + (\bar y-1)^2},
+label{vib:app:pendulum_elastic:L:s}\\
+\bar x(0) &= (1+\epsilon)\sin\Theta,
+label{vib:app:pendulum_elastic:x0:s}\\
+\frac{d\bar x}{d\bar t}(0) &= 0,
+label{vib:app:pendulum_elastic:vx0:s}\\
+\bar y(0) &= 1 - (1+\epsilon)\cos\Theta,
+label{vib:app:pendulum_elastic:y0:s}\\
+\frac{d\bar y}{d\bar t}(0) &= 0,
+label{vib:app:pendulum_elastic:vy0:s}
+\end{align}
+!et
+We have here added a parameter $\epsilon$, which is an additional
+downward stretch of the wire at $t=0$. This parameter makes it possible
+to do a desired test: vertical oscillations of the pendulum. Without
+$\epsilon$, starting the motion from $(0,0)$ with zero velocity will
+result in $x=y=0$ for all times (also a good test!), but with
+an initial stretch so the body's position is $(0,\epsilon)$, we
+will have oscillatory vertical motion with amplitude $\epsilon$ (see
+Exercise ref{vib:exer:pendulum_elastic}).
+
+=== Remark on the non-elastic limit ===
+
+We immediately see that as $k\rightarrow\infty$ (i.e., we obtain a non-elastic
+pendulum), $\beta\rightarrow 1$, $\bar L\rightarrow 1$, and we have
+very small values $1-\beta\bar L^{-1}$ divided by very small values
+$1-\beta$ in the ODEs. However, it turns out that we can set $\beta$
+very close to one and obtain a path of the body that within the visual
+accuracy of a plot does not show any elastic oscillations.
+(Should the division of very small values become a problem, one can
+study the limit by L'Hospital's rule:
+
+!bt
+\[ \lim_{\beta\rightarrow 1}\frac{1 - \beta \bar L^{-1}}{1-\beta}
+= \frac{1}{\bar L},\]
+!et
+and use the limit $\bar L^{-1}$ in the ODEs for $\beta$ values very
+close to 1.)
+
+
+===== Bouncing ball =====
+label{vib:app:bouncing_ball}
+
+A bouncing ball is a body in free vertically fall until it impacts the
+ground. During the impact, some kinetic energy is lost, and a new
+motion upwards with reduced velocity starts.  At some point the
+velocity close to the ground is so small that the ball is considered
+to be finally at rest.
+
+The motion of the ball falling in air is governed by Newton's second
+law $F=ma$, where $a$ is the acceleration of the body, $m$ is the mass,
+and $F$ is the sum of all forces. Here, we neglect the air resistance
+so that gravity $-mg$ is the only force. The height of the ball is
+denoted by $h$ and $v$ is the velocity. The relations between $h$, $v$, and
+$a$,
+
+!bt
+\[ h'(t)= v(t),\quad v'(t) = a(t),\]
+!et
+combined with Newton's second law gives the ODE model
+
+!bt
+\begin{equation}
+h^{\prime\prime}(t) = -g,
+label{vib:app:bouncing:ball:h2eq}
+\end{equation}
+!et
+or expressed alternatively as a system of first-order equations:
+
+!bt
+\begin{align}
+v'(t) &= -g,
+label{vib:app:bouncing:ball:veq} \\
+h'(t) &= v(t)\tp
+label{vib:app:bouncing:ball:heq}
+\end{align}
+!et
+These equations govern the motion as long as the ball is away from
+the ground by a small distance $\epsilon_h > 0$. When $h<\epsilon_h$,
+we have two cases.
+
+ o The ball impacts the ground, recognized by a sufficiently large negative
+   velocity ($v<-\epsilon_v$). The velocity then changes sign and is
+   reduced by a factor $C_R$, known as the "coefficient of restitution":
+   "http://en.wikipedia.org/wiki/Coefficient_of_restitution".
+   For plotting purposes, one may set $h=0$.
+ o The motion stops, recognized by a sufficiently small velocity
+   ($|v|<\epsilon_v$) close to the ground.
+
+===== Electric circuits =====
+
+Although the term ``mechanical vibrations'' is used in the present
+${DOCUMENT}, we must mention that the same type of equations arise
+when modeling electric circuits.
+The current $I(t)$ in a
+circuit with an inductor with inductance $L$, a capacitor with
+capacitance $C$, and overall resistance $R$, is governed by
+
+!bt
+\begin{equation}
+\ddot I + \frac{R}{L}\dot I + \frac{1}{LC}I = \dot V(t),
+\end{equation}
+!et
+where $V(t)$ is the voltage source powering the circuit.
+This equation has the same form as the general model considered in
+Section refref{vib:model2} if we set $u=I$, $f(u^{\prime}=bu^{\prime}$
+and define $b=R/L$, $s(u) = L^{-1}C^{-1}u$, and $F(t)=\dot V(t)$.
+
+## * URL: "https://en.wikipedia.org/wiki/LC_circuit"
+## * URL: "https://en.wikipedia.org/wiki/RLC_circuit"
+
+======= Exercises =======
+
+===== Exercise: Simulate resonance =====
+label{vib:exer:resonance}
+file=resonance
+
+idx{resonance}
+
+We consider the scaled ODE model
+(ref{vib:app:mass_gen:scaled}) from Section ref{vib:app:mass_gen}.
+After scaling, the amplitude of $u$ will have a size about unity
+as time grows and the effect of the initial conditions die out due
+to damping. However, as $\gamma\rightarrow 1$, the amplitude of $u$
+increases, especially if $\beta$ is small. This effect is called
+*resonance*. The purpose of this exercise is to explore resonance.
+
+!bsubex
+Figure out how the `solver` function in `vib.py` can be called
+for the scaled ODE (ref{vib:app:mass_gen:scaled}).
+
+!bsol
+Comparing the scaled ODE (ref{vib:app:mass_gen:scaled})
+with the ODE (ref{vib:app:mass_gen:equ}) with dimensions, we
+realize that the parameters in the latter must be set as
+
+ * $m=1$
+ * $f(\dot u) = 2\beta |\dot u|\dot u$
+ * $s(u)=ku$
+ * $F(t)=\sin(\gamma t)$
+ * $I=Ik/A$
+ * $V=\sqrt{mk}V/A$
+
+The expected period is $2\pi$, so simulating for $N$ periods means
+$T=2\pi N$. Having $m$ time steps per period means $\Delta t = 2\pi/m$.
+
+Suppose we just choose $I=1$ and $V=0$. Simulating for 20 periods with
+60 time steps per period, implies the following
+`solver` call to run the scaled model:
+
+!bc pycod
+u, t = solver(I=1, V=0, m=1, b=2*beta, s=lambda u: u,
+              F=lambda t: sin(gamma*t), dt=2*pi/60,
+              T=2*pi*20, damping='quadratic')
+!ec
+!esol
+!esubex
+
+!bsubex
+Run $\gamma =5, 1.5, 1.1, 1$ for $\beta=0.005, 0.05, 0.2$.
+For each $\beta$ value, present an image with plots of $u(t)$ for
+the four $\gamma$ values.
+
+!bsol
+An appropriate program is
+
+@@@CODE exer-vib/resonance.py fromto: from vib import solver@
+
+For $\beta = 0.2$ we see that the amplitude is not far from unity:
+
+FIGURE: [fig-vib/resonance3, width=800 frac=1]
+
+For $\beta =0.05$ we see that as $\gamma\rightarrow 1$, the amplitude grows:
+
+FIGURE: [fig-vib/resonance2, width=800 frac=1]
+
+Finally, a small damping ($\beta = 0.005$) amplifies the amplitude significantly (by a factor of 10) for $\gamma=1$:
+
+FIGURE: [fig-vib/resonance2, width=800 frac=1]
+
+For a very small $\beta=0.00005$, the amplitude grows linearly up to
+about 60 for $\bar t\in [0,120]$.
+!esol
+!esubex
+
+===== Exercise: Simulate oscillations of a sliding box =====
+label{vib:exer:sliding_box}
+file=sliding_box
+
+Consider a sliding box on a flat surface as modeled in Section
+ref{vib:app:mass_sliding}. As spring force we choose the nonlinear
+formula
+
+!bt
+\[ s(u) = \frac{k}{\alpha}\tanh(\alpha u) = ku + \frac{1}{3}\alpha^2 ku^3 + \frac{2}{15}\alpha^4 k u^5 + \Oof{u^6}\tp\]
+!et
+
+!bsubex
+Plot $g(u)=\alpha^{-1}\tanh(\alpha u)$ for various values of $\alpha$.
+Assume $u\in [-1,1]$.
+
+!bsol
+Here is a function that does the plotting:
+
+@@@CODE exer-vib/sliding_box.py fromto: import scitools@def simulate
+
+FIGURE: [fig-vib/tanh_spring, width=600 frac=0.8]
+!esol
+!esubex
+
+!bsubex
+Scale the equations using $I$ as scale for $u$ and $m/k$ as
+time scale.
+
+!bsol
+Inserting the dimensionless dependent and independent variables,
+
+!bt
+\[ \bar u = \frac{u}{I},\quad \bar t = \frac{tk}{m},\]
+!et
+in the problem
+
+!bt
+\[
+m\ddot u + \mu mg\hbox{sign}(\dot u) + s(u) = 0,\quad u(0)=I,\ \dot u(0)=V,\]
+!et
+gives
+
+!bt
+\[ \frac{d^2\bar u}{d\bar t^2} + \frac{\mu mg}{kI}\hbox{sign}\left(
+\frac{d\bar u}{d\bar t}\right) + \frac{1}{\alpha I}\tanh(\alpha I\bar u)
+= 0,\quad \bar u(0)=1,\ \frac{d\bar u}{d\bar t}(0)=\frac{V\sqrt{mk}}{kI}\tp
+\]
+!et
+We identify three dimensionless parameters,
+
+!bt
+\[ \beta = \frac{\mu mg}{kI},\quad
+\gamma = \alpha I,\quad \delta = \frac{V\sqrt{mk}}{kI}\tp\]
+!et
+The scaled problem can the be written
+
+!bt
+\[ \frac{d^2\bar u}{d\bar t^2} + \beta\hbox{sign}\left(
+\frac{d\bar u}{d\bar t}\right) + \gamma^{-1}\tanh(\gamma \bar u)
+= 0,\quad \bar u(0)=1,\ \frac{d\bar u}{d\bar t}(0)=\delta\tp
+\]
+!et
+The initial set of 7 parameters $(\mu, m, g, k, \alpha, I, V)$ are
+reduced to 3 dimensionless combinations.
+!esol
+!esubex
+
+!bsubex
+Implement the scaled model in b). Run it for some values of
+the dimensionless parameters.
+
+!bsol
+The code can be like this:
+
+@@@CODE exer-vib/sliding_box.py fromto: def simulate@if __name
+
+We simulate for an almost linear spring in the regime of $\bar u$ (recall
+that $\bar u\in [0,1]$ since $u$ is scaled with $I$), which corresponds
+to $\alpha = 1$ in a) and therefore $\gamma =1$. Then we can try a
+spring whose force quickly flattens out like $\alpha=10$ in a), which
+corresponds to $\gamma = 10$ in the scaled model. After some
+experimentation we realize that $\beta=0,0.05, 0.1$ are relevant values.
+
+FIGURE: [fig-vib/sliding_box_gamma1, width=600 frac=0.8]
+
+FIGURE: [fig-vib/sliding_box_gamma10, width=600 frac=0.8]
+!esol
+!esubex
+
+===== Exercise: Simulate a bouncing ball  =====
+label{vib:exer:bouncing:ball}
+file=bouncing_ball
+
+Section ref{vib:app:bouncing_ball} presents a model for a bouncing
+ball.
+Choose one of the two ODE formulation, (ref{vib:app:bouncing:ball:h2eq}) or
+(ref{vib:app:bouncing:ball:veq})-(ref{vib:app:bouncing:ball:heq}),
+and simulate the motion of a bouncing ball. Plot $h(t)$. Think about how to
+plot $v(t)$.
+
+!bhint
+A naive implementation may get stuck in repeated impacts for large time
+step sizes. To avoid this situation, one can introduce a state
+variable that holds the mode of the motion: free fall, impact, or rest.
+Two consecutive impacts imply that the motion has stopped.
+!ehint
+
+!bsol
+A tailored `solver` function and some plotting statements go like
+
+@@@CODE exer-vib/bouncing_ball.py
+
+FIGURE: [fig-vib/bouncing_ball, width=800 frac=1]
+
+!esol
+
+===== Exercise: Simulate an elastic pendulum  =====
+label{vib:exer:pendulum_elastic}
+file=elastic_pendulum
+
+Section ref{vib:app:pendulum_elastic} describes a model for an elastic
+pendulum, resulting in a system of two ODEs. The purpose of this
+exercise is to implement the scaled model, test the software, and
+generalize the model.
+
+!bsubex
+Write a function `simulate`
+that can simulate an elastic pendulum using the scaled model.
+The function should have the following arguments:
+
+!bc pycod
+def simulate(
+    beta=0.9,                 # dimensionless parameter
+    Theta=30,                 # initial angle in degrees
+    epsilon=0,                # initial stretch of wire
+    num_periods=6,            # simulate for num_periods
+    time_steps_per_period=60, # time step resolution
+    plot=True,                # make plots or not
+    ):
+!ec
+To set the total simulation time and the time step, we
+use our knowledge of the scaled, classical, non-elastic pendulum:
+$u^{\prime\prime} + u = 0$, with solution
+$u = \Theta\cos \bar t$.
+The period of these oscillations is $P=2\pi$
+and the frequency is unity. The time
+for simulation is taken as `num_periods` times $P$. The time step
+is set as $P$ divided by `time_steps_per_period`.
+
+The `simulate` function should return the arrays of
+$x$, $y$, $\theta$, and $t$, where $\theta = \tan^{-1}(x/(1-y))$ is
+the angular displacement of the elastic pendulum corresponding to the
+position $(x,y)$.
+
+If `plot` is `True`, make a plot of $\bar y(\bar t)$
+versus $\bar x(\bar t)$, i.e., the physical motion
+of the mass at $(\bar x,\bar y)$. Use the equal aspect ratio on the axis
+such that we get a physically correct picture of the motion. Also
+make a plot of $\theta(\bar t)$, where $\theta$ is measured in degrees.
+If $\Theta < 10$ degrees, add a plot that compares the solutions of
+the scaled, classical, non-elastic pendulum and the elastic pendulum
+($\theta(t)$).
+
+Although the mathematics here employs a bar over scaled quantities, the
+code should feature plain names `x` for $\bar x$, `y` for $\bar y$, and
+`t` for $\bar t$ (rather than `x_bar`, etc.). These variable names make
+the code easier to read and compare with the mathematics.
+
+!bhint
+Equal aspect ratio is set by `plt.gca().set_aspect('equal')` in
+Matplotlib (`import matplotlib.pyplot as plt`)
+and by `plot(..., daspect=[1,1,1], daspectmode='equal')`
+in SciTools (`import scitools.std as plt`).
+!ehint
+
+!bhint
+If you want to use Odespy to solve the equations, order the ODEs
+like $\dot \bar x, \bar x, \dot\bar y,\bar y$ such that the Euler-Cromer
+scheme can (also) be used (`odespy.EulerCromer`).
+!ehint
+
+!bsol
+Here is a suggested `simulate` function:
+
+@@@CODE exer-vib/elastic_pendulum.py fromto: import odespy@def test_equil
+!esol
+!esubex
+
+!bsubex
+Write a test function for testing that $\Theta=0$ and $\epsilon=0$
+gives $x=y=0$ for all times.
+
+!bsol
+Here is the code:
+
+@@@CODE exer-vib/elastic_pendulum.py fromto: def test_equil@def test_vert
+!esol
+!esubex
+
+!bsubex
+Write another test function for checking that the pure vertical
+motion of the elastic pendulum is correct.
+Start with simplifying the ODEs for pure vertical motion and show that
+$\bar y(\bar t)$ fulfills a vibration equation with
+frequency $\sqrt{\beta/(1-\beta)}$. Set up the exact solution.
+
+Write a test function that
+uses this special case to verify the `simulate` function. There will
+be numerical approximation errors present in the results from
+`simulate` so you have to believe in correct results and set a
+(low) tolerance that corresponds to the computed maximum error.
+Use a small $\Delta t$ to obtain a small numerical approximation error.
+
+!bsol
+For purely vertical motion, the ODEs reduce to $\ddot x = 0$ and
+
+!bt
+\[ \ddot\bar y = -\frac{\beta}{1-\beta}(1-\beta\frac{1}{\sqrt{(\bar y - 1)^2}})(\bar y-1) - \beta = -\frac{\beta}{1-\beta}(\bar y-1 + \beta) - \beta\tp\]
+!et
+We have here used that $(\bar y -1)/\sqrt{(\bar y -1)^2}=-1$ since
+$\bar y$ cannot exceed 1 (the pendulum's wire is fixed at the scaled
+point $(0,1)$). In fact, $\bar y$ will be around zero.
+(As a consistency check, we realize that in equilibrium, $\ddot\bar y =0$,
+and multiplying by $(1-\beta)/\beta$ leads to the expected $\bar y=0$.)
+Further calculations easily lead to
+
+!bt
+\[ \ddot\bar y = -\frac{\beta}{1-\beta}\bar y = -\omega^2\bar y,\]
+!et
+where we have introduced the frequency
+$\omega = \sqrt{\beta/(1-\beta)}$.
+Solving this standard ODE, with an initial stretching $\bar y(0)=\epsilon$
+and no velocity, results in
+
+!bt
+\[ \bar y(\bar t) = \epsilon\cos(\omega\bar t)\tp\]
+!et
+
+Note that the oscillations we describe here are very different from
+the oscillations used to set the period and time step in function
+`simulate`. The latter type of oscillations are due to gravity when
+a classical, non-elastic pendulum oscillates back and forth, while
+$\bar y(\bar t)$ above refers to vertical *elastic* oscillations in the wire
+around the equilibrium point in the gravity field. The angular frequency
+of the vertical oscillations are given by $\omega$ and the corresponding
+period is $\hat P = 2\pi/\omega$. Suppose we want to simulate for
+$T=N\hat P = N2\pi/\omega$ and use $n$ time steps per period,
+$\Delta\bar t = \hat P/n$. The `simulate` function operates with
+a simulation time of `num_periods` times $2\pi$. This means that we must set
+`num_periods=N/omega` if we want to simulate to time $T=N\hat P$.
+The parameter `time_steps_per_period` must be set to $\omega n$
+since `simulate` has $\Delta t$ as $2\pi$ divided by `time_steps_per_period`
+and we want $\Delta t = 2\pi\omega^{-1}n^{-1}$.
+
+The corresponding test function can be written as follows.
+
+@@@CODE exer-vib/elastic_pendulum.py fromto: def test_vert@def demo
+!esol
+!esubex
+
+!bsubex
+Make a function `demo(beta, Theta)` for simulating an elastic pendulum with a
+given $\beta$ parameter and initial angle $\Theta$. Use 600 time steps
+per period to get every accurate results, and simulate for 3 periods.
+
+!bsol
+The `demo` function is just
+
+@@@CODE exer-vib/elastic_pendulum.py fromto: def demo@if __name
+
+Below are plots corresponding to $\beta = 0.999$ (3 periods) and
+$\beta = 0.93$ (one period):
+
+FIGURE: [fig-vib/elastic_pendulum_xy, width=600 frac=0.8]
+
+FIGURE: [fig-vib/elastic_pendulum_theta, width=600 frac=0.8]
+
+FIGURE: [fig-vib/elastic_pendulum_xy2, width=600 frac=0.8]
+
+FIGURE: [fig-vib/elastic_pendulum_theta2, width=600 frac=0.8]
+!esol
+!esubex
+
+===== Exercise: Simulate an elastic pendulum with air resistance =====
+label{vib:exer:pendulum_elastic_drag}
+file=elastic_pendulum_drag
+
+This is a continuation Exercise ref{vib:exer:pendulum_elastic_drag}.
+Air resistance on the body with mass $m$ can be modeled by the
+force $-\frac{1}{2}\varrho C_D A|\v|\v$,
+where $C_D$ is a drag coefficient (0.2 for a sphere), $\varrho$
+is the density of air (1.2 $\hbox{kg }\,{\hbox{m}}^{-3}$), $A$ is the
+cross section area ($A=\pi R^2$ for a sphere, where $R$ is the radius),
+and $\v$ is the velocity of the body.
+Include air resistance in the original model, scale the model,
+write a function `simulate_drag` that is a copy of the `simulate`
+function from Exercise ref{vib:exer:pendulum_elastic_drag}, but with the
+new ODEs included, and show plots of how air resistance
+influences the motion.
+
+!bsol
+We start with the model
+(ref{vib:app:pendulum_elastic:x})-(ref{vib:app:pendulum_elastic:vy0}).
+Since $\v = \dot x\ii + \dot y\jj$, the air resistance term
+can be written
+
+!bt
+\[ -q(\dot x\ii + \dot y\jj),\quad q=\frac{1}{2}\varrho C_D A\sqrt{\dot x^2 + \dot y^2}\tp\]
+!et
+Note that for positive velocities, the pendulum is moving to the right
+and the air resistance works against the motion, i.e., in direction of $-\v$.
+
+We can easily include the terms in the ODEs:
+
+!bt
+\begin{align}
+\ddot x &= -\frac{q}{m}\dot x -\frac{k}{m}\left(1 -\frac{L_0}{L}\right)(x-x_0),
+label{vib:app:pendulum_elastic_drag:x}\\
+\ddot y &= \frac{q}{m}\dot y -\frac{k}{m}\left(1 -\frac{L_0}{L}\right)(y-y_0) - g,
+label{vib:app:pendulum_elastic_drag:y}\\
+L &= \sqrt{(x-x_0)^2 + (y-y_0)^2},
+label{vib:app:pendulum_elastic_drag:L}\\
+\end{align}
+!et
+The initial conditions are not affected.
+
+The next step is to scale the model. We use the same scales as in
+Exercise ref{vib:exer:pendulum_elastic_drag}. The new scaled term
+(after dividing by the length scale) in the $x$ component is
+
+!bt
+\[ t_c^{-2} \frac{1}{2m}\varrho C_D A\sqrt{\frac{(L_0+mg/k)^2}{t_c^2}(
+\left(\frac{d\bar x}{d\bar t}\right)^2 +
+\left(\frac{d\bar y}{d\bar t}\right)^2)} t_c^{-1}\dot\bar\dot x
+= \frac{1}{2}\varrho C_D A (L_0+mg/k)\sqrt{\bar\dot x^2 + \bar y^2}\bar\dot x
+\tp\]
+!et
+We can introduce the $\beta$ parameter and use $A=\pi R^2$ to simplify a bit:
+
+!bt
+\[ \frac{L_0}{2m}\varrho C_D R^2\beta^{-1}
+\sqrt{\left(\frac{d\bar x}{d\bar t}\right)^2 +
+\left(\frac{d\bar y}{d\bar t}\right)^2}
+= \gamma \beta^{-1}
+\sqrt{\left(\frac{d\bar x}{d\bar t}\right)^2 +
+\left(\frac{d\bar y}{d\bar t}\right)^2},\]
+!et
+where $\gamma$ is a second dimensionless parameter:
+
+!bt
+\[ \gamma = \frac{L_0}{2m}\varrho C_D R^2\tp\]
+!et
+
+The final set of scaled equations are then
+
+!bt
+\begin{align}
+\frac{d^2\bar x}{d\bar t^2} &= -\gamma\beta^{-1}
+\sqrt{\left(\frac{d\bar x}{d\bar t}\right)^2 +
+\left(\frac{d\bar y}{d\bar t}\right)^2}\frac{d\bar x}{d\bar t}
+-\frac{\beta}{1-\beta}\left(1- \frac{\beta}{\bar L}\right)\bar x,
+label{vib:app:pendulum_elastic_drag:x:s}\\
+\frac{d^2\bar y}{d\bar t^2} &=
+-\gamma\beta^{-1}
+\sqrt{\left(\frac{d\bar x}{d\bar t}\right)^2 +
+\left(\frac{d\bar y}{d\bar t}\right)^2}\frac{d\bar y}{d\bar t}
+-\frac{\beta}{1-\beta}\left(1- \frac{\beta}{\bar L}\right)(\bar y-1)
+-\beta,
+label{vib:app:pendulum_elastic_drag:y:s}\\
+\bar L &= \sqrt{\bar x^2 + (\bar y-1)^2},
+label{vib:app:pendulum_elastic_drag:L:s}\\
+\bar x(0) &= (1+\epsilon)\sin\Theta,
+label{vib:app:pendulum_elastic_drag:x0:s}\\
+\frac{d\bar x}{d\bar t}(0) &= 0,
+label{vib:app:pendulum_elastic_drag:vx0:s}\\
+\bar y(0) &= 1 - (1+\epsilon)\cos\Theta,
+label{vib:app:pendulum_elastic_drag:y0:s}\\
+\frac{d\bar y}{d\bar t}(0) &= 0,
+label{vib:app:pendulum_elastic_drag:vy0:s}
+\end{align}
+!et
+
+The new `simulate_drag` function becomes
+
+@@@CODE exer-vib/elastic_pendulum_drag.py fromto: def simulate_drag@def test_eq
+
+The plot of $\theta$ shows the damping ($\beta = 0.999$):
+
+FIGURE: [fig-vib/elastic_pendulum_drag_theta, width=600 frac=0.8]
+
+Test functions for equilibrium and vertical motion are also included. These
+are as in Exercise ref{vib:exer:pendulum_elastic_drag}, except that
+they call `simulate_drag` instead of `simulate`.
+!esol
+
+!bremarks
+Test functions are challenging to construct for the problem with
+air resistance. You can reuse the tests from
+Exercise ref{vib:exer:pendulum_elastic_drag} for `simulate_drag`,
+but these tests does not verify the new terms arising from air
+resistance.
+!eremarks

@@ -1,0 +1,204 @@
+!split
+======= Finite difference methods for 2D and 3D wave equations =======
+label{wave:2D3D}
+
+Constant wave velocity $c$:
+
+!bt
+\begin{equation}
+\frac{\partial^2 u}{\partial t^2} = c^2\nabla^2 u\hbox{ for }\xpoint\in\Omega\subset\Real^d,\ t\in (0,T]
+label{wave:2D3D:model1}
+\end{equation}
+!et
+
+Variable wave velocity:
+
+!bt
+\begin{equation}
+\varrho\frac{\partial^2 u}{\partial t^2} = \nabla\cdot (q\nabla u) + f\hbox{ for }\xpoint\in\Omega\subset\Real^d,\ t\in (0,T]
+label{wave:2D3D:model2}
+\end{equation}
+!et
+
+!split
+===== Examples on wave equations written out in 2D/3D =====
+label{wave:2D3D:models}
+
+3D, constant $c$:
+
+!bt
+\begin{equation*} \nabla^2 u = \frac{\partial^2 u}{\partial x^2} +
+\frac{\partial^2 u}{\partial y^2} + \frac{\partial^2 u}{\partial z^2}
+  \end{equation*}
+!et
+
+2D, variable $c$:
+
+!bt
+\begin{equation}
+\varrho(x,y)
+\frac{\partial^2 u}{\partial t^2} =
+\frac{\partial}{\partial x}\left( q(x,y)
+\frac{\partial u}{\partial x}\right)
++
+\frac{\partial}{\partial y}\left( q(x,y)
+\frac{\partial u}{\partial y}\right)
++ f(x,y,t)
+\end{equation}
+!et
+
+Compact notation:
+
+!bt
+\begin{align}
+u_{tt} &= c^2(u_{xx} + u_{yy} + u_{zz}) + f,
+label{wave:2D3D:model1:v2}\\
+\varrho u_{tt} &= (q u_x)_x + (q u_z)_z + (q u_z)_z + f
+label{wave:2D3D:model2:v2}
+\end{align}
+!et
+
+!split
+===== Boundary and initial conditions =====
+
+We need *one* boundary condition at *each point* on $\partial\Omega$:
+
+  o $u$ is prescribed ($u=0$ or known incoming wave)
+  o $\partial u/\partial n = \normalvec\cdot\nabla u$ prescribed
+    ($=0$: reflecting boundary)
+  o open boundary (radiation) condition: $u_t + \bm{c}\cdot\nabla u =0$
+    (let waves travel undisturbed out of the domain)
+
+PDEs with *second-order* time derivative need *two* initial conditions:
+
+  o $u=I$,
+  o $u_t = V$.
+
+!split
+===== Example: 2D propagation of Gaussian function =====
+
+# #if FORMAT not in ("pdflatex", "latex")
+MOVIE: [mov-wave/Gaussian2D/movie.ogg]
+# #endif
+
+!split
+===== Mesh =====
+label{wave:2D3D:mesh}
+
+ * Mesh point: $(x_i,y_j,z_k,t_n)$
+ * $x$ direction: $x_0 < x_1 <\cdots < x_{N_x}$
+ * $y$ direction: $y_0 < y_1 <\cdots < y_{N_y}$
+ * $z$ direction: $z_0 < z_1 <\cdots < z_{N_z}$
+ * $u^{n}_{i,j,k} \approx \uex(x_i,y_j,z_k,t_n)$
+
+!split
+===== Discretization =====
+label{wave:2D3D:models:discretization}
+
+
+!bt
+\[
+[D_tD_t u = c^2(D_xD_x u + D_yD_yu) + f]^n_{i,j,k},
+\]
+!et
+Written out in detail:
+
+!bt
+\begin{align*}
+\frac{u^{n+1}_{i,j} - 2u^{n}_{i,j} + u^{n-1}_{i,j}}{\Delta t^2}
+&= c^2
+\frac{u^{n}_{i+1,j} - 2u^{n}_{i,j} + u^{n}_{i-1,j}}{\Delta x^2}
++ \nonumber\\
+&\quad c^2\frac{u^{n}_{i,j+1} - 2u^{n}_{i,j} + u^{n}_{i,j-1}}{\Delta y^2}
++ f^n_{i,j},
+\end{align*}
+!et
+
+$u^{n-1}_{i,j}$ and $u^n_{i,j}$ are known, solve for
+$u^{n+1}_{i,j}$:
+
+!bt
+\[ u^{n+1}_{i,j} = 2u^n_{i,j} + u^{n-1}_{i,j} + c^2\Delta t^2[D_xD_x u + D_yD_y u]^n_{i,j}\]
+!et
+
+!split
+===== Special stencil for the first time step =====
+
+ * The stencil for $u^1_{i,j}$ ($n=0$) involves $u^{-1}_{i,j}$
+   which is outside the time mesh
+ * Remedy: use discretized $u_t(x,0)=V$ and the stencil for $n=0$
+   to develop a special stencil (as in the 1D case)
+
+!bt
+\[ [D_{2t}u = V]^0_{i,j}\quad\Rightarrow\quad u^{-1}_{i,j} = u^1_{i,j} - 2\Delta t V_{i,j}
+\]
+!et
+
+!bt
+\[ u^{n+1}_{i,j} = u^n_{i,j} -2\Delta V_{i,j} + {\half}
+c^2\Delta t^2[D_xD_x u + D_yD_y u]^n_{i,j}\]
+!et
+
+!split
+===== Variable coefficients (1) =====
+
+3D wave equation:
+
+!bt
+\[ \varrho u_{tt} = (qu_x)_x + (qu_y)_y + (qu_z)_z + f(x,y,z,t) \]
+!et
+
+Just apply the 1D discretization for each term:
+
+!bt
+\begin{equation}
+[\varrho D_tD_t u = (D_x\overline{q}^x D_x u +
+D_y\overline{q}^y D_yu + D_z\overline{q}^z D_z u) + f]^n_{i,j,k}
+\end{equation}
+!et
+
+Need special formula for $u^1_{i,j,k}$
+(use $[D_{2t}u=V]^0$ and stencil for $n=0$).
+
+!split
+===== Variable coefficients (2) =====
+
+Written out:
+
+!bt
+\begin{align*}
+u^{n+1}_{i,j,k} &= - u^{n-1}_{i,j,k}  + 2u^{n}_{i,j,k} + \\
+&= \frac{1}{\varrho_{i,j,k}}\frac{1}{\Delta x^2} ( \half(q_{i,j,k} + q_{i+1,j,k})(u^{n}_{i+1,j,k} - u^{n}_{i,j,k}) - \\
+&\qquad\quad \half(q_{i-1,j,k} + q_{i,j,k})(u^{n}_{i,j,k} - u^{n}_{i-1,j,k})) + \\
+&= \frac{1}{\varrho_{i,j,k}}\frac{1}{\Delta x^2} ( \half(q_{i,j,k} + q_{i,j+1,k})(u^{n}_{i,j+1,k} - u^{n}_{i,j,k}) - \\
+&\qquad\quad\half(q_{i,j-1,k} + q_{i,j,k})(u^{n}_{i,j,k} - u^{n}_{i,j-1,k})) + \\
+&= \frac{1}{\varrho_{i,j,k}}\frac{1}{\Delta x^2} ( \half(q_{i,j,k} + q_{i,j,k+1})(u^{n}_{i,j,k+1} - u^{n}_{i,j,k}) -\\
+&\qquad\quad \half(q_{i,j,k-1} + q_{i,j,k})(u^{n}_{i,j,k} - u^{n}_{i,j,k-1})) + \\
++ &\qquad \Delta t^2 f^n_{i,j,k}
+\end{align*}
+!et
+
+
+
+!split
+===== Neumann boundary condition in 2D =====
+
+Use ideas from 1D! Example: $\frac{\partial u}{\partial n}$ at $y=0$,
+$\frac{\partial u}{\partial n} = -\frac{\partial u}{\partial y}$
+
+Boundary condition discretization:
+
+!bt
+\[ [-D_{2y} u = 0]^n_{i,0}\quad\Rightarrow\quad \frac{u^n_{i,1}-u^n_{i,-1}}{2\Delta y} = 0,\ i\in\Ix
+\]
+!et
+
+Insert $u^n_{i,-1}=u^n_{i,1}$ in the stencil for $u^{n+1}_{i,j=0}$ to
+obtain a modified stencil on the boundary.
+
+Pattern: use interior stencil also on the bundary, but replace
+$j-1$ by $j+1$
+
+Alternative: use ghost cells and ghost values
+
+# Should have fig

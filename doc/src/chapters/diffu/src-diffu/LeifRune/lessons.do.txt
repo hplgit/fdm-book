@@ -1,0 +1,83 @@
+TITLE: Leif Ruuuune back to school
+AUTHOR: HPL
+DATE: today
+
+ o Kill Matlab-style: flat, special-purpose script; every line is
+   a candidate for change
+ o Use functions, not classes, if ok
+ o Testing:
+   o constant solution
+   o exact solution of the scheme (product of lower-order polynomials)
+   o exact manufactured solution for convergence rates
+ o "PEP8" typographic Python standard:
+   o `def my_special_function` (lower case, underscore), not Java-style
+     `mySpecialFunction`
+   o whitespace around `=` (but not in keyword arguments), `+`, `-`,
+     after comma in argument lists
+   o space after `#` (comment)
+
+===== For solvers in solvers =====
+
+Model problem:
+
+!bt
+\[ u_t = u_{xx}+f,\quad x\in [0,L],\ t>0\]
+!et
+
+!bc pycod
+def mysolver(inital_condition, u_left, u_right, ...):
+    ...
+    return u
+
+u = mysolver(...)
+
+# Wrap in object
+
+# Method 1: functools
+import functools
+call = functools.partial
+solvers = [
+    call(mysolver, initial_condition=I, u_left=0, u_right=0, ...),
+    call(yoursolver, ...)
+  ]
+
+for solver in solvers:
+    u = solver()
+
+# Method 2: minimalistic wrapping of mysolver
+
+class MySolver:
+    def __init__(self, initial_condition, u_left, u_right, ...):
+        self.u_left = u_left
+        ...
+
+    def solver(self):
+        return mysolver(self.initial_condition, self.u_left, ...)
+
+# Method 3: divide mysolver into several methods in a class
+# (e.g., the loop over spatial points)
+!ec
+
+===== Test functions =====
+
+!bc pycod
+def test_mysolver():
+    def u_exact(x, t):
+        return x*(L-x)*t
+
+    def f(x, t):
+        return .... # such that u_exact fits the PDE
+
+    def I(x):
+        return u_exact(x, 0)
+
+    def u_left(t):
+        return u_exact(0, t)
+
+    u = mysolver(I, u_left, ...)
+
+    diff = numpy.abs(u_exact(x, t) - u).max()
+    tol = 1E-12
+    # The Clue
+    assert diff < tol, message
+!ec

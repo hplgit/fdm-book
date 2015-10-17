@@ -1,0 +1,413 @@
+======= Diffusion in heterogeneous media =======
+
+Diffusion in heterogeneous media will normally imply a non-constant
+diffusion coefficient $\alpha = \alpha (x)$.
+A 1D diffusion model with such a variable diffusion coefficient reads
+
+# #if FORMAT in ("latex", "pdflatex")
+!bt
+\begin{alignat}{3}
+\frac{\partial u}{\partial t} &=
+\frac{\partial}{\partial x}\left( \alpha (x) \frac{\partial u}{\partial x^2}
+\right), \quad & x\in (0,L),\ t\in (0,T]
+label{diffu:pde1}\\
+u(x,0) &= I(x), \quad & x\in [0,L]
+label{diffu:pde1:ic:u}\\
+u(0,t) & = U_L, \quad & t>0,
+label{diffu:pde1:bc:0}\\
+u(L,t) & = U_0, \quad & t>0
+\tp
+label{diffu:pde1:bc:L}
+\end{alignat}
+!et
+# #else
+!bt
+\begin{align}
+\frac{\partial u}{\partial t} &=
+\frac{\partial}{\partial x}\left( \alpha (x) \frac{\partial u}{\partial x^2}
+\right), \quad x\in (0,L),\ t\in (0,T]
+label{diffu:pde1}\\
+u(x,0) &= I(x), \quad  x\in [0,L]
+label{diffu:pde1:ic:u}\\
+u(0,t) & = U_0, \quad  t>0,
+label{diffu:pde1:bc:0}\\
+u(L,t) & = U_L, \quad  t>0\tp
+label{diffu:pde1:bc:L}
+\end{align}
+!et
+# #endif
+A short form of the diffusion equation with variable coefficients is
+$u_t = (\alpha u_x)_x$.
+
+===== Stationary solution =====
+
+As $t\rightarrow\infty$, the solution of the above problem will approach
+a stationary limit where $\partial u/\partial t=0$. The governing
+equation is then
+
+!bt
+\begin{equation}
+\frac{d}{dx}\left(\alpha\frac{du}{dx}\right) =0,
+label{diffu:fd2:pde:st}
+\end{equation}
+!et
+with boundary conditions $u(0)=U_0$ and $u(L)=u_L$.
+It is possible to obtain an exact solution of (ref{diffu:fd2:pde:st})
+for any $\alpha$. Integrating twice and applying the boundary conditions
+to determine the integration constants gives
+
+!bt
+\begin{equation}
+u(x) = U_0 + (U_L-U_0)\frac{\int_0^x (\alpha(\xi))^{-1}d\xi}{\int_0^L (\alpha(\xi))^{-1}d\xi}
+\tp
+label{diffu:fd2:pde:st:sol}
+\end{equation}
+!et
+
+===== Piecewise constant medium =====
+
+Consider a medium built of $M$ layers. The boundaries between the
+layers are denoted by $b_0, \ldots, b_M$,
+where $b_0=0$ and $b_M=L$.
+If the material in each layer potentially differs from the others, but
+is otherwise constant, we can express $\alpha$ as a
+*piecewise constant function* according to
+
+!bt
+\begin{equation}
+\alpha (x) = \left\lbrace\begin{array}{ll}
+\alpha_0,& b_0 \leq x < b_1,\\
+\vdots &\\
+\alpha_i,& b_i \leq x < b_{i+1},\\
+\vdots &\\
+\alpha_0,& b_{M-1} \leq x \leq b_M.
+\end{array}\right.
+\end{equation}
+label{diffu:fd2:pde:st:pc:alpha}
+!et
+
+The exact solution (ref{diffu:fd2:pde:st:sol}) in case of such a
+piecewise constant $\alpha$ function is easy to derive. Assume that
+$x$ is in the $m$-th layer: $x\in [b_m, b_{m+1}]$. In the integral
+$\int_0^x (a(\xi))^{-1}d\xi$ we must integrate through the first
+$m-1$ layers and then add the contribution from the remaining part
+$x-b_m$ into the $m$-th layer:
+
+
+!bt
+\begin{equation}
+u(x) = U_0 + (U_L-U_0)
+\frac{\sum_{j=0}^{m-1} (b_{j+1}-b_j)/\alpha(b_j) + (x-b_m)/\alpha(b_m)}{\sum_{j=0}^{M-1} (b_{j+1}-b_j)/\alpha(b_j)}
+label{diffu:fd2:pde:st:sol:pc}
+\end{equation}
+!et
+
+__Remark.__
+It may sound strange to have a discontinuous $\alpha$ in a differential
+equation where one is to differentiate, but a discontinuous $\alpha$
+is compensated by a discontinuous $u_x$ such that $\alpha u_x$ is
+continues and therefore can be differentiated as $(\alpha u_x)_x$.
+
+===== Implementation =====
+
+Programming with piecewise function definition quickly becomes
+cumbersome as the most naive approach is to test for which interval
+$x$ lies, and then start evaluating a formula like
+(ref{diffu:fd2:pde:st:sol:pc}). In Python, vectorized expressions may
+help to speed up the computations.
+The convenience classes `PiecewiseConstant` and
+`IntegratedPiecewiseConstant` were made to simplify programming with
+functions like (ref{diffu:fd2:pde:st:pc:alpha}) and expressions like
+(ref{diffu:fd2:pde:st:sol:pc}). These utilities not only represent
+piecewise constant functions, but also *smoothed* versions of them
+where the discontinuities can be smoothed out in a controlled fashion.
+This is advantageous in many computational contexts (although seldom
+for pure finite difference computations of the solution $u$).
+
+The `PiecewiseConstant` class is created by sending in the domain as a
+2-tuple or 2-list and a `data` object describing the boundaries
+$b_0,\ldots,b_M$ and the corresponding function values
+$\alpha_0,\ldots,\alpha_{M-1}$. More precisely, `data` is a nested
+list, where `data[i][0]` holds $b_i$ and `data[i][1]` holds the
+corresponding value $\alpha_i$, for $i=0,\ldots,M-1$. Given $b_i$ and
+$\alpha_i$ in arrays `b` and `a`, it is easy to fill out the nested
+list `data`.
+
+In our application, we want to represent $\alpha$ and $1/\alpha$
+as piecewise constant function, in addition to the $u(x)$ function
+which involves the integrals of $1/\alpha$. A class creating the
+functions we need and a method for evaluating $u$, can take the
+form
+
+!bc pycod
+class SerialLayers:
+    """
+    b: coordinates of boundaries of layers, b[0] is left boundary
+    and b[-1] is right boundary of the domain [0,L].
+    a: values of the functions in each layer (len(a) = len(b)-1).
+    U_0: u(x) value at left boundary x=0=b[0].
+    U_L: u(x) value at right boundary x=L=b[0].
+    """
+
+    def __init__(self, a, b, U_0, U_L, eps=0):
+        self.a, self.b = np.asarray(a), np.asarray(b)
+        self.eps = eps  # smoothing parameter for smoothed a
+        self.U_0, self.U_L = U_0, U_L
+
+        a_data = [[bi, ai] for bi, ai in zip(self.b, self.a)]
+        domain = [b[0], b[-1]]
+        self.a_func = PiecewiseConstant(domain, a_data, eps)
+
+        # inv_a = 1/a is needed in formulas
+        inv_a_data = [[bi, 1./ai] for bi, ai in zip(self.b, self.a)]
+        self.inv_a_func = \
+             PiecewiseConstant(domain, inv_a_data, eps)
+        self.integral_of_inv_a_func = \
+             IntegratedPiecewiseConstant(domain, inv_a_data, eps)
+        # Denominator in the exact formula is constant
+        self.inv_a_0L = self.integral_of_inv_a_func(b[-1])
+
+    def __call__(self, x):
+        solution = self.U_0 + (self.U_L-self.U_0)*\
+                   self.integral_of_inv_a_func(x)/self.inv_a_0L
+        return solution
+!ec
+
+A visualization method is also convenient to have. Below we plot $u(x)$
+along with $\alpha (x)$ (which works well as long as $\max \alpha(x)$
+is of the same size as $\max u = \max(U_0,U_L)$).
+
+!bc pycod
+class SerialLayers:
+    ...
+
+    def plot(self):
+        x, y_a = self.a_func.plot()
+        x = np.asarray(x); y_a = np.asarray(y_a)
+        y_u = self.u_exact(x)
+        import matplotlib.pyplot as plt
+        plt.figure()
+        plt.plot(x, y_u, 'b')
+        plt.hold('on')  # Matlab style
+        plt.plot(x, y_a, 'r')
+        ymin = -0.1
+        ymax = 1.2*max(y_u.max(), y_a.max())
+        plt.axis([x[0], x[-1], ymin, ymax])
+        plt.legend(['solution $u$', 'coefficient $a$'], loc='upper left')
+        if self.eps > 0:
+            plt.title('Smoothing eps: %s' % self.eps)
+        plt.savefig('tmp.pdf')
+        plt.savefig('tmp.png')
+        plt.show()
+!ec
+
+Figure ref{diffu:fd2:pde:st:sol:pc:fig1} shows the case where
+
+!bc pycod
+b = [0, 0.25, 0.5, 1]   # material boundaries
+a = [0.2, 0.4, 4]       # material values
+U_0 = 0.5;  U_L = 5     # boundary conditions
+!ec
+
+FIGURE: [fig-diffu/flow_in_layers_case1, width=400 frac=1.0] Solution of the stationary diffusion equation corresponding to a piecewise constant diffusion coefficient. label{diffu:fd2:pde:st:sol:pc:fig1}
+
+By adding the `eps` parameter to the constructor of the `SerialLayers`
+class, we can experiment with smoothed versions of $\alpha$ and see
+the (small) impact on $u$. Figure ref{diffu:fd2:pde:st:sol:pc:fig2}
+shows the result.
+
+FIGURE: [fig-diffu/flow_in_layers_case1_eps, width=400 frac=1.0] Solution of the stationary diffusion equation corresponding to a *smoothed* piecewise constant diffusion coefficient. label{diffu:fd2:pde:st:sol:pc:fig2}
+
+===== Diffusion equation in axi-symmetric geometries =====
+label{diffu:fd2:radial}
+
+## http://www.ewp.rpi.edu/hartford/~ernesto/S2004/CHT/Notes/s06.pdf
+
+Suppose we have a diffusion process taking care in a straight tube
+with radius $R$. We assume axi-symmetry such that $u$ is just a
+function of $r$ and $t$. A model problem is
+
+!bt
+\begin{align}
+\frac{\partial u}{\partial t} &= \frac{1}{r}\frac{\partial}{\partial r}
+\left(r\dfc(r)\frac{\partial u}{\partial r}\right) + f(t), & r\in (0,R),\ t\in (0,T],
+label{diffu:fd2:radial:PDE}\\
+\frac{\partial u}{\partial r}(0,t) &= 0, & t\in (0,T],
+label{diffu:fd2:radial:symmr0}\\
+u(R,t) &= 0, & t\in (0,T],
+label{diffu:fd2:radial:uR}\\
+u(r,0) &= I(r), & r\in [0,R].
+label{diffu:fd2:radial:initial}
+\end{align}
+!et
+The condition (ref{diffu:fd2:radial:symmr0}) is a necessary symmetry condition
+at $r=0$, while (ref{diffu:fd2:radial:uR}) could be any Dirichlet
+or Neumann condition (or Robin condition in case of cooling or heating).
+
+The finite difference approximation at $r=0$ of the spatial derivative term
+is the only new challenge in this problem. Let us in case of
+constant $\dfc$ expand the derivative to
+
+!bt
+\[ \frac{\partial^2 u}{\partial r^2} + \frac{1}{r}\frac{\partial u}{\partial r}\tp\]
+!et
+The last term faces a difficulty at $r=0$ since it becomes a $0/0$ expression
+because of the symmetry conditon.
+L'Hoptial's rule can be used:
+
+!bt
+\[ \lim_{r\rightarrow 0} \frac{1}{r}\frac{\partial u}{\partial r}
+= \lim_{r\rightarrow 0} \frac{\partial^2 u}{\partial r^2}\tp\]
+!et
+The PDE at $r=0$ therefore becomes
+
+!bt
+\begin{equation}
+\frac{\partial u}{\partial t} = 2\dfc\frac{\partial^2 u}{\partial r^2}
++ f(t)\tp
+\end{equation}
+!et
+For a variable coefficient $\dfc(r)$ the expanded derivative reads
+
+!bt
+\[ \dfc(r)\frac{\partial^2 u}{\partial r^2} +
+\frac{1}{r}(\dfc(r) + r\dfc'(r))\frac{\partial u}{\partial r}\tp\]
+!et
+We have that the the "limit of a product": "https://en.wikibooks.org/wiki/Calculus/Proofs_of_Some_Basic_Limit_Rules" is
+
+!bt
+\[ \lim_{r\rightarrow 0}
+\frac{1}{r}(\dfc(r) + r\dfc'(r))\frac{\partial u}{\partial r} =
+\lim_{r\rightarrow 0} (\dfc(r) + r\dfc'(r))\
+\lim_{x\rightarrow c}
+\frac{1}{r}\frac{\partial u}{\partial r}\tp
+\]
+!et
+The second limit becomes as above, so the PDE at $r=0$,
+assuming $(\dfc(0) + r\dfc'(0))\neq 0$,
+looks like
+
+!bt
+\begin{equation}
+\frac{\partial u}{\partial t} = (2\dfc + r\dfc')
+\frac{\partial^2 u}{\partial r^2}
++ f(t)\tp
+\end{equation}
+!et
+
+The second-order derivative is discretized in the usual way.
+Consider first constant $\dfc$:
+
+!bt
+\[ 2\dfc\frac{\partial^2}{\partial r^2}u(r_0,t_n) \approx
+[2\dfc 2D_rD_r u]^n_0 =
+2\dfc \frac{u^{n}_{1} - 2u^{n}_0 + u^n_{-1}}{\Delta r^2}\tp\]
+!et
+The fictitous value $u^n_{-1}$ can be eliminated using the discrete
+symmetry condition
+
+!bt
+\[ [D_{2r} u =0]^n_0 \quad\Rightarrow\quad u^n_{-1} = u^n_1,\]
+!et
+which then gives the modified approximation to the second-order derivative
+of $u$ in $r$ at $r=0$:
+
+!bt
+\begin{equation}
+4\dfc \frac{u^{n}_{1} - u^{n}_0}{\Delta r^2}\tp
+\end{equation}
+!et
+With variable $\dfc$ we simply get
+
+!bt
+[(2\dfc + r\dfc')2D_rD_r u]^n_0 =
+(2\dfc(0) + r\dfc'(0)) \frac{u^{n}_{1} - 2u^{n}_0 + u^n_{-1}}{\Delta r^2}\tp\]
+!et
+
+The discretization of the second-order derivative in $r$ at another
+internal mesh point is straightforward:
+
+!bt
+\[
+\left.\frac{1}{r}\frac{\partial}{\partial r}
+\left(r\dfc\frac{\partial u}{\partial r}\right)\right\vert_{r=r_i}^{t=t_n}
+\approx [r^{-1} D_r (r \dfc D_r u)]_i^n
+= \frac{1}{\Delta r^2}\left(
+r_{i+\half}\dfc_{i+\half}(u_{i+1}^n - u_i^n) - r_{i-\half}\dfc_{i-\half}(u_{i}^n - u_{i-1}^n)\right)\tp
+\]
+!et
+
+$\theta$-rule in time...
+
+===== Diffusion equation in spherically-symmetric geometries =====
+label{diffu:fd2:spherical}
+
+=== Discretization in spherical coordinates ===
+
+Let us now pose the problem from Section ref{diffu:fd2:radial}
+in spherical coordinates, where $u$ only depends on the radial coordinate
+$r$ and time $t$. That is, we have spherical symmetry.
+For simplicity we restrict the diffusion coefficient $\dfc$ to be
+a constant. The PDE reads
+
+!bt
+\begin{equation}
+\frac{\partial u}{\partial t} &= \frac{\dfc}{r^\gamma}\frac{\partial}{\partial r}
+\left(r^\gamma\frac{\partial u}{\partial r}\right) + f(t),
+\end{equation}
+!et
+for $r\in (0,R)$ and $t\in (0,T]$. The parameter $\gamma$ is 2 for
+spherically-symmetric problems and 1 for axi-symmetric problems.
+The boundary and initial conditions
+have the same mathematical form as
+in (ref{diffu:fd2:radial:PDE})-(ref{diffu:fd2:radial:initial}).
+
+Since the PDE in spherical coordinates has the same form as the PDE
+in Section ref{diffu:fd2:radial}, just with the $\gamma$ parameter
+being different, we can use the same discretization approach.
+At the origin $r=0$ we get problems with the term
+
+!bt
+\[ \frac{\gamma}{r}\frac{\partial u}{\partial t},\]
+!et
+but L'Hoptial's rule shows that this term equals $\gamma\partial^2 u/
+\partial r^2$, and the PDE at $r=0$ becomes
+
+!bt
+\begin{equation}
+\frac{\partial u}{\partial t} = (\gamma+1)\dfc\frac{\partial^2 u}{\partial r^2}
++ f(t)\tp
+\end{equation}
+!et
+
+Same discretization, write up with $\gamma$.
+
+=== Discretization in Cartesian coordinates ===
+
+The spherically-symmetric spatial derivative can be transformed to
+the Cartesian counterpart by introducing
+
+!bt
+\[ v(r,t) = ru(r,t)\tp\]
+!et
+Inserting $u=v/r$ in the PDE yields
+
+!bt
+\[ \frac{1}{r^2}\frac{\partial}{\partial r}
+\left(\dfc(r)r^2\frac{\partial u}{\partial t}\right), \]
+!et
+and then
+
+!bt
+\[ r\left(\frac{d c^2}{dr}\frac{\partial v}{\partial r} +
+\dfc\frac{\partial^2 v}{\partial r^2}\right) - \frac{d c^2}{dr}v
+\tp
+\]
+!et
+The two terms in the parenthesis can be combined to
+!bt
+\[ r\frac{\partial}{\partial r}\left( \dfc\frac{\partial v}{\partial r}\right),
+\]
+!et
+which is recognized as the variable-coefficient Laplace operator in
+one Cartesian coordinate.

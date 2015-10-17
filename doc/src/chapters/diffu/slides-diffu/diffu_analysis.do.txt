@@ -1,0 +1,396 @@
+!split
+======= Analysis of schemes for the diffusion equation =======
+label{diffu:pde1:analysis}
+
+!bbox
+Solutions of diffusion problems are expected to be smooth. Can we
+understand when they are not?
+!ebox
+
+FIGURE: [fig-diffu/discontinuity_CN_F5, width=400 frac=1]
+
+!split
+===== Properties of the solution =====
+label{diffu:pde1:analysis:uex}
+
+The PDE
+
+!bt
+\[
+u_t = \dfc u_{xx}
+\]
+!et
+admits solutions
+
+!bt
+\[
+u(x,t) = Qe^{-\dfc k^2 t}\sin\left( kx\right)
+\]
+!et
+
+Observations from this solution:
+
+ * The initial shape $I(x)=Q\sin kx$
+   undergoes a damping $\exp{(-\dfc k^2t)}$
+ * The damping is very strong for short waves (large $k$)
+ * The damping is weak for long waves (small $k$)
+ * Consequence: $u$ is smoothened with time
+
+!split
+===== Example =====
+
+Test problem:
+
+!bt
+\begin{align*}
+u_t &= u_{xx},\quad &x\in (0,1),\ t\in (0,T]\\
+u(0,t) &= u(1,t) = 0,\quad &t\in (0,T]\\
+u(x,0) & = \sin (\pi x) + 0.1\sin(100\pi x)
+\end{align*}
+!et
+
+Exact solution:
+
+!bt
+\[
+u(x,t) = e^{-\pi^2 t}\sin (\pi x) + 0.1e^{-\pi^2 10^4 t}\sin (100\pi x)
+\]
+!et
+
+!split
+===== High frequency components of the solution are very quickly damped =====
+
+FIGURE: [fig-diffu/diffusion_damping, width=800]
+
+!split
+===== Damping of a discontinuity; problem =====
+
+!bnotice Problem
+Two pieces of a material, at different temperatures, are brought
+in contact at $t=0$. Assume the end points of the pieces are
+kept at the initial temperature. How does the heat flow from
+the hot to the cold piece?
+
+Or: A huge ion concentration on one side of a synapse in the brain
+(concentration discontinuity) is released and
+ions move by diffusion.
+!enotice
+
+!split
+===== Damping of a discontinuity; model =====
+
+!bnotice Solution
+
+Assume a 1D model is sufficient (e.g., insulated rod):
+
+!bt
+\[
+u(x,0)=\left\lbrace
+\begin{array}{ll}
+U_L, & x < L/2\\
+U_R,& x\geq L/2
+\end{array}\right.
+\]
+!et
+
+!bt
+\[ \frac{\partial u}{\partial t} = \dfc
+\frac{\partial^2 u}{\partial x^2},\quad u(0,t)=U_L,\ u(L,t)=U_R\]
+!et
+!enotice
+
+# #ifdef PPP
+!bt
+\begin{align*}
+u_t &= \dfc u_{xx}\\
+u(x,0)&=\left\lbrace
+\begin{array}{ll}
+U_L, & x<L/2\\
+U_R,& x\geq L/2
+\end{array}\right.\\
+u(0,t)&=U_L\\
+u(L,t)&=U_R
+\end{align*}
+!et
+# #endif
+
+#FIGURE: [fig-diffu/discont_I, width=400 frac=0.6]
+
+!split
+===== Damping of a discontinuity; Backward Euler scheme =====
+
+Discrete model:
+
+!bt
+\[ [D_t^- u = \dfc D_xD_x]^n_i \]
+!et
+
+results in a (tridiagonal) linear system
+
+!bt
+\[
+- F u^n_{i-1} + \left(1+  2F \right) u^{n}_i - F u^n_{i+1} =
+u_{i-1}^{n-1}
+\]
+!et
+
+where
+
+!bt
+\[ F = \dfc\frac{\Delta t}{\Delta x^2} \]
+!et
+
+is the *mesh Fourier number*
+
+!split
+===== Damping of a discontinuity; Backward Euler simulation $F=\half$ =====
+
+# #if FORMAT not in ("latex", "pdflatex")
+MOVIE: [mov-diffu/BE_C0.5/movie.ogg, width=500]
+# #else
+"Movie": "${doc_notes}/mov-diffu/BE_C0.5/index.html"
+# #endif
+
+!split
+===== Damping of a discontinuity; Forward Euler scheme =====
+
+Discrete model:
+
+!bt
+\[ [D_t^+ u = \dfc D_xD_x]^n_i \]
+!et
+
+results in the explicit updating formula
+
+!bt
+\[ u^{n+1}_i = u^n_i + F\left(
+u^{n}_{i+1} - 2u^n_i + u^n_{i-1}\right)
+\]
+!et
+
+!split
+===== Damping of a discontinuity; Forward Euler simulation $F=\half$ =====
+
+# #if FORMAT not in ("latex", "pdflatex")
+MOVIE: [mov-diffu/FE_C0.5/movie.ogg, width=500]
+# #else
+"Movie": "${doc_notes}/mov-diffu/FE_C0.5/index.html"
+# #endif
+
+!split
+===== Damping of a discontinuity; Crank-Nicolson scheme =====
+
+Discrete model:
+
+!bt
+\[ [D_t u = \dfc D_xD_x\overline{u}^t]^n_i \]
+!et
+
+results in a tridiagonal linear system
+
+!split
+===== Damping of a discontinuity; Crank-Nicolson simulation $F=5$ =====
+
+# #if FORMAT not in ("latex", "pdflatex")
+MOVIE: [mov-diffu/CN_C5/movie.ogg, width=500]
+# #else
+"Movie": "${doc_notes}/mov-diffu/CN_C5/index.html"
+# #endif
+
+
+!split
+===== Fourier representation =====
+
+Represent $I(x)$ as a Fourier series
+
+!bt
+\[
+I(x) \approx \sum_{k\in K} b_k e^{ikx}
+\]
+!et
+
+The corresponding sum for $u$ is
+
+!bt
+\[
+u(x,t) \approx \sum_{k\in K} b_k e^{-\dfc k^2t}e^{ikx}
+\]
+!et
+
+Such solutions are also accepted by the numerical schemes, but
+with an amplification factor $A$ different from $\exp{({-\dfc k^2t})}$:
+
+!bt
+\[
+u^n_q = A^n e^{ikq\Delta x} = A^ne^{ikx}
+\]
+!et
+
+!split
+===== Analysis of the finite difference schemes =====
+label{diffu:pde1:analysis}
+
+Stability:
+
+  * $|A|< 1$: decaying numerical solutions (as we want)
+  * $A<0$: *oscillating* numerical solutions (as we do not want)
+
+Accuracy:
+
+  * Compare numerical and exact amplification factor: $A$ vs $\Aex = \exp{(-\dfc k^2 \Delta t)}$
+
+
+!split
+===== Analysis of the Forward Euler scheme =====
+label{diffu:pde1:analysis:FE}
+
+!bt
+\begin{equation*} [D_t^+ u = \dfc D_xD_x u]^n_q \end{equation*}
+!et
+
+Inserting
+
+!bt
+\[ u^n_q = A^n e^{ikq\Delta x}\]
+!et
+leads to
+
+!bt
+\[
+A = 1 -4F\sin^2\left(
+\frac{k\Delta x}{2}\right),\quad
+F = \frac{\dfc\Delta t}{\Delta x^2}\mbox{ (mesh Fourier number)}
+\]
+!et
+
+The complete numerical solution is
+
+!bt
+\[
+u^n_q = (1 -4F\sin^2 p)^ne^{ikq\Delta x},\quad
+p = k\Delta x/2
+\]
+!et
+
+Key spatial discretization quantity: the dimensionless $p=\half k\Delta x$
+
+!split
+===== Results for stability =====
+
+We always have $A\leq 1$. The condition $A\geq -1$ implies
+
+!bt
+\[ 4F\sin^2p\leq 2 \]
+!et
+The worst case is when $\sin^2 p=1$, so a sufficient criterion for
+stability is
+
+!bt
+\[ F\leq {\half} \]
+!et
+or:
+
+!bt
+\[ \Delta t\leq \frac{\Delta x^2}{2\dfc} \]
+!et
+
+!bnotice Implications of the stability result
+Less favorable criterion than for $u_{tt}=c^2u_{xx}$: halving $\Delta x$
+implies time step $\frac{1}{4}\Delta t$ (not just $\half\Delta t$
+as in a wave equation). Need very small time steps for fine spatial
+meshes!
+!enotice
+
+!split
+===== Analysis of the Backward Euler scheme =====
+label{diffu:pde1:analysis:BE}
+
+!bt
+\begin{equation*} [D_t^- u = \dfc D_xD_x u]^n_q\end{equation*}
+!et
+
+!bt
+\[ u^n_q = A^n e^{ikq\Delta x}\]
+!et
+
+!bt
+\[ A = (1  + 4F\sin^2p)^{-1} \]
+!et
+
+!bt
+\[ u^n_q = (1  + 4F\sin^2p)^{-n}e^{ikq\Delta x} \]
+!et
+
+Stability:
+We see that $|A|<1$ for all $\Delta t>0$
+and that $A>0$ (no oscillations)
+
+!split
+===== Analysis of the Crank-Nicolson scheme =====
+label{diffu:pde1:analysis:CN}
+
+The scheme
+
+!bt
+\[ [D_t u = \dfc D_xD_x \overline{u}^x]^{n+\half}_q\]
+!et
+leads to
+
+!bt
+\[ A = \frac{ 1 - 2F\sin^2p}{1 + 2F\sin^2p} \]
+!et
+
+!bt
+\[ u^n_q = \left(\frac{ 1 - 2F\sin^2p}{1 + 2F\sin^2p}\right)^ne^{ikp\Delta x}\]
+!et
+
+Stability:
+The criteria $A>-1$ and $A<1$ are fulfilled for any $\Delta t >0$
+
+!split
+===== Summary of amplification factors =====
+
+!bt
+\begin{align*}
+\Aex &= \exp{(-\alpha k^2\Delta t)} = \exp{(-4Fp^2)}\\
+A &= 1 -4F\sin^2\left(\frac{k\Delta x}{2}\right)\quad\mbox{Forward Euler}\\
+A &= (1  + 4F\sin^2p)^{-1}\quad\mbox{Backward Euler}\\
+A &= \frac{ 1 - 2F\sin^2p}{1 + 2F\sin^2p}\quad\mbox{Crank-Nicolson}
+\end{align*}
+!et
+
+Note: $\Aex = \exp{(-\dfc k^2\Delta t)}=\exp{(-F k^2\Delta x^2)}=
+\exp{(-F4p^2)}$.
+
+
+!split
+===== Summary of accuracy of amplification factors; large time steps =====
+
+FIGURE: [fig-diffu/diffusion_A_F20_F2, width=800 frac=1.2]
+
+!split
+===== Summary of accuracy of amplification factors; time steps around the Forward Euler stability limit =====
+
+FIGURE: [fig-diffu/diffusion_A_F05_F025, width=800 frac=1.2]
+
+!split
+===== Summary of accuracy of amplification factors; small time steps =====
+
+FIGURE: [fig-diffu/diffusion_A_F01_F001, width=800 frac=1.2]
+
+!split
+===== Observations =====
+
+ * The key spatial discretization parameter is the dimensionless $p=\half k\Delta x$
+ * The key temporal discretization parameter is the dimensionless $F = \dfc\Delta t/\Delta x^2$
+ * Important: $\Delta t$ and $\Delta x$ *in combination with* $\dfc$ and $k$
+   determine accuracy
+ * Crank-Nicolson gives oscillations and not much damping of short waves
+   for increasing $F$
+ * These waves will manifest themselves as high frequency
+   oscillatory noise in the solution
+ * Steep solutions will have short waves with significant (visible) amplitudes
+ * All schemes fail to dampen short waves enough
+
+The problems of correct damping for $u_t = u_{xx}$ is partially
+manifested in the similar time discretization schemes for $u'(t)=-\dfc u(t)$.

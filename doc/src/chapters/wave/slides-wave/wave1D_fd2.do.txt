@@ -1,0 +1,622 @@
+!split
+======= Generalization: reflecting boundaries =======
+
+ * Boundary condition $u=0$: $u$ changes sign
+ * Boundary condition $u_x=0$: wave is perfectly reflected
+ * How can we implement $u_x$? (more complicated than $u=0$)
+
+# #if FORMAT not in ("pdflatex", "latex")
+MOVIE: [mov-wave/demo_BC_gaussian/movie.ogg, width=500]
+# #endif
+
+"Demo of boundary conditions": "http://phet.colorado.edu/sims/wave-on-a-string/wave-on-a-string_en.html"
+
+!split
+===== Neumann boundary condition =====
+label{wave:pde2:Neumann}
+
+idx{Neumann conditions}
+idx{Dirichlet conditions}
+idx{homogeneous Neumann conditions}
+idx{homogeneous Dirichlet conditions}
+
+!bt
+\begin{equation}
+ \frac{\partial u}{\partial n} \equiv \normalvec\cdot\nabla u = 0
+label{wave:pde1:Neumann:0}
+\end{equation}
+!et
+
+For a 1D domain $[0,L]$:
+
+!bt
+\[
+\left.\frac{\partial}{\partial n}\right\vert_{x=L} =
+\frac{\partial}{\partial x},\quad
+\left.\frac{\partial}{\partial n}\right\vert_{x=0} = -
+\frac{\partial}{\partial x}
+\]
+!et
+
+Boundary condition terminology:
+
+  * $u_x$ specified: "Neumann": "http://en.wikipedia.org/wiki/Neumann_boundary_condition" condition
+  * $u$ specified: "Dirichlet": "http://en.wikipedia.org/wiki/Dirichlet_conditions" condition
+
+!split
+===== Discretization of derivatives at the boundary (1) =====
+label{wave:pde2:Neumann:discr}
+
+ * How can we incorporate the condition $u_x=0$
+   in the finite difference scheme?
+ * We used centeral differences for $u_{tt}$ and $u_{xx}$: $\Oof{\Delta t^2, \Delta x^2}$ accuracy
+ * Also for $u_t(x,0)$
+ * Should use central difference for $u_x$ to preserve second order accuracy
+
+!bt
+\begin{equation}
+\frac{u_{-1}^n - u_1^n}{2\Delta x} = 0
+label{wave:pde1:Neumann:0:cd}
+\end{equation}
+!et
+
+!split
+===== Discretization of derivatives at the boundary (2) =====
+
+!bt
+\[
+\frac{u_{-1}^n - u_1^n}{2\Delta x} = 0
+\]
+!et
+
+ * Problem: $u_{-1}^n$ is outside the mesh (fictitious value)
+ * Remedy: use the stencil at the boundary to eliminate $u_{-1}^n$;
+   just replace $u_{-1}^n$ by $u_{1}^n$
+
+
+!bt
+\begin{equation}
+u^{n+1}_i = -u^{n-1}_i  + 2u^n_i + 2C^2
+\left(u^{n}_{i+1}-u^{n}_{i}\right),\quad i=0   \end{equation}
+!et
+
+!split
+===== Visualization of modified boundary stencil =====
+
+Discrete equation
+for computing $u^3_0$ in terms of $u^2_0$, $u^1_0$, and
+$u^2_1$:
+
+idx{stencil!Neumann boundary}
+
+# #if FORMAT not in ("pdflatex", "latex")
+MOVIE: [mov-wave/wave1D_PDE_Neumann_stencil_gpl/movie.ogg, width=500]
+# #endif
+
+Animation
+in a "web page":
+"${doc_notes}/mov-wave/wave1D_PDE_Neumann_stencil_gpl/index.html"
+or a "movie file": "${doc_notes}/mov-wave/wave1D_PDE_Neumann_stencil_gpl/movie.ogg".
+
+
+
+!split
+===== Implementation of Neumann conditions =====
+label{wave:pde2:Neumann:impl}
+
+ * Use the general stencil for interior points also on the boundary
+ * Replace $u_{i-1}^n$ by $u_{i+1}^n$ for $i=0$
+ * Replace $u_{i+1}^n$ by $u_{i-1}^n$ for $i=N_x$
+
+!bc cod
+i = 0
+ip1 = i+1
+im1 = ip1  # i-1 -> i+1
+u[i] = u_1[i] + C2*(u_1[im1] - 2*u_1[i] + u_1[ip1])
+
+i = Nx
+im1 = i-1
+ip1 = im1  # i+1 -> i-1
+u[i] = u_1[i] + C2*(u_1[im1] - 2*u_1[i] + u_1[ip1])
+
+# Or just one loop over all points
+
+for i in range(0, Nx+1):
+    ip1 = i+1 if i < Nx else i-1
+    im1 = i-1 if i > 0  else i+1
+    u[i] = u_1[i] + C2*(u_1[im1] - 2*u_1[i] + u_1[ip1])
+!ec
+
+Program "`wave1D_dn0.py`": "${src_wave}/wave1D/wave1D_dn0.py"
+
+!split
+===== Moving finite difference stencil =====
+
+# #if FORMAT not in ("pdflatex", "latex")
+MOVIE: [mov-wave/wave1D_PDE_Dirichlet_stencil_gpl/movie.ogg]
+# #endif
+
+"web page":
+"${doc_notes}/mov-wave/wave1D_PDE_Neumann_stencil_gpl/index.html"
+or a "movie file": "${doc_notes}/mov-wave/wave1D_PDE_Neumann_stencil_gpl/movie.ogg".
+
+
+
+
+!split
+===== Index set notation =====
+label{wave:indexset}
+
+idx{index set notation}
+
+ * Tedious to write index sets like $i=0,\ldots,N_x$ and
+   $n=0,\ldots,N_t$
+ * Notation not valid if $i$ or $n$ starts at 1 instead...
+ * Both in math and code it is advantageous to use *index sets*
+ * $i\in\Ix$ instead of $i=0,\ldots,N_x$
+ * Definition: $\Ix =\{0,\ldots,N_x\}$
+ * The first index: $i=\setb{\Ix}$
+ * The last index: $i=\sete{\Ix}$
+ * All interior points: $i\in\seti{\Ix}$, $\seti{\Ix}=\{1,\ldots,N_x-1\}$
+ * $\setl{\Ix}$ means $\{0,\ldots,N_x-1\}$
+ * $\setr{\Ix}$ means $\{1,\ldots,N_x\}$
+
+
+!split
+===== Index set notation in code =====
+
+|----------------------------|
+| Notation      | Python     |
+|----l---------------l-------|
+|  $\Ix$        | `Ix`       |
+|  $\setb{\Ix}$      | `Ix[0]`    |
+|  $\sete{\Ix}$      | `Ix[-1]`   |
+|  $\setl{\Ix}$ | `Ix[1:]`   |
+|  $\setr{\Ix}$ | `Ix[:-1]`  |
+|  $\seti{\Ix}$ | `Ix[1:-1]` |
+|----------------------------|
+
+!split
+===== Index sets in action (1) =====
+
+Index sets for a problem in the $x,t$ plane:
+
+!bt
+\begin{equation}
+\Ix = \{0,\ldots,N_x\},\quad \It = \{0,\ldots,N_t\},
+\end{equation}
+!et
+
+Implemented in Python as
+
+!bc pycod
+Ix = range(0, Nx+1)
+It = range(0, Nt+1)
+!ec
+
+!split
+===== Index sets in action (2) =====
+
+A finite difference scheme can with the index set notation be specified as
+
+!bt
+\begin{align*}
+u^{n+1}_i &= -u^{n-1}_i  + 2u^n_i + C^2
+\left(u^{n}_{i+1}-2u^{n}_{i}+u^{n}_{i-1}\right),
+\quad i\in\seti{\Ix},\ n\in\seti{\It}\\
+u_i &= 0,
+\quad i=\setb{\Ix},\ n\in\seti{\It}\\
+u_i &= 0,
+\quad i=\sete{\Ix},\ n\in\seti{\It}
+\end{align*}
+!et
+
+Corresponding implementation:
+
+!bc pycod
+for n in It[1:-1]:
+    for i in Ix[1:-1]:
+        u[i] = - u_2[i] + 2*u_1[i] + \
+               C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1])
+    i = Ix[0];  u[i] = 0
+    i = Ix[-1]; u[i] = 0
+!ec
+
+Program "`wave1D_dn.py`": "${src_wave}/wave1D/wave1D_dn.py"
+
+!split
+===== Alternative implementation via ghost cells =====
+label{wave:pde1:Neumann:ghost}
+
+ * Instead of modifying the stencil at the boundary,
+   we extend the mesh to cover $u_{-1}^n$ and $u_{N_x+1}^n$
+ * The extra left and right cell are called *ghost cells*
+ * The extra points are called *ghost points*
+ * The $u_{-1}^n$ and $u_{N_x+1}^n$ values are called *ghost values*
+ * Update ghost values as $u_{i-1}^n = u_{i+1}^n$ for $i=0$ and $i=N_x$
+ * Then the stencil becomes right at the boundary
+
+!split
+===== Implementation of ghost cells (1) =====
+
+Add ghost points:
+
+!bc pycod
+u   = zeros(Nx+3)
+u_1 = zeros(Nx+3)
+u_2 = zeros(Nx+3)
+
+x = linspace(0, L, Nx+1)  # Mesh points without ghost points
+!ec
+
+ * A major indexing problem arises with ghost cells since
+   Python indices *must* start at 0.
+ * `u[-1]` will always mean the last element in `u`
+ * Math indexing: $-1,0,1,2,\ldots,N_x+1$
+ * Python indexing: `0,..,Nx+2`
+ * Remedy: use index sets
+
+!split
+===== Implementation of ghost cells (2) =====
+
+!bc cod
+u = zeros(Nx+3)
+Ix = range(1, u.shape[0]-1)
+
+# Boundary values: u[Ix[0]], u[Ix[-1]]
+
+# Set initial conditions
+for i in Ix:
+    u_1[i] = I(x[i-Ix[0]])  # Note i-Ix[0]
+
+# Loop over all physical mesh points
+for i in Ix:
+    u[i] = - u_2[i] + 2*u_1[i] + \
+           C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1])
+
+# Update ghost values
+i = Ix[0]          # x=0 boundary
+u[i-1] = u[i+1]
+i = Ix[-1]         # x=L boundary
+u[i-1] = u[i+1]
+!ec
+
+Program: "`wave1D_dn0_ghost.py`": "${src_wave}/wave1D/wave1D_dn0_ghost.py".
+
+
+!split
+======= Generalization: variable wave velocity =======
+label{wave:pde2:var:c}
+
+Heterogeneous media: varying $c=c(x)$
+
+# #if FORMAT not in ("pdflatex", "latex")
+MOVIE: [mov-wave/pulse1_in_two_media/movie.ogg, width=500]
+# #else
+FIGURE: [fig-wave/pulse1_in_two_media, width=800]
+# #endif
+
+!split
+===== The model PDE with a variable coefficient =====
+
+!bt
+\begin{equation}
+\frac{\partial^2 u}{\partial t^2} =
+\frac{\partial}{\partial x}\left( q(x)
+\frac{\partial u}{\partial x}\right) + f(x,t)
+label{wave:pde2:var:c:pde}
+\end{equation}
+!et
+
+This equation sampled at a mesh point $(x_i,t_n)$:
+!bt
+\[
+\frac{\partial^2 }{\partial t^2} u(x_i,t_n) =
+\frac{\partial}{\partial x}\left( q(x_i)
+\frac{\partial}{\partial x} u(x_i,t_n)\right) + f(x_i,t_n),
+\]
+!et
+
+!split
+===== Discretizing the variable coefficient (1) =====
+label{wave:pde2:var:c:ideas}
+
+The principal idea is to *first discretize the outer derivative*.
+
+Define
+!bt
+\[ \phi = q(x)
+\frac{\partial u}{\partial x}
+\]
+!et
+
+Then use a centered derivative around $x=x_i$ for the derivative of $\phi$:
+
+!bt
+\[
+\left[\frac{\partial\phi}{\partial x}\right]^n_i
+\approx \frac{\phi_{i+\half} - \phi_{i-\half}}{\Delta x}
+= [D_x\phi]^n_i
+\]
+!et
+
+!split
+===== Discretizing the variable coefficient (2) =====
+
+Then discretize the inner operators:
+!bt
+\[
+\phi_{i+\half}  = q_{i+\half}
+\left[\frac{\partial u}{\partial x}\right]^n_{i+\half}
+\approx q_{i+\half} \frac{u^n_{i+1} - u^n_{i}}{\Delta x}
+= [q D_x u]_{i+\half}^n
+\]
+!et
+
+Similarly,
+!bt
+\[
+\phi_{i-\half}  = q_{i-\half}
+\left[\frac{\partial u}{\partial x}\right]^n_{i-\half}
+\approx q_{i-\half} \frac{u^n_{i} - u^n_{i-1}}{\Delta x}
+= [q D_x u]_{i-\half}^n
+\]
+!et
+
+!split
+===== Discretizing the variable coefficient (3) =====
+
+These intermediate results are now combined to
+
+!bt
+\begin{equation}
+\left[
+\frac{\partial}{\partial x}\left( q(x)
+\frac{\partial u}{\partial x}\right)\right]^n_i
+\approx \frac{1}{\Delta x^2}
+\left( q_{i+\half} \left({u^n_{i+1} - u^n_{i}}\right)
+- q_{i-\half} \left({u^n_{i} - u^n_{i-1}}\right)\right)
+label{wave:pde2:var:c:formula}
+\end{equation}
+!et
+
+In operator notation:
+!bt
+\begin{equation}
+\left[
+\frac{\partial}{\partial x}\left( q(x)
+\frac{\partial u}{\partial x}\right)\right]^n_i
+\approx [D_xq D_x u]^n_i
+label{wave:pde2:var:c:formula:op}
+\end{equation}
+!et
+
+${admon('warning', 'Remark', r"""
+Many are tempted to use the chain rule on the
+term $\frac{\partial}{\partial x}\left( q(x)
+\frac{\partial u}{\partial x}\right)$, but this is not a good idea!
+""")}
+
+# Needs some better explanation here - maybe the exact solution of a
+# poisson type problem (piecewise linear solution) failes if we use
+# the chain rule?
+
+!split
+===== Computing the coefficient between mesh points =====
+label{wave:pde2:var:c:means}
+
+ * Given $q(x)$: compute $q_{i+\half}$ as $q(x_{i+\half})$
+ * Given $q$ at the mesh points: $q_i$, use an average
+
+!bt
+\begin{align}
+q_{i+\half} &\approx
+\half\left( q_{i} + q_{i+1}\right) =
+[\overline{q}^{x}]_i
+\quad &\hbox{(arithmetic mean)}
+label{wave:pde2:var:c:mean:arithmetic}\\
+q_{i+\half} &\approx
+2\left( \frac{1}{q_{i}} + \frac{1}{q_{i+1}}\right)^{-1}
+\quad &\hbox{(harmonic mean)}
+label{wave:pde2:var:c:mean:harmonic}\\
+q_{i+\half} &\approx
+\left(q_{i}q_{i+1}\right)^{1/2}
+\quad &\hbox{(geometric mean)}
+label{wave:pde2:var:c:mean:geometric}
+\end{align}
+!et
+
+The arithmetic mean in (ref{wave:pde2:var:c:mean:arithmetic}) is by
+far the most used averaging technique.
+
+!split
+===== Discretization of variable-coefficient wave equation in operator notation =====
+
+!bt
+\begin{equation}
+\lbrack D_tD_t u = D_x\overline{q}^{x}D_x u + f\rbrack^{n}_i
+label{wave:pde2:var:c:scheme:op}
+\end{equation}
+!et
+
+We clearly see the type of finite differences and averaging!
+
+Write out and solve wrt $u_i^{n+1}$:
+
+!bt
+\begin{align}
+u^{n+1}_i &= - u_i^{n-1}  + 2u_i^n + \left(\frac{\Delta t}{\Delta x}\right)^2\times \nonumber\\
+&\quad  \left(
+\half(q_{i} + q_{i+1})(u_{i+1}^n - u_{i}^n) -
+\half(q_{i} + q_{i-1})(u_{i}^n - u_{i-1}^n)\right)
++ \nonumber\\
+& \quad \Delta t^2 f^n_i
+label{wave:pde2:var:c:scheme:impl}
+\end{align}
+!et
+
+
+!split
+===== Neumann condition and a variable coefficient =====
+label{wave:pde2:var:c:Neumann}
+
+
+Consider $\partial u/\partial x=0$ at $x=L=N_x\Delta x$:
+
+!bt
+\[ \frac{u_{i+1}^{n} - u_{i-1}^n}{2\Delta x} = 0\quad u_{i+1}^n = u_{i-1}^n,
+\quad i=N_x
+\]
+!et
+
+Insert $u_{i+1}^n=u_{i-1}^n$ in the stencil
+(ref{wave:pde2:var:c:scheme:impl})
+for $i=N_x$ and obtain
+
+!bt
+\[
+u^{n+1}_i \approx
+- u_i^{n-1}  + 2u_i^n + \left(\frac{\Delta t}{\Delta x}\right)^2
+2q_{i}(u_{i-1}^n - u_{i}^n) + \Delta t^2 f^n_i
+\]
+!et
+
+(We have used $q_{i+\half} + q_{i-\half}\approx 2q_i$.)
+
+Alternative: assume $dq/dx=0$ (simpler).
+
+!split
+===== Implementation of variable coefficients =====
+label{wave:pde2:var:c:impl}
+
+Assume `c[i]` holds $c_i$ the spatial mesh points
+
+!bc pycod
+for i in range(1, Nx):
+    u[i] = - u_2[i] + 2*u_1[i] + \
+           C2*(0.5*(q[i] + q[i+1])*(u_1[i+1] - u_1[i])  - \
+               0.5*(q[i] + q[i-1])*(u_1[i] - u_1[i-1])) + \
+           dt2*f(x[i], t[n])
+!ec
+
+Here: `C2=(dt/dx)**2`
+
+Vectorized version:
+
+!bc pycod
+u[1:-1] = - u_2[1:-1] + 2*u_1[1:-1] + \
+          C2*(0.5*(q[1:-1] + q[2:])*(u_1[2:] - u_1[1:-1]) -
+              0.5*(q[1:-1] + q[:-2])*(u_1[1:-1] - u_1[:-2])) + \
+          dt2*f(x[1:-1], t[n])
+!ec
+
+Neumann condition $u_x=0$: same ideas as in 1D (modified stencil
+or ghost cells).
+
+
+!split
+===== A more general model PDE with variable coefficients =====
+
+!bt
+\begin{equation}
+\varrho(x)\frac{\partial^2 u}{\partial t^2} =
+\frac{\partial}{\partial x}\left( q(x)
+\frac{\partial u}{\partial x}\right) + f(x,t)
+label{wave:pde2:var:c:pde2}
+\end{equation}
+!et
+
+A natural scheme is
+
+!bt
+\begin{equation}
+[\varrho D_tD_t u = D_x\overline{q}^xD_x u + f]^n_i
+\end{equation}
+!et
+
+Or
+
+!bt
+\begin{equation}
+[D_tD_t u = \varrho^{-1}D_x\overline{q}^xD_x u + f]^n_i
+\end{equation}
+!et
+
+No need to average $\varrho$, just sample at $i$
+
+!split
+===== Generalization: damping =====
+
+Why do waves die out?
+
+ * Damping (non-elastic effects, air resistance)
+ * 2D/3D: conservation of energy makes an amplitude reduction by
+   $1/\sqrt{r}$ (2D) or $1/r$ (3D)
+
+Simplest damping model (for physical behavior, see "demo": "http://phet.colorado.edu/sims/wave-on-a-string/wave-on-a-string_en.html"):
+
+!bt
+\begin{equation}
+\frac{\partial^2 u}{\partial t^2} + \color{red}{b\frac{\partial u}{\partial t}}
+= c^2\frac{\partial^2 u}{\partial x^2} + f(x,t),
+label{wave:pde3}
+\end{equation}
+!et
+
+$b \geq 0$: prescribed damping coefficient.
+
+Discretization via centered differences to ensure $\Oof{\Delta t^2}$ error:
+
+!bt
+\begin{equation}
+[D_tD_t u + bD_{2t}u = c^2D_xD_x u + f]^n_i
+label{wave:pde3:fd}
+\end{equation}
+!et
+
+Need special formula for $u^1_i$ + special stencil (or ghost cells)
+for Neumann conditions.
+
+
+!split
+======= Building a general 1D wave equation solver =======
+label{wave:pde2:software}
+
+The program "`wave1D_dn_vc.py`": "${src_wave}/wave1D/wave1D_dn_vc.py"
+solves a fairly general 1D wave equation:
+
+!bt
+\begin{align}
+u_t &= (c^2(x)u_x)_x + f(x,t),\quad &x\in (0,L),\ t\in (0,T]
+label{wave:pde2:software:ueq}\\
+u(x,0) &= I(x),\quad &x\in [0,L]
+label{wave:pde2:software:u0}\\
+u_t(x,0) &= V(t),\quad &x\in [0,L]
+label{wave:pde2:software:ut0}\\
+u(0,t) &= U_0(t)\hbox{ or } u_x(0,t)=0,\quad &t\in (0,T]
+label{wave:pde2:software:bc0}\\
+u(L,t) &= U_L(t)\hbox{ or } u_x(L,t)=0,\quad &t\in (0,T]
+label{wave:pde2:software:bcL}
+\end{align}
+!et
+
+Can be adapted to many needs.
+
+!split
+===== Collection of initial conditions =====
+
+The function `pulse` in `wave1D_dn_vc.py` offers four
+initial conditions:
+
+ o a rectangular pulse ("plug")
+ o a Gaussian function (`gaussian`)
+ o a "cosine hat": one period of $1 + \cos (\pi x$, $x\in [-1,1]$
+ o half a "cosine hat": half a period of $\cos \pi x$,
+   $x\in [-{\half},{\half}]$
+
+Can locate the initial pulse at $x=0$ or in the middle
+
+!bc ipy
+>>> import wave1D_dn_vc as w
+>>> w.pulse(loc='left', pulse_tp='cosinehat', Nx=50, every_frame=10)
+!ec

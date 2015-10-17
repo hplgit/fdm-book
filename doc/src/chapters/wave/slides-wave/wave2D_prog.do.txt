@@ -1,0 +1,163 @@
+!split
+======= Implementation of 2D/3D problems =======
+label{wave:2D3D:impl}
+
+idx{wave equation!2D, implementation}
+
+
+!bt
+\begin{align}
+u_t &= c^2(u_{xx} + u_{yy}) + f(x,y,t),\quad &(x,y)\in \Omega,\ t\in (0,T]\\
+u(x,y,0) &= I(x,y),\quad &(x,y)\in\Omega\\
+u_t(x,y,0) &= V(x,y),\quad &(x,y)\in\Omega\\
+u &= 0,\quad &(x,y)\in\partial\Omega,\ t\in (0,T]
+\end{align}
+!et
+
+$\Omega = [0,L_x]\times [0,L_y]$
+
+Discretization:
+
+!bt
+\[ [D_t D_t u = c^2(D_xD_x u + D_yD_y u) + f]^n_{i,j},
+\]
+!et
+
+!split
+===== Algorithm =====
+
+ o Set initial condition $u^0_{i,j}=I(x_i,y_j)$
+ o Compute $u^1_{i,j} = \cdots$ for $i\in\seti{\Ix}$ and $j\in\seti{\Iy}$
+ o Set $u^1_{i,j}=0$ for the boundaries $i=0,N_x$, $j=0,N_y$
+ o For $n=1,2,\ldots,N_t$:
+  o Find $u^{n+1}_{i,j} = \cdots$
+    for $i\in\seti{\Ix}$ and $j\in\seti{\Iy}$
+  o Set $u^{n+1}_{i,j}=0$ for the boundaries $i=0,N_x$, $j=0,N_y$
+
+!split
+===== Scalar computations: mesh =====
+label{wave2D3D:impl:scalar}
+
+Program: "`wave2D_u0.py`": "${src_wave}/wave2D_u0/wave2D_u0.py"
+
+!bc pycod
+def solver(I, V, f, c, Lx, Ly, Nx, Ny, dt, T,
+           user_action=None, version='scalar'):
+!ec
+
+Mesh:
+
+!bc pycod
+x = linspace(0, Lx, Nx+1)                  # mesh points in x dir
+y = linspace(0, Ly, Ny+1)                  # mesh points in y dir
+dx = x[1] - x[0]
+dy = y[1] - y[0]
+Nt = int(round(T/float(dt)))
+t = linspace(0, N*dt, N+1)                 # mesh points in time
+Cx2 = (c*dt/dx)**2;  Cy2 = (c*dt/dy)**2    # help variables
+dt2 = dt**2
+!ec
+
+!split
+===== Scalar computations: arrays =====
+
+Store $u^{n+1}_{i,j}$, $u^{n}_{i,j}$, and
+$u^{n-1}_{i,j}$ in three two-dimensional arrays:
+
+!bc pycod
+u   = zeros((Nx+1,Ny+1))   # solution array
+u_1 = zeros((Nx+1,Ny+1))   # solution at t-dt
+u_2 = zeros((Nx+1,Ny+1))   # solution at t-2*dt
+!ec
+
+$u^{n+1}_{i,j}$ corresponds to `u[i,j]`, etc.
+
+!split
+===== Scalar computations: initial condition =====
+
+!bc pycod
+Ix = range(0, u.shape[0])
+Iy = range(0, u.shape[1])
+It = range(0, t.shape[0])
+
+for i in Ix:
+    for j in Iy:
+        u_1[i,j] = I(x[i], y[j])
+
+if user_action is not None:
+    user_action(u_1, x, xv, y, yv, t, 0)
+!ec
+Arguments `xv` and `yv`: for vectorized computations
+
+!split
+===== Scalar computations: primary stencil =====
+
+@@@CODE src-wave/wave2D_u0/wave2D_u0.py fromto: def advance_scalar@def advance_ve
+`D1` and `D2`: allow `advance_scalar` to be used also for $u^1_{i,j}$:
+
+!bc pycod
+u = advance_scalar(u, u_1, u_2, f, x, y, t,
+                   n, 0.5*Cx2, 0.5*Cy2, 0.5*dt2, D1=1, D2=0)
+!ec
+
+!split
+===== Vectorized computations: mesh coordinates =====
+label{wave2D3D:impl:vectorized}
+
+Mesh with $30\times 30$ cells: vectorization reduces the CPU
+time by a factor of 70 (!).
+
+Need special coordinate arrays `xv` and `yv` such that $I(x,y)$
+and $f(x,y,t)$ can be vectorized:
+
+!bc pycod
+from numpy import newaxis
+xv = x[:,newaxis]
+yv = y[newaxis,:]
+
+u_1[:,:] = I(xv, yv)
+f_a[:,:] = f(xv, yv, t)
+!ec
+
+!split
+===== Vectorized computations: stencil =====
+
+@@@CODE src-wave/wave2D_u0/wave2D_u0.py fromto: def advance_vec@import nose\.tools
+
+!split
+===== Verification: quadratic solution (1) =====
+label{wave2D3D:impl:verify}
+
+Manufactured solution:
+
+!bt
+\begin{equation}
+\uex(x,y,t) = x(L_x-x)y(L_y-y)(1+{\half}t)
+label{wave2D3D:impl:verify:quadratic}
+\end{equation}
+!et
+
+Requires $f=2c^2(1+{\half}t)(y(L_y-y) +
+x(L_x-x))$.
+
+This $\uex$ is ideal because it also solves the discrete equations!
+
+!split
+===== Verification: quadratic solution (2) =====
+
+ * $[D_t D_t 1]^n=0$
+ * $[D_t D_t t]^n=0$
+ * $[D_t D_t t^2]=2$
+ * $D_tD_t$ is a linear operator: $[D_tD_t (au+bv)]^n = a[D_tD_t u]^n +
+   b[D_tD_t v]^n$
+
+!bt
+\begin{align*}
+[D_xD_x \uex]^n_{i,j} &= [y(L_y-y)(1+{\half}t) D_xD_x x(L_x-x)]^n_{i,j}\\
+&= y_j(L_y-y_j)(1+{\half}t_n)2
+\end{align*}
+!et
+
+ * Similar calculations for $[D_yD_y\uex]^n_{i,j}$ and
+   $[D_tD_t \uex]^n_{i,j}$ terms
+ * Must also check the equation for $u^1_{i,j}$

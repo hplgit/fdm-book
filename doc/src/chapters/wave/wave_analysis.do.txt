@@ -1,0 +1,850 @@
+# 2DO
+
+# Explain the concepts of stability, convergence and consistence
+# in trunc and state here too.
+# Explain the relation between von Neumann stability analysis and
+# dispersion relations.
+
+======= Analysis of the difference equations =======
+label{wave:pde1:analysis}
+
+===== Properties of the solution of the wave equation =====
+label{wave:pde1:properties}
+idx{wave equation!1D, analytical properties}
+
+The wave equation
+
+!bt
+\begin{equation*} \frac{\partial^2 u}{\partial t^2} =
+c^2 \frac{\partial^2 u}{\partial x^2}
+\end{equation*}
+!et
+has solutions of the form
+
+!bt
+\begin{equation}
+u(x,t) = g_R(x-ct) + g_L(x+ct),
+label{wave:pde1:gensol}
+\end{equation}
+!et
+for any functions $g_R$ and $g_L$ sufficiently smooth to be differentiated
+twice. The result follows from inserting (ref{wave:pde1:gensol})
+in the wave equation. A function of the form $g_R(x-ct)$ represents a
+signal
+moving to the right in time with constant velocity $c$.
+This feature can be explained as follows.
+At time $t=0$ the signal looks like $g_R(x)$. Introducing a
+moving $x$ axis with coordinates $\xi = x-ct$, we see the function
+$g_R(\xi)$ is "at rest"
+in the $\xi$ coordinate system, and the shape is always
+the same. Say the $g_R(\xi)$ function has a peak at $\xi=0$. This peak
+is located at $x=ct$, which means that it moves with the velocity
+$dx/dt=c$ in the $x$ coordinate system. Similarly, $g_L(x+ct)$
+is a function initially with shape $g_L(x)$ that moves in the negative
+$x$ direction with constant velocity $c$ (introduce $\xi=x+ct$,
+look at the point $\xi=0$, $x=-ct$, which has velocity $dx/dt=-c$).
+
+With the particular initial conditions
+
+!bt
+\begin{equation*}
+u(x,0)=I(x),\quad \frac{\partial}{\partial t}u(x,0) =0,
+\end{equation*}
+!et
+we get, with $u$ as in (ref{wave:pde1:gensol}),
+
+!bt
+\begin{equation*}
+g_R(x) + g_L(x) = I(x),\quad -cg_R'(x) + cg_L'(x) = 0,
+\end{equation*}
+!et
+which have the solution $g_R=g_L=I/2$, and consequently
+
+!bt
+\begin{equation}
+u(x,t) = \half I(x-ct) + \half I(x+ct) \tp
+label{wave:pde1:gensol2}
+\end{equation}
+!et
+The interpretation of (ref{wave:pde1:gensol2}) is that
+the initial shape of $u$ is split into two parts, each with the same
+shape as $I$ but half
+of the initial amplitude. One part is traveling to the left and the
+other one to the right.
+
+# #if FORMAT in ("html", "sphinx")
+MOVIE: [mov-wave/demo_BC_gaussian/movie.ogg] Splitting of the initial profile into two waves.
+# #endif
+
+The solution has two important physical features: constant amplitude
+of the left and right wave, and constant velocity of these two waves.
+It turns out that the numerical solution will also preserve the
+constant amplitude, but the velocity depends on the mesh parameters
+$\Delta t$ and $\Delta x$.
+
+The solution (ref{wave:pde1:gensol2}) will be influenced by
+boundary conditions when the parts
+$\half I(x-ct)$ and $\half I(x+ct)$ hit the boundaries and get, e.g.,
+reflected back into the domain. However, when $I(x)$ is nonzero
+only in a small part in the middle
+of the spatial domain $[0,L]$, which means that the
+boundaries are placed far away from the initial disturbance of $u$,
+the solution (ref{wave:pde1:gensol2}) is very clearly observed
+in a simulation.
+
+#  plug!
+
+A useful representation of solutions of wave equations is a linear
+combination of sine and/or cosine waves. Such a sum of waves is a
+solution if the governing PDE is linear and each sine or cosine
+wave fulfills the
+equation.  To ease analytical calculations by hand we shall work with
+complex exponential functions instead of real-valued sine or cosine
+functions. The real part of complex expressions will typically be
+taken as the physical relevant quantity (whenever a physical relevant
+quantity is strictly needed).
+The idea now is to build $I(x)$ of complex wave components
+$e^{ikx}$:
+!bt
+\begin{equation} I(x) \approx \sum_{k\in K} b_k e^{ikx} \tp
+label{wave:Fourier:I}
+\end{equation}
+!et
+Here, $k$ is the frequency of a component,
+$K$ is some set of all the discrete
+$k$ values needed to approximate $I(x)$ well,
+and $b_k$ are
+constants that must be determined. We will very seldom
+need to compute the $b_k$ coefficients: most of the insight
+we look for, and the understanding of the numerical methods we want to
+establish, come from
+investigating how the PDE and the scheme treat a single
+component $e^{ikx}$ wave.
+
+Letting the number of $k$ values in $K$ tend to infinity, makes the sum
+(ref{wave:Fourier:I}) converge to $I(x)$. This sum is known as a
+*Fourier series* representation of $I(x)$.  Looking at
+(ref{wave:pde1:gensol2}), we see that the solution $u(x,t)$, when
+$I(x)$ is represented as in (ref{wave:Fourier:I}), is also built of
+basic complex exponential wave components of the form $e^{ik(x\pm
+ct)}$ according to
+
+!bt
+\begin{equation}
+u(x,t) = \half \sum_{k\in K} b_k e^{ik(x - ct)}
++ \half \sum_{k\in K} b_k e^{ik(x + ct)} \tp
+label{wave:Fourier:u1}
+\end{equation}
+!et
+It is common to introduce the frequency in time $\omega = kc$ and
+assume that $u(x,t)$ is a sum of basic wave components
+written as $e^{ikx -\omega t}$.
+(Observe that inserting such a wave component in the governing PDE reveals that
+$\omega^2 = k^2c^2$, or $\omega =\pm kc$, reflecting the
+two solutions: one ($+kc$) traveling to the right and the other ($-kc$)
+traveling to the left.)
+
+===== More precise definition of Fourier representations =====
+label{wave:pde1:Fourier}
+idx{Fourier series}
+idx{Fourier transform}
+idx{discrete Fourier transform}
+
+The above introduction to function representation by sine and cosine
+waves was quick and intuitive, but will suffice as background
+knowledge for the following material of single wave component
+analysis.
+However, to understand
+all details of how different wave components sum up to the analytical
+and numerical solutions, a more precise mathematical treatment is helpful
+and therefore summarized below.
+
+It is well known that periodic functions can be represented by
+Fourier series. A generalization of the Fourier series idea to
+non-periodic functions defined on the real line is the *Fourier transform*:
+
+
+!bt
+\begin{align}
+I(x) &= \int_{-\infty}^\infty A(k)e^{ikx}dk,
+label{wave:pde1:Fourier:I} \\
+A(k) &= \int_{-\infty}^\infty I(x)e^{-ikx}dx\tp
+label{wave:pde1:Fourier:A}
+\end{align}
+!et
+The function $A(k)$ reflects the weight of each wave component $e^{ikx}$
+in an infinite sum of such wave components. That is, $A(k)$
+reflects the frequency content in the function $I(x)$. Fourier transforms
+are particularly fundamental for analyzing and understanding time-varying
+signals.
+
+The solution of the linear 1D wave PDE can be expressed as
+
+!bt
+\[ u(x,t) = \int_{-\infty}^\infty A(k)e^{i(kx-\omega(k)t)}dx\tp\]
+!et
+
+In a finite difference method, we represent $u$ by a mesh function
+$u^n_q$, where $n$ counts temporal mesh points and $q$ counts
+the spatial ones (the usual counter for spatial points, $i$, is
+here already used as imaginary unit). Similarly, $I(x)$ is approximated by
+the mesh function $I_q$, $q=0,\ldots,N_x$.
+On a mesh, it does not make sense to work with wave
+components $e^{ikx}$ for very large $k$, because the shortest possible
+sine or cosine wave that can be represented uniquely
+on a mesh with spacing $\Delta x$
+is the wave with wavelength $2\Delta x$. This wave has its peaks
+and throughs at every two mesh points. That is, the ``jumps up and down''
+between the mesh points.
+
+The corresponding $k$ value for the shortest possible wave in the mesh is
+$k=2\pi /(2\Delta x) = \pi/\Delta x$. This maximum frequency is
+known as the *Nyquist frequency*.
+Within the range of
+relevant frequencies $(0,\pi/\Delta x]$ one defines
+the "discrete Fourier transform": "http://en.wikipedia.org/wiki/Discrete_Fourier_transform", using $N_x+1$ discrete frequencies:
+
+!bt
+\begin{align}
+I_q &= \frac{1}{N_x+1}\sum_{k=0}^{N_x} A_k e^{i2\pi k j/(N_x+1)},\quad
+i=0,\ldots,N_x,\\
+A_k &= \sum_{q=0}^{N_x} I_q e^{-i2\pi k q/(N_x+1)},
+\quad k=0,\ldots,N_x+1\tp
+\end{align}
+!et
+The $A_k$ values represent the discrete Fourier transform of the $I_q$ values,
+which themselves are the inverse discrete Fourier transform of the $A_k$
+values.
+
+The discrete Fourier transform is efficiently computed by the
+*Fast Fourier transform* algorithm. For a real function $I(x)$,
+the relevant Python code for computing and plotting
+the discrete Fourier transform appears in the example below.
+
+@@@CODE src-wave/analysis/fourier.py
+
+===== Stability =====
+label{wave:pde1:stability}
+
+idx{wave equation!1D, exact numerical solution}
+
+The scheme
+
+!bt
+\begin{equation}
+[D_tD_t u = c^2 D_xD_x u]^n_q
+label{wave:pde1:analysis:scheme}
+\end{equation}
+!et
+for the wave equation $u_t = c^2u_{xx}$ allows basic wave components
+
+!bt
+\[ u^n_q=e^{i(kx_q - \tilde\omega t_n)} \]
+!et
+as solution, but it turns out that
+the frequency in time, $\tilde\omega$, is not equal to
+the exact frequency $\omega = kc$.  The goal now is to
+find exactly what $\tilde \omega$ is. We ask two key
+questions:
+
+ * How accurate is $\tilde\omega$
+   compared to $\omega$?
+ * Does the amplitude of such a wave component
+   preserve its (unit) amplitude, as it should,
+   or does it get amplified or damped in time (because of a complex $\tilde\omega$)?
+
+The following analysis will answer these questions. We shall
+continue using $q$ as counter for the mesh point in $x$ direction.
+
+##We use $p$ because we can then naturally continue with $q$ and $r$ as indices
+##in the $y$ and $z$ directions.
+
+=== Preliminary results ===
+
+A key result needed in the investigations is the finite difference
+approximation of a second-order derivative acting on a complex
+wave component:
+
+!bt
+\begin{equation*}
+[D_tD_t e^{i\omega t}]^n = -\frac{4}{\Delta t^2}\sin^2\left(
+\frac{\omega\Delta t}{2}\right)e^{i\omega n\Delta t}
+\tp
+\end{equation*}
+!et
+By just changing symbols ($\omega\rightarrow k$,
+$t\rightarrow x$, $n\rightarrow q$) it follows that
+
+!bt
+\begin{equation*}
+[D_xD_x e^{ikx}]_q = -\frac{4}{\Delta x^2}\sin^2\left(
+\frac{k\Delta x}{2}\right)e^{ikq\Delta x} \tp
+\end{equation*}
+!et
+
+=== Numerical wave propagation ===
+
+Inserting a basic wave component $u^n_q=e^{i(kx_q-\tilde\omega t_n)}$ in
+(ref{wave:pde1:analysis:scheme}) results in the need to
+evaluate two expressions:
+
+!bt
+\begin{align}
+\lbrack D_tD_t e^{ikx}e^{-i\tilde\omega t}\rbrack^n_q &= \lbrack D_tD_t e^{-i\tilde\omega t}\rbrack^ne^{ikq\Delta x}\nonumber\\ &= -\frac{4}{\Delta t^2}\sin^2\left(
+\frac{\tilde\omega\Delta t}{2}\right)e^{-i\tilde\omega n\Delta t}e^{ikq\Delta x}\\
+\lbrack D_xD_x e^{ikx}e^{-i\tilde\omega t}\rbrack^n_q &= \lbrack D_xD_x e^{ikx}\rbrack_q e^{-i\tilde\omega n\Delta t}\nonumber\\ &= -\frac{4}{\Delta x^2}\sin^2\left(
+\frac{k\Delta x}{2}\right)e^{ikq\Delta x}e^{-i\tilde\omega n\Delta t} \tp  \end{align}
+!et
+Then the complete scheme,
+
+!bt
+\begin{equation*}
+\lbrack D_tD_t e^{ikx}e^{-i\tilde\omega t} = c^2D_xD_x e^{ikx}e^{-i\tilde\omega t}\rbrack^n_q
+\end{equation*}
+!et
+leads to the following equation for the unknown numerical
+frequency $\tilde\omega$
+(after dividing by $-e^{ikx}e^{-i\tilde\omega t}$):
+
+!bt
+\begin{equation*}
+\frac{4}{\Delta t^2}\sin^2\left(\frac{\tilde\omega\Delta t}{2}\right)
+= c^2 \frac{4}{\Delta x^2}\sin^2\left(\frac{k\Delta x}{2}\right),
+\end{equation*}
+!et
+or
+
+!bt
+\begin{equation}
+\sin^2\left(\frac{\tilde\omega\Delta t}{2}\right)
+= C^2\sin^2\left(\frac{k\Delta x}{2}\right),
+label{wave:pde1:analysis:sineq1}
+\end{equation}
+!et
+where
+
+idx{Courant number}
+
+!bt
+\begin{equation}
+C = \frac{c\Delta t}{\Delta x}
+\end{equation}
+!et
+is the Courant number.
+Taking the square root of (ref{wave:pde1:analysis:sineq1}) yields
+
+!bt
+\begin{equation}
+\sin\left(\frac{\tilde\omega\Delta t}{2}\right)
+= C\sin\left(\frac{k\Delta x}{2}\right),
+label{wave:pde1:analysis:sineq2}
+\end{equation}
+!et
+Since the exact $\omega$ is real it is reasonable to look for a real
+solution $\tilde\omega$ of (ref{wave:pde1:analysis:sineq2}).
+The right-hand side of
+(ref{wave:pde1:analysis:sineq2}) must then be in $[-1,1]$ because
+the sine function on the left-hand side has values in $[-1,1]$
+for real $\tilde\omega$. The sine function on
+the right-hand side can attain the value 1 when
+
+!bt
+\begin{equation*}
+\frac{k\Delta x}{2} = m\frac{\pi}{2},\quad m\in\Integer
+\tp
+\end{equation*}
+!et
+With $m=1$ we have $k\Delta x = \pi$, which means that
+the wavelength $\lambda = 2\pi/k$ becomes $2\Delta x$. This is
+the absolutely shortest wavelength that can be represented on the mesh:
+the wave jumps up and down between each mesh point. Larger values of $|m|$
+are irrelevant since these correspond to $k$ values whose
+waves are too short to be represented
+on a mesh with spacing $\Delta x$.
+For the shortest possible wave in the mesh, $\sin\left(k\Delta x/2\right)=1$,
+and we must require
+
+idx{stability criterion}
+idx{wave equation!1D, stability}
+
+!bt
+\begin{equation}
+C\leq 1 \tp
+label{wave:pde1:stability:crit}
+\end{equation}
+!et
+
+Consider a right-hand side in (ref{wave:pde1:analysis:sineq2}) of
+magnitude larger
+than unity. The solution $\tilde\omega$ of (ref{wave:pde1:analysis:sineq2})
+must then be a complex number
+$\tilde\omega = \tilde\omega_r + i\tilde\omega_i$ because
+the sine function is larger than unity for a complex argument.
+One can show that for any $\omega_i$  there will also be a
+corresponding solution with $-\omega_i$. The component with $\omega_i>0$
+gives an amplification factor $e^{\omega_it}$ that grows exponentially
+in time. We cannot allow this and must therefore require $C\leq 1$
+as a *stability criterion*.
+
+!bnotice Remark on the stability requirement
+For smoother wave components with longer wave lengths per length $\Delta x$,
+(ref{wave:pde1:stability:crit}) can in theory be relaxed. However,
+small round-off errors are always present in a numerical solution and these
+vary arbitrarily from mesh point to mesh point and can be viewed as
+unavoidable noise with wavelength $2\Delta x$. As explained, $C>1$
+will for this very small noise leads to exponential growth of
+the shortest possible wave component in the mesh. This noise will
+therefore grow with time and destroy the whole solution.
+!enotice
+
+===== Numerical dispersion relation =====
+label{wave:pde1:num:dispersion}
+
+Equation (ref{wave:pde1:analysis:sineq2}) can be solved with respect
+to $\tilde\omega$:
+
+!bt
+\begin{equation}
+\tilde\omega = \frac{2}{\Delta t}
+\sin^{-1}\left( C\sin\left(\frac{k\Delta x}{2}\right)\right) \tp
+label{wave:pde1:disprel}
+\end{equation}
+!et
+The relation between the numerical frequency $\tilde\omega$ and
+the other parameters $k$, $c$, $\Delta x$, and $\Delta t$ is called
+a *numerical dispersion relation*. Correspondingly,
+$\omega =kc$ is the *analytical dispersion relation*.
+In general, dispersion refers to the phenomenon where the wave
+velocity depends on the spatial frequency ($k$, or the
+wave length $\lambda = 2\pi/k$) of the wave.
+Since the wave velocity is $\omega/k =c$, we realize that the
+analytical dispersion relation reflects the fact that there is no
+dispersion. However, in a numerical scheme we have dispersive waves
+where the wave velocity depends on $k$.
+
+The special case $C=1$ deserves attention since then the right-hand side
+of (ref{wave:pde1:disprel}) reduces to
+
+!bt
+\begin{equation*} \frac{2}{\Delta t}\frac{k\Delta x}{2} = \frac{1}{\Delta t}
+\frac{\omega\Delta x}{c} = \frac{\omega}{C} = \omega \tp  \end{equation*}
+!et
+That is, $\tilde\omega = \omega$ and the numerical solution is exact
+at all mesh points regardless of $\Delta x$ and $\Delta t$!
+This implies that the numerical solution method is also an analytical
+solution method, at least for computing $u$ at discrete points (the
+numerical method says nothing about the
+variation of $u$ *between* the mesh points, and employing the
+common linear interpolation for extending the discrete solution
+gives a curve that in general deviates from the exact one).
+
+For a closer examination of the error in the numerical dispersion
+relation when $C<1$, we can study
+$\tilde\omega -\omega$, $\tilde\omega/\omega$, or the similar
+error measures in wave velocity: $\tilde c - c$ and $\tilde c/c$,
+where $c=\omega /k$ and $\tilde c = \tilde\omega /k$.
+It appears that the most convenient expression to work with is $\tilde c/c$,
+since it can be written as a function of just two parameters:
+
+!bt
+\begin{equation*}
+\frac{\tilde c}{c} = \frac{1}{Cp}{\sin}^{-1}\left(C\sin p\right),
+\end{equation*}
+!et
+with $p=k\Delta x/2$ as a non-dimensional measure of the spatial frequency.
+In essence, $p$ tells how many spatial mesh points we have per
+wave length in space for the wave component with frequency $k$ (recall
+that the wave
+length is $2\pi/k$). That is, $p$ reflects how well the
+spatial variation of the wave component
+is resolved in the mesh. Wave components with wave length
+less than $2\Delta x$ ($2\pi/k < 2\Delta x$) are not visible in the mesh,
+so it does not make sense to have $p>\pi/2$.
+
+We may introduce the function $r(C, p)=\tilde c/c$ for further investigation
+of numerical errors in the wave velocity:
+
+!bt
+\begin{equation}
+r(C, p) = \frac{1}{Cp}{\sin}^{-1}\left(C\sin p\right), \quad C\in (0,1],\ p\in (0,\pi/2] \tp
+label{wave:pde1:disprel2}
+\end{equation}
+!et
+This function is very well suited for plotting since it combines several
+parameters in the problem into a dependence on two dimensionless
+numbers, $C$ and $p$.
+
+FIGURE: [fig-wave/disprel, width=600 frac=0.9]  The fractional error in the wave velocity for different Courant numbers.  label{wave:pde1:fig:disprel}
+
+Defining
+
+!bc cod
+def r(C, p):
+    return 2/(C*p)*asin(C*sin(p))
+!ec
+we can plot $r(C,p)$ as a function of $p$ for various values of
+$C$, see Figure ref{wave:pde1:fig:disprel}. Note that the shortest
+waves have the most erroneous velocity, and that short waves move
+more slowly than they should.
+
+We can also easily make a Taylor series expansion in the
+discretization parameter $p$:
+
+!bc pyshell
+>>> import sympy as sym
+>>> C, p = sym.symbols('C p')
+>>> # Compute the 7 first terms around p=0 with no O() term
+>>> rs = r(C, p).series(p, 0, 7).removeO()
+>>> rs
+p**6*(5*C**6/112 - C**4/16 + 13*C**2/720 - 1/5040) +
+p**4*(3*C**4/40 - C**2/12 + 1/120) +
+p**2*(C**2/6 - 1/6) + 1
+
+>>> # Pick out the leading order term, but drop the constant 1
+>>> rs_error_leading_order = (rs - 1).extract_leading_order(p)
+>>> rs_error_leading_order
+p**2*(C**2/6 - 1/6)
+
+>>> # Turn the series expansion into a Python function
+>>> rs_pyfunc = lambdify([C, p], rs, modules='numpy')
+
+>>> # Check: rs_pyfunc is exact (=1) for C=1
+>>> rs_pyfunc(1, 0.1)
+1.0
+!ec
+Note that without the `.removeO()` call the series get an `O(x**7)` term
+that makes it impossible to convert the series to a Python function
+(for, e.g., plotting).
+
+From the `rs_error_leading_order` expression above, we see that the leading
+order term in the error of this series expansion is
+
+!bt
+\begin{equation}
+\frac{1}{6}\left(\frac{k\Delta x}{2}\right)^2(C^2-1)
+= \frac{k^2}{24}\left( c^2\Delta t^2 - \Delta x^2\right),
+\end{equation}
+!et
+pointing to an error $\Oof{\Delta t^2, \Delta x^2}$, which is
+compatible with the errors in the difference approximations ($D_tD_tu$
+and $D_xD_xu$).
+
+We can do more with a series expansion, e.g., factor it to see how
+the factor $C-1$ plays a significant role.
+To this end, we make a list of the terms, factor each term,
+and then sum the terms:
+
+!bc pyshell
+>>> rs = r(C, p).series(p, 0, 4).removeO().as_ordered_terms()
+>>> rs
+[1, C**2*p**2/6 - p**2/6,
+ 3*C**4*p**4/40 - C**2*p**4/12 + p**4/120,
+ 5*C**6*p**6/112 - C**4*p**6/16 + 13*C**2*p**6/720 - p**6/5040]
+>>> rs = [factor(t) for t in rs]
+>>> rs
+[1, p**2*(C - 1)*(C + 1)/6,
+ p**4*(C - 1)*(C + 1)*(3*C - 1)*(3*C + 1)/120,
+ p**6*(C - 1)*(C + 1)*(225*C**4 - 90*C**2 + 1)/5040]
+>>> rs = sum(rs)  # Python's sum function sums the list
+>>> rs
+p**6*(C - 1)*(C + 1)*(225*C**4 - 90*C**2 + 1)/5040 +
+p**4*(C - 1)*(C + 1)*(3*C - 1)*(3*C + 1)/120 +
+p**2*(C - 1)*(C + 1)/6 + 1
+!ec
+We see from the last expression
+that $C=1$ makes all the terms in `rs` vanish.
+Since we already know that the numerical solution is exact for $C=1$, the
+remaining terms in the Taylor series expansion
+will also contain factors of $C-1$ and cancel for $C=1$.
+
+
+# 2DO
+#Test that the exact solution is there for $K=\{ 1, 3, 7\}$! Give the
+#$k$ values on the command line.
+
+
+===== Extending the analysis to 2D and 3D =====
+label{wave:pde1:analysis:2D3D}
+
+The typical analytical solution of a 2D wave equation
+
+!bt
+\[ u_{tt} = c^2(u_{xx} + u_{yy}), \]
+!et
+is a wave traveling in the direction of $\kk = k_x\ii + k_y\jj$, where
+$\ii$ and $\jj$ are unit vectors in the $x$ and $y$ directions, respectively.
+Such a wave can be expressed by
+
+!bt
+\[ u(x,y,t) = g(k_xx + k_yy - kct) \]
+!et
+for some twice differentiable function $g$, or with $\omega =kc$, $k=|\kk|$:
+
+!bt
+\[ u(x,y,t) = g(k_xx + k_yy - \omega t)\tp \]
+!et
+We can, in particular, build a solution by adding complex Fourier components
+of the form
+
+!bt
+\[
+\exp{(i(k_xx + k_yy - \omega t))}
+\tp
+\]
+!et
+
+A discrete 2D wave equation can be written as
+!bt
+\begin{equation}
+\lbrack D_tD_t u = c^2(D_xD_x u + D_yD_y u)\rbrack^n_{q,r}
+\tp
+label{wave:pde1:analysis:scheme2D}
+\end{equation}
+!et
+This equation admits a Fourier component
+!bt
+\begin{equation}
+u^n_{q,r} = \exp{\left( i(k_x q\Delta x + k_y r\Delta y -
+\tilde\omega n\Delta t)\right)},
+label{wave:pde1:analysis:numsol2D}
+\end{equation}
+!et
+as solution. Letting the operators $D_tD_t$, $D_xD_x$, and $D_yD_y$
+act on $u^n_{q,r}$ from (ref{wave:pde1:analysis:numsol2D}) transforms
+(ref{wave:pde1:analysis:scheme2D}) to
+!bt
+\begin{equation}
+\frac{4}{\Delta t^2}\sin^2\left(\frac{\tilde\omega\Delta t}{2}\right)
+= c^2 \frac{4}{\Delta x^2}\sin^2\left(\frac{k_x\Delta x}{2}\right)
++ c^2 \frac{4}{\Delta y^2}\sin^2\left(\frac{k_y\Delta y}{2}\right) \tp  \end{equation}
+!et
+or
+!bt
+\begin{equation}
+\sin^2\left(\frac{\tilde\omega\Delta t}{2}\right)
+= C_x^2\sin^2 p_x
++ C_y^2\sin^2 p_y, \end{equation}
+!et
+where we have eliminated the factor 4 and introduced the symbols
+
+!bt
+\[ C_x = \frac{c^2\Delta t^2}{\Delta x^2},\quad
+C_y = \frac{c^2\Delta t^2}{\Delta y^2}, \quad
+p_x = \frac{k_x\Delta x}{2},\quad
+p_y = \frac{k_y\Delta y}{2}\tp
+\]
+!et
+For a real-valued $\tilde\omega$ the right-hand side
+must be less than or equal to unity in absolute value, requiring in general
+that
+
+!bt
+\begin{equation}
+C_x^2 + C_y^2 \leq 1 \tp
+label{wave:pde1:analysis:2DstabC}
+\end{equation}
+!et
+This gives the stability criterion, more commonly expressed directly
+in an inequality for the time step:
+
+!bt
+\begin{equation}
+\Delta t \leq \frac{1}{c} \left( \frac{1}{\Delta x^2} +
+\frac{1}{\Delta y^2}\right)^{-\halfi}
+label{wave:pde1:analysis:2Dstab}
+\end{equation}
+!et
+A similar, straightforward analysis for the 3D case leads to
+
+!bt
+\begin{equation}
+\Delta t \leq \frac{1}{c}\left( \frac{1}{\Delta x^2} +
+\frac{1}{\Delta y^2} + \frac{1}{\Delta z^2}\right)^{-\halfi}
+\end{equation}
+!et
+In the case of a variable coefficient $c^2=c^2(\xpoint)$, we must use
+the worst-case value
+
+!bt
+\begin{equation}
+\bar c = \sqrt{\max_{\xpoint\in\Omega} c^2(\xpoint)}
+\end{equation}
+!et
+in the stability criteria. Often, especially in the variable wave
+velocity case, it is wise to introduce a safety factor $\beta\in (0,1]$ too:
+
+!bt
+\begin{equation}
+\Delta t \leq \beta \frac{1}{\bar c}
+\left( \frac{1}{\Delta x^2} +
+\frac{1}{\Delta y^2} + \frac{1}{\Delta z^2}\right)^{-\halfi}
+\end{equation}
+!et
+
+
+The exact numerical dispersion relations in 2D and 3D becomes, for constant $c$,
+
+!bt
+\begin{align}
+\tilde\omega &= \frac{2}{\Delta t}\sin^{-1}\left(
+\left( C_x^2\sin^2 p_x + C_y^2\sin^2 p_y\right)^\half\right),\\
+\tilde\omega &= \frac{2}{\Delta t}\sin^{-1}\left(
+\left( C_x^2\sin^2 p_x + C_y^2\sin^2 p_y + C_z^2\sin^2 p_z\right)^\half\right)\tp
+\end{align}
+!et
+
+We can visualize the numerical dispersion error in 2D much like we did
+in 1D. To this end, we need to reduce the number of parameters in
+$\tilde\omega$. The direction of the wave is parameterized by the
+polar angle $\theta$, which means that
+
+!bt
+\[ k_x = k\sin\theta,\quad k_y=k\cos\theta\tp\]
+!et
+A simplification is to set $\Delta x=\Delta y=h$.
+Then $C_x=C_y=c\Delta t/h$, which we call $C$. Also,
+
+!bt
+\[ p_x=\half kh\cos\theta,\quad p_y=\half kh\sin\theta\tp\]
+!et
+The numerical frequency $\tilde\omega$
+is now a function of three parameters:
+
+  * $C$, reflecting the number cells a wave is displaced during a time step,
+  * $p=\half kh$, reflecting the number of cells per wave length in space,
+  * $\theta$, expressing the direction of the wave.
+
+We want to visualize the error in the numerical frequency. To avoid having
+$\Delta t$ as a free parameter in $\tilde\omega$, we work with
+$\tilde c/c = \tilde\omega/(kc)$. The coefficient in front of the
+$\sin^{-1}$ factor is then
+
+!bt
+\[ \frac{2}{kc\Delta t} = \frac{2}{2kc\Delta t h/h} =
+\frac{1}{Ckh} = \frac{2}{Cp},\]
+!et
+and
+
+!bt
+\[ \frac{\tilde c}{c} = \frac{2}{Cp}
+\sin^{-1}\left(C\left(\sin^2 (p\cos\theta)
++ \sin^2(p\sin\theta) \right)^\half\right)\tp
+\]
+!et
+We want to visualize this quantity as a function of
+$p$ and $\theta$ for some values of $C\leq 1$. It is
+instructive
+to make color contour plots of $1-\tilde c/c$ in
+*polar coordinates* with $\theta$ as the angular coordinate and
+$p$ as the radial coordinate.
+
+The stability criterion (ref{wave:pde1:analysis:2DstabC})
+becomes $C\leq C_{\max} = 1/\sqrt{2}$ in the present 2D case with the
+$C$ defined above. Let us plot $1-\tilde c/c$ in polar coordinates
+for $C_{\max}, 0.9C_{\max}, 0.5C_{\max}, 0.2C_{\max}$.
+The program below does the somewhat tricky
+work in Matplotlib, and the result appears
+in Figure ref{wave:pde1:fig:disprel2D}. From the figure we clearly
+see that the maximum $C$ value gives the best results, and that
+waves whose propagation direction makes an angle of 45 degrees with
+an axis are the most accurate.
+
+@@@CODE src-wave/analysis/dispersion_relation_2D.py def disp@# See
+
+FIGURE: [fig-wave/disprel2D, width=600] Error in numerical dispersion in 2D. label{wave:pde1:fig:disprel2D}
+
+# #ifdef NOTREADY
+===== Energy considerations =====
+
+The wave equation implies a certain energy balance in the domain $\Omega$,
+which is a property that is of physical interest in itself and that can
+also be used for program verification.
+
+Consider the 1D wave equation
+
+!bt
+\[
+u_{tt} = c^2 u_{xx},\quad x\in (0,L),\ t\in (0,T]
+\tp
+\]
+!et
+As initial conditions we choose the general expressions
+
+!bt
+\[ u(x,0) = I(x),\quad u_t(x,0)=V(x)\tp \]
+!et
+The boundary conditions are first taken as
+$u=0$ at $x=0$ and $x=L$.
+
+We multiply the wave equation by $u$ and
+integrate over the domain $\Omega=[0,L]$,
+
+!bt
+\[
+\int_0^L u_{tt}u dx = c^2 \int_0^L u_{xx}u dx\tp
+\]
+!et
+Integrating by parts results in
+
+!bt
+\[
+-\int_0^L u_{t}u_t dx + \left[ u_tu \right]_0^L = -
+c^2 \int_0^L u_{xx}u dx + \left[ u_xu \right]_0^L \tp
+!et
+The boundary terms vanish since $u=0$ at $x=0$ and $x=L$.
+Upon division by $-2$ we have the equation
+
+!bt
+\begin{equation}
+K+P = 0,
+\end{equation}
+!et
+where
+
+!bt
+\begin{equation}
+K = \half\int_0^L (u_t)^2\dx,\quad P = \half\int_0^L (cu_x)^2\dx
+\tp
+\end{equation}
+!et
+
+__Physical interpretation.__
+Suppose we start out with the equation for waves on a string in its original
+form,
+
+!bt
+\[ \varrho u_{tt} = Tu_{xx},\]
+!et
+where $\varrho$ is the density of the string and $T$ the tension in
+the string. Multiplying by $u$, integrating over $[0,L]$, and proceeding
+as above leads again to $K+P=0$, this time with
+
+!bt
+\begin{equation}
+K = \half \int_0^L \varrho (u_t)^2\dx,\quad P = \half\int_0^L T(u_x)^2\dx
+\tp
+\end{equation}
+!et
+With $u$ as displacement, $u_t$ is the velocity, and we can interpret
+$K$ as the kinetic energy of the string due to motion
+and $P$ as the potential energy
+due to tension. The multiplication with $u$ essentially ...
+
+#It is common to denote $K$ as the kinetic energy and $P$ as the
+#potential energy. This is sometimes not completely physically correct.
+#For example, when $u$ is the displacement of a string, we have the
+#equation $\varrho u_{tt} = Tu_{xx}$, where $\varrho$ is the mass per
+##length unit of the string ("density"), and $T$ is the tension in the
+#string. The velocity of the string is $u_t$ and the kinetic energy is
+#hence $\half\varrho\int_0^L u_t^2\dx$ (recall the standard
+#formula $\half mv^2$ for the kinetic energy of a particle, a
+#little piece of the string with mass $\varrho\dx$ therefore has
+#kinetic energy $\half\varrho\dx u_t^2$, which we then integrate
+#over the domain).  The worked done by the tension force is stored as
+#elastic energy and equals $\half Tu_x^2$. If we divide the
+#equation by $\varrho$ and set $c^2 = T/\varrho$, we see that the
+#quantities $K$ and $P$ as defined above are proportional to the
+#kinetic and potential energy expressions of a string, but not exactly
+#equal.
+
+# #endif

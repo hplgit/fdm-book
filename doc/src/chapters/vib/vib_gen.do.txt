@@ -1,0 +1,911 @@
+======= Generalization: damping, nonlinear spring, and external excitation =======
+label{vib:model2}
+
+idx{nonlinear restoring force}
+idx{nonlinear spring}
+idx{forced vibrations}
+
+We shall now generalize the simple model problem from
+Section ref{vib:model1} to include a possibly nonlinear damping term $f(u^{\prime})$,
+a possibly nonlinear spring (or restoring) force $s(u)$, and
+some external excitation $F(t)$:
+
+!bt
+\begin{equation}
+mu^{\prime\prime} + f(u^{\prime}) + s(u) = F(t),\quad u(0)=I,\ u^{\prime}(0)=V,\ t\in (0,T]
+\tp
+label{vib:ode2}
+\end{equation}
+!et
+We have also included a possibly nonzero initial value of $u^{\prime}(0)$.
+The parameters $m$, $f(u^{\prime})$, $s(u)$, $F(t)$, $I$, $V$, and $T$ are
+input data.
+
+There are two main types of damping (friction) forces: linear $f(u^{\prime})=bu$, or
+quadratic $f(u^{\prime})=bu^{\prime}|u^{\prime}|$. Spring systems often feature linear
+damping, while air resistance usually gives rise to quadratic damping.
+Spring forces are often linear: $s(u)=cu$, but nonlinear versions
+are also common, the most famous is the gravity force on a pendulum
+that acts as a spring with $s(u)\sim \sin(u)$.
+
+
+===== A centered scheme for linear damping =====
+label{vib:ode2:fdm:flin}
+
+Sampling (ref{vib:ode2}) at a mesh point $t_n$, replacing
+$u^{\prime\prime}(t_n)$ by $[D_tD_tu]^n$, and $u^{\prime}(t_n)$ by $[D_{2t}u]^n$ results
+in the discretization
+
+!bt
+\begin{equation}
+[mD_tD_t u + f(D_{2t}u) + s(u) = F]^n,
+\end{equation}
+!et
+which written out means
+
+!bt
+\begin{equation}
+m\frac{u^{n+1}-2u^n + u^{n-1}}{\Delta t^2}
++ f(\frac{u^{n+1}-u^{n-1}}{2\Delta t}) + s(u^n) = F^n,
+label{vib:ode2:step3b}
+\end{equation}
+!et
+where $F^n$ as usual means $F(t)$ evaluated at $t=t_n$.
+Solving (ref{vib:ode2:step3b}) with respect to the unknown
+$u^{n+1}$ gives a problem: the $u^{n+1}$ inside the $f$ function
+makes the equation *nonlinear* unless $f(u^{\prime})$ is a linear function,
+$f(u^{\prime})=bu^{\prime}$. For now we shall assume that $f$ is linear in $u^{\prime}$.
+Then
+
+!bt
+\begin{equation}
+m\frac{u^{n+1}-2u^n + u^{n-1}}{\Delta t^2}
++ b\frac{u^{n+1}-u^{n-1}}{2\Delta t} + s(u^n) = F^n,
+label{vib:ode2:step3b2}
+\end{equation}
+!et
+which gives an explicit formula for $u$ at each
+new time level:
+
+!bt
+\begin{equation}
+u^{n+1} = (2mu^n + (\frac{b}{2}\Delta t - m)u^{n-1} +
+\Delta t^2(F^n - s(u^n)))(m + \frac{b}{2}\Delta t)^{-1}
+label{vib:ode2:step4}
+\tp
+\end{equation}
+!et
+
+For the first time step we need to discretize $u^{\prime}(0)=V$
+as $[D_{2t}u = V]^0$ and combine
+with (ref{vib:ode2:step4}) for $n=0$. The discretized initial condition
+leads to
+
+!bt
+\begin{equation}
+u^{-1} = u^{1} - 2\Delta t V,
+label{vib:ode2:ic:du}
+\end{equation}
+!et
+which inserted in (ref{vib:ode2:step4}) for $n=0$ gives an equation
+that can be solved for
+$u^1$:
+
+!bt
+\begin{equation}
+u^1 = u^0 + \Delta t\, V
++ \frac{\Delta t^2}{2m}(-bV - s(u^0) + F^0)
+\tp
+label{vib:ode2:step4b}
+\end{equation}
+!et
+
+===== A centered scheme for quadratic damping =====
+label{vib:ode2:fdm:fquad}
+
+When $f(u^{\prime})=bu^{\prime}|u^{\prime}|$, we get a quadratic equation for $u^{n+1}$
+in (ref{vib:ode2:step3b}). This equation can be straightforwardly
+solved by the well-known formula for the roots of a quadratic equation.
+However, we can also avoid the nonlinearity by introducing
+an approximation with an error of order no higher than what we
+already have from replacing derivatives with finite differences.
+
+idx{geometric mean}
+idx{averaging!geometric}
+
+We start with (ref{vib:ode2}) and only replace
+$u^{\prime\prime}$ by $D_tD_tu$, resulting in
+
+!bt
+\begin{equation}
+[mD_tD_t u + bu^{\prime}|u^{\prime}| + s(u) = F]^n\tp
+label{vib:ode2:quad:idea1}
+\end{equation}
+!et
+Here, $u^{\prime}|u^{\prime}|$ is to be computed at time $t_n$. The idea
+is now to introduce
+a *geometric mean*, defined by
+
+!bt
+\[ (w^2)^n \approx w^{n-\half}w^{n+\half},\]
+!et
+for some quantity $w$ depending on time. The error in the geometric mean
+approximation is $\Oof{\Delta t^2}$, the same as in the
+approximation $u^{\prime\prime}\approx D_tD_tu$. With $w=u^{\prime}$ it follows
+that
+
+!bt
+\[ [u^{\prime}|u^{\prime}|]^n \approx u^{\prime}(t_{n+\half})|u^{\prime}(t_{n-\half})|\tp\]
+!et
+The next step is to approximate
+$u^{\prime}$ at $t_{n\pm 1/2}$, and fortunately a centered difference
+fits perfectly into the formulas since it involves $u$ values at
+the mesh points only. With the approximations
+
+
+!bt
+\begin{equation}
+u^{\prime}(t_{n+1/2})\approx [D_t u]^{n+\half},\quad u^{\prime}(t_{n-1/2})\approx [D_t u]^{n-\half},
+label{vib:ode2:quad:idea2}
+\end{equation}
+!et
+we get
+
+!bt
+\begin{equation}
+[u^{\prime}|u^{\prime}|]^n
+\approx [D_tu]^{n+\half}|[D_tu]^{n-\half}| = \frac{u^{n+1}-u^n}{\Delta t}
+\frac{|u^n-u^{n-1}|}{\Delta t}
+\tp
+\end{equation}
+!et
+The counterpart to (ref{vib:ode2:step3b}) is then
+
+!bt
+\begin{equation}
+m\frac{u^{n+1}-2u^n + u^{n-1}}{\Delta t^2}
++ b\frac{u^{n+1}-u^n}{\Delta t}\frac{|u^n-u^{n-1}|}{\Delta t}
++ s(u^n) = F^n,
+label{vib:ode2:step3b:quad}
+\end{equation}
+!et
+which is linear in the unknown $u^{n+1}$. Therefore, we can easily solve
+(ref{vib:ode2:step3b:quad})
+with respect to $u^{n+1}$ and achieve the explicit updating formula
+
+!bt
+\begin{align}
+u^{n+1} &=  \left( m + b|u^n-u^{n-1}|\right)^{-1}\times \nonumber\\
+& \qquad \left(2m u^n - mu^{n-1} + bu^n|u^n-u^{n-1}| + \Delta t^2 (F^n - s(u^n))
+\right)
+\tp
+label{vib:ode2:step4:quad}
+\end{align}
+!et
+
+# Make exercise to solve complicated u^1 equation with Bisection/Newton
+
+In the derivation of a special equation for the first
+time step we run into some trouble: inserting (ref{vib:ode2:ic:du})
+in (ref{vib:ode2:step4:quad}) for $n=0$ results in a complicated nonlinear
+equation for $u^1$. By thinking differently about the problem we can
+easily get away with the nonlinearity again. We have for $n=0$ that
+$b[u^{\prime}|u^{\prime}|]^0 = bV|V|$. Using this value in (ref{vib:ode2:quad:idea1})
+gives
+
+!bt
+\begin{equation}
+[mD_tD_t u + bV|V| + s(u) = F]^0
+\tp
+\end{equation}
+!et
+Writing this equation out and using (ref{vib:ode2:ic:du}) results in the
+special equation for the first time step:
+
+!bt
+\begin{equation}
+u^1 = u^0 + \Delta t V + \frac{\Delta t^2}{2m}\left(-bV|V| - s(u^0) + F^0\right)
+\tp
+label{vib:ode2:step4b:quad}
+\end{equation}
+!et
+
+===== A forward-backward discretization of the quadratic damping term =====
+
+The previous section first proposed to discretize the quadratic
+damping term $|u^{\prime}|u^{\prime}$ using centered differences:
+$[|D_{2t}|D_{2t}u]^n$. As this gives rise to a nonlinearity in
+$u^{n+1}$, it was instead proposed to use a geometric mean combined
+with centered differences.  But there are other alternatives. To get
+rid of the nonlinearity in $[|D_{2t}|D_{2t}u]^n$, one can think
+differently: apply a backward difference to $|u^{\prime}|$, such that
+the term involves known values, and apply a forward difference to
+$u^{\prime}$ to make the term linear in the unknown $u^{n+1}$. With
+mathematics,
+
+!bt
+\begin{equation}
+[\beta |u^{\prime}|u^{\prime}]^n \approx \beta |[D_t^-u]^n|[D_t^+ u]^n =
+\beta\left\vert\frac{u^n-u^{n-1}}{\Delta t}\right\vert
+\frac{u^{n+1}-u^n}{\Delta t}\tp
+label{vib:ode2:nonlin:fbdiff}
+\end{equation}
+!et
+The forward and backward differences have both an error proportional
+to $\Delta t$ so one may think the discretization above leads to
+a first-order scheme.
+However, by looking at the formulas, we realize that the forward-backward
+differences in (ref{vib:ode2:nonlin:fbdiff})
+result in exactly the same scheme as in
+(ref{vib:ode2:step3b:quad}) where we
+used a geometric mean and centered differences and committed errors
+of size $\Oof{\Delta t^2}$. Therefore, the forward-backward
+differences in (ref{vib:ode2:nonlin:fbdiff})
+act in a symmetric way and actually produce a second-order
+accurate discretization of the quadratic damping term.
+
+
+===== Implementation =====
+label{vib:ode2:solver}
+
+The algorithm arising from the methods in Sections ref{vib:ode2:fdm:flin}
+and ref{vib:ode2:fdm:fquad} is very similar to the undamped case in
+Section ref{vib:ode1:fdm}. The difference is
+basically a question of different formulas for $u^1$ and
+$u^{n+1}$. This is actually quite remarkable. The equation
+(ref{vib:ode2}) is normally impossible to solve by pen and paper, but
+possible for some special choices of $F$, $s$, and $f$. On the
+contrary, the complexity of the
+nonlinear generalized model (ref{vib:ode2}) versus the
+simple undamped model is not a big deal when we solve the
+problem numerically!
+
+The computational algorithm takes the form
+
+  o $u^0=I$
+  o compute $u^1$ from (ref{vib:ode2:step4b}) if linear
+    damping or (ref{vib:ode2:step4b:quad}) if quadratic damping
+  o for $n=1,2,\ldots,N_t-1$:
+    o compute $u^{n+1}$ from (ref{vib:ode2:step4}) if linear
+      damping or (ref{vib:ode2:step4:quad}) if quadratic damping
+
+Modifying the `solver` function for the undamped case is fairly
+easy, the big difference being many more terms and if tests on
+the type of damping:
+
+@@@CODE src-vib/vib.py fromto: def solver@def visualize
+The complete code resides in the file "`vib.py`": "${src_vib}/vib.py".
+
+===== Verification =====
+label{vib:ode2:verify}
+
+=== Constant solution ===
+
+For debugging and initial verification, a constant solution is often
+very useful. We choose $\uex(t)=I$, which implies $V=0$.
+Inserted in the ODE, we get
+$F(t)=s(I)$ for any choice of $f$. Since the discrete derivative
+of a constant vanishes (in particular, $[D_{2t}I]^n=0$,
+$[D_tI]^n=0$, and $[D_tD_t I]^n=0$), the constant solution also fulfills
+the discrete equations. The constant should therefore be reproduced
+to machine precision. The function `test_constant` in `vib.py`
+implements this test.
+
+[hpl: Add verification tests for constant, linear, quadratic.
+Check how many bugs that are caught by these tests.]
+
+=== Linear solution ===
+
+Now we choose a linear solution: $\uex = ct + d$. The initial condition
+$u(0)=I$ implies $d=I$, and $u^{\prime}(0)=V$ forces $c$ to be $V$.
+Inserting $\uex=Vt+I$ in the ODE with linear damping results in
+
+!bt
+\[ 0 + bV + s(Vt+I) = F(t),\]
+!et
+while quadratic damping requires the source term
+
+!bt
+\[ 0 + b|V|V + s(Vt+I) = F(t)\tp\]
+!et
+Since the finite difference approximations used to compute $u^{\prime}$ all
+are exact for a linear function, it turns out that the linear $\uex$
+is also a solution of the discrete equations.
+Exercise ref{vib:exer:verify:gen:linear} asks you to carry out
+all the details.
+
+=== Quadratic solution ===
+
+Choosing $\uex = bt^2 + Vt + I$, with $b$ arbitrary,
+fulfills the initial conditions and
+fits the ODE if $F$ is adjusted properly. The solution also solves
+the discrete equations with linear damping. However, this quadratic
+polynomial in $t$ does not fulfill the discrete equations in case
+of quadratic damping, because the geometric mean used in the approximation
+of this term introduces an error.
+Doing Exercise ref{vib:exer:verify:gen:linear} will reveal
+the details. One can fit $F^n$ in the discrete equations such that
+the quadratic polynomial is reproduced by the numerical method (to
+machine precision).
+
+# More: classes, cases with pendulum approx u vs sin(u),
+# making UI via parampool
+
+===== Visualization =====
+label{vib:ode2:viz}
+
+The functions for visualizations differ significantly from
+those in the undamped case in the `vib_undamped.py` program because,
+in the present general case, we do not have an exact solution to
+include in the plots. Moreover, we have no good estimate of
+the periods of the oscillations as there will be one period
+determined by the system parameters, essentially the
+approximate frequency $\sqrt{s'(0)/m}$ for linear $s$ and small damping,
+and one period dictated by $F(t)$ in case the excitation is periodic.
+This is, however,
+nothing that the program can depend on or make use of.
+Therefore, the user has to specify $T$ and the window width
+to get a plot that moves with the graph and shows
+the most recent parts of it in long time simulations.
+
+The `vib.py` code
+contains several functions for analyzing the time series signal
+and for visualizing the solutions.
+
+===== User interface =====
+label{vib:ode2:ui}
+
+idx{`ArgumentParser` (Python class)}
+idx{`argparse` (Python module)}
+
+The `main` function is changed substantially from
+the `vib_undamped.py` code, since we need to
+specify the new data $c$, $s(u)$, and $F(t)$.  In addition, we must
+set $T$ and the plot window width (instead of the number of periods we
+want to simulate as in `vib_undamped.py`). To figure out whether we
+can use one plot for the whole time series or if we should follow the
+most recent part of $u$, we can use the `plot_empricial_freq_and_amplitude`
+function's estimate of the number of local maxima. This number is now
+returned from the function and used in `main` to decide on the
+visualization technique.
+
+!bc pycod
+def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--I', type=float, default=1.0)
+    parser.add_argument('--V', type=float, default=0.0)
+    parser.add_argument('--m', type=float, default=1.0)
+    parser.add_argument('--c', type=float, default=0.0)
+    parser.add_argument('--s', type=str, default='u')
+    parser.add_argument('--F', type=str, default='0')
+    parser.add_argument('--dt', type=float, default=0.05)
+    parser.add_argument('--T', type=float, default=140)
+    parser.add_argument('--damping', type=str, default='linear')
+    parser.add_argument('--window_width', type=float, default=30)
+    parser.add_argument('--savefig', action='store_true')
+    a = parser.parse_args()
+    from scitools.std import StringFunction
+    s = StringFunction(a.s, independent_variable='u')
+    F = StringFunction(a.F, independent_variable='t')
+    I, V, m, c, dt, T, window_width, savefig, damping = \
+       a.I, a.V, a.m, a.c, a.dt, a.T, a.window_width, a.savefig, \
+       a.damping
+
+    u, t = solver(I, V, m, c, s, F, dt, T)
+    num_periods = empirical_freq_and_amplitude(u, t)
+    if num_periods <= 15:
+        figure()
+        visualize(u, t)
+    else:
+        visualize_front(u, t, window_width, savefig)
+    show()
+!ec
+The program `vib.py` contains
+the above code snippets and can solve the model problem
+(ref{vib:ode2}). As a demo of `vib.py`, we consider the case
+$I=1$, $V=0$, $m=1$, $c=0.03$, $s(u)=\sin(u)$, $F(t)=3\cos(4t)$,
+$\Delta t = 0.05$, and $T=140$. The relevant command to run is
+
+!bc sys
+Terminal> python vib.py --s 'sin(u)' --F '3*cos(4*t)' --c 0.03
+!ec
+This results in a "moving window following the function":
+"${doc_notes}/mov-vib/vib_generalized_dt0.05/index.html" on the screen.
+Figure ref{vib:ode2:fig:demo} shows a part of the time series.
+
+FIGURE: [fig-vib/vib_gen_demo, width=600 frac=1.0] Damped oscillator excited by a sinusoidal function. label{vib:ode2:fig:demo}
+
+===== The Euler-Cromer scheme for the generalized model =====
+
+The ideas of the Euler-Cromer method from Section ref{vib:model2x2:EulerCromer}
+carry over to the generalized model. We write (ref{vib:ode2})
+as two equations for $u$ and $v=u^{\prime}$. The first equation is taken as the
+one with $v'$ on the left-hand side:
+
+!bt
+\begin{align}
+v' &= \frac{1}{m}(F(t)-s(u)-f(v)),
+label{vib:ode2:EulerCromer:veq}\\
+u^{\prime} &= v\tp
+label{vib:ode2:EulerCromer:ueq}
+\end{align}
+!et
+The idea is to step (ref{vib:ode2:EulerCromer:veq}) forward using
+a standard Forward Euler method, while we update $u$ from
+(ref{vib:ode2:EulerCromer:ueq}) with a Backward Euler method,
+utilizing the recent, computed $v^{n+1}$ value. In detail,
+
+!bt
+\begin{align}
+\frac{v^{n+1}-v^n}{\Delta t} &= \frac{1}{m}(F(t_n)-s(u^n)-f(v^n)),
+label{vib:ode2:EulerCromer:dveq0a}\\
+\frac{u^{n+1}-u^n}{\Delta t} &= v^{n+1},
+label{vib:ode2:EulerCromer:dueq0a}
+\end{align}
+!et
+resulting in the explicit scheme
+
+!bt
+\begin{align}
+v^{n+1} &= v^n + \Delta t\frac{1}{m}(F(t_n)-s(u^n)-f(v^n)),
+label{vib:ode2:EulerCromer:dveq}\\
+u^{n+1} &= u^n + \Delta t\,v^{n+1}\tp
+label{vib:ode2:EulerCromer:dueq0}
+\end{align}
+!et
+We immediately note one very favorable feature of this scheme: all the
+nonlinearities in $s(u)$ and $f(v)$ are evaluated at a previous time
+level. This makes the Euler-Cromer method easier to apply and
+hence much more convenient than the centered scheme for the second-order
+ODE (ref{vib:ode2}).
+
+The initial conditions are trivially set as
+
+!bt
+\begin{align}
+v^0 &= V,
+\\
+u^0 &= I\tp
+\end{align}
+!et
+
+[hpl: odespy for the generalized problem]
+
+======= Exercises and Problems =======
+
+===== Problem: Use linear/quadratic functions for verification =====
+label{vib:exer:undamped:verify:linquad}
+file=vib_undamped_verify_mms
+
+Consider the ODE problem
+
+!bt
+\[ u^{\prime\prime} + \omega^2u=f(t), \quad u(0)=I,\ u^{\prime}(0)=V,\ t\in(0,T]\tp\]
+!et
+Discretize this equation according to
+$[D_tD_t u + \omega^2 u = f]^n$.
+
+!bsubex
+Derive the equation for the
+first time step ($u^1$).
+!esubex
+
+!bsubex
+For verification purposes,
+we use the method of manufactured solutions (MMS) with the
+choice of $\uex(x,t)= ct+d$.
+Find restrictions on $c$ and $d$ from
+the initial conditions. Compute the corresponding source term $f$ by term.
+Show that $[D_tD_t t]^n=0$ and use the fact
+that the $D_tD_t$ operator is linear,
+$[D_tD_t (ct+d)]^n = c[D_tD_t t]^n + [D_tD_t d]^n = 0$, to show that
+$\uex$ is also a perfect solution of the discrete equations.
+!esubex
+
+!bsubex
+Use `sympy` to do the symbolic calculations above. Here is a
+sketch of the program `vib_undamped_verify_mms.py`:
+
+!bc pycod
+import sympy as sym
+V, t, I, w, dt = sym.symbols('V t I w dt')  # global symbols
+f = None  # global variable for the source term in the ODE
+
+def ode_source_term(u):
+    """Return the terms in the ODE that the source term
+    must balance, here u'' + w**2*u.
+    u is symbolic Python function of t."""
+    return sym.diff(u(t), t, t) + w**2*u(t)
+
+def residual_discrete_eq(u):
+    """Return the residual of the discrete eq. with u inserted."""
+    R = ...
+    return sym.simplify(R)
+
+def residual_discrete_eq_step1(u):
+    """Return the residual of the discrete eq. at the first
+    step with u inserted."""
+    R = ...
+    return sym.simplify(R)
+
+def DtDt(u, dt):
+    """Return 2nd-order finite difference for u_tt.
+    u is a symbolic Python function of t.
+    """
+    return ...
+
+def main(u):
+    """
+    Given some chosen solution u (as a function of t, implemented
+    as a Python function), use the method of manufactured solutions
+    to compute the source term f, and check if u also solves
+    the discrete equations.
+    """
+    print '=== Testing exact solution: %s ===' % u
+    print "Initial conditions u(0)=%s, u'(0)=%s:" % \
+          (u(t).subs(t, 0), sym.diff(u(t), t).subs(t, 0))
+
+    # Method of manufactured solution requires fitting f
+    global f  # source term in the ODE
+    f = sym.simplify(ode_lhs(u))
+
+    # Residual in discrete equations (should be 0)
+    print 'residual step1:', residual_discrete_eq_step1(u)
+    print 'residual:', residual_discrete_eq(u)
+
+def linear():
+    main(lambda t: V*t + I)
+
+if __name__ == '__main__':
+    linear()
+!ec
+Fill in the various functions such that the calls in the `main`
+function works.
+!esubex
+
+!bsubex
+The purpose now is to choose a quadratic function
+$\uex = bt^2 + ct + d$ as exact solution. Extend the `sympy`
+code above with a function `quadratic` for fitting `f` and checking
+if the discrete equations are fulfilled. (The function is very similar
+to `linear`.)
+
+#Check with hand calculations that the `sympy` implementation
+#is correct.
+
+!esubex
+
+!bsubex
+Will a polynomial of degree three fulfill the discrete equations?
+!esubex
+
+!bsubex
+Implement a `solver` function for computing the numerical
+solution of this problem.
+!esubex
+
+
+!bsubex
+Write a nose test for checking that the quadratic solution
+is computed to correctly (too machine precision, but the
+round-off errors accumulate and increase with $T$) by the `solver`
+function.
+!esubex
+
+
+===== Exercise: Show linear growth of the phase with time =====
+label{vib:exer:phase:err:growth}
+file=vib_phase_error_growth
+
+Consider an exact solution $I\cos (\omega t)$ and an
+approximation $I\cos(\tilde\omega t)$.
+Define the phase error as time lag between the peak $I$
+in the exact solution and the corresponding peak in the approximation
+after $m$ periods of oscillations. Show that this phase error
+is linear in $m$.
+
+
+===== Exercise: Improve the accuracy by adjusting the frequency =====
+label{vib:exer:w:adjust}
+file=vib_adjust_w
+
+According to (ref{vib:ode1:tildeomega:series}), the numerical
+frequency deviates from the exact frequency by a (dominating) amount
+$\omega^3\Delta t^2/24 >0$. Replace the `w` parameter in the algorithm
+in the `solver` function in `vib_undamped.py` by `w*(1 -
+(1./24)*w**2*dt**2` and test how this adjustment in the numerical
+algorithm improves the accuracy (use $\Delta t =0.1$ and simulate
+for 80 periods, with and without adjustment of $\omega$).
+
+# How does this go if
+
+===== Exercise: See if adaptive methods improve the phase error =====
+label{vib:exer:undamped:adaptive}
+file=vib_undamped_adaptive
+
+Adaptive methods for solving ODEs aim at adjusting $\Delta t$ such
+that the error is within a user-prescribed tolerance. Implement the
+equation $u^{\prime\prime}+u=0$ in the "Odespy": "https://github.com/hplgit/odespy"
+software. Use the example ref[from Section
+ref{decay:fd2:adaptiveRK}][ in cite{Langtangen_decay}]["on adaptive
+schemes": "${decay_book}/._book006.html#example-adaptive-runge-kutta-methods"
+in cite{Langtangen_decay}].  Run the scheme with a very low
+tolerance (say $10^{-14}$) and for a long time, check the number of
+time points in the solver's mesh (`len(solver.t_all)`), and compare
+the phase error with that produced by the simple finite difference
+method from Section ref{vib:ode1:fdm} with the same number of (equally
+spaced) mesh points. The question is whether it pays off to use an
+adaptive solver or if equally many points with a simple method gives
+about the same accuracy.
+
+
+
+===== Exercise: Use a Taylor polynomial to compute $u^1$ =====
+label{vib:exer:step4b:alt}
+file=vib_first_step
+
+As an alternative to the derivation of (ref{vib:ode1:step4b}) for
+computing $u^1$, one can use a Taylor polynomial with three terms
+for $u^1$:
+
+!bt
+\[ u(t_1) \approx u(0) + u^{\prime}(0)\Delta t + {\half}u^{\prime\prime}(0)\Delta t^2\]
+!et
+With $u^{\prime\prime}=-\omega^2 u$ and $u^{\prime}(0)=0$, show that this method also leads to
+(ref{vib:ode1:step4b}). Generalize the condition on $u^{\prime}(0)$ to
+be $u^{\prime}(0)=V$ and compute $u^1$ in this case with both methods.
+
+===== Exercise: Find the minimal resolution of an oscillatory function =====
+# Short: Find the largest relevant value of $\omega\Delta t$
+
+label{vib:exer:wdt:limit}
+file=vib_largest_wdt
+
+Sketch the function on a given mesh which has the highest possible
+frequency. That is, this oscillatory "cos-like" function has its
+maxima and minima at every two grid points.  Find an expression for
+the frequency of this function, and use the result to find the largest
+relevant value of $\omega\Delta t$ when $\omega$ is the frequency
+of an oscillating function and $\Delta t$ is the mesh spacing.
+
+
+===== Exercise: Visualize the accuracy of finite differences for a cosine function =====
+# Short: Visualize the accuracy of finite differences
+
+label{vib:exer:fd:exp:plot}
+file=vib_plot_fd_exp_error
+
+We introduce the error fraction
+!bt
+\[ E = \frac{[D_tD_t u]^n}{u^{\prime\prime}(t_n)} \]
+!et
+to measure the error in the finite difference approximation $D_tD_tu$ to
+$u^{\prime\prime}$.
+Compute $E$
+for the specific choice of a cosine/sine function of the
+form $u=\exp{(i\omega t)}$ and show that
+!bt
+\[ E = \left(\frac{2}{\omega\Delta t}\right)^2
+\sin^2(\frac{\omega\Delta t}{2})
+\tp
+\]
+!et
+Plot $E$ as a function of $p=\omega\Delta t$. The relevant
+values of $p$ are $[0,\pi]$ (see Exercise ref{vib:exer:wdt:limit}
+for why $p>\pi$ does not make sense).
+The deviation of the curve from unity visualizes the error in the
+approximation. Also expand $E$ as a Taylor polynomial in $p$ up to
+fourth degree (use, e.g., `sympy`).
+
+===== Exercise: Verify convergence rates of the error in energy =====
+label{vib:exer:energy:convrate}
+file=test_error_conv
+
+We consider the ODE problem $u^{\prime\prime} + \omega^2u=0$, $u(0)=I$, $u^{\prime}(0)=V$,
+for $t\in (0,T]$. The total energy of the solution
+$E(t)=\half(u^{\prime})^2 + \half\omega^2 u^2$ should stay
+constant.
+The error in energy can be computed as explained in
+Section ref{vib:model1:energy}.
+
+Make a nose test in a file `test_error_conv.py`, where code from
+`vib_undamped.py` is imported, but the `convergence_rates` and
+`test_convergence_rates` functions are copied and modified to also
+incorporate computations of the error in energy and the convergence
+rate of this error. The expected rate is 2.
+
+===== Exercise: Use linear/quadratic functions for verification  =====
+label{vib:exer:verify:gen:linear}
+file=vib_verify_mms
+
+This exercise is a generalization of Problem
+ref{vib:exer:undamped:verify:linquad} to the extended model problem
+(ref{vib:ode2}) where the damping term is either linear or quadratic.
+Solve the various subproblems and see how the results and problem
+settings change with the generalized ODE in case of linear or
+quadratic damping. By modifying the code from Problem
+ref{vib:exer:undamped:verify:linquad}, `sympy` will do most
+of the work required to analyze the generalized problem.
+
+===== Exercise: Use an exact discrete solution for verification =====
+label{vib:exer:discrete:omega}
+file=test_vib_undamped_exact_discrete_sol
+
+Write a nose test function in a separate file
+that employs the exact discrete solution
+(ref{vib:ode1:un:exact}) to verify the implementation of the
+`solver` function in the file `vib_undamped.py`.
+
+
+===== Exercise: Use analytical solution for convergence rate tests =====
+label{vib:exer:conv:rate}
+file=vib_conv_rate
+
+The purpose of this exercise is to perform convergence tests of the
+problem (ref{vib:ode2}) when $s(u)=\omega^2u$ and $F(t)=A\sin\phi t$.
+Find the complete analytical solution to the problem in this case
+(most textbooks on mechanics or ordinary differential equations list
+the various elements you need to write down the exact solution).
+Modify the `convergence_rate` function from the `vib_undamped.py`
+program to perform experiments with the extended model.  Verify that
+the error is of order $\Delta t^2$.
+
+===== Exercise: Investigate the amplitude errors of many solvers =====
+label{vib:exer:undamped:odespy}
+file=vib_amplitude_errors
+
+Use the program `vib_undamped_odespy.py` from Section
+ref{vib:model2x2:compare} and the amplitude estimation from the
+`amplitudes` function in the `vib_undamped.py` file (see Section
+ref{vib:ode1:empirical}) to investigate how well famous methods for
+1st-order ODEs can preserve the amplitude of $u$ in undamped
+oscillations.  Test, for example, the 3rd- and 4th-order Runge-Kutta
+methods (`RK3`, `RK4`), the Crank-Nicolson method (`CrankNicolson`),
+the 2nd- and 3rd-order Adams-Bashforth methods (`AdamsBashforth2`,
+`AdamsBashforth3`), and a 2nd-order Backwards scheme
+(`Backward2Step`).  The relevant governing equations are listed in
+the beginning of Section ref{vib:model2x2}.
+
+===== Exercise: Minimize memory usage of a vibration solver =====
+label{vib:exer:memsave}
+file=vib_memsave
+
+The program "`vib.py`": "${src_vib}/vib.py"
+store the complete solution $u^0,u^1,\ldots,u^{N_t}$ in memory, which is
+convenient for later plotting.
+Make a memory minimizing version of this program where only the last three
+$u^{n+1}$, $u^n$, and $u^{n-1}$ values are stored in memory.
+Write each computed $(t_{n+1}, u^{n+1})$ pair to file.
+Visualize the data in the file (a cool solution is to
+read one line at a time and
+plot the $u$ value using the line-by-line plotter in the
+`visualize_front_ascii` function - this technique makes it trivial
+to visualize very long time simulations).
+
+
+===== Exercise: Implement the solver via classes =====
+label{vib:exer:gen:class}
+file=vib_class
+
+Reimplement the `vib.py`
+program
+using a class `Problem` to hold all the physical parameters of the problem,
+a class `Solver` to hold the numerical parameters and compute the
+solution, and a class `Visualizer` to display the solution.
+
+!bhint
+Use the ideas and examples
+ref[from Section ref{decay:prog:se:class} and ref{decay:prog:se:class2}][in cite{Langtangen_decay}][for an "ODE model": "${decay_book}/._book009.html#classes-for-problem-and-solution-method" in cite{Langtangen_decay}].
+More specifically, make a superclass `Problem` for holding the scalar
+physical parameters of a problem and let subclasses implement the
+$s(u)$ and $F(t)$ functions as methods.
+Try to call up as much existing functionality in `vib.py` as possible.
+!ehint
+
+
+
+
+===== Exercise: Interpret $[D_tD_t u]^n$ as a forward-backward difference =====
+label{vib:exer:DtDt:asDtpDtm}
+file=vib_DtDt_fw_bw
+
+Show that the difference $[D_t D_tu]^n$ is equal to $[D_t^+D_t^-u]^n$
+and $D_t^-D_t^+u]^n$. That is, instead of applying a centered difference
+twice one can alternatively apply a mixture forward and backward
+differences.
+
+
+===== Exercise: Use a backward difference for the damping term =====
+label{vib:exer:quad:damping:bw}
+file=vib_gen_bwdamping
+
+As an alternative to discretizing the damping terms $\beta u^{\prime}$ and
+$\beta |u^{\prime}|u^{\prime}$ by centered differences, we may apply
+backward differences:
+
+!bt
+\begin{align*}
+[u^{\prime}]^n &\approx [D_t^-u]^n,\\
+& [|u^{\prime}|u^{\prime}]^n &\approx [|D_t^-u|D_t^-u]^n
+= |[D_t^-u]^n|[D_t^-u]^n\tp
+\end{align*}
+!et
+The advantage of the backward difference is that the damping term is
+evaluated using known values $u^n$ and $u^{n-1}$ only.
+Extend the "`vib.py`": "${src_vib}/vib.py" code with a scheme based
+on using backward differences in the damping terms. Add statements
+to compare the original approach with centered difference and the
+new idea launched in this exercise. Perform numerical experiments
+to investigate how much accuracy that is lost by using the backward
+differences.
+
+
+===== Exercise: Analysis of the Euler-Cromer scheme =====
+label{vib:exer:EulerCromer:analysis}
+
+The Euler-Cromer scheme for the model problem
+$u^{\prime\prime} + \omega^2 u =0$, $u(0)=I$, $u^{\prime}(0)=0$, is given in
+(ref{vib:model2x2:EulerCromer:ueq1b})-(ref{vib:model2x2:EulerCromer:veq1b}).
+Find the exact discrete solutions of this scheme and show that the solution
+for $u^n$ coincides with that found in Section ref{vib:ode1:analysis}.
+
+!bhint
+Use an ``ansatz'' $u^n=I\exp{(i\tilde\omega\Delta t\,n)}$ and
+$v^n=qu^n$, where $\tilde\omega$ and $q$ are unknown parameters. The
+following formula is handy:
+
+!bt
+\[ \e^{i\tilde\omega\Delta t} + e^{i\tilde\omega(-\Delta t)} - 2
+= 2\left(\cosh(i\tilde\omega\Delta t) -1 \right)
+=-4\sin^2(\frac{\tilde\omega\Delta t}{2})\tp\]
+!et
+!ehint
+
+!bsol
+We follow the ideas in Section ref{vib:ode1:analysis}. Inserting
+$u^n=I\exp{(i\tilde\omega\Delta t\,n)}$ and
+$v^=qu^n$ in
+(ref{vib:model2x2:EulerCromer:ueq1b})-(ref{vib:model2x2:EulerCromer:veq1b})
+and dividing by $I\exp{(i\tilde\omega\Delta t\,n)}$ gives
+
+!bt
+\begin{align}
+q\exp{(i\tilde\omega\Delta t)} &= q - \omega^2 \Delta t,
+label{vib:exer:EulerCromer:analysis:equ} \\
+\exp{(i\tilde\omega\Delta t)} &= 1 + \Delta t\, q\exp{(i\tilde\omega\Delta t)}
+label{vib:exer:EulerCromer:analysis:eqv}\tp
+\end{align}
+!et
+Solving (ref{vib:exer:EulerCromer:analysis:eqv}) with respect to $q$ gives
+
+!bt
+\[ q = \frac{1}{\Delta t}\left( 1 - \exp{(i\tilde\omega\Delta t)} \right)\tp\]
+!et
+Inserting this expression for $q$ in (ref{vib:exer:EulerCromer:analysis:equ})
+results in
+
+!bt
+\[ \exp{(i\tilde\omega\Delta t)} + \exp{(-i\tilde\omega\Delta t)} -2
+= - \omega^2\Delta t^2\tp\]
+!et
+Using the relation
+$\exp{(i\tilde\omega(\Delta t))} + \exp{(i\tilde\omega(-\Delta t))} - 2
+= -4\sin^2(\frac{\tilde\omega\Delta t}{2})$ gives
+
+!bt
+\[ -4\sin^2(\frac{\tilde\omega\Delta t}{2}) = - \omega^2\Delta t^2,\]
+!et
+or after dividing by 4,
+
+!bt
+\[
+\sin^2(\frac{\tilde\omega\Delta t}{2}) = \left(\frac{1}{2}\omega\Delta t\right)^2,\]
+!et
+which is the same equation for $\tilde\omega$ as found in
+Section ref{vib:ode1:analysis}, such that $\tilde\omega$ is the
+same. The accuracy, stability, and formula for the exact discrete solution
+are then all the same as derived in Section ref{vib:ode1:analysis}.
+#This proves that the solution of the Euler-Cromer scheme
+#coincides
+!esol

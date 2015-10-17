@@ -1,0 +1,307 @@
+======= Finite difference methods for 2D and 3D wave equations =======
+label{wave:2D3D}
+
+A natural next step is to consider extensions of the methods for
+various
+variants of the one-dimensional wave equation to two-dimensional (2D) and
+three-dimensional (3D) versions of the wave equation.
+
+===== Multi-dimensional wave equations =====
+label{wave:2D3D:models}
+
+The general wave equation in $d$ space dimensions, with constant
+wave velocity $c$,
+can be written in the compact form
+
+!bt
+\begin{equation}
+\frac{\partial^2 u}{\partial t^2} = c^2\nabla^2 u\hbox{ for }\xpoint\in\Omega\subset\Real^d,\ t\in (0,T] ,
+label{wave:2D3D:model1}
+\end{equation}
+!et
+where
+
+!bt
+\begin{equation*} \nabla^2 u = \frac{\partial^2 u}{\partial x^2} +
+\frac{\partial^2 u}{\partial y^2} ,\end{equation*}
+!et
+in a 2D problem ($d=2$) and
+
+!bt
+\begin{equation*} \nabla^2 u = \frac{\partial^2 u}{\partial x^2} +
+\frac{\partial^2 u}{\partial y^2} + \frac{\partial^2 u}{\partial z^2},
+\end{equation*}
+!et
+in three space dimensions $d=3$).
+
+Many applications involve variable coefficients, and the general
+wave equation in $d$ dimensions is in this case written as
+
+!bt
+\begin{equation}
+\varrho\frac{\partial^2 u}{\partial t^2} = \nabla\cdot (q\nabla u) + f\hbox{ for }\xpoint\in\Omega\subset\Real^d,\ t\in (0,T],
+label{wave:2D3D:model2}
+\end{equation}
+!et
+which in, e.g.,  2D becomes
+
+!bt
+\begin{equation}
+\varrho(x,y)
+\frac{\partial^2 u}{\partial t^2} =
+\frac{\partial}{\partial x}\left( q(x,y)
+\frac{\partial u}{\partial x}\right)
++
+\frac{\partial}{\partial y}\left( q(x,y)
+\frac{\partial u}{\partial y}\right)
++ f(x,y,t)
+\tp
+\end{equation}
+!et
+To save some writing and space we may use the index notation, where
+subscript $t$, $x$, or $y$ means differentiation with respect
+to that coordinate. For example,
+
+!bt
+\begin{align*}
+\frac{\partial^2 u}{\partial t^2} &= u_{tt},\\
+\frac{\partial}{\partial y}\left( q(x,y)
+\frac{\partial u}{\partial y}\right) &= (q u_y)_y
+\tp
+\end{align*}
+!et
+These comments extend straightforwardly to 3D, which means that
+the 3D versions of the
+two wave PDEs, with and without variable coefficients,
+can with be stated as
+
+!bt
+\begin{align}
+u_{tt} &= c^2(u_{xx} + u_{yy} + u_{zz}) + f,
+label{wave:2D3D:model1:v2}\\
+\varrho u_{tt} &= (q u_x)_x + (q u_z)_z + (q u_z)_z + f,
+label{wave:2D3D:model2:v2}
+\end{align}
+!et
+where the index notation for differentiation has been used.
+
+At *each point* of the boundary $\partial\Omega$ (of $\Omega$) we need
+*one* boundary condition involving the unknown $u$.
+The boundary conditions are of three principal types:
+
+  o $u$ is prescribed ($u=0$ or a known time variation of $u$ at
+    the boundary points, e.g.,
+    modeling an incoming wave),
+  o $\partial u/\partial n = \normalvec\cdot\nabla u$ is prescribed
+    (zero for reflecting boundaries),
+  o an open boundary condition (also called radiation condition)
+    is specified to let waves travel undisturbed out of the domain,
+    see Exercise ref{wave:app:exer:radiationBC} for details.
+
+All the listed wave equations with *second-order* derivatives in
+time need *two* initial conditions:
+
+  o $u=I$,
+  o $u_t = V$.
+
+===== Mesh =====
+label{wave:2D3D:mesh}
+
+We introduce a mesh in time and in space. The mesh in time consists
+of time points
+
+!bt
+\[ t_0=0 < t_1 <\cdots < t_{N_t},\]
+!et
+
+often with a constant
+spacing $\Delta t= t_{n+1}-t_{n}$, $n\in\setl{\It}$.
+
+Finite difference methods are easy to implement on simple
+rectangle- or box-shaped
+domains. More complicated shapes of the domain
+require substantially more advanced techniques and
+implementational efforts. On a rectangle- or box-shaped domain,
+mesh points are introduced separately in the various space directions:
+
+!bt
+\begin{align*}
+&x_0 < x_1 <\cdots < x_{N_x}  \hbox{ in the }x \hbox{ direction},\\
+&y_0 < y_1 <\cdots < y_{N_y}  \hbox{ in the }y \hbox{ direction},\\
+&z_0 < z_1 <\cdots < z_{N_z}  \hbox{ in the }z \hbox{ direction}\tp
+\end{align*}
+!et
+We can write a general mesh point as $(x_i,y_j,z_k,t_n)$, with
+$i\in\Ix$, $j\in\Iy$, $k\in\Iz$, and $n\in\It$.
+
+It is a very common choice to use constant mesh spacings:
+$\Delta x = x_{i+1}-x_{i}$, $i\in\setl{\Ix}$,
+$\Delta y = y_{j+1}-y_{j}$, $j\in\setl{\Iy}$, and
+$\Delta z = z_{k+1}-z_{k}$, $k\in\setl{\Iz}$.
+With equal mesh spacings one often introduces
+$h = \Delta x = \Delta y =\Delta z$.
+
+The unknown $u$ at mesh point $(x_i,y_j,z_k,t_n)$ is denoted by
+$u^{n}_{i,j,k}$. In 2D problems we just skip the $z$ coordinate
+(by assuming no variation in that direction: $\partial/\partial z=0$)
+and write $u^n_{i,j}$.
+
+
+===== Discretization =====
+label{wave:2D3D:discretization}
+
+Two- and three-dimensional wave equations are easily discretized by
+assembling building blocks for discretization of
+1D wave equations, because the multi-dimensional versions just contain
+terms of the same type as those in 1D.
+
+=== Discretizing the PDEs ===
+
+Equation (ref{wave:2D3D:model1:v2}) can be discretized as
+
+!bt
+\begin{equation}
+[D_tD_t u = c^2(D_xD_x u + D_yD_yu + D_zD_z u) + f]^n_{i,j,k}
+\tp
+\end{equation}
+!et
+A 2D version might be instructive to write out in detail:
+
+!bt
+\[
+[D_tD_t u = c^2(D_xD_x u + D_yD_yu) + f]^n_{i,j,k},
+\]
+!et
+which becomes
+
+!bt
+\[
+\frac{u^{n+1}_{i,j} - 2u^{n}_{i,j} + u^{n-1}_{i,j}}{\Delta t^2}
+= c^2
+\frac{u^{n}_{i+1,j} - 2u^{n}_{i,j} + u^{n}_{i-1,j}}{\Delta x^2}
++ c^2
+\frac{u^{n}_{i,j+1} - 2u^{n}_{i,j} + u^{n}_{i,j-1}}{\Delta y^2}
++ f^n_{i,j},
+\]
+!et
+Assuming, as usual, that all values at time levels $n$ and $n-1$
+are known, we can solve for the only unknown $u^{n+1}_{i,j}$. The
+result can be compactly written as
+
+!bt
+\begin{equation}
+u^{n+1}_{i,j} = 2u^n_{i,j} + u^{n-1}_{i,j} + c^2\Delta t^2[D_xD_x u + D_yD_y u]^n_{i,j}\tp
+label{wave:2D3D:models:unp1}
+\end{equation}
+!et
+
+As in the 1D case, we need to develop a special formula for $u^1_{i,j}$
+where we combine the general scheme for $u^{n+1}_{i,j}$, when $n=0$,
+with the discretization of the initial condition:
+
+!bt
+\[ [D_{2t}u = V]^0_{i,j}\quad\Rightarrow\quad u^{-1}_{i,j} = u^1_{i,j} - 2\Delta t V_{i,j}
+\tp
+\]
+!et
+The result becomes, in compact form,
+
+!bt
+\begin{equation}
+u^{n+1}_{i,j} = u^n_{i,j} -2\Delta V_{i,j} + {\half}
+c^2\Delta t^2[D_xD_x u + D_yD_y u]^n_{i,j}\tp
+label{wave:2D3D:models:u1}
+\end{equation}
+!et
+
+The PDE (ref{wave:2D3D:model2:v2})
+with variable coefficients is discretized term by term using
+the corresponding elements from the 1D case:
+
+!bt
+\begin{equation}
+[\varrho D_tD_t u = (D_x\overline{q}^x D_x u +
+D_y\overline{q}^y D_yu + D_z\overline{q}^z D_z u) + f]^n_{i,j,k}
+\tp
+\end{equation}
+!et
+When written out and solved for the unknown $u^{n+1}_{i,j,k}$, one gets the
+scheme
+
+!bt
+\begin{align*}
+u^{n+1}_{i,j,k} &= - u^{n-1}_{i,j,k}  + 2u^{n}_{i,j,k} + \\
+&\quad \frac{1}{\varrho_{i,j,k}}\frac{1}{\Delta x^2} ( \half(q_{i,j,k} + q_{i+1,j,k})(u^{n}_{i+1,j,k} - u^{n}_{i,j,k}) - \\
+&\qquad\qquad \half(q_{i-1,j,k} + q_{i,j,k})(u^{n}_{i,j,k} - u^{n}_{i-1,j,k})) + \\
+&\quad \frac{1}{\varrho_{i,j,k}}\frac{1}{\Delta x^2} ( \half(q_{i,j,k} + q_{i,j+1,k})(u^{n}_{i,j+1,k} - u^{n}_{i,j,k}) - \\
+&\qquad\qquad\half(q_{i,j-1,k} + q_{i,j,k})(u^{n}_{i,j,k} - u^{n}_{i,j-1,k})) + \\
+&\quad \frac{1}{\varrho_{i,j,k}}\frac{1}{\Delta x^2} ( \half(q_{i,j,k} + q_{i,j,k+1})(u^{n}_{i,j,k+1} - u^{n}_{i,j,k}) -\\
+&\qquad\qquad \half(q_{i,j,k-1} + q_{i,j,k})(u^{n}_{i,j,k} - u^{n}_{i,j,k-1})) + \\
+&\quad \Delta t^2 f^n_{i,j,k}
+\tp
+\end{align*}
+!et
+
+Also here we need to develop a special formula for $u^1_{i,j,k}$
+by combining the scheme for $n=0$ with the discrete initial condition,
+which is just a matter of inserting
+$u^{-1}_{i,j,k}=u^1_{i,j,k} - 2\Delta tV_{i,j,k}$ in the scheme
+and solving for $u^1_{i,j,k}$.
+
+=== Handling boundary conditions where $u$ is known ===
+
+The schemes listed above are valid for the internal points in the mesh.
+After updating these, we need to visit all the mesh points at the
+boundaries and set the prescribed $u$ value.
+
+=== Discretizing the Neumann condition ===
+
+The condition $\partial u/\partial n = 0$ was implemented in 1D by
+discretizing it with a $D_{2x}u$ centered difference, followed by
+eliminating the fictitious $u$ point outside the mesh by using the
+general scheme at the boundary point. Alternatively, one can introduce
+ghost cells and update a ghost value for use in the Neumann
+condition. Exactly the same ideas are reused in multiple dimensions.
+
+Consider the condition  $\partial u/\partial n = 0$
+at a boundary $y=0$ of a rectangular domain $[0, L_x]\times [0,L_y]$ in 2D.
+The normal direction is then in $-y$ direction,
+so
+!bt
+\[ \frac{\partial u}{\partial n} = -\frac{\partial u}{\partial y},\]
+!et
+and we set
+
+!bt
+\[ [-D_{2y} u = 0]^n_{i,0}\quad\Rightarrow\quad \frac{u^n_{i,1}-u^n_{i,-1}}{2\Delta y} = 0
+\tp
+\]
+!et
+From this it follows that $u^n_{i,-1}=u^n_{i,1}$.
+The discretized PDE at the boundary point $(i,0)$ reads
+
+!bt
+\[
+\frac{u^{n+1}_{i,0} - 2u^{n}_{i,0} + u^{n-1}_{i,0}}{\Delta t^2}
+= c^2
+\frac{u^{n}_{i+1,0} - 2u^{n}_{i,0} + u^{n}_{i-1,0}}{\Delta x^2}
++ c^2
+\frac{u^{n}_{i,1} - 2u^{n}_{i,0} + u^{n}_{i,-1}}{\Delta y^2}
++ f^n_{i,j},
+\]
+!et
+We can then just insert $u^n_{i,1}$ for $u^n_{i,-1}$ in this equation
+and solve for the boundary value $u^{n+1}_{i,0}$, just as was done in 1D.
+
+From these calculations, we see a pattern:
+the general scheme applies at the boundary $j=0$ too if we just
+replace $j-1$ by $j+1$. Such a pattern is particularly useful for
+implementations. The details follow from the explained 1D case
+in Section ref{wave:pde2:Neumann:impl}.
+
+The alternative approach to eliminating fictitious values outside the
+mesh is to have $u^n_{i,-1}$ available as a ghost value.  The mesh is
+extended with one extra line (2D) or plane (3D) of ghost cells at a
+Neumann boundary. In the present example it means that we need a line
+with ghost cells below the $y$ axis.  The ghost values must be updated
+according to $u^{n+1}_{i,-1}=u^{n+1}_{i,1}$.
