@@ -1,0 +1,103 @@
+## File used to create a complete index.html table of contents
+## for all versions of all chapters for a book project
+
+# #include "mako_code.txt"
+
+<%
+# List the chapters that are ready for publishing
+published = ['vib', 'wave', 'softeng2', 'diffu', 'trunc']  #, 'staggered']
+
+import os
+def has_slides(ch):
+    """Can we find slides #  for the given chapter?"""
+    return os.path.isdir(os.path.join(ch, 'slides-'+ ch))
+
+# Error check (if chapters above is appropriately defined)
+for name in published:
+    if name not in chapters:
+        print """
+*** error: 'chapters' dictionary in index_html_files_do.txt does not
+    contain the key "%s". Fill in that chapter nickname and the
+    corresponding chapter title!
+""" % name
+        import sys; sys.exit(1)
+
+pub_url = '.'
+%>
+
+TITLE: Finite Difference Computing with Exponential Decay Models
+
+TOC: off
+
+## Mako function: list various formats for a chapter text
+<%def name="text_types(name)">
+
+ * LaTeX PDF:
+   "for printing": "${pub_url}/${name}/pdf/${name}-4print.pdf",
+   "for electronic viewing": "${pub_url}/${name}/pdf/${name}.pdf"
+ * HTML:
+   "plain bootstrap style": "${pub_url}/${name}/html/${name}-bootstrap.html",
+   "bootswatch readable style": "${pub_url}/${name}/html/${name}-readable.html",
+   "solarized color style": "${pub_url}/${name}/html/${name}-solarized.html",
+   "Sphinx style": "${pub_url}/${name}/html/sphinx/index.html"
+</%def>
+
+## Mako function: list various formats for a chapter's slides
+<%def name="slide_types(name)">
+
+ * HTML5:
+   "reveal.js dark": "${pub_url}/${name}/html/slides_${name}-reveal.html",
+   "reveal.js beige": "${pub_url}/${name}/html/slides_${name}-reveal-beige.html",
+   "remark": "${pub_url}/${name}/html/slides_${name}-remark.html",
+   "plain HTML one big file": "${pub_url}/${name}/html/slides_${name}-1.html",
+   "solarized HTML one big file": "${pub_url}/${name}/html/slides_${name}-solarized.html"
+ * LaTeX Beamer:
+   "slides for electronic viewing": "${pub_url}/${name}/pdf/slides_${name}-beamer.pdf",
+   "handouts": "${pub_url}/${name}/pdf/slides_${name}-beamer-handouts2x3.pdf"
+</%def>
+
+!split
+
+# #ifdef CHAPTERS
+======= Finite difference comptuing with exponential decay models =======
+# #endif
+
+ * Traditional LaTeX book: "for electronic viewing": "book/pdf/decay-book-4screen.pdf", "for printing": "book/pdf/decay-book-4print.pdf", "for printing w/2 pages per sheet": "book/pdf/decay-book-4print-2up.pdf"
+ * "Sphinx ebook": "book/sphinx/index.html"
+ * "HTML Bootstrap ebook": "book/html/decay-book.html"
+
+# #ifdef CHAPTERS
+% for ch in published:
+===== ${chapters[ch]} =====
+
+${text_types(ch)}
+
+% endfor
+# #endif
+
+======= Study guides (slides for lectures) =======
+
+The study guides are summaries of the main points in the course
+material. The guides are made such that they can be used as
+slides in lectures.
+
+% for ch in published:
+% if has_slides(ch):
+===== ${chapters[ch]} =====
+
+${slide_types(ch)}
+
+% endif
+% endfor
+
+!bwarning
+The PDF files are based on LaTeX and have seldom technical
+failures that cannot be easily corrected.
+The HTML-based files, however, apply MathJax
+for rendering LaTeX formulas, and sometimes this technology gives rise
+to unexpected failures (e.g.,
+incorrect rendering in a web page despite correct LaTeX syntax in the
+formula). Consult the corresponding PDF
+file if you find missing or incorrectly rendered
+formulas in HTML or Sphinx files.
+!ewarning

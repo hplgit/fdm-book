@@ -51,7 +51,7 @@ doconce replace 'newcommand{\I}' 'renewcommand{\I}' newcommands_keep.tex
 # TASKS: generate book with solutions, also in the html version
 # Make pdfnup with two-pages per sheet
 
-opt1="CHAPTER=$CHAPTER BOOK=$BOOK APPENDIX=$APPENDIX"
+opt1="CHAPTER=$CHAPTER BOOK=$BOOK APPENDIX=$APPENDIX $encoding"
 opt2="--without_solutions --without_answers"
 opt2=
 devices="screen paper"
