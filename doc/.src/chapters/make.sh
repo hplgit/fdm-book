@@ -149,12 +149,11 @@ if [ $? -ne 0 ]; then echo "doconce could not compile slides - abort"; exit; fi
 fi
 rsync="rsync -rtDvz -u -e ssh -b --exclude-from=$HOME/1/.rsyncexclude --delete --force "
 
-#repo=~/vc/fdm-book/doc
-repo=../../..
+doc=../../..
 if [ $publish -eq 1 ]; then
 # Copy compiled documents to destination repo
-dest=$repo/pub
-dest_sol=$repo/Trash
+dest=$doc/pub
+dest_sol=$doc/Trash
 if [ ! -d $dest/${nickname} ]; then
 echo "making directory ${dest}/${nickname}"
 mkdir $dest/${nickname}
@@ -205,7 +204,7 @@ for dir in $dirs; do
 done
 
 # Copy slides source
-#dest=$repo/doc/slides/src/$name
+#dest=$doc/doc/slides/src/$name
 #if [ ! -d $dest ]; then
 #  mkdir $dest
 #fi
@@ -221,7 +220,7 @@ rm -f ../index.*
 
 # Copy src
 if [ $# -ge 3 ]; then
-dest=$repo/src
+dest=../../../../src
 if [ ! -d $dest/$nickname ]; then
   mkdir $dest/$nickname
 fi
