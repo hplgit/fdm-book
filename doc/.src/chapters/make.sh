@@ -221,6 +221,9 @@ rm -f ../index.*
 # Copy src
 if [ $# -ge 3 ]; then
 dest=../../../../src
+if [ ! -d $dest ]; then
+  mkdir $dest
+fi
 if [ ! -d $dest/$nickname ]; then
   mkdir $dest/$nickname
 fi
