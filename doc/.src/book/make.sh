@@ -8,7 +8,7 @@
 set -x
 
 name=book
-topicname=decay
+topicname=fdm
 
 encoding="--encoding=utf-8"
 
@@ -108,7 +108,7 @@ doconce latex_problems $name.log 10
 # load tmp_stripped_book.do.txt into Word
 
 # Publish
-repo=~/vc/${topicname}-book/
+repo=../../..
 dest=${repo}/doc/pub/book
 if [ ! -d $dest ]; then mkdir $dest; fi
 if [ ! -d $dest/pdf ]; then mkdir $dest/pdf; fi

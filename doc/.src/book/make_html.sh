@@ -16,12 +16,12 @@ function system {
 }
 
 pwd
-preprocess -DFORMAT=html ../decay-chapters/newcommands_keep.p.tex > newcommands_keep.tex
+preprocess -DFORMAT=html ../chapters/newcommands_keep.p.tex > newcommands_keep.tex
 
-opt="CHAPTER=$CHAPTER BOOK=$BOOK APPENDIX=$APPENDIX"
+opt="CHAPTER=$CHAPTER BOOK=$BOOK APPENDIX=$APPENDIX --encoding=utf-8"
 
 # Compile Bootstrap HTML
-html=decay-book
+html=fdm-book
 system doconce format html $name $opt --html_style=bootswatch_readable --html_code_style=inherit --html_output=$html --without_solutions --without_answers
 system doconce split_html $html.html
 
@@ -30,12 +30,12 @@ hash=82dee82e1274a586571086dca04d00308d3a0d86  # "book with solutions"
 html=.trash${hash}
 system doconce format html $name $opt --html_style=bootswatch_readable --html_code_style=inherit --html_output=$html #--without_solutions --without_answers
 system doconce split_html $html.html
-cp password.html decay-book-sol.html
-doconce replace DESTINATION "$html" decay-book-sol.html
-doconce replace PASSWORD "d!e!cay" decay-book-sol.html
+cp password.html fdm-book-sol.html
+doconce replace DESTINATION "$html" fdm-book-sol.html
+doconce replace PASSWORD "d!e!cay" fdm-book-sol.html
 
 # Compile solarized HTML
-html=decay-book-solarized
+html=fdm-book-solarized
 system doconce format html $name $opt --html_style=solarized3 --html_output=$html --without_solutions --without_answers
 system doconce split_html $html.html --nav_button=text
 
@@ -47,7 +47,7 @@ system doconce sphinx_dir theme=$theme dirname=sphinx-${theme} $name
 system python automake_sphinx.py
 
 # Publish
-repo=~/vc/decay-book/
+repo=~/vc/fdm-book/
 dest=${repo}/doc/pub/book
 if [ ! -d $dest ]; then mkdir $dest; fi
 if [ ! -d $dest/html ]; then mkdir $dest/html; fi
