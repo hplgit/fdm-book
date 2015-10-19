@@ -47,7 +47,7 @@ system doconce sphinx_dir theme=$theme dirname=sphinx-${theme} $name
 system python automake_sphinx.py
 
 # Publish
-repo=~/vc/fdm-book/
+repo=../../..
 dest=${repo}/doc/pub/book
 if [ ! -d $dest ]; then mkdir $dest; fi
 if [ ! -d $dest/html ]; then mkdir $dest/html; fi
