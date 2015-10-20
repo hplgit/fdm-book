@@ -1,5 +1,5 @@
 
-======= The 1D diffusion equation =======
+======= An explicit method for the 1D diffusion equation =======
 
 idx{diffusion equation, 1D}
 idx{heat equation, 1D}
@@ -65,7 +65,7 @@ space dimension can then be specified as
 !bt
 \begin{alignat}{3}
 \frac{\partial u}{\partial t} &=
-\dfc \frac{\partial^2 u}{\partial x^2}, \quad & x\in (0,L),\ t\in (0,T]
+\dfc \frac{\partial^2 u}{\partial x^2} + f, \quad & x\in (0,L),\ t\in (0,T]
 label{diffu:pde1}\\
 u(x,0) &= I(x), \quad & x\in [0,L]
 label{diffu:pde1:ic:u}\\
@@ -80,7 +80,7 @@ label{diffu:pde1:bc:L}
 !bt
 \begin{align}
 \frac{\partial u}{\partial t} &=
-\dfc \frac{\partial^2 u}{\partial x^2}, \quad x\in (0,L),\ t\in (0,T]
+\dfc \frac{\partial^2 u}{\partial x^2} + f, \quad x\in (0,L),\ t\in (0,T]
 label{diffu:pde1}\\
 u(x,0) &= I(x), \quad  x\in [0,L]
 label{diffu:pde1:ic:u}\\
@@ -97,7 +97,8 @@ Equation (ref{diffu:pde1}) is known as a one-dimensional
 only one *initial condition* is needed, while the second-order
 derivative in space leads to a demand for two *boundary conditions*.
 The parameter $\dfc$ must be given and is referred to as the
-*diffusion coefficient*.
+*diffusion coefficient*. We have added a source term $f=f(x,t)$ for
+convenience when testing implementations.
 
 Diffusion equations like (ref{diffu:pde1}) have a wide range of
 applications throughout physical, biological, and financial sciences.
@@ -109,6 +110,7 @@ time $t$.
 ===== Forward Euler scheme =====
 label{diffu:pde1:FE}
 idx{explicit discretization methods}
+idx{Forward Euler scheme}
 
 The first step in the discretization procedure is to replace the
 domain $[0,L]\times [0,T]$ by a set of mesh points. Here we apply
@@ -130,7 +132,7 @@ leads to the equation
 !bt
 \begin{equation}
 \frac{\partial}{\partial t} u(x_i, t_n) =
-\dfc\frac{\partial^2}{\partial x^2} u(x_i, t_n),
+\dfc\frac{\partial^2}{\partial x^2} u(x_i, t_n) + f(x_i,t_n),
 label{diffu:pde1:step2}
 \end{equation}
 !et
@@ -141,7 +143,7 @@ space:
 
 !bt
 \begin{equation}
-[D_t^+ u = \dfc D_xD_x u]^n_i \tp
+[D_t^+ u = \dfc D_xD_x u + f]^n_i \tp
 label{diffu:pde1:step3a}
 \end{equation}
 !et
@@ -149,7 +151,7 @@ Written out,
 
 !bt
 \begin{equation}
-\frac{u^{n+1}_i-u^n_i}{\Delta t} = \dfc \frac{u^{n}_{i+1} - 2u^n_i + u^n_{i-1}}{\Delta x^2} \tp
+\frac{u^{n+1}_i-u^n_i}{\Delta t} = \dfc \frac{u^{n}_{i+1} - 2u^n_i + u^n_{i-1}}{\Delta x^2} + f_i^n\tp
 label{diffu:pde1:step3b}
 \end{equation}
 !et
@@ -163,8 +165,15 @@ Solving with respect to this unknown is easy:
 !bt
 \begin{equation}
 u^{n+1}_i = u^n_i + F\left(
-u^{n}_{i+1} - 2u^n_i + u^n_{i-1}\right)\tp
+u^{n}_{i+1} - 2u^n_i + u^n_{i-1}\right) + \Delta t f_i^n,
 label{diffu:pde1:step4}
+\end{equation}
+!et
+where we have introduced the *mesh Fourier number*:
+
+!bt
+\begin{equation}
+F = \dfc\frac{\Delta t}{\Delta x^2}\tp
 \end{equation}
 !et
 
@@ -203,7 +212,8 @@ for i in range(0, Nx+1):
 for n in range(0, Nt):
     # Compute u at inner mesh points
     for i in range(1, Nx):
-        u[i] = u_1[i] + F*(u_1[i-1] - 2*u_1[i] + u_1[i+1])
+        u[i] = u_1[i] + F*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) + \
+	       f(x[i], t[n])
 
     # Insert boundary conditions
     u[0] = 0;  u[Nx] = 0
@@ -211,21 +221,293 @@ for n in range(0, Nt):
     # Update u_1 before next step
     u_1[:]= u
 !ec
+Note that we use `a` for $\dfc$ in the code, motivated by easy visual
+mapping between the variable name and the mathematical symbol in formulas.
 
-The program "`diffu1D_u0.py`": "${src_diffu}/diffu1D_u0.py"
-contains a function `solver_FE` for solving the 1D diffusion equation
-with $u=0$ on the boundary. The functions `plug` and `gaussian`
-runs the case with $I(x)$ as a discontinuous plug or a smooth
-Gaussian function, respectively. Experiments with these two functions
-reveal some important observations:
+We need to state already now that the shown algorithm does not
+produce meaningful results unless $F\leq 1/2$. Why is explained in
+Section ref{diffu:pde1:analysis}.
+
+===== Implementation =====
+label{diffu:pde1:FE:code}
+
+The file "`diffu1D_u0.py`": "${src_diffu}/diffu1D_u0.py"
+contains a complete function `solver_FE_simple`
+for solving the 1D diffusion equation with $u=0$ on the boundary
+as specified in the algorithm above:
+
+@@@CODE src-diffu/diffu1D_u0.py fromto: import numpy@def solver_FE\(
+
+A faster version, based on vectorization of the finite difference
+scheme, is available in the function `solver_FE`.
+The vectorized version replaces the explicit loop
+
+!bc pycod
+for i in range(1, Nx):
+    u[i] = u_1[i] + F*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) \
+           + dt*f(x[i], t[n])
+!ec
+by arithmetics on displaced slices of the `u` array:
+
+!bc pycod
+u[1:Nx] = u_1[1:Nx] + F*(u_1[0:Nx-1] - 2*u_1[1:Nx] + u_1[2:Nx+1]) \
+          + dt*f(x[1:Nx], t[n])
+# or
+u[1:-1] = u_1[1:-1] + F*(u_1[0:-2] - 2*u_1[1:-1] + u_1[2:]) \
+          + dt*f(x[1:-1], t[n])
+!ec
+For example,
+the
+vectorized version runs 70 times faster than the scalar version
+in a case with 100 time steps and a spatial mesh of $10^5$ cells.
+
+The `solver_FE` function also features a callback function such that the
+user can process the solution at each time level. The callback
+function looks like `user_action(u, x, t, n)`, where `u` is the array
+containing the solution at time level `n`, `x` holds all the
+spatial mesh points, while `t` holds all the temporal mesh points.
+Apart from the vectorized loop over the spatial mesh points, the
+callback function, and a bit more complicated setting of the source
+`f` it is not specified (`None`), the `solver_FE` is identical to
+`solver_FE_simple` above:
+
+@@@CODE src-diffu/diffu1D_u0.py fromto: def solver_FE\(@def solver_BE_simple
+
+===== Verification =====
+label{diffu:pde1:FE:verify}
+
+Before thinking about running the functions in the previous section, we need to
+construct a suitable test example for verification. It appears that
+a manufactured solution
+that is linear in time and at most quadratic in space fulfills
+the Forward Euler scheme exactly. With the restriction that $u=0$ for $x=0,L$,
+we can try the solution
+
+!bt
+\[ u(x,t) = 5tx(L-x)\tp\]
+!et
+Inserted in the PDE, it requires a source term
+
+!bt
+\[ f(x,t) = 10\dfc t + 5x(L-x)\tp\]
+!et
+With the formulas from Appendix ref{sec:form:fdtn} we can easily check
+that the manufactured `u` fulfills the scheme:
+
+!bt
+\begin{align*}
+\lbrack D_t^+ u = \dfc D_x_D_x u + f\rbrack^n_i &=
+\lbrack 5x(L-x)D_t^+ t  = 5 t\dfc D_x_D_x (xL-x^2) + 10\dfc t + 5x(L-x)\rbrack^n_i\\
+&=
+\lbrack 5x(L-x)  = 5 t\dfc (-2) + 10\dfc t + 5x(L-x) \rbrack^n_i\tp
+\end{align*}
+!et
+
+The computation of the source term, given any $u$,
+is easily automated with SymPy:
+
+!bc pycod
+import sympy as sym
+x, t, a, L = sym.symbols('x t a L')
+u = x*(L-x)*5*t
+
+def pde(u):
+    return sym.diff(u, t) - a*sym.diff(u, x, x)
+
+f = sym.simplify(pde(u))
+!ec
+Now we can choose any expression for `u` and automatically
+get the suitable source term `f`.
+
+The numerical code will need to access the `u` and `f` above
+as Python function. The exact solution is wanted as a Python
+function `u_exact(x, t)`, while the source term is wanted as
+`f(x, t)`. The parameters `a` and `L` in `u` and `f` above
+are symbols and must be replaced by `float` objects in a Python
+function. This can be done by redefining `a` and `L` as
+`float` objects and performing substitutions of symbols by
+numbers in `u` and `f`. The appropriate code looks like this:
+
+!bc pycod
+a = 0.5
+L = 1.5
+u_exact = sym.lambdify(
+    [x, t], u.subs('L', L).subs('a', a), modules='numpy')
+f = sym.lambdify(
+    [x, t], f.subs('L', L).subs('a', a), modules='numpy')
+I = lambda x: u_exact(x, 0)
+!ec
+Here we also make a function `I` for the initial condition.
+
+The idea now is that our manufactured solution should be
+exactly reproduced by the code (to machine precision).
+For this purpose we make a test function for comparing
+the exact and numerical solutions at the end of the
+time interval:
+
+!bc pycod
+def test_solver_FE():
+    # Define u_exact, f, I as explained above
+
+    dx = L/3  # 3 cells
+    F = 0.5
+    dt = F*dx**2
+
+    u, x, t, cpu = solver_FE_simple(
+        I=I, a=a, f=f, L=L, dt=dt, F=F, T=2)
+    u_e = u_exact(x, t[-1])
+    diff = abs(u_e - u).max()
+    tol = 1E-14
+    assert diff < tol, 'max diff solver_FE_simple: %g' % diff
+
+    u, x, t, cpu = solver_FE(
+        I=I, a=a, f=f, L=L, dt=dt, F=F, T=2,
+        user_action=None, version='scalar')
+    u_e = u_exact(x, t[-1])
+    diff = abs(u_e - u).max()
+    tol = 1E-14
+    assert diff < tol, 'max diff solver_FE, scalar: %g' % diff
+
+    u, x, t, cpu = solver_FE(
+        I=I, a=a, f=f, L=L, dt=dt, F=F, T=2,
+        user_action=None, version='vectorized')
+    u_e = u_exact(x, t[-1])
+    diff = abs(u_e - u).max()
+    tol = 1E-14
+    assert diff < tol, 'max diff solver_FE, vectorized: %g' % diff
+!ec
+We emphasize that the value `F=0.5` is critical: the tests above
+will fail if `F` has a larger value (this is because the Forward
+Euler scheme is unstable for $F>1/2$).
+
+===== Numerical experiments =====
+label{diffu:pde1:FE:experiments}
+
+When a test function like the one above runs silently without
+errors, we have some evidence for a correct implementation of the
+numerical method.
+The next step is to do some experiments with more interesting solutions.
+
+We target a scaled diffusion problem where $x/L$ is a new spatial
+coordinate and $\dfc t/L^2$ is a new time coordinate. The source term
+$f$ is omitted, and $u$ is scaled by $\max_{x\in [0,L]}|I(x)|$
+(see ref[Section ref{sec:scale:diffu}][ in cite{Langtangen_scaling}]["Scaling of the diffusion equation": "http://hplgit.github.io/scaling-book/doc/pub/book/sphinx/._book007.html" in cite{Langtangen_scaling}] for details).
+The governing PDE is then
+
+!bt
+\[ \frac{\partial u}{\partial t} = \frac{\partial^2 u}{\partial x^2},\]
+!et
+in the spatial domain $[0,L]$, with boundary conditions $u(0)=u(1)=0$.
+Two initial conditions will be tested: a discontinuous plug,
+
+!bt
+\[ I(x) = \left\lbrace\begin{array}{ll}
+0, & |x-L/2| > 0.1\\
+1, & \hbox{otherwise}
+\end{array}\right.\]
+!et
+and a smooth Gaussian function,
+
+!bt
+\[ I(x) = e^{-\frac{1}{2\sigma^2}(x-L/2)^2}\tp\]
+!et
+The functions `plug` and `gaussian` in "`diffu1D_u0.py`":
+"${src_diffu}/diffu1D_u0.py" run the two cases,
+respectively:
+
+@@@CODE src-diffu/diffu1D_u0.py fromto: def plug@def expsin
+These functions make use of the function `viz` for running the
+solver and visualizing the solution using a callback function
+with plotting:
+
+@@@CODE src-diffu/diffu1D_u0.py fromto: def viz@def plug
+Notice that this `viz` function stores all the solutions in a
+list `solutions` in the callback function. Modern computers have
+hardly any problem with storing a lot of such solutions for moderate
+values of $N_x$ in 1D problems, but for 2D and 3D problems, this
+technique cannot be used and solutions must be stored in files.
+
+[hpl: Better to show the scalable file solution here?]
+
+Our experiments employs a time step $\Delta t = 0.0002$ and
+simulate for $t\in [0,0.1]$. First we try the highest value of
+$F$: $F=0.5$. This resolution corresponds to
+$N_x=50$. A possible terminal command is
+
+!bc sys
+Terminal> python -c 'from diffu1D_u0 import gaussian
+> gaussian("solver_FE", F=0.5, dt=0.0002)'
+!ec
+
+The $u(x,t)$ curve as a function of $x$ is shown
+in Figure ref{diffu:pde1:FE:fig:F=0.5} at four time
+% if FORMAT == "pdflatex":
+levels (see also a
+"movie": "${doc_notes}/mov-diffu/diffu1D_u0_FE_plug/movie.ogg").
+% else:
+levels.
+
+MOVIE: [mov-diffu/diffu1D_u0_FE_plug/movie.ogg]
+% endif
+
+We see that the curves have saw-tooth waves in the beginning of the
+simulation. This non-physical noise is smoothed out with time, but
+solutions of the diffusion equations are known to be smooth, and
+this numerical solution is definitely not smooth.
+Lowering $F$ helps: $F\leq 0.25$ gives a smooth solution, see
+% if FORMAT == "pdflatex":
+Figure ref{diffu:pde1:FE:fig:F=0.25} (and a
+"movie": "${doc_notes}/mov-diffu/diffu1D_u0_FE_plug_F025/movie.ogg").
+% else:
+Figure ref{diffu:pde1:FE:fig:F=0.25}.
+
+MOVIE: [mov-diffu/diffu1D_u0_FE_plug_F025/movie.ogg]
+% endif
+
+Increasing $F$ slightly beyond the limit 0.5, to $F=0.51$,
+gives growing, non-physical instabilities,
+as seen in Figure ref{diffu:pde1:FE:fig:F=0.51}.
+
+FIGURE: [fig-diffu/plug_FE_F05, width=800 frac=1] Forward Euler scheme for $F=0.5$. label{diffu:pde1:FE:fig:F=0.5}
+
+FIGURE: [fig-diffu/plug_FE_F025, width=800 frac=1] Forward Euler scheme for $F=0.25$. label{diffu:pde1:FE:fig:F=0.25}
+
+FIGURE: [fig-diffu/plug_FE_F051, width=800 frac=1] Forward Euler scheme for $F=0.51$. label{diffu:pde1:FE:fig:F=0.51}
+
+
+Instead of a discontinuous initial condition we now try the smooth
+Gaussian function for $I(x)$. A simulation for $F=0.5$
+is shown in Figure ref{diffu:pde1:FE:fig:F=0.5}. Now the numerical solution
+is smooth for all times, and this is true for any $F\leq 0.5$.
+
+% if FORMAT != "pdflatex":
+MOVIE: [mov-diffu/diffu1D_u0_FE_gaussian1/movie.ogg]
+% endif
+
+FIGURE: [fig-diffu/gaussian_FE_F05, width=800 frac=1] Forward Euler scheme for $F=0.5$. label{diffu:pde1:FE:fig:F=0.5}
+
+Experiments with these two choices of $I(x)$ reveal some
+important observations:
 
  * The Forward Euler scheme leads to growing solutions if $F>\half$.
  * $I(x)$ as a discontinuous plug leads to a saw tooth-like noise
-   for $F=\half$, see "movie": "${doc_notes}/mov-diffu/diffu1D_u0_FE_plug/movie.ogg", which is absent for $F\leq\frac{1}{4}$, see
-   "movie": "${doc_notes}/mov-diffu/diffu1D_u0_FE_plug_F025/movie.ogg".
- * The smooth Gaussian initial function leads to a smooth solution,
-   see "movie": "${doc_notes}/mov-diffu/diffu1D_u0_FE_plug_gaussian1/movie.ogg"
-   for $F=\half$.
+   for $F=\half$, which is absent for $F\leq\frac{1}{4}$.
+ * The smooth Gaussian initial function leads to a smooth solution
+   for all relevant $F$ values ($F\geq \half$).
+
+
+======= Implicit methods for the 1D diffusion equation =======
+
+Simulations with the Forward Euler scheme shows that the time step
+restriction, $F\leq\half$, which means $\Delta t \leq \Delta x^2/(2\dfc)$,
+may be relevant in the beginning of the diffusion process, when the
+solution changes quite fast, but as time increases, the process slows
+down, and a small $\Delta t$ may be inconvenient. By using
+*implicit schemes*, which lead to a coupled system of linear equations
+to be solved at each time level, any size of $\Delta t$ is possible
+(but the accuracy decreases with increasing $\Delta t$).
+The Backward Euler scheme, derived and implemented below, is the
+simplest implicit scheme for the diffusion equation.
 
 ===== Backward Euler scheme =====
 label{diffu:pde1:BE}
@@ -237,7 +519,7 @@ but the same central difference in space:
 
 !bt
 \begin{equation}
-[D_t^- u = D_xD_x u]^n_i,
+[D_t^- u = D_xD_x u + f]^n_i,
 label{diffu:pde1:step3aBE}
 \end{equation}
 !et
@@ -245,7 +527,7 @@ which written out reads
 
 !bt
 \begin{equation}
-\frac{u^{n}_i-u^{n-1}_i}{\Delta t} = \dfc\frac{u^{n}_{i+1} - 2u^n_i + u^n_{i-1}}{\Delta x^2} \tp
+\frac{u^{n}_i-u^{n-1}_i}{\Delta t} = \dfc\frac{u^{n}_{i+1} - 2u^n_i + u^n_{i-1}}{\Delta x^2} + f_i^n\tp
 label{diffu:pde1:step3bBE}
 \end{equation}
 !et
@@ -257,17 +539,18 @@ Let us examine this fact for the case when $N_x=3$. Equation (ref{diffu:pde1:ste
 
 !bt
 \begin{align}
-\frac{u^{n}_1-u^{n-1}_1}{\Delta t} &= \dfc\frac{u^{n}_{2} - 2u^n_1 + u^n_{0}}{\Delta x^2}\\
-\frac{u^{n}_2-u^{n-1}_2}{\Delta t} &= \dfc\frac{u^{n}_{3} - 2u^n_2 + u^n_{1}}{\Delta x^2}
+\frac{u^{n}_1-u^{n-1}_1}{\Delta t} &= \dfc\frac{u^{n}_{2} - 2u^n_1 + u^n_{0}}{\Delta x^2} + f_1^n\\
+\frac{u^{n}_2-u^{n-1}_2}{\Delta t} &= \dfc\frac{u^{n}_{3} - 2u^n_2 + u^n_{1}}{\Delta x^2} + f_2^n
 \end{align}
 !et
 The boundary values $u^n_0$ and $u^n_3$ are known as zero. Collecting the
-unknown new values $u^n_1$ and $u^n_2$ on the left-hand side gives
+unknown new values $u^n_1$ and $u^n_2$ on the left-hand side and multiplying
+by $\Delta t$ gives
 
 !bt
 \begin{align}
-\left(1+  2F\right) u^{n}_1 - F u^{n}_{2}    &= u^{n-1}_1,\\
-- F u^{n}_{1} + \left(1+  2F\right) u^{n}_2  &= u^{n-1}_2\tp
+\left(1+  2F\right) u^{n}_1 - F u^{n}_{2}    &= u^{n-1}_1 + \Delta t f_1^n,\\
+- F u^{n}_{1} + \left(1+  2F\right) u^{n}_2  &= u^{n-1}_2 + \Delta t f_2^n\tp
 \end{align}
 !et
 This is a coupled $2\times 2$ system of algebraic equations for
@@ -280,12 +563,12 @@ the unknowns $u^n_1$ and $u^n_2$. The equivalent matrix form is
 \end{array}\right)
 \left(\begin{array}{c}
 u^{n}_1\\
-u^{n}_{2}\\
+u^{n}_2
 \end{array}\right)
 =
 \left(\begin{array}{c}
-u^{n-1}_1\\
-u^{n-1}_2
+u^{n-1}_1 + \Delta t f_1^n\\
+u^{n-1}_2 + \Delta t f_2^n
 \end{array}\right)
 \]
 !et
@@ -315,15 +598,7 @@ u_{i-1}^{n-1},
 label{diffu:pde1:step4BE}
 \end{equation}
 !et
-for $i=1,\ldots,Nx-1$. Here,
-we have introduced the *mesh Fourier number*
-
-!bt
-\begin{equation}
-F = \dfc\frac{\Delta t}{\Delta x^2}\tp
-\end{equation}
-!et
-
+for $i=1,\ldots,Nx-1$.
 One can either view these equations as a system for where the
 $u^{n}_i$ values at the internal mesh points, $i=1,\ldots,N_x-1$, are
 unknown, or we may append the boundary values $u^n_0$ and $u^n_{N_x}$
@@ -533,7 +808,7 @@ in between the points in the time mesh:
 !bt
 \[
 \frac{\partial}{\partial t} u(x_i, t_{n+\half}) =
-\dfc\frac{\partial^2}{\partial x^2}u(x_i, t_{n+\half}).
+\dfc\frac{\partial^2}{\partial x^2}u(x_i, t_{n+\half}) + f(x_i,t_{n+\half}),
 \]
 !et
 for $i=1,\ldots,N_x-1$ and $n=0,\ldots, N_t-1$.
@@ -541,12 +816,12 @@ for $i=1,\ldots,N_x-1$ and $n=0,\ldots, N_t-1$.
 With centered differences in space and time, we get
 
 !bt
-\[ [D_t u = \dfc D_xD_x u]^{n+\half}_i\tp\]
+\[ [D_t u = \dfc D_xD_x u + f]^{n+\half}_i\tp\]
 !et
 On the right-hand side we get an expression
 
 !bt
-\[ \frac{1}{\Delta x^2}\left(u^{n+\half}_{i-1} - 2u^{n+\half}_i + u^{n+\half}_{i+1}\right)\tp\]
+\[ \frac{1}{\Delta x^2}\left(u^{n+\half}_{i-1} - 2u^{n+\half}_i + u^{n+\half}_{i+1}\right) + f_i^{n+\half}\tp\]
 !et
 This expression is problematic since $u^{n+\half}_i$ is not one of
 the unknown we compute. A possibility is to replace $u^{n+\half}_i$
@@ -561,17 +836,23 @@ In the compact notation, we can use the arithmetic average
 notation $\overline{u}^t$:
 
 !bt
-\[ [D_t u = \dfc D_xD_x \overline{u}^t]^{n+\half}_i\tp\]
+\[ [D_t u = \dfc D_xD_x \overline{u}^t + f]^{n+\half}_i\tp\]
+!et
+We can also use an average for $f_i^{n+\half}$:
+
+!bt
+\[ [D_t u = \dfc D_xD_x \overline{u}^t + \overline{f}^t]^{n+\half}_i\tp\]
 !et
 
 After writing out the differences and average, multiplying by $\Delta t$,
 and collecting all unknown terms on the left-hand side, we get
 
 !bt
-\begin{equation}
+\begin{align}
 u^{n+1}_i - \half F(u^{n+1}_{i-1} - 2u^{n+1}_i + u^{n+1}_{i+1})
-= u^{n}_i + \half F(u^{n}_{i-1} - 2u^{n}_i + u^{n}_{i+1})\tp
-\end{equation}
+&= u^{n}_i + \half F(u^{n}_{i-1} - 2u^{n}_i + u^{n}_{i+1})\nonumber\\
+&\qquad \half f_i^{n+1} + \half f_i^n\tp
+\end{align}
 !et
 
 Also here, as in the Backward Euler scheme, the new unknowns
@@ -604,7 +885,7 @@ The right-hand side $b$ has entries
 !bt
 \begin{align}
 b_0 &= 0,\\
-b_i &= u^{n-1}_i,\quad i=1,\ldots,N_x-1,\\
+b_i &= u^{n-1}_i + \half(f_i^n + f_i^{n+1}),\quad i=1,\ldots,N_x-1,\\
 b_{N_x} &= 0 \tp  \end{align}
 !et
 
@@ -635,9 +916,11 @@ well-known and widely used schemes:
 Applied to the 1D diffusion problem, the $\theta$-rule gives
 
 !bt
-\[ \frac{u^{n+1}_i-u^n_i}{\Delta t} =
+\begin{align*}
+\frac{u^{n+1}_i-u^n_i}{\Delta t} &=
 \dfc\left( \theta \frac{u^{n+1}_{i+1} - 2u^{n+1}_i + u^{n+1}_{i-1}}{\Delta x^2}
-+ (1-\theta) \frac{u^{n}_{i+1} - 2u^n_i + u^n_{i-1}}{\Delta x^2}\right)
++ (1-\theta) \frac{u^{n}_{i+1} - 2u^n_i + u^n_{i-1}}{\Delta x^2}\right)\\
+&\qquad + \theta f_i^{n+1} + (1-\theta)f_i^n
 \tp
 \]
 !et
@@ -651,7 +934,8 @@ while right-hand side entry $b_i$ is
 
 !bt
 \[ b_i = u^n_{i} + F(1-\theta)
-\frac{u^{n}_{i+1} - 2u^n_i + u^n_{i-1}}{\Delta x^2}
+\frac{u^{n}_{i+1} - 2u^n_i + u^n_{i-1}}{\Delta x^2} +
+\Delta t\theta f_i^{n+1} + \Delta t(1-\theta)f_i^n\tp
 \]
 !et
 The corresponding entries for the boundary points are as in the Backward
@@ -664,6 +948,29 @@ Euler and Crank-Nicolson schemes listed earlier.
 \end{equation}
 !et
 # #endif
+
+===== Experiments =====
+
+We can repeat the experiments from Section ref{diffu:pde1:FE:experiments}
+to see if the Backward Euler or Crank-Nicolson schemes have problems
+with sawtooth-like noise when starting with a discontinuous initial
+condition. We can also verify that we can have $F>\half$,
+which in practice often means choosing larger time steps.
+
+FIGURE: [fig-diffu/plug_BE_F05, width=800 frac=1] Backward Euler scheme for $F=0.5$. label{diffu:pde1:BE:fig:F=0.5}
+
+The Backward Euler scheme always produces smooth solutions for any $F$.
+Figure ref{diffu:pde1:BE:fig:F=0.5} shows one example.
+The Crank-Nicolson method produces smooth solutions for small $F$,
+$F\leq\half$, but small noise is more and more evident as $F$
+increases. Figures ref{diffu:pde1:CN:fig:F=3} and ref{diffu:pde1:CN:fig:F=10}
+demonstrates the effect for $F=3$ and $F=10$, respectively.
+
+FIGURE: [fig-diffu/plug_CE_F3, width=800 frac=1] Crank-Nicolson scheme for $F=3$. label{diffu:pde1:CN:fig:F=3}
+
+FIGURE: [fig-diffu/plug_CE_F10, width=800 frac=1] Crank-Nicolson scheme for $F=10$. label{diffu:pde1:CN:fig:F=10}
+
+
 
 ===== The Laplace and Poisson equation =====
 
@@ -679,23 +986,27 @@ Similarly, Poisson's equation $-u_{xx}=f$ arises from solving
 $u_t = u_{xx} + f$ and letting $t\rightarrow$ so $u_t\rightarrow 0$.
 
 Technically in a program, we can simulate $t\rightarrow\infty$
-by just taking one large time step,
-or equivalently, set $\dfc$ to a large value. All we need is to have
-$F$ large. As $F\rightarrow\infty$, we can from the schemes see that
-the limiting discrete equation becomes
+by just taking one large time step:
+$\Delta t\rightarrow\infty$. In the limit the Backward Euler
+scheme gives
 
 !bt
-\[ \frac{u^{n+1}_{i+1} - 2u^{n+1}_i + u^{n+1}_{i-1}}{\Delta x^2} = 0,\]
+\[ -\frac{u^{n+1}_{i+1} - 2u^{n+1}_i + u^{n+1}_{i-1}}{\Delta x^2} = f^{n+1}_i,\]
 !et
-which is nothing but the discretization $[D_xD_x u]^{n+1}_i=0$ of
-$u_{xx}=0$.
+which is nothing but the discretization $[-D_xD_x u = f]^{n+1}_i=0$ of
+$-u_{xx}=f$.
 
-The Backward Euler scheme can solve the limit equation directly and
+The result above means that
+the Backward Euler scheme can solve the limit equation directly and
 hence produce a solution of the 1D Laplace equation.
-With the Forward Euler scheme we must do the time stepping since $F > 1/2$
-is illegal and leads to instability. We may interpret this time stepping
-as solving the equation system from $u_{xx}$ by iterating on a time
+With the Forward Euler scheme we must do the time stepping since $\Delta t >
+\Delta x^2/\dfc$
+is illegal and leads to instability.
+We may interpret this time stepping
+as solving the equation system from $-u_{xx}=f$ by iterating on a time
 pseudo time variable.
+
+[hpl: Better to say the last sentence when we treat iterative methods.]
 
 ===== Extensions =====
 

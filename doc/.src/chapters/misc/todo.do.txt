@@ -1,0 +1,55 @@
+TITLE: Remaining tasks for the finite difference book
+AUTHOR: hpl
+DATE: today
+
+Complete chapters: vib, wave.
+
+======= Diffusion equations =======
+
+===== Diffusion PDE in 2D =====
+
+__Task 1:__ Implement a 2D diffusion PDE solver for the $\theta$-rule
+in time. Set up the matrix system first as a square matrix, then
+as a sparse matrix. Solve system by Gaussian elimination.
+
+There is a preliminary sparse matrix
+code in `src-diffu/LeifRune/laplace.py`, but it
+applies `scipy.sparse.spdiags` and we should apply `scipy.sparse.diags`
+instead, see `src-diffu/diffu1D_u0.py` (`diags`) versus
+`src-diffu/diffu1D_v1.py` (`spdiags`) for a corresponding 1D examples.
+
+We need a verification example. I suggest extending the 1D example to
+
+!bt
+\[ u(x,y,t) = (L_x-x)(L_y-y)5t,\]
+!et
+which fulfills $u=0$ at the boundary. This solution should be exactly
+reproduced by all schemes.
+Then we can have convergence rates tests with
+solutions of the form
+
+!bt
+\[ u(x,y,t) = e^{-pt}\cos qx\cos ry,\]
+!et
+with prescribed boundary conditions (as functions of time and space) for $u$.
+
+__Task 2:__ Add a 2D diffusion PDE solver for the $\theta$-rule
+in time using Conjugate Gradient method with ILU preconditioning.
+Use `scipy.sparse` tools (make the sparse matrix in some format,
+call ILU to make preconditioner and call the iterative solver).
+This is *the* definite solver to present.
+Exercise: extend to 3D.
+
+===== Applications of diffusion equations =====
+
+We need to write about various applications that results in diffusion PDEs.
+See `wave_app*.do.txt ` for how we did this for the wave equation.
+
+ * Quick derivation of diffusion of a substance: start with mass conservation and use Fick's law.
+ * Quick derivation of diffusion of heat in solids: start with the energy equation, remove terms with stress work and convection, and use Fourier's law.
+ * Diffusion PDEs arising from Navier-Stokes in simplified flow configurations. Some suggestions are in `diffu_app.do.txt`.
+ * Quick intro to the cable equation for signals in the brain.
+ * Fisher's equation for population growth with spatial diffusion,
+   but this is a nonlinear equation... OK with Forward Euler.
+ * Murray's Mathematical Biology book has many nonlinear diffusion PDEs
+   for various bio applications.
