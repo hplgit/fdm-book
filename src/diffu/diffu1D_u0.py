@@ -372,7 +372,7 @@ def viz(I, a, f, L, dt, F, T, umin, umax,
         plot(x, u, 'r-', axis=[0, L, umin, umax], title='t=%f' % t[n])
         if framefiles:
             savefig('tmp_frame%04d.png' % n)
-            if n in [0, 2, 5, 10, 25, 50, 250, 500]: savefig('tmp_frame%04d.pdf' % n)
+            if n in [0, 2, 5, 10, 25, 50, 75, 100, 250, 500]: savefig('tmp_frame%04d.pdf' % n)
         if t[n] == 0:
             time.sleep(2)
         elif not framefiles:

@@ -29,8 +29,8 @@ code { color: inherit; background-color: transparent; }
 {'highest level': 1,
  'sections': [('An explicit method for the 1D diffusion equation',
                1,
-               None,
-               '___sec0'),
+               'diffu:pde1:FEsec',
+               'diffu:pde1:FEsec'),
               ('The initial-boundary value problem for 1D diffusion',
                2,
                None,
@@ -50,8 +50,8 @@ code { color: inherit; background-color: transparent; }
                'diffu:pde1:FE:experiments'),
               ('Implicit methods for the 1D diffusion equation',
                1,
-               None,
-               '___sec6'),
+               'diffu:pde1:implicit',
+               'diffu:pde1:implicit'),
               ('Backward Euler scheme', 2, 'diffu:pde1:BE', 'diffu:pde1:BE'),
               ('Sparse matrix implementation',
                2,
@@ -130,9 +130,10 @@ code { color: inherit; background-color: transparent; }
                'diffu:exer:uterm',
                'diffu:exer:uterm'),
               ('Diffusion in heterogeneous media', 1, None, '___sec36'),
-              ('Stationary solution', 2, None, '___sec37'),
-              ('Piecewise constant medium', 2, None, '___sec38'),
-              ('Implementation', 2, None, '___sec39'),
+              ('Discretization', 2, None, '___sec37'),
+              ('Stationary solution', 2, None, '___sec38'),
+              ('Piecewise constant medium', 2, None, '___sec39'),
+              ('Implementation', 2, None, '___sec40'),
               ('Diffusion equation in axi-symmetric geometries',
                2,
                'diffu:fd2:radial',
@@ -144,12 +145,13 @@ code { color: inherit; background-color: transparent; }
               ('Discretization in spherical coordinates',
                3,
                None,
-               '___sec42'),
+               '___sec43'),
               ('Discretization in Cartesian coordinates',
                3,
                None,
-               '___sec43'),
-              ('Exercises', 1, None, '___sec44'),
+               '___sec44'),
+              ('Random walk', 1, None, '___sec45'),
+              ('Exercises', 1, None, '___sec46'),
               ('Exercise 6: Stabilizing the Crank-Nicolson method by Rannacher time stepping',
                2,
                'diffu:exer:CN:Rannacher',
@@ -158,7 +160,7 @@ code { color: inherit; background-color: transparent; }
                2,
                'diffu:exer:energy:estimates',
                'diffu:exer:energy:estimates'),
-              ('Bibliography', 1, None, '___sec47')]}
+              ('Bibliography', 1, None, '___sec49')]}
 end of tocinfo -->
 
 <body>
@@ -208,12 +210,13 @@ $$
       <li class="dropdown">
         <a href="#" class="dropdown-toggle" data-toggle="dropdown">Contents <b class="caret"></b></a>
         <ul class="dropdown-menu">
-     <!-- navigation toc: --> <li><a href="#___sec0" style="font-size: 80%;">An explicit method for the 1D diffusion equation</a></li>
-     <!-- navigation toc: --> <li><a href="#___sec6" style="font-size: 80%;">Implicit methods for the 1D diffusion equation</a></li>
+     <!-- navigation toc: --> <li><a href="#diffu:pde1:FEsec" style="font-size: 80%;">An explicit method for the 1D diffusion equation</a></li>
+     <!-- navigation toc: --> <li><a href="#diffu:pde1:implicit" style="font-size: 80%;">Implicit methods for the 1D diffusion equation</a></li>
      <!-- navigation toc: --> <li><a href="#diffu:pde1:analysis" style="font-size: 80%;">Analysis of schemes for the diffusion equation</a></li>
      <!-- navigation toc: --> <li><a href="#___sec36" style="font-size: 80%;">Diffusion in heterogeneous media</a></li>
-     <!-- navigation toc: --> <li><a href="#___sec44" style="font-size: 80%;">Exercises</a></li>
-     <!-- navigation toc: --> <li><a href="._diffu-sol002.html#___sec47" style="font-size: 80%;">Bibliography</a></li>
+     <!-- navigation toc: --> <li><a href="#___sec45" style="font-size: 80%;">Random walk</a></li>
+     <!-- navigation toc: --> <li><a href="#___sec46" style="font-size: 80%;">Exercises</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol002.html#___sec49" style="font-size: 80%;">Bibliography</a></li>
 
         </ul>
       </li>
@@ -228,8 +231,6 @@ $$
 
 <a name="part0001"></a>
 <!-- !split -->
-
-<h1 id="___sec0">An explicit method for the 1D diffusion equation </h1>
 
 <p>
 The famous <em>diffusion equation</em>, also known as the <em>heat equation</em>,
@@ -246,7 +247,7 @@ short form for the diffusion equation is \( u_t = \dfc u_{xx} \).
 
 <p>
 Compared to the wave equation, \( u_{tt}=c^2u_{xx} \), which looks very similar,
-but the diffusion equation features solutions that are very different from
+the diffusion equation features solutions that are very different from
 those of the wave equation. Also, the diffusion equation
 makes quite different demands to the numerical
 methods.
@@ -267,13 +268,19 @@ the <em>Laplace</em> equation and arises in a very wide range of applications
 throughout the sciences.
 
 <p>
-It is possible to solve for \( u(x,t) \) using a explicit scheme,
-but the time step restrictions soon become much less favorable than for
-an explicit scheme for the wave equation. And of more importance,
-since the solution \( u \) of the diffusion equation is very smooth and changes
-slowly, small time steps are not convenient and not
-required by accuracy as the diffusion process converges to a stationary
-state.
+It is possible to solve for \( u(x,t) \) using a explicit scheme, as we do
+in the section <a href="#diffu:pde1:FEsec">An explicit method for the 1D diffusion equation</a>, but the time step restrictions soon
+become much less favorable than for an explicit scheme for the wave
+equation. And of more importance, since the solution \( u \) of the
+diffusion equation is very smooth and changes slowly, small time steps
+are not convenient and not required by accuracy as the diffusion
+process converges to a stationary state. Therefore, implicit schemes
+as described in the section <a href="#diffu:pde1:implicit">Implicit methods for the 1D diffusion equation</a> are popular, but
+these require solutions of systems of algebraic equations. We shall
+use ready-made software for this purpose, but also program some simple
+iterative methods.
+
+<h1 id="diffu:pde1:FEsec">An explicit method for the 1D diffusion equation</h1>
 
 <h2 id="___sec1">The initial-boundary value problem for 1D diffusion </h2>
 
@@ -305,13 +312,10 @@ u(L,t) & = 0, \quad  t>0\tp
 \end{align}
 $$
 
-Equation <a href="#mjx-eqn-1">(1)</a> is known as a one-dimensional
-<em>diffusion equation</em>, also often referred to as a
-<em>heat equation</em>. With only a first-order derivative in time,
+With only a first-order derivative in time,
 only one <em>initial condition</em> is needed, while the second-order
 derivative in space leads to a demand for two <em>boundary conditions</em>.
-The parameter \( \dfc \) must be given and is referred to as the
-<em>diffusion coefficient</em>. We have added a source term \( f=f(x,t) \) for
+We have added a source term \( f=f(x,t) \) for
 convenience when testing implementations.
 
 <p>
@@ -825,7 +829,7 @@ with plotting:
         plot(x, u, <span style="color: #BA2121">&#39;r-&#39;</span>, axis<span style="color: #666666">=</span>[<span style="color: #666666">0</span>, L, umin, umax], title<span style="color: #666666">=</span><span style="color: #BA2121">&#39;t=</span><span style="color: #BB6688; font-weight: bold">%f</span><span style="color: #BA2121">&#39;</span> <span style="color: #666666">%</span> t[n])
         <span style="color: #008000; font-weight: bold">if</span> framefiles:
             savefig(<span style="color: #BA2121">&#39;tmp_frame</span><span style="color: #BB6688; font-weight: bold">%04d</span><span style="color: #BA2121">.png&#39;</span> <span style="color: #666666">%</span> n)
-            <span style="color: #008000; font-weight: bold">if</span> n <span style="color: #AA22FF; font-weight: bold">in</span> [<span style="color: #666666">0</span>, <span style="color: #666666">2</span>, <span style="color: #666666">5</span>, <span style="color: #666666">10</span>, <span style="color: #666666">25</span>, <span style="color: #666666">50</span>, <span style="color: #666666">250</span>, <span style="color: #666666">500</span>]: savefig(<span style="color: #BA2121">&#39;tmp_frame</span><span style="color: #BB6688; font-weight: bold">%04d</span><span style="color: #BA2121">.pdf&#39;</span> <span style="color: #666666">%</span> n)
+            <span style="color: #008000; font-weight: bold">if</span> n <span style="color: #AA22FF; font-weight: bold">in</span> [<span style="color: #666666">0</span>, <span style="color: #666666">2</span>, <span style="color: #666666">5</span>, <span style="color: #666666">10</span>, <span style="color: #666666">25</span>, <span style="color: #666666">50</span>, <span style="color: #666666">75</span>, <span style="color: #666666">100</span>, <span style="color: #666666">250</span>, <span style="color: #666666">500</span>]: savefig(<span style="color: #BA2121">&#39;tmp_frame</span><span style="color: #BB6688; font-weight: bold">%04d</span><span style="color: #BA2121">.pdf&#39;</span> <span style="color: #666666">%</span> n)
         <span style="color: #008000; font-weight: bold">if</span> t[n] <span style="color: #666666">==</span> <span style="color: #666666">0</span>:
             time<span style="color: #666666">.</span>sleep(<span style="color: #666666">2</span>)
         <span style="color: #008000; font-weight: bold">elif</span> <span style="color: #AA22FF; font-weight: bold">not</span> framefiles:
@@ -961,7 +965,7 @@ important observations:
    for all relevant \( F \) values (\( F\geq \half \)).</li>
 </ul>
 
-<h1 id="___sec6">Implicit methods for the 1D diffusion equation </h1>
+<h1 id="diffu:pde1:implicit">Implicit methods for the 1D diffusion equation</h1>
 
 <p>
 Simulations with the Forward Euler scheme shows that the time step
@@ -2541,7 +2545,13 @@ $$
 A short form of the diffusion equation with variable coefficients is
 \( u_t = (\alpha u_x)_x \).
 
-<h2 id="___sec37">Stationary solution </h2>
+<h2 id="___sec37">Discretization </h2>
+
+<p>
+We can discretize <a href="#mjx-eqn-64">(64)</a> by a \( theta \)-rule in time
+and centered differences in space.
+
+<h2 id="___sec38">Stationary solution </h2>
 
 <p>
 As \( t\rightarrow\infty \), the solution of the above problem will approach
@@ -2568,7 +2578,7 @@ u(x) = U_0 + (U_L-U_0)\frac{\int_0^x (\alpha(\xi))^{-1}d\xi}{\int_0^L (\alpha(\x
 \end{equation}
 $$
 
-<h2 id="___sec38">Piecewise constant medium </h2>
+<h2 id="___sec39">Piecewise constant medium </h2>
 
 <p>
 Consider a medium built of \( M \) layers. The boundaries between the
@@ -2614,7 +2624,7 @@ equation where one is to differentiate, but a discontinuous \( \alpha \)
 is compensated by a discontinuous \( u_x \) such that \( \alpha u_x \) is
 continues and therefore can be differentiated as \( (\alpha u_x)_x \).
 
-<h2 id="___sec39">Implementation </h2>
+<h2 id="___sec40">Implementation </h2>
 
 <p>
 Programming with piecewise function definition quickly becomes
@@ -2864,7 +2874,7 @@ $$
 
 <h2 id="diffu:fd2:spherical">Diffusion equation in spherically-symmetric geometries</h2>
 
-<h3 id="___sec42">Discretization in spherical coordinates </h3>
+<h3 id="___sec43">Discretization in spherical coordinates </h3>
 
 <p>
 Let us now pose the problem from the section <a href="#diffu:fd2:radial">Diffusion equation in axi-symmetric geometries</a>
@@ -2909,7 +2919,7 @@ $$
 <p>
 Same discretization, write up with \( \gamma \).
 
-<h3 id="___sec43">Discretization in Cartesian coordinates </h3>
+<h3 id="___sec44">Discretization in Cartesian coordinates </h3>
 
 <p>
 The spherically-symmetric spatial derivative can be transformed to
@@ -2936,7 +2946,9 @@ $$
 which is recognized as the variable-coefficient Laplace operator in
 one Cartesian coordinate.
 
-<h1 id="___sec44">Exercises </h1>
+<h1 id="___sec45">Random walk </h1>
+
+<h1 id="___sec46">Exercises </h1>
 
 <p>
 <!-- --- begin exercise --- -->
