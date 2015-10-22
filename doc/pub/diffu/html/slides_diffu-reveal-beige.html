@@ -1,0 +1,2022 @@
+<!DOCTYPE html>
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="DocOnce: https://github.com/hplgit/doconce/" />
+<meta name="description" content="Study guide: Finite difference schemes for diffusion processes">
+<meta name="keywords" content="diffusion equation, 1D,heat equation, 1D,mesh finite differences,stencil 1D diffusion equation,mesh function">
+
+<title>Study guide: Finite difference schemes for diffusion processes</title>
+
+
+
+
+
+
+
+<!-- reveal.js: http://lab.hakim.se/reveal-js/ -->
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+<link rel="stylesheet" href="reveal.js/css/reveal.css">
+<link rel="stylesheet" href="reveal.js/css/theme/beige.css" id="theme">
+<!--
+<link rel="stylesheet" href="reveal.js/css/reveal.css">
+<link rel="stylesheet" href="reveal.js/css/theme/beige.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/beigesmall.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/solarized.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/serif.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/night.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/moon.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/simple.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/sky.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/darkgray.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/default.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/cbc.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/simula.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/black.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/white.css" id="theme">
+<link rel="stylesheet" href="reveal.js/css/theme/league.css" id="theme">
+-->
+
+<!-- For syntax highlighting -->
+<link rel="stylesheet" href="reveal.js/lib/css/zenburn.css">
+
+<!-- Printing and PDF exports -->
+<script>
+var link = document.createElement( 'link' );
+link.rel = 'stylesheet';
+link.type = 'text/css';
+link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+document.getElementsByTagName( 'head' )[0].appendChild( link );
+</script>
+
+<style type="text/css">
+    hr { border: 0; width: 80%; border-bottom: 1px solid #aaa}
+    p.caption { width: 80%; font-size: 60%; font-style: italic; text-align: left; }
+    hr.figure { border: 0; width: 80%; border-bottom: 1px solid #aaa}
+    .reveal .alert-text-small   { font-size: 80%;  }
+    .reveal .alert-text-large   { font-size: 130%; }
+    .reveal .alert-text-normal  { font-size: 90%;  }
+    .reveal .alert {
+             padding:8px 35px 8px 14px; margin-bottom:18px;
+             text-shadow:0 1px 0 rgba(255,255,255,0.5);
+             border:5px solid #bababa;
+             -webkit-border-radius: 14px; -moz-border-radius: 14px;
+             border-radius:14px;
+             background-position: 10px 10px;
+             background-repeat: no-repeat;
+             background-size: 38px;
+             padding-left: 30px; /* 55px; if icon */
+     }
+     .reveal .alert-block {padding-top:14px; padding-bottom:14px}
+     .reveal .alert-block > p, .alert-block > ul {margin-bottom:1em}
+     /*.reveal .alert li {margin-top: 1em}*/
+     .reveal .alert-block p+p {margin-top:5px}
+     /*.reveal .alert-notice { background-image: url(http://hplgit.github.io/doconce/bundled/html_images/small_gray_notice.png); }
+     .reveal .alert-summary  { background-image:url(http://hplgit.github.io/doconce/bundled/html_images/small_gray_summary.png); }
+     .reveal .alert-warning { background-image: url(http://hplgit.github.io/doconce/bundled/html_images/small_gray_warning.png); }
+     .reveal .alert-question {background-image:url(http://hplgit.github.io/doconce/bundled/html_images/small_gray_question.png); } */
+
+</style>
+
+
+
+<!-- Styles for table layout of slides -->
+<style type="text/css">
+td.padding {
+  padding-top:20px;
+  padding-bottom:20px;
+  padding-right:50px;
+  padding-left:50px;
+}
+</style>
+
+</head>
+
+<body>
+<div class="reveal">
+
+<!-- Any section element inside the <div class="slides"> container
+     is displayed as a slide -->
+
+<div class="slides">
+
+
+
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: {
+     equationNumbers: {  autoNumber: "none"  },
+     extensions: ["AMSmath.js", "AMSsymbols.js", "autobold.js", "color.js"]
+  }
+});
+</script>
+<script type="text/javascript"
+ src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+<!-- newcommands_keep.tex -->
+$$
+\newcommand{\half}{\frac{1}{2}}
+\newcommand{\tp}{\thinspace .}
+\newcommand{\uex}{{u_{\small\mbox{e}}}}
+\newcommand{\Aex}{{A_{\small\mbox{e}}}}
+\newcommand{\Oof}[1]{\mathcal{O}(#1)}
+\newcommand{\dfc}{\alpha}  % diffusion coefficient
+$$
+
+
+
+
+    
+
+
+
+<section>
+<!-- ------------------- main content ---------------------- -->
+
+
+
+<center><h1 style="text-align: center;">Study guide: Finite difference schemes for diffusion processes</h1></center>  <!-- document title -->
+
+<p>
+<!-- author(s): Hans Petter Langtangen -->
+
+<center>
+<b>Hans Petter Langtangen</b> [1, 2]
+</center>
+
+<p>&nbsp;<br>
+<!-- institution(s) -->
+
+<center>[1] <b>Center for Biomedical Computing, Simula Research Laboratory</b></center>
+<center>[2] <b>Department of Informatics, University of Oslo</b></center>
+<br>
+<p>&nbsp;<br>
+<center><h4>Oct 21, 2015</h4></center> <!-- date -->
+<br>
+</section>
+
+
+<section>
+<h1 id="___sec0">The 1D diffusion equation </h1>
+
+<p>
+The famous <em>diffusion equation</em>, also known as the <em>heat equation</em>,
+reads
+
+<p>&nbsp;<br>
+$$ \frac{\partial u}{\partial t} =
+\dfc \frac{\partial^2 u}{\partial x^2}
+$$
+<p>&nbsp;<br>
+
+<p>
+Here,
+
+<ul>
+ <p><li> \( u(x,t) \): unknown</li>
+ <p><li> \( \dfc \): <em>diffusion coefficient</em></li>
+</ul>
+<p>
+
+Alternative, compact notation:
+
+<p>&nbsp;<br>
+$$ u_t = \dfc u_{xx} $$
+<p>&nbsp;<br>
+</section>
+
+
+<section>
+<h2 id="___sec1">The initial-boundary value problem for 1D diffusion </h2>
+
+<p>&nbsp;<br>
+$$
+\begin{align}
+\frac{\partial u}{\partial t} &=
+\dfc \frac{\partial^2 u}{\partial x^2}, \quad x\in (0,L),\ t\in (0,T]
+\tag{1}\\ 
+u(x,0) &= I(x), \quad  x\in [0,L]
+\tag{2}\\ 
+u(0,t) & = 0, \quad  t>0,
+\tag{3}\\ 
+u(L,t) & = 0, \quad  t>0\tp
+\tag{4}
+\end{align}
+$$
+<p>&nbsp;<br>
+
+<p>
+Note:
+
+<ul>
+ <p><li> First-order derivative in time: one initial condition</li>
+ <p><li> Second-order derivative in space: a boundary condition at each
+   point of the boundary (2 points in 1D)</li>
+ <p><li> Numerous applications throughout physics and biology</li>
+</ul>
+</section>
+
+
+<section>
+<h2 id="diffu:1D:mesh">Step 1: Discretizing the domain</h2>
+
+<p>
+Mesh in time:
+
+<p>&nbsp;<br>
+$$
+\begin{equation}
+0 = t_0 < t_1 < t_2 < \cdots < t_{N_t-1} < t_{N_t} = T    \tag{5}
+\end{equation}
+$$
+<p>&nbsp;<br>
+
+<p>
+Mesh in space:
+
+<p>&nbsp;<br>
+$$
+\begin{equation}
+0 = x_0 < x_1 < x_2 < \cdots < x_{N_x-1} < x_{N_x} = L    \tag{6}
+\end{equation}
+$$
+<p>&nbsp;<br>
+
+<p>
+Uniform mesh with constant mesh spacings \( \Delta t \) and \( \Delta x \):
+
+<p>&nbsp;<br>
+$$
+\begin{equation}
+x_i = i\Delta x,\ i=0,\ldots,N_x,\quad
+t_i = n\Delta t,\ n=0,\ldots,N_t
+\tag{7}
+\end{equation}
+$$
+<p>&nbsp;<br>
+</section>
+
+
+<section>
+<h2 id="diffu:1D:numerical:sol">The discrete solution</h2>
+
+<ul>
+ <p><li> The numerical solution is a mesh function: \( u_i^n \approx \uex(x_i,t_n) \)</li>
+ <p><li> Finite difference stencil (or scheme): equation for \( u^n_i \) involving
+   neighboring space-time points</li>
+</ul>
+<p>
+
+<center><p><img src="mov-diffu/diffu1D_PDE_FE_Dirichlet_stencil_gpl/stencil_n_interior.png" align="bottom" width=500></p></center>
+</section>
+
+
+<section>
+<h2 id="diffu:1D:samplingPDE">Step 2: Fulfilling the equation at the mesh points</h2>
+
+<p>
+Require the PDE <a href="#mjx-eqn-1">(1)</a> to be fulfilled at an arbitrary
+<em>interior mesh point</em> \( (x_i,t_n) \)
+leads to
+
+<p>&nbsp;<br>
+$$
+\begin{equation}
+\frac{\partial}{\partial t} u(x_i, t_n) =
+\dfc\frac{\partial^2}{\partial x^2} u(x_i, t_n)
+\tag{8}
+\end{equation}
+$$
+<p>&nbsp;<br>
+
+<p>
+Applies to all interior mesh points: \( i=1,\ldots,N_x-1 \) and \( n=1,\ldots,N_t-1 \)
+
+<p>
+For \( n=0 \) we have the initial conditions \( u=I(x) \) and \( u_t=0 \)
+
+<p>
+At the boundaries \( i=0,N_x \) we have the boundary condition \( u=0 \).
+</section>
+
+
+<section>
+<h2 id="diffu:1D:fd">Step 3: Replacing derivatives by finite differences</h2>
+
+<p>
+Use a forward difference in time and a centered difference in space
+(<em>Forward Euler</em> scheme):
+
+<p>&nbsp;<br>
+$$
+\begin{equation}
+[D_t^+ u = \dfc D_xD_x u]^n_i
+\tag{9}
+\end{equation}
+$$
+<p>&nbsp;<br>
+
+<p>
+Written out,
+
+<p>&nbsp;<br>
+$$
+\begin{equation}
+\frac{u^{n+1}_i-u^n_i}{\Delta t} = \dfc \frac{u^{n}_{i+1} - 2u^n_i + u^n_{i-1}}{\Delta x^2}
+\tag{10}
+\end{equation}
+$$
+<p>&nbsp;<br>
+
+<p>
+Initial condition: \( u^0_i = I(x_i) \), \( i=0,1,\ldots,N_x \).
+</section>
+
+
+<section>
+<h2 id="diffu:1D:alg">Step 4: Formulating a recursive algorithm</h2>
+
+<ul>
+ <p><li> Nature of the algorithm: compute \( u \) in space at \( t=\Delta t, 2\Delta t, 3\Delta t,... \)</li>
+ <p><li> Two time levels are involved in the general discrete equation:
+   \( n+1 \) and \( n \)</li>
+ <p><li> \( u^n_i \) is already computed for \( i=0,\ldots,N_x \),
+   and \( u^{n+1}_i \) is the unknown quantity</li>
+</ul>
+<p>
+
+Solve the discretized PDE for the unknown \( u^{n+1}_i \):
+
+<p>&nbsp;<br>
+$$
+\begin{equation}
+u^{n+1}_i = u^n_i + F\left(
+u^{n}_{i+1} - 2u^n_i + u^n_{i-1}\right)
+\tag{11}
+\end{equation}
+$$
+<p>&nbsp;<br>
+
+<p>
+where
+
+<p>&nbsp;<br>
+$$ F = \dfc\frac{\Delta t}{\Delta x^2} $$
+<p>&nbsp;<br>
+</section>
+
+
+<section>
+<h2 id="___sec7">The mesh Fourier number </h2>
+
+<p>&nbsp;<br>
+$$ F = \dfc\frac{\Delta t}{\Delta x^2} $$
+<p>&nbsp;<br>
+
+<p>
+<div class="alert alert-block alert-notice alert-text-normal">
+<b>Observe.</b>
+<p>
+There is only one parameter, \( F \), in the discrete model:
+\( F \) lumps mesh parameters \( \Delta t \) and \( \Delta x \)
+with the only physical parameter, the diffusion coefficient
+\( \dfc \).
+The value \( F \) and the smoothness of \( I(x) \)
+govern the quality of the numerical solution.
+</div>
+</section>
+
+
+<section>
+<h2 id="___sec8">The finite difference stencil </h2>
+
+<p>
+<center><p><img src="mov-diffu/diffu1D_PDE_FE_Dirichlet_stencil_gpl/stencil_n_interior.png" align="bottom" width=500></p></center>
+</section>
+
+
+<section>
+<h2 id="___sec9">The computational algorithm for the Forward Euler scheme </h2>
+
+<ol>
+ <p><li> compute \( u^0_i=I(x_i) \), \( i=0,\ldots,N_x \)</li>
+ <p><li> for \( n=0,1,\ldots,N_t \):</li>
+
+<ol>
+
+<p><li> compute \( u^{n+1}_i \) from <a href="#mjx-eqn-11">(11)</a> for all the internal
+      spatial points \( i=1,\ldots,N_x-1 \)</li>
+
+<p><li> set the boundary values
+      \( u^{n+1}_i=0 \) for \( i=0 \) and \( i=N_x \)</li>
+</ol>
+<p>
+</ol>
+<p>
+
+<div class="alert alert-block alert-notice alert-text-normal">
+<b>Notice.</b>
+<p>
+We visit one mesh point \( (x_i,t_{n+1}) \) at a time,
+and we have an explicit formula
+for computing the associated \( u^{n+1}_i \) value.
+The spatial points can be updated in any sequence, but the
+time levels \( t_n \) must be updated in cronological order: \( t_n \) before
+\( t_{n+1} \).
+</div>
+</section>
+
+
+<section>
+<h2 id="___sec10">The Python implementation of the computational algorithm </h2>
+
+<p>
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="highlight" style="background: #eeeedd"><pre style="font-size: 80%; line-height: 125%">x = linspace(<span style="color: #B452CD">0</span>, L, Nx+<span style="color: #B452CD">1</span>)    <span style="color: #228B22"># mesh points in space</span>
+dx = x[<span style="color: #B452CD">1</span>] - x[<span style="color: #B452CD">0</span>]
+t = linspace(<span style="color: #B452CD">0</span>, T, Nt+<span style="color: #B452CD">1</span>)    <span style="color: #228B22"># mesh points in time</span>
+dt = t[<span style="color: #B452CD">1</span>] - t[<span style="color: #B452CD">0</span>]
+F = a*dt/dx**<span style="color: #B452CD">2</span>
+u   = zeros(Nx+<span style="color: #B452CD">1</span>)
+u_1 = zeros(Nx+<span style="color: #B452CD">1</span>)
+
+<span style="color: #228B22"># Set initial condition u(x,0) = I(x)</span>
+<span style="color: #8B008B; font-weight: bold">for</span> i <span style="color: #8B008B">in</span> <span style="color: #658b00">range</span>(<span style="color: #B452CD">0</span>, Nx+<span style="color: #B452CD">1</span>):
+    u_1[i] = I(x[i])
+
+<span style="color: #8B008B; font-weight: bold">for</span> n <span style="color: #8B008B">in</span> <span style="color: #658b00">range</span>(<span style="color: #B452CD">0</span>, Nt):
+    <span style="color: #228B22"># Compute u at inner mesh points</span>
+    <span style="color: #8B008B; font-weight: bold">for</span> i <span style="color: #8B008B">in</span> <span style="color: #658b00">range</span>(<span style="color: #B452CD">1</span>, Nx):
+        u[i] = u_1[i] + F*(u_1[i-<span style="color: #B452CD">1</span>] - <span style="color: #B452CD">2</span>*u_1[i] + u_1[i+<span style="color: #B452CD">1</span>])
+
+    <span style="color: #228B22"># Insert boundary conditions</span>
+    u[<span style="color: #B452CD">0</span>] = <span style="color: #B452CD">0</span>;  u[Nx] = <span style="color: #B452CD">0</span>
+
+    <span style="color: #228B22"># Update u_1 before next step</span>
+    u_1[:]= u
+    <span style="color: #228B22"># or more efficient switch of references</span>
+    <span style="color: #228B22">#u_1, u = u, u_1</span>
+</pre></div>
+</section>
+
+
+<section>
+<h2 id="___sec11">Moving finite difference stencil </h2>
+
+<p>
+
+<div>
+<video  loop controls width='640' height='365' preload='none'>
+    <source src='mov-diffu/diffu1D_PDE_FE_Dirichlet_stencil_gpl/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+</video>
+</div>
+<p><em></em></p>
+
+<!-- Issue warning if only .ogg or .webm movie in a Safari browser -->
+<script language="javascript">
+if (!!(window.safari)) {
+  document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
+</script>
+
+<p>
+<a href="http://tinyurl.com/opdfafk/pub/mov-diffu/diffu1D_PDE_FE_Dirichlet_stencil_gpl/index.html" target="_self">web page</a>
+or a <a href="http://tinyurl.com/opdfafk/pub/mov-diffu/diffu1D_PDE_FE_Dirichlet_stencil_gpl/movie.ogg" target="_self">movie file</a>.
+</section>
+
+
+<section>
+<h2 id="___sec12">Demo program </h2>
+
+<ul>
+ <p><li> Program: <a href="http://tinyurl.com/nm5587k/diffu/diff1D_u0.py" target="_self"><tt>diffu1D_u0.py</tt></a></li>
+ <p><li> Produces animation on the screen</li>
+ <p><li> Each frame stored in <code>tmp_frame%04d.png</code> files<br />
+   <code>tmp_frame0000.png</code>, <code>tmp_frame0001.png</code>, ...</li>
+</ul>
+<p>
+
+How to make movie file in modern formats:
+
+<p>
+
+<!-- code=text (!bc sys) typeset with pygments style "perldoc" -->
+<div class="highlight" style="background: #eeeedd"><pre style="font-size: 80%; line-height: 125%">Terminal&gt; name=tmp_frame%04d.png
+Terminal&gt; fps=8  # frames per second in movie
+Terminal&gt; avconv -r $fps -i $name -vcodec flv       movie.flv
+Terminal&gt; avconv -r $fps -i $name -vcodec libx64    movie.mp4
+Terminal&gt; avconv -r $fps -i $name -vcodec libvpx    movie.webm
+Terminal&gt; avconv -r $fps -i $name -vcodec libtheora movie.ogg
+</pre></div>
+</section>
+
+
+<section>
+<h2 id="___sec13">Forward Euler applied to an initial plug profile </h2>
+
+<p>
+\( N_x=50 \). The method results in a growing, unstable solution if \( F>0.5 \).
+
+<p>
+
+<table border="0">
+<tr>
+<td class="padding">
+Choosing \( F=0.5 \) gives a strange saw tooth-like curve.
+
+<p>
+
+<div>
+<video  loop controls width='640' height='365' preload='none'>
+    <source src='mov-diffu/diffu1D_u0_FE_plug/movie.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+    <source src='mov-diffu/diffu1D_u0_FE_plug/movie.webm' type='video/webm; codecs="vp8, vorbis"'>
+    <source src='mov-diffu/diffu1D_u0_FE_plug/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+</video>
+</div>
+<p><em></em></p>
+
+</td>
+<td class="padding">
+Lowering \( F \) to 0.25 gives a smooth (expected) solution.
+
+<p>
+
+<div>
+<video  loop controls width='640' height='365' preload='none'>
+    <source src='mov-diffu/diffu1D_u0_FE_plug_F025/movie.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+    <source src='mov-diffu/diffu1D_u0_FE_plug_F025/movie.webm' type='video/webm; codecs="vp8, vorbis"'>
+    <source src='mov-diffu/diffu1D_u0_FE_plug_F025/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+</video>
+</div>
+<p><em></em></p>
+
+</td>
+</tr>
+</table>
+</section>
+
+
+<section>
+<h2 id="___sec14">Forward Euler applied to a Gaussian profile </h2>
+
+<p>
+\( N_x=50 \). \( F=0.5 \).
+
+<p>
+
+<table border="0">
+<tr>
+<td class="padding">
+<p>
+
+<div>
+<video  loop controls width='640' height='365' preload='none'>
+    <source src='mov-diffu/diffu1D_u0_FE_gaussian1/movie.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+    <source src='mov-diffu/diffu1D_u0_FE_gaussian1/movie.webm' type='video/webm; codecs="vp8, vorbis"'>
+    <source src='mov-diffu/diffu1D_u0_FE_gaussian1/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+</video>
+</div>
+<p><em></em></p>
+
+</td>
+<td class="padding">
+<p>
+
+<div>
+<video  loop controls width='640' height='365' preload='none'>
+    <source src='mov-diffu/diffu1D_u0_FE_gaussian2/movie.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+    <source src='mov-diffu/diffu1D_u0_FE_gaussian2/movie.webm' type='video/webm; codecs="vp8, vorbis"'>
+    <source src='mov-diffu/diffu1D_u0_FE_gaussian2/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+</video>
+</div>
+<p><em></em></p>
+
+</td>
+</tr>
+</table>
+</section>
+
+
+<section>
+<h2 id="diffu:pde1:BE">Backward Euler scheme</h2>
+
+<p>
+Backward difference in time, centered difference in space:
+
+<p>&nbsp;<br>
+$$
+\begin{equation}
+[D_t^- u = D_xD_x u]^n_i
+\tag{12}
+\end{equation}
+$$
+<p>&nbsp;<br>
+
+<p>
+Written out:
+
+<p>&nbsp;<br>
+$$
+\begin{equation}
+\frac{u^{n}_i-u^{n-1}_i}{\Delta t} = \dfc\frac{u^{n}_{i+1} - 2u^n_i + u^n_{i-1}}{\Delta x^2}
+\tag{13}
+\end{equation}
+$$
+<p>&nbsp;<br>
+
+<p>
+Assumption: \( u^{n-1}_i \) is computed, but all quantities at the new
+time level \( t_n \) are unknown.
+
+<p>
+<div class="alert alert-block alert-notice alert-text-normal">
+<b>Notice.</b>
+<p>
+We cannot solve wrt \( u^n_i \) because that unknown value is coupled to
+two other unknown values: \( u^n_{i-1} \) and \( u^n_{i+1} \).
+That is, all the new unknown values are coupled to each other
+in a <em>linear system of algebraic equations</em>.
+</div>
+</section>
+
+
+<section>
+<h2 id="___sec16">Let's write out the equations for \( N_x=3 \) </h2>
+
+<p>
+Equation <a href="#mjx-eqn-13">(13)</a> written for \( i=1,\ldots,Nx-1= 1,2 \) becomes
+
+<p>&nbsp;<br>
+$$
+\begin{align}
+\frac{u^{n}_1-u^{n-1}_1}{\Delta t} &= \dfc\frac{u^{n}_{2} - 2u^n_1 + u^n_{0}}{\Delta x^2}
+\tag{14}\\ 
+\frac{u^{n}_2-u^{n-1}_2}{\Delta t} &= \dfc\frac{u^{n}_{3} - 2u^n_2 + u^n_{1}}{\Delta x^2}
+\tag{15}
+\end{align}
+$$
+<p>&nbsp;<br>
+
+<p>
+(The boundary values \( u^n_0 \) and \( u^n_3 \) are known as zero.)
+
+<p>
+Collecting the unknown new values  on the left-hand side and writing
+as \( 2\times 2 \) matrix system:
+
+<p>&nbsp;<br>
+$$ \left(\begin{array}{cc}
+1+  2F &   - F\\ 
+- F    & 1+  2F
+\end{array}\right)
+\left(\begin{array}{c}
+u^{n}_1\\ 
+u^{n}_{2}\\ 
+\end{array}\right)
+=
+\left(\begin{array}{c}
+u^{n-1}_1\\ 
+u^{n-1}_2
+\end{array}\right)
+$$
+<p>&nbsp;<br>
+</section>
+
+
+<section>
+<h2 id="___sec17">Two classes of discretization methods: explicit and implicit </h2>
+
+<p>
+<div class="alert alert-block alert-block alert-text-normal">
+<b>Implicit.</b>
+<p>
+Discretization methods that lead linear systems are known
+as <em>implicit methods</em>.
+</div>
+
+<p>
+<div class="alert alert-block alert-block alert-text-normal">
+<b>Explicit.</b>
+<p>
+Discretization methods that avoid linear systems and have
+an explicit formula for each new value of the unknown are called
+<em>explicit methods</em>.
+</div>
+</section>
+
+
+<section>
+<h2 id="___sec18">The linear system for a general \( N_x \) </h2>
+
+<p>&nbsp;<br>
+$$
+\begin{equation}
+- F_o u^n_{i-1} + \left(1+  2F_o \right) u^{n}_i - F_o u^n_{i+1} =
+u_{i-1}^{n-1}
+\tag{16}
+\end{equation}
+$$
+<p>&nbsp;<br>
+
+for \( i=1,\ldots,Nx-1 \).
+
+<p>
+What are the unknowns in the linear system?
+
+<ol>
+<p><li> either \( u^n_i \) for \( i=1,\ldots,N_x-1 \) (all <em>internal</em> spatial mesh points)</li>
+<p><li> or \( u^n_i \), \( i=0,\ldots,N_x \) (all spatial points)</li>
+</ol>
+<p>
+
+The linear system in matrix notation:
+
+<p>&nbsp;<br>
+$$
+\begin{equation*} AU = b,\quad U=(u^n_0,\ldots,u^n_{N_x})
+\end{equation*}
+$$
+<p>&nbsp;<br>
+</section>
+
+
+<section>
+<h2 id="___sec19">\( A \) is very sparse: a tridiagonal matrix </h2>
+
+<p>&nbsp;<br>
+$$
+\begin{equation}
+A =
+\left(
+\begin{array}{cccccccccc}
+A_{0,0} & A_{0,1} & 0
+&\cdots &
+\cdots & \cdots & \cdots &
+\cdots & 0 \\ 
+A_{1,0} & A_{1,1} & 0 & \ddots &   & &  & &  \vdots \\ 
+0 & A_{2,1} & A_{2,2} & A_{2,3} &
+\ddots & &  &  & \vdots \\ 
+\vdots & \ddots &  & \ddots & \ddots & 0 &  & & \vdots \\ 
+\vdots &  & \ddots & \ddots & \ddots & \ddots & \ddots & & \vdots \\ 
+\vdots & &  & 0 & A_{i,i-1} & A_{i,i} & A_{i,i+1} & \ddots & \vdots \\ 
+\vdots & & &  & \ddots & \ddots & \ddots &\ddots  & 0 \\ 
+\vdots & & & &  &\ddots  & \ddots &\ddots  & A_{N_x-1,N_x} \\ 
+0 &\cdots & \cdots &\cdots & \cdots & \cdots  & 0 & A_{N_x,N_x-1} & A_{N_x,N_x}
+\end{array}
+\right)
+\tag{17}
+\end{equation}
+$$
+<p>&nbsp;<br>
+</section>
+
+
+<section>
+<h2 id="___sec20">Detailed expressions for the matrix entries </h2>
+
+<p>
+The nonzero elements are given by
+
+<p>&nbsp;<br>
+$$
+\begin{align}
+A_{i,i-1} &= -F_o
+\tag{18}\\ 
+A_{i,i} &= 1+ 2F_o
+\tag{19}\\ 
+A_{i,i+1} &= -F_o
+\tag{20}
+\end{align}
+$$
+<p>&nbsp;<br>
+
+<p>
+for \( i=1,\ldots,N_x-1 \).
+
+<p>
+The equations for the boundary points correspond to
+
+<p>&nbsp;<br>
+$$
+A_{0,0} = 1,\quad A_{0,1} = 0,\quad A_{N_x,N_x-1} = 0,\quad
+A_{N_x,N_x} = 1
+$$
+<p>&nbsp;<br>
+</section>
+
+
+<section>
+<h2 id="___sec21">The right-hand side </h2>
+
+<p>&nbsp;<br>
+$$
+\begin{equation}
+b = \left(\begin{array}{c}
+b_0\\ 
+b_1\\ 
+\vdots\\ 
+b_i\\ 
+\vdots\\ 
+b_{N_x}
+\end{array}\right)
+\tag{21}
+\end{equation}
+$$
+<p>&nbsp;<br>
+
+<p>
+with
+
+<p>&nbsp;<br>
+$$
+\begin{align}
+b_0 &= 0
+\tag{22}\\ 
+b_i &= u^{n-1}_i,\quad i=1,\ldots,N_x-1
+\tag{23}\\ 
+b_{N_x} &= 0
+\tag{24}
+\end{align}
+$$
+<p>&nbsp;<br>
+</section>
+
+
+<section>
+<h2 id="___sec22">Naive Python implementation with a dense \( (N_x+1)\times(N_x+1) \) matrix </h2>
+
+<p>
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="highlight" style="background: #eeeedd"><pre style="font-size: 80%; line-height: 125%">x = linspace(<span style="color: #B452CD">0</span>, L, Nx+<span style="color: #B452CD">1</span>)   <span style="color: #228B22"># mesh points in space</span>
+dx = x[<span style="color: #B452CD">1</span>] - x[<span style="color: #B452CD">0</span>]
+t = linspace(<span style="color: #B452CD">0</span>, T, N+<span style="color: #B452CD">1</span>)    <span style="color: #228B22"># mesh points in time</span>
+u   = zeros(Nx+<span style="color: #B452CD">1</span>)
+u_1 = zeros(Nx+<span style="color: #B452CD">1</span>)
+
+<span style="color: #228B22"># Data structures for the linear system</span>
+A = zeros((Nx+<span style="color: #B452CD">1</span>, Nx+<span style="color: #B452CD">1</span>))
+b = zeros(Nx+<span style="color: #B452CD">1</span>)
+
+<span style="color: #8B008B; font-weight: bold">for</span> i <span style="color: #8B008B">in</span> <span style="color: #658b00">range</span>(<span style="color: #B452CD">1</span>, Nx):
+    A[i,i-<span style="color: #B452CD">1</span>] = -F
+    A[i,i+<span style="color: #B452CD">1</span>] = -F
+    A[i,i] = <span style="color: #B452CD">1</span> + <span style="color: #B452CD">2</span>*F
+A[<span style="color: #B452CD">0</span>,<span style="color: #B452CD">0</span>] = A[Nx,Nx] = <span style="color: #B452CD">1</span>
+
+<span style="color: #228B22"># Set initial condition u(x,0) = I(x)</span>
+<span style="color: #8B008B; font-weight: bold">for</span> i <span style="color: #8B008B">in</span> <span style="color: #658b00">range</span>(<span style="color: #B452CD">0</span>, Nx+<span style="color: #B452CD">1</span>):
+    u_1[i] = I(x[i])
+
+<span style="color: #8B008B; font-weight: bold">import</span> <span style="color: #008b45; text-decoration: underline">scipy.linalg</span>
+
+<span style="color: #8B008B; font-weight: bold">for</span> n <span style="color: #8B008B">in</span> <span style="color: #658b00">range</span>(<span style="color: #B452CD">0</span>, Nt):
+    <span style="color: #228B22"># Compute b and solve linear system</span>
+    <span style="color: #8B008B; font-weight: bold">for</span> i <span style="color: #8B008B">in</span> <span style="color: #658b00">range</span>(<span style="color: #B452CD">1</span>, Nx):
+        b[i] = -u_1[i]
+    b[<span style="color: #B452CD">0</span>] = b[Nx] = <span style="color: #B452CD">0</span>
+    u[:] = scipy.linalg.solve(A, b)
+
+    <span style="color: #228B22"># Update u_1 before next step</span>
+    u_1, u = u, u_1
+</pre></div>
+</section>
+
+
+<section>
+<h2 id="diffu:pde1:impl:sparse">A sparse matrix representation will dramatically reduce the computational complexity</h2>
+
+<ul>
+ <p><li> With a dense matrix, the algorithm leads to \( \Oof{N_x^3} \) operations</li>
+ <p><li> Utilizing the sparsity, the algorithm has complexity \( \Oof{N_x} \)!</li>
+ <p><li> <code>scipy.sparse</code> enables storage and calculations with the three
+   nonzero diagonals only</li>
+</ul>
+<p>
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="highlight" style="background: #eeeedd"><pre style="font-size: 80%; line-height: 125%"><span style="color: #228B22"># Representation of sparse matrix and right-hand side</span>
+diagonal  = zeros(Nx+<span style="color: #B452CD">1</span>)
+lower     = zeros(Nx)
+upper     = zeros(Nx)
+b         = zeros(Nx+<span style="color: #B452CD">1</span>)
+</pre></div>
+</section>
+
+
+<section>
+<h2 id="___sec24">Computing the sparse matrix </h2>
+
+<p>
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="highlight" style="background: #eeeedd"><pre style="font-size: 80%; line-height: 125%"><span style="color: #228B22"># Precompute sparse matrix</span>
+diagonal[:] = <span style="color: #B452CD">1</span> + <span style="color: #B452CD">2</span>*F
+lower[:] = -F  <span style="color: #228B22">#1</span>
+upper[:] = -F  <span style="color: #228B22">#1</span>
+<span style="color: #228B22"># Insert boundary conditions</span>
+diagonal[<span style="color: #B452CD">0</span>] = <span style="color: #B452CD">1</span>
+upper[<span style="color: #B452CD">0</span>] = <span style="color: #B452CD">0</span>
+diagonal[Nx] = <span style="color: #B452CD">1</span>
+lower[-<span style="color: #B452CD">1</span>] = <span style="color: #B452CD">0</span>
+
+<span style="color: #8B008B; font-weight: bold">import</span> <span style="color: #008b45; text-decoration: underline">scipy.sparse</span>
+A = scipy.sparse.diags(
+    diagonals=[main, lower, upper],
+    offsets=[<span style="color: #B452CD">0</span>, -<span style="color: #B452CD">1</span>, <span style="color: #B452CD">1</span>], shape=(Nx+<span style="color: #B452CD">1</span>, Nx+<span style="color: #B452CD">1</span>),
+    format=<span style="color: #CD5555">&#39;csr&#39;</span>)
+
+<span style="color: #228B22"># Set initial condition</span>
+<span style="color: #8B008B; font-weight: bold">for</span> i <span style="color: #8B008B">in</span> <span style="color: #658b00">range</span>(<span style="color: #B452CD">0</span>,Nx+<span style="color: #B452CD">1</span>):
+    u_1[i] = I(x[i])
+
+<span style="color: #8B008B; font-weight: bold">for</span> n <span style="color: #8B008B">in</span> <span style="color: #658b00">range</span>(<span style="color: #B452CD">0</span>, Nt):
+    b = u_1
+    b[<span style="color: #B452CD">0</span>] = b[-<span style="color: #B452CD">1</span>] = <span style="color: #B452CD">0.0</span>  <span style="color: #228B22"># boundary conditions</span>
+    u[:] = scipy.sparse.linalg.spsolve(A, b)
+    <span style="color: #228B22"># Switch variables before next step</span>
+    u_1, u = u, u_1
+</pre></div>
+</section>
+
+
+<section>
+<h2 id="___sec25">Backward Euler applied to a plug profile </h2>
+
+<p>
+\( N_x=50 \).
+\( F=0.5 \).
+
+<p>
+
+<div>
+<video  loop controls width='640' height='365' preload='none'>
+    <source src='mov-diffu/diffu1D_u0_BE_plug/movie.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+    <source src='mov-diffu/diffu1D_u0_BE_plug/movie.webm' type='video/webm; codecs="vp8, vorbis"'>
+    <source src='mov-diffu/diffu1D_u0_BE_plug/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+</video>
+</div>
+<p><em></em></p>
+</section>
+
+
+<section>
+<h2 id="___sec26">Backward Euler applied to a Gaussian profile </h2>
+
+<p>
+\( N_x=50 \).
+
+<p>
+
+<table border="0">
+<tr>
+<td class="padding">
+<p>
+\( F=0.5 \).
+
+<p>
+
+<div>
+<video  loop controls width='640' height='365' preload='none'>
+    <source src='mov-diffu/diffu1D_u0_BE_gaussian1/movie.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+    <source src='mov-diffu/diffu1D_u0_BE_gaussian1/movie.webm' type='video/webm; codecs="vp8, vorbis"'>
+    <source src='mov-diffu/diffu1D_u0_BE_gaussian1/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+</video>
+</div>
+<p><em></em></p>
+
+</td>
+<td class="padding">
+\( F=5 \).
+
+<p>
+
+<div>
+<video  loop controls width='640' height='365' preload='none'>
+    <source src='mov-diffu/diffu1D_u0_BE_gaussian1_F5/movie.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+    <source src='mov-diffu/diffu1D_u0_BE_gaussian1_F5/movie.webm' type='video/webm; codecs="vp8, vorbis"'>
+    <source src='mov-diffu/diffu1D_u0_BE_gaussian1_F5/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+</video>
+</div>
+<p><em></em></p>
+
+</td>
+</tr>
+</table>
+</section>
+
+
+<section>
+<h2 id="___sec27">Crank-Nicolson scheme </h2>
+
+<p>
+The PDE is sampled at points \( (x_i,t_{n+\half}) \) (at the spatial
+mesh points, but in between two temporal mesh points).
+
+<p>&nbsp;<br>
+$$
+\frac{\partial}{\partial t} u(x_i, t_{n+\half}) =
+\dfc\frac{\partial^2}{\partial x^2}u(x_i, t_{n+\half})
+$$
+<p>&nbsp;<br>
+
+for \( i=1,\ldots,N_x-1 \) and \( n=0,\ldots, N_t-1 \).
+
+<p>
+Centered differences in space and time:
+
+<p>&nbsp;<br>
+$$ [D_t u = \dfc D_xD_x u]^{n+\half}_i$$
+<p>&nbsp;<br>
+</section>
+
+
+<section>
+<h2 id="___sec28">Averaging in time is necessary in the Crank-Nicolson scheme </h2>
+
+<p>
+Right-hand side term:
+
+<p>&nbsp;<br>
+$$ \frac{1}{\Delta x^2}\left(u^{n+\half}_{i-1} - 2u^{n+\half}_i + u^{n+\half}_{i+1}\right)$$
+<p>&nbsp;<br>
+
+<p>
+Problem: \( u^{n+\half}_i \) is not one of
+the unknowns we compute.
+
+<p>
+Solution: replace \( u^{n+\half}_i \) by an arithmetic average:
+
+<p>&nbsp;<br>
+$$ u^{n+\half}_i\approx
+\half\left(u^{n}_i +u^{n+1}_{i}\right)
+$$
+<p>&nbsp;<br>
+
+<p>
+In compact notation (arithmetic average in time \( \overline{u}^t \)):
+
+<p>&nbsp;<br>
+$$ [D_t u = \dfc D_xD_x \overline{u}^t]^{n+\half}_i$$
+<p>&nbsp;<br>
+</section>
+
+
+<section>
+<h2 id="___sec29">Crank-Nicolsoon scheme written out </h2>
+
+<p>&nbsp;<br>
+$$
+\begin{equation}
+u^{n+1}_i - \half F(u^{n+1}_{i-1} - 2u^{n+1}_i + u^{n+1}_{i+1})
+= u^{n}_i + \half F(u^{n}_{i-1} - 2u^{n}_i + u^{n}_{i+1})
+\tag{25}
+\end{equation}
+$$
+<p>&nbsp;<br>
+
+<p>
+Observe:
+
+<ul>
+ <p><li> The unknowns are \( u^{n+1}_{i-1}, u^{n+1}_{i}, u^{n+1}_{i+1} \)</li>
+ <p><li> These unknowns are coupled to each other (in a linear system)</li>
+ <p><li> Must solve \( AU=b \) at each time level</li>
+</ul>
+<p>
+
+Now,
+
+<p>&nbsp;<br>
+$$
+\begin{align}
+A_{i,i-1} &= -\half F_o
+\tag{26}\\ 
+A_{i,i} &= \half + F_o
+\tag{27}\\ 
+A_{i,i+1} &= -\half F_o
+\tag{28}
+\end{align}
+$$
+<p>&nbsp;<br>
+
+<p>
+for internal points. For boundary points,
+
+<p>&nbsp;<br>
+$$
+\begin{align}
+A_{0,0} &= 1
+\tag{29}\\ 
+A_{0,1} &= 0
+\tag{30}\\ 
+A_{N_x,N_x-1} &= 0
+\tag{31}\\ 
+A_{N_x,N_x} &= 1
+\tag{32}
+\end{align}
+$$
+<p>&nbsp;<br>
+
+<p>
+Right-hand side:
+
+<p>&nbsp;<br>
+$$
+\begin{align}
+b_0 &= 0
+\tag{33}\\ 
+b_i &= u^{n-1}_i,\quad i=1,\ldots,N_x-1
+\tag{34}\\ 
+b_{N_x} &= 0    \tag{35}
+\end{align}
+$$
+<p>&nbsp;<br>
+</section>
+
+
+<section>
+<h2 id="___sec30">Crank-Nicolson applied to a plug profile </h2>
+
+<p>
+Crank-Nicolson never blows up, so any \( F \) can be used
+(modulo loss of accuracy).
+
+<p>
+
+<table border="0">
+<tr>
+<td class="padding">
+\( N_x=50 \).
+\( F=5 \) gives instabilities.
+
+<p>
+
+<div>
+<video  loop controls width='640' height='365' preload='none'>
+    <source src='mov-diffu/diffu1D_u0_theta_plug_F5/movie.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+    <source src='mov-diffu/diffu1D_u0_theta_plug_F5/movie.webm' type='video/webm; codecs="vp8, vorbis"'>
+    <source src='mov-diffu/diffu1D_u0_theta_plug_F5/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+</video>
+</div>
+<p><em></em></p>
+
+</td>
+<td class="padding">
+\( N_x=50 \).
+\( F=0.5 \) gives a smooth solution.
+
+<p>
+
+<div>
+<video  loop controls width='640' height='365' preload='none'>
+    <source src='mov-diffu/diffu1D_u0_theta_plug/movie.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+    <source src='mov-diffu/diffu1D_u0_theta_plug/movie.webm' type='video/webm; codecs="vp8, vorbis"'>
+    <source src='mov-diffu/diffu1D_u0_theta_plug/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+</video>
+</div>
+<p><em></em></p>
+
+</td>
+</tr>
+</table>
+</section>
+
+
+<section>
+<h2 id="___sec31">Crank-Nicolson applied to a Gaussian profile </h2>
+
+<p>
+\( N_x=50 \).
+
+<p>
+
+<table border="0">
+<tr>
+<td class="padding">
+<p>
+\( F=0.5 \).
+
+<p>
+
+<div>
+<video  loop controls width='640' height='365' preload='none'>
+    <source src='mov-diffu/diffu1D_u0_theta_gaussian1/movie.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+    <source src='mov-diffu/diffu1D_u0_theta_gaussian1/movie.webm' type='video/webm; codecs="vp8, vorbis"'>
+    <source src='mov-diffu/diffu1D_u0_theta_gaussian1/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+</video>
+</div>
+<p><em></em></p>
+
+</td>
+<td class="padding">
+\( F=5 \).
+
+<p>
+
+<div>
+<video  loop controls width='640' height='365' preload='none'>
+    <source src='mov-diffu/diffu1D_u0_theta_gaussian1_F5/movie.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+    <source src='mov-diffu/diffu1D_u0_theta_gaussian1_F5/movie.webm' type='video/webm; codecs="vp8, vorbis"'>
+    <source src='mov-diffu/diffu1D_u0_theta_gaussian1_F5/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+</video>
+</div>
+<p><em></em></p>
+
+</td>
+</tr>
+</table>
+</section>
+
+
+<section>
+<h2 id="diffu:pde1:theta">The \( \theta \) rule</h2>
+
+<p>
+The \( \theta \) rule condenses a family of finite difference approximations
+in time to one formula
+
+<ul>
+ <p><li> \( \theta=0 \) gives the Forward Euler scheme in time</li>
+ <p><li> \( \theta=1 \) gives the Backward Euler scheme in time</li>
+ <p><li> \( \theta=\half \) gives the Crank-Nicolson scheme in time</li>
+</ul>
+<p>
+
+Applied to \( u_t=\dfc u_{xx} \):
+
+<p>&nbsp;<br>
+$$ \frac{u^{n+1}_i-u^n_i}{\Delta t} =
+\dfc\left( \theta \frac{u^{n+1}_{i+1} - 2u^{n+1}_i + u^{n+1}_{i-1}}{\Delta x^2}
++ (1-\theta) \frac{u^{n}_{i+1} - 2u^n_i + u^n_{i-1}}{\Delta x^2}\right)
+$$
+<p>&nbsp;<br>
+
+<p>
+Matrix entries:
+
+<p>&nbsp;<br>
+$$ A_{i,i-1} = -F_o\theta,\quad A_{i,i} = 1+2F_o\theta\quad,
+A_{i,i+1} = -F_o\theta$$
+<p>&nbsp;<br>
+
+<p>
+Right-hand side:
+
+<p>&nbsp;<br>
+$$ b_i = u^n_{i} + F_o(1-\theta)
+\frac{u^{n}_{i+1} - 2u^n_i + u^n_{i-1}}{\Delta x^2}
+$$
+<p>&nbsp;<br>
+</section>
+
+
+<section>
+<h2 id="___sec33">The Laplace and Poisson equation </h2>
+
+<p>
+Laplace equation:
+
+<p>&nbsp;<br>
+$$ \nabla^2 u = 0,\quad \mbox{1D: } u''(x)=0$$
+<p>&nbsp;<br>
+
+<p>
+Poisson equation:
+
+<p>&nbsp;<br>
+$$ -\nabla^2 u = f,\quad \mbox{1D: } -u''(x)=f(x)$$
+<p>&nbsp;<br>
+
+<p>
+These are limiting behavior of time-dependent diffusion equations if
+
+<p>&nbsp;<br>
+$$ \lim_{t\rightarrow\infty}\frac{\partial u}{\partial t} = 0$$
+<p>&nbsp;<br>
+
+<p>
+Then \( u_t = \dfc u_{xx} + 0 \) in the limit \( t\rightarrow\infty \)
+reduces to
+
+<p>&nbsp;<br>
+$$ u_{xx} + f = 0$$
+<p>&nbsp;<br>
+</section>
+
+
+<section>
+<h2 id="___sec34">We can solve 1D Poisson/Laplace equation by going to infinity in time-dependent diffusion equations </h2>
+
+<p>
+Looking at the numerical schemes, \( F\rightarrow\infty \) leads to the
+Laplace or Poisson equations (without \( f \) or with \( f \), resp.).
+
+<p>
+Good news: choose \( F \) large in the BE or CN schemes and <em>one
+time step</em> is enough to produce the stationary solution for
+\( t\rightarrow\infty \).
+
+<p>
+<!-- Need example, but with nonzero boundary conditions -->
+</section>
+
+
+<section>
+<h2 id="___sec35">Extensions </h2>
+
+<p>
+These extensions are performed exactly as for a wave equation as they
+only affect the spatial derivatives (which are the same as in the
+wave equation).
+
+<ul>
+ <p><li> Variable coefficients</li>
+ <p><li> Neumann and Robin conditions</li>
+ <p><li> 2D and 3D</li>
+</ul>
+<p>
+
+Future versions of this document will for completeness and
+independence of the wave equation document feature info on the three
+points. The Robin condition is new, but straightforward to handle:
+
+<p>&nbsp;<br>
+$$ -\dfc\frac{\partial u}{\partial n} = h_T(u-U_s),\quad
+[-\dfc D_x u = h_T(u-U_s)]^n_i
+$$
+<p>&nbsp;<br>
+</section>
+
+
+<section>
+<h1 id="diffu:pde1:analysis">Analysis of schemes for the diffusion equation</h1>
+
+<p>
+
+<!-- begin box -->
+<div style="width: 95%; padding: 10px; border: 1px solid #000; border-radius: 4px;">
+Solutions of diffusion problems are expected to be smooth. Can we
+understand when they are not?
+</div>
+<!-- end box -->
+
+<p>
+<center><p><img src="fig-diffu/discontinuity_CN_F5.png" align="bottom" width=400></p></center>
+</section>
+
+
+<section>
+<h2 id="diffu:pde1:analysis:uex">Properties of the solution</h2>
+
+<p>
+The PDE
+
+<p>&nbsp;<br>
+$$
+u_t = \dfc u_{xx}
+$$
+<p>&nbsp;<br>
+
+admits solutions
+
+<p>&nbsp;<br>
+$$
+u(x,t) = Qe^{-\dfc k^2 t}\sin\left( kx\right)
+$$
+<p>&nbsp;<br>
+
+<p>
+Observations from this solution:
+
+<ul>
+ <p><li> The initial shape \( I(x)=Q\sin kx \)
+   undergoes a damping \( \exp{(-\dfc k^2t)} \)</li>
+ <p><li> The damping is very strong for short waves (large \( k \))</li>
+ <p><li> The damping is weak for long waves (small \( k \))</li>
+ <p><li> Consequence: \( u \) is smoothened with time</li>
+</ul>
+</section>
+
+
+<section>
+<h2 id="___sec38">Example </h2>
+
+<p>
+Test problem:
+
+<p>&nbsp;<br>
+$$
+\begin{align*}
+u_t &= u_{xx},\quad &x\in (0,1),\ t\in (0,T]\\ 
+u(0,t) &= u(1,t) = 0,\quad &t\in (0,T]\\ 
+u(x,0) & = \sin (\pi x) + 0.1\sin(100\pi x)
+\end{align*}
+$$
+<p>&nbsp;<br>
+
+<p>
+Exact solution:
+
+<p>&nbsp;<br>
+$$
+u(x,t) = e^{-\pi^2 t}\sin (\pi x) + 0.1e^{-\pi^2 10^4 t}\sin (100\pi x)
+$$
+<p>&nbsp;<br>
+</section>
+
+
+<section>
+<h2 id="___sec39">High frequency components of the solution are very quickly damped </h2>
+
+<p>
+<center><p><img src="fig-diffu/diffusion_damping.png" align="bottom" width=800></p></center>
+</section>
+
+
+<section>
+<h2 id="___sec40">Damping of a discontinuity; problem </h2>
+
+<p>
+<div class="alert alert-block alert-notice alert-text-normal">
+<b>Problem.</b>
+<p>
+Two pieces of a material, at different temperatures, are brought
+in contact at \( t=0 \). Assume the end points of the pieces are
+kept at the initial temperature. How does the heat flow from
+the hot to the cold piece?
+
+<p>
+Or: A huge ion concentration on one side of a synapse in the brain
+(concentration discontinuity) is released and
+ions move by diffusion.
+</div>
+</section>
+
+
+<section>
+<h2 id="___sec41">Damping of a discontinuity; model </h2>
+
+<p>
+<div class="alert alert-block alert-notice alert-text-normal">
+<b>Solution.</b>
+<p>
+Assume a 1D model is sufficient (e.g., insulated rod):
+
+<p>&nbsp;<br>
+$$
+u(x,0)=\left\lbrace
+\begin{array}{ll}
+U_L, & x < L/2\\ 
+U_R,& x\geq L/2
+\end{array}\right.
+$$
+<p>&nbsp;<br>
+
+<p>&nbsp;<br>
+$$ \frac{\partial u}{\partial t} = \dfc
+\frac{\partial^2 u}{\partial x^2},\quad u(0,t)=U_L,\ u(L,t)=U_R$$
+<p>&nbsp;<br>
+</div>
+
+<p>
+<!-- FIGURE: [fig-diffu/discont_I, width=400 frac=0.6] -->
+</section>
+
+
+<section>
+<h2 id="___sec42">Damping of a discontinuity; Backward Euler scheme </h2>
+
+<p>
+Discrete model:
+
+<p>&nbsp;<br>
+$$ [D_t^- u = \dfc D_xD_x]^n_i $$
+<p>&nbsp;<br>
+
+<p>
+results in a (tridiagonal) linear system
+
+<p>&nbsp;<br>
+$$
+- F u^n_{i-1} + \left(1+  2F \right) u^{n}_i - F u^n_{i+1} =
+u_{i-1}^{n-1}
+$$
+<p>&nbsp;<br>
+
+<p>
+where
+
+<p>&nbsp;<br>
+$$ F = \dfc\frac{\Delta t}{\Delta x^2} $$
+<p>&nbsp;<br>
+
+<p>
+is the <em>mesh Fourier number</em>
+</section>
+
+
+<section>
+<h2 id="___sec43">Damping of a discontinuity; Backward Euler simulation \( F=\half \) </h2>
+
+<p>
+
+<div>
+<video  loop controls width='500' height='365' preload='none'>
+    <source src='mov-diffu/BE_C0.5/movie.webm' type='video/webm; codecs="vp8, vorbis"'>
+    <source src='mov-diffu/BE_C0.5/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+</video>
+</div>
+<p><em></em></p>
+
+<!-- Issue warning if only .ogg or .webm movie in a Safari browser -->
+<script language="javascript">
+if (!!(window.safari)) {
+  document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
+</script>
+</section>
+
+
+<section>
+<h2 id="___sec44">Damping of a discontinuity; Forward Euler scheme </h2>
+
+<p>
+Discrete model:
+
+<p>&nbsp;<br>
+$$ [D_t^+ u = \dfc D_xD_x]^n_i $$
+<p>&nbsp;<br>
+
+<p>
+results in the explicit updating formula
+
+<p>&nbsp;<br>
+$$ u^{n+1}_i = u^n_i + F\left(
+u^{n}_{i+1} - 2u^n_i + u^n_{i-1}\right)
+$$
+<p>&nbsp;<br>
+</section>
+
+
+<section>
+<h2 id="___sec45">Damping of a discontinuity; Forward Euler simulation \( F=\half \) </h2>
+
+<p>
+
+<div>
+<video  loop controls width='500' height='365' preload='none'>
+    <source src='mov-diffu/FE_C0.5/movie.webm' type='video/webm; codecs="vp8, vorbis"'>
+    <source src='mov-diffu/FE_C0.5/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+</video>
+</div>
+<p><em></em></p>
+
+<!-- Issue warning if only .ogg or .webm movie in a Safari browser -->
+<script language="javascript">
+if (!!(window.safari)) {
+  document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
+</script>
+</section>
+
+
+<section>
+<h2 id="___sec46">Damping of a discontinuity; Crank-Nicolson scheme </h2>
+
+<p>
+Discrete model:
+
+<p>&nbsp;<br>
+$$ [D_t u = \dfc D_xD_x\overline{u}^t]^n_i $$
+<p>&nbsp;<br>
+
+<p>
+results in a tridiagonal linear system
+</section>
+
+
+<section>
+<h2 id="___sec47">Damping of a discontinuity; Crank-Nicolson simulation \( F=5 \) </h2>
+
+<p>
+
+<div>
+<video  loop controls width='500' height='365' preload='none'>
+    <source src='mov-diffu/CN_C5/movie.webm' type='video/webm; codecs="vp8, vorbis"'>
+    <source src='mov-diffu/CN_C5/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+</video>
+</div>
+<p><em></em></p>
+
+<!-- Issue warning if only .ogg or .webm movie in a Safari browser -->
+<script language="javascript">
+if (!!(window.safari)) {
+  document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
+</script>
+</section>
+
+
+<section>
+<h2 id="___sec48">Fourier representation </h2>
+
+<p>
+Represent \( I(x) \) as a Fourier series
+
+<p>&nbsp;<br>
+$$
+I(x) \approx \sum_{k\in K} b_k e^{ikx}
+$$
+<p>&nbsp;<br>
+
+<p>
+The corresponding sum for \( u \) is
+
+<p>&nbsp;<br>
+$$
+u(x,t) \approx \sum_{k\in K} b_k e^{-\dfc k^2t}e^{ikx}
+$$
+<p>&nbsp;<br>
+
+<p>
+Such solutions are also accepted by the numerical schemes, but
+with an amplification factor \( A \) different from \( \exp{({-\dfc k^2t})} \):
+
+<p>&nbsp;<br>
+$$
+u^n_q = A^n e^{ikq\Delta x} = A^ne^{ikx}
+$$
+<p>&nbsp;<br>
+</section>
+
+
+<section>
+<h2 id="diffu:pde1:analysis:summary">Analysis of the finite difference schemes</h2>
+
+<p>
+Stability:
+
+<ul>
+
+<p><li> \( |A| < 1 \): decaying numerical solutions (as we want)</li>
+
+<p><li> \( A < 0 \): <em>oscillating</em> numerical solutions (as we do not want)</li>
+</ul>
+<p>
+
+Accuracy:
+
+<ul>
+
+<p><li> Compare numerical and exact amplification factor: \( A \) vs \( \Aex = \exp{(-\dfc k^2 \Delta t)} \)</li>
+</ul>
+</section>
+
+
+<section>
+<h2 id="diffu:pde1:analysis:FE">Analysis of the Forward Euler scheme</h2>
+
+<p>&nbsp;<br>
+$$
+\begin{equation*} [D_t^+ u = \dfc D_xD_x u]^n_q \end{equation*}
+$$
+<p>&nbsp;<br>
+
+<p>
+Inserting
+
+<p>&nbsp;<br>
+$$ u^n_q = A^n e^{ikq\Delta x}$$
+<p>&nbsp;<br>
+
+leads to
+
+<p>&nbsp;<br>
+$$
+A = 1 -4F\sin^2\left(
+\frac{k\Delta x}{2}\right),\quad
+F = \frac{\dfc\Delta t}{\Delta x^2}\mbox{ (mesh Fourier number)}
+$$
+<p>&nbsp;<br>
+
+<p>
+The complete numerical solution is
+
+<p>&nbsp;<br>
+$$
+u^n_q = (1 -4F\sin^2 p)^ne^{ikq\Delta x},\quad
+p = k\Delta x/2
+$$
+<p>&nbsp;<br>
+
+<p>
+Key spatial discretization quantity: the dimensionless \( p=\half k\Delta x \)
+</section>
+
+
+<section>
+<h2 id="___sec51">Results for stability </h2>
+
+<p>
+We always have \( A\leq 1 \). The condition \( A\geq -1 \) implies
+
+<p>&nbsp;<br>
+$$ 4F\sin^2p\leq 2 $$
+<p>&nbsp;<br>
+
+The worst case is when \( \sin^2 p=1 \), so a sufficient criterion for
+stability is
+
+<p>&nbsp;<br>
+$$ F\leq {\half} $$
+<p>&nbsp;<br>
+
+or:
+
+<p>&nbsp;<br>
+$$ \Delta t\leq \frac{\Delta x^2}{2\dfc} $$
+<p>&nbsp;<br>
+
+<p>
+<div class="alert alert-block alert-notice alert-text-normal">
+<b>Implications of the stability result.</b>
+<p>
+Less favorable criterion than for \( u_{tt}=c^2u_{xx} \): halving \( \Delta x \)
+implies time step \( \frac{1}{4}\Delta t \) (not just \( \half\Delta t \)
+as in a wave equation). Need very small time steps for fine spatial
+meshes!
+</div>
+</section>
+
+
+<section>
+<h2 id="diffu:pde1:analysis:BE">Analysis of the Backward Euler scheme</h2>
+
+<p>&nbsp;<br>
+$$
+\begin{equation*} [D_t^- u = \dfc D_xD_x u]^n_q\end{equation*}
+$$
+<p>&nbsp;<br>
+
+<p>&nbsp;<br>
+$$ u^n_q = A^n e^{ikq\Delta x}$$
+<p>&nbsp;<br>
+
+<p>&nbsp;<br>
+$$ A = (1  + 4F\sin^2p)^{-1} $$
+<p>&nbsp;<br>
+
+<p>&nbsp;<br>
+$$ u^n_q = (1  + 4F\sin^2p)^{-n}e^{ikq\Delta x} $$
+<p>&nbsp;<br>
+
+<p>
+Stability:
+We see that \( |A| < 1 \) for all \( \Delta t>0 \)
+and that \( A>0 \) (no oscillations)
+</section>
+
+
+<section>
+<h2 id="diffu:pde1:analysis:CN">Analysis of the Crank-Nicolson scheme</h2>
+
+<p>
+The scheme
+
+<p>&nbsp;<br>
+$$ [D_t u = \dfc D_xD_x \overline{u}^x]^{n+\half}_q$$
+<p>&nbsp;<br>
+
+leads to
+
+<p>&nbsp;<br>
+$$ A = \frac{ 1 - 2F\sin^2p}{1 + 2F\sin^2p} $$
+<p>&nbsp;<br>
+
+<p>&nbsp;<br>
+$$ u^n_q = \left(\frac{ 1 - 2F\sin^2p}{1 + 2F\sin^2p}\right)^ne^{ikp\Delta x}$$
+<p>&nbsp;<br>
+
+<p>
+Stability:
+The criteria \( A>-1 \) and \( A < 1 \) are fulfilled for any \( \Delta t >0 \)
+</section>
+
+
+<section>
+<h2 id="___sec54">Summary of amplification factors </h2>
+
+<p>&nbsp;<br>
+$$
+\begin{align*}
+\Aex &= \exp{(-\alpha k^2\Delta t)} = \exp{(-4Fp^2)}\\ 
+A &= 1 -4F\sin^2\left(\frac{k\Delta x}{2}\right)\quad\mbox{Forward Euler}\\ 
+A &= (1  + 4F\sin^2p)^{-1}\quad\mbox{Backward Euler}\\ 
+A &= \frac{ 1 - 2F\sin^2p}{1 + 2F\sin^2p}\quad\mbox{Crank-Nicolson}
+\end{align*}
+$$
+<p>&nbsp;<br>
+
+<p>
+Note: \( \Aex = \exp{(-\dfc k^2\Delta t)}=\exp{(-F k^2\Delta x^2)}=
+\exp{(-F4p^2)} \).
+</section>
+
+
+<section>
+<h2 id="___sec55">Summary of accuracy of amplification factors; large time steps </h2>
+
+<p>
+<center><p><img src="fig-diffu/diffusion_A_F20_F2.png" align="bottom" width=800></p></center>
+</section>
+
+
+<section>
+<h2 id="___sec56">Summary of accuracy of amplification factors; time steps around the Forward Euler stability limit </h2>
+
+<p>
+<center><p><img src="fig-diffu/diffusion_A_F05_F025.png" align="bottom" width=800></p></center>
+</section>
+
+
+<section>
+<h2 id="___sec57">Summary of accuracy of amplification factors; small time steps </h2>
+
+<p>
+<center><p><img src="fig-diffu/diffusion_A_F01_F001.png" align="bottom" width=800></p></center>
+</section>
+
+
+<section>
+<h2 id="___sec58">Observations </h2>
+
+<ul>
+ <p><li> The key spatial discretization parameter is the dimensionless \( p=\half k\Delta x \)</li>
+ <p><li> The key temporal discretization parameter is the dimensionless \( F = \dfc\Delta t/\Delta x^2 \)</li>
+ <p><li> Important: \( \Delta t \) and \( \Delta x \) <em>in combination with</em> \( \dfc \) and \( k \)
+   determine accuracy</li>
+ <p><li> Crank-Nicolson gives oscillations and not much damping of short waves
+   for increasing \( F \)</li>
+ <p><li> These waves will manifest themselves as high frequency
+   oscillatory noise in the solution</li>
+ <p><li> Steep solutions will have short waves with significant (visible) amplitudes</li>
+ <p><li> All schemes fail to dampen short waves enough</li>
+</ul>
+<p>
+
+The problems of correct damping for \( u_t = u_{xx} \) is partially
+manifested in the similar time discretization schemes for \( u'(t)=-\dfc u(t) \).
+</section>
+
+
+
+</div> <!-- class="slides" -->
+</div> <!-- class="reveal" -->
+
+<script src="reveal.js/lib/js/head.min.js"></script>
+<script src="reveal.js/js/reveal.js"></script>
+
+<script>
+// Full list of configuration options available here:
+// https://github.com/hakimel/reveal.js#configuration
+Reveal.initialize({
+
+    // Display navigation controls in the bottom right corner
+    controls: true,
+
+    // Display progress bar (below the horiz. slider)
+    progress: true,
+
+    // Display the page number of the current slide
+    slideNumber: true,
+
+    // Push each slide change to the browser history
+    history: false,
+
+    // Enable keyboard shortcuts for navigation
+    keyboard: true,
+
+    // Enable the slide overview mode
+    overview: true,
+
+    // Vertical centering of slides
+    //center: true,
+    center: false,
+
+    // Enables touch navigation on devices with touch input
+    touch: true,
+
+    // Loop the presentation
+    loop: false,
+
+    // Change the presentation direction to be RTL
+    rtl: false,
+
+    // Turns fragments on and off globally
+    fragments: true,
+
+    // Flags if the presentation is running in an embedded mode,
+    // i.e. contained within a limited portion of the screen
+    embedded: false,
+
+    // Number of milliseconds between automatically proceeding to the
+    // next slide, disabled when set to 0, this value can be overwritten
+    // by using a data-autoslide attribute on your slides
+    autoSlide: 0,
+
+    // Stop auto-sliding after user input
+    autoSlideStoppable: true,
+
+    // Enable slide navigation via mouse wheel
+    mouseWheel: false,
+
+    // Hides the address bar on mobile devices
+    hideAddressBar: true,
+
+    // Opens links in an iframe preview overlay
+    previewLinks: false,
+
+    // Transition style
+    transition: 'default', // default/cube/page/concave/zoom/linear/fade/none
+
+    // Transition speed
+    transitionSpeed: 'default', // default/fast/slow
+
+    // Transition style for full page slide backgrounds
+    backgroundTransition: 'default', // default/none/slide/concave/convex/zoom
+
+    // Number of slides away from the current that are visible
+    viewDistance: 3,
+
+    // Parallax background image
+    //parallaxBackgroundImage: '', // e.g. "'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg'"
+
+    // Parallax background size
+    //parallaxBackgroundSize: '' // CSS syntax, e.g. "2100px 900px"
+
+    theme: Reveal.getQueryHash().theme, // available themes are in reveal.js/css/theme
+    transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/none
+
+});
+
+Reveal.initialize({
+    dependencies: [
+        // Cross-browser shim that fully implements classList - https://github.com/eligrey/classList.js/
+        { src: 'reveal.js/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+
+        // Interpret Markdown in <section> elements
+        { src: 'reveal.js/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+        { src: 'reveal.js/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+
+        // Syntax highlight for <code> elements
+        { src: 'reveal.js/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+
+        // Zoom in and out with Alt+click
+        { src: 'reveal.js/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+
+        // Speaker notes
+        { src: 'reveal.js/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } },
+
+        // Remote control your reveal.js presentation using a touch device
+        //{ src: 'reveal.js/plugin/remotes/remotes.js', async: true, condition: function() { return !!document.body.classList; } },
+
+        // MathJax
+        //{ src: 'reveal.js/plugin/math/math.js', async: true }
+    ]
+});
+
+Reveal.initialize({
+
+    // The "normal" size of the presentation, aspect ratio will be preserved
+    // when the presentation is scaled to fit different resolutions. Can be
+    // specified using percentage units.
+    width: 1170,  // original: 960,
+    height: 700,
+
+    // Factor of the display size that should remain empty around the content
+    margin: 0.1,
+
+    // Bounds for smallest/largest possible scale to apply to content
+    minScale: 0.2,
+    maxScale: 1.0
+
+});
+</script>
+
+<!-- begin footer logo
+<div style="position: absolute; bottom: 0px; left: 0; margin-left: 0px">
+<img src="somelogo.png">
+</div>
+     end footer logo -->
+
+
+
+</body>
+</html>
