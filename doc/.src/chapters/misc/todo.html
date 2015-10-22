@@ -1,0 +1,191 @@
+<!--
+Automatically generated HTML file from DocOnce source
+(https://github.com/hplgit/doconce/)
+-->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="DocOnce: https://github.com/hplgit/doconce/" />
+<meta name="description" content="Remaining tasks for the finite difference book">
+
+<title>Remaining tasks for the finite difference book</title>
+
+<!-- Bootstrap style: bootstrap -->
+<link href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
+<!-- not necessary
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+-->
+
+
+</head>
+
+<!-- tocinfo
+{'highest level': 1,
+ 'sections': [('Diffusion equations', 1, None, '___sec0'),
+              ('Diffusion PDE in 2D', 2, None, '___sec1'),
+              ('Applications of diffusion equations', 2, None, '___sec2'),
+              ('Software engineering; wave equation model',
+               1,
+               None,
+               '___sec3')]}
+end of tocinfo -->
+
+<body>
+
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: {
+     equationNumbers: {  autoNumber: "AMS"  },
+     extensions: ["AMSmath.js", "AMSsymbols.js", "autobold.js", "color.js"]
+  }
+});
+</script>
+<script type="text/javascript"
+ src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+
+
+    
+<!-- Bootstrap navigation bar -->
+<div class="navbar navbar-default navbar-fixed-top">
+  <div class="navbar-header">
+    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </button>
+    <a class="navbar-brand" href="todo.html">Remaining tasks for the finite difference book</a>
+  </div>
+  <div class="navbar-collapse collapse navbar-responsive-collapse">
+    <ul class="nav navbar-nav navbar-right">
+      <li class="dropdown">
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown">Contents <b class="caret"></b></a>
+        <ul class="dropdown-menu">
+     <!-- navigation toc: --> <li><a href="#___sec0" style="font-size: 80%;"><b>Diffusion equations</b></a></li>
+     <!-- navigation toc: --> <li><a href="#___sec1" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Diffusion PDE in 2D</a></li>
+     <!-- navigation toc: --> <li><a href="#___sec2" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Applications of diffusion equations</a></li>
+     <!-- navigation toc: --> <li><a href="#___sec3" style="font-size: 80%;"><b>Software engineering; wave equation model</b></a></li>
+
+        </ul>
+      </li>
+    </ul>
+  </div>
+</div>
+</div> <!-- end of navigation bar -->
+
+<div class="container">
+
+<p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p> <!-- add vertical space -->
+
+<!-- ------------------- main content ---------------------- -->
+
+
+
+<div class="jumbotron">
+<center><h1>Remaining tasks for the finite difference book</h1></center>  <!-- document title -->
+
+<p>
+<!-- author(s): hpl -->
+
+<center>
+<b>hpl</b> 
+</center>
+
+<p>
+<!-- institution(s) -->
+
+<br>
+<p>
+<center><h4>Oct 21, 2015</h4></center> <!-- date -->
+<br>
+<p>
+Complete chapters: vib, wave.
+
+<p>
+</div> <!-- end jumbotron -->
+
+<h1 id="___sec0">Diffusion equations </h1>
+
+<h2 id="___sec1">Diffusion PDE in 2D </h2>
+
+<p>
+<b>Task 1:</b>
+Implement a 2D diffusion PDE solver for the \( \theta \)-rule
+in time. Set up the matrix system first as a square matrix, then
+as a sparse matrix. Solve system by Gaussian elimination.
+
+<p>
+There is a preliminary sparse matrix
+code in <code>src-diffu/LeifRune/laplace.py</code>, but it
+applies <code>scipy.sparse.spdiags</code> and we should apply <code>scipy.sparse.diags</code>
+instead, see <code>src-diffu/diffu1D_u0.py</code> (<code>diags</code>) versus
+<code>src-diffu/diffu1D_v1.py</code> (<code>spdiags</code>) for a corresponding 1D examples.
+
+<p>
+We need a verification example. I suggest extending the 1D example to
+
+$$ u(x,y,t) = (L_x-x)(L_y-y)5t,$$
+
+which fulfills \( u=0 \) at the boundary. This solution should be exactly
+reproduced by all schemes.
+Then we can have convergence rates tests with
+solutions of the form
+
+$$ u(x,y,t) = e^{-pt}\cos qx\cos ry,$$
+
+with prescribed boundary conditions (as functions of time and space) for \( u \).
+
+<p>
+<b>Task 2:</b>
+Add a 2D diffusion PDE solver for the \( \theta \)-rule
+in time using Conjugate Gradient method with ILU preconditioning.
+Use <code>scipy.sparse</code> tools (make the sparse matrix in some format,
+call ILU to make preconditioner and call the iterative solver).
+This is <em>the</em> definite solver to present.
+Exercise: extend to 3D.
+
+<h2 id="___sec2">Applications of diffusion equations </h2>
+
+<p>
+We need to write about various applications that results in diffusion PDEs.
+See <code>wave_app*.do.txt </code> for how we did this for the wave equation.
+
+<ul>
+ <li> Quick derivation of diffusion of a substance: start with mass conservation and use Fick's law.</li>
+ <li> Quick derivation of diffusion of heat in solids: start with the energy equation, remove terms with stress work and convection, and use Fourier's law.</li>
+ <li> Diffusion PDEs arising from Navier-Stokes in simplified flow configurations. Some suggestions are in <code>diffu_app.do.txt</code>.</li>
+ <li> Quick intro to the cable equation for signals in the brain.</li>
+ <li> Fisher's equation for population growth with spatial diffusion,
+   but this is a nonlinear equation... OK with Forward Euler.</li>
+ <li> Murray's Mathematical Biology book has many nonlinear diffusion PDEs
+   for various bio applications.</li>
+</ul>
+
+<h1 id="___sec3">Software engineering; wave equation model </h1>
+
+<ul>
+ <li> Explain how to use classes to implement the solver</li>
+</ul>
+
+
+<!-- ------------------- end of main content --------------- -->
+
+</div>  <!-- end container -->
+<!-- include javascript, jQuery *first* -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script src="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+
+<!-- Bootstrap footer
+<footer>
+<a href="http://..."><img width="250" align=right src="http://..."></a>
+</footer>
+-->
+
+
+</body>
+</html>
+    
+
