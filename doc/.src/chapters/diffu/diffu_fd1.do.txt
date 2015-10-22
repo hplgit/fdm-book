@@ -291,13 +291,18 @@ Inserted in the PDE, it requires a source term
 !bt
 \[ f(x,t) = 10\dfc t + 5x(L-x)\tp\]
 !et
+% if BOOK == 'book':
 With the formulas from Appendix ref{sec:form:fdtn} we can easily check
+% else:
+Let us check
+% endif
 that the manufactured `u` fulfills the scheme:
 
 !bt
 \begin{align*}
-\lbrack D_t^+ u = \dfc D_x_D_x u + f\rbrack^n_i &=
-\lbrack 5x(L-x)D_t^+ t  = 5 t\dfc D_x_D_x (xL-x^2) + 10\dfc t + 5x(L-x)\rbrack^n_i\\
+\lbrack D_t^+ u = \dfc D_x D_x u + f\rbrack^n_i &=
+\lbrack 5x(L-x)D_t^+ t  = 5 t\dfc D_x D_x (xL-x^2) +
+10\dfc t + 5x(L-x)\rbrack^n_i\\
 &=
 \lbrack 5x(L-x)  = 5 t\dfc (-2) + 10\dfc t + 5x(L-x) \rbrack^n_i\tp
 \end{align*}
@@ -477,14 +482,14 @@ FIGURE: [fig-diffu/plug_FE_F051, width=800 frac=1] Forward Euler scheme for $F=0
 
 Instead of a discontinuous initial condition we now try the smooth
 Gaussian function for $I(x)$. A simulation for $F=0.5$
-is shown in Figure ref{diffu:pde1:FE:fig:F=0.5}. Now the numerical solution
+is shown in Figure ref{diffu:pde1:FE:fig:gauss:F=0.5}. Now the numerical solution
 is smooth for all times, and this is true for any $F\leq 0.5$.
 
 % if FORMAT != "pdflatex":
 MOVIE: [mov-diffu/diffu1D_u0_FE_gaussian1/movie.ogg]
 % endif
 
-FIGURE: [fig-diffu/gaussian_FE_F05, width=800 frac=1] Forward Euler scheme for $F=0.5$. label{diffu:pde1:FE:fig:F=0.5}
+FIGURE: [fig-diffu/gaussian_FE_F05, width=800 frac=1] Forward Euler scheme for $F=0.5$. label{diffu:pde1:FE:fig:gauss:F=0.5}
 
 Experiments with these two choices of $I(x)$ reveal some
 important observations:
@@ -922,7 +927,7 @@ Applied to the 1D diffusion problem, the $\theta$-rule gives
 + (1-\theta) \frac{u^{n}_{i+1} - 2u^n_i + u^n_{i-1}}{\Delta x^2}\right)\\
 &\qquad + \theta f_i^{n+1} + (1-\theta)f_i^n
 \tp
-\]
+\end{align*}
 !et
 This scheme also leads to a matrix system with entries
 
@@ -950,6 +955,7 @@ Euler and Crank-Nicolson schemes listed earlier.
 # #endif
 
 ===== Experiments =====
+label{diffu:pde1:theta:experiments}
 
 We can repeat the experiments from Section ref{diffu:pde1:FE:experiments}
 to see if the Backward Euler or Crank-Nicolson schemes have problems
@@ -965,10 +971,11 @@ The Crank-Nicolson method produces smooth solutions for small $F$,
 $F\leq\half$, but small noise is more and more evident as $F$
 increases. Figures ref{diffu:pde1:CN:fig:F=3} and ref{diffu:pde1:CN:fig:F=10}
 demonstrates the effect for $F=3$ and $F=10$, respectively.
+Section ref{diffu:pde1:analysis} explains why such noise occur.
 
-FIGURE: [fig-diffu/plug_CE_F3, width=800 frac=1] Crank-Nicolson scheme for $F=3$. label{diffu:pde1:CN:fig:F=3}
+FIGURE: [fig-diffu/plug_CN_F3, width=800 frac=1] Crank-Nicolson scheme for $F=3$. label{diffu:pde1:CN:fig:F=3}
 
-FIGURE: [fig-diffu/plug_CE_F10, width=800 frac=1] Crank-Nicolson scheme for $F=10$. label{diffu:pde1:CN:fig:F=10}
+FIGURE: [fig-diffu/plug_CN_F10, width=800 frac=1] Crank-Nicolson scheme for $F=10$. label{diffu:pde1:CN:fig:F=10}
 
 
 
@@ -1008,6 +1015,8 @@ pseudo time variable.
 
 [hpl: Better to say the last sentence when we treat iterative methods.]
 
+# #ifdef 2DO
+
 ===== Extensions =====
 
 These extensions are performed exactly as for a wave equation as they
@@ -1027,8 +1036,6 @@ points. The Robin condition is new, but straightforward to handle:
 [-\dfc D_x u = h_T(u-U_s)]^n_i
 \]
 !et
-
-# #ifdef 2DO
 
 ===== Implementation =====
 label{diffu:pde1:impl}
@@ -1061,7 +1068,7 @@ manufactured solutions. In the  limit $t\rightarrow\infty$, however,
 we can derive an analytical solution.
 The limit problem for the stationary solution
 $v(x) = \lim_{t\rightarrow \infty} u(x,t)$,
-assuming $\partial u/\partial t\rightarrow 0$, becomes
+assuming $\partial u/\partial t\rightarrow 0$ in this limit, becomes
 
 !bt
 \begin{equation}
