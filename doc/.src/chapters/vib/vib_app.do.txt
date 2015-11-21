@@ -867,14 +867,14 @@ FIGURE: [fig-vib/tanh_spring, width=600 frac=0.8]
 !esubex
 
 !bsubex
-Scale the equations using $I$ as scale for $u$ and $m/k$ as
+Scale the equations using $I$ as scale for $u$ and $\sqrt{m/k}$ as
 time scale.
 
 !bsol
 Inserting the dimensionless dependent and independent variables,
 
 !bt
-\[ \bar u = \frac{u}{I},\quad \bar t = \frac{tk}{m},\]
+\[ \bar u = \frac{u}{I},\quad \bar t = \frac{t}{\sqrt{m/k}},\]
 !et
 in the problem
 
@@ -890,13 +890,13 @@ gives
 = 0,\quad \bar u(0)=1,\ \frac{d\bar u}{d\bar t}(0)=\frac{V\sqrt{mk}}{kI}\tp
 \]
 !et
-We identify three dimensionless parameters,
+We can now identify three dimensionless parameters,
 
 !bt
 \[ \beta = \frac{\mu mg}{kI},\quad
 \gamma = \alpha I,\quad \delta = \frac{V\sqrt{mk}}{kI}\tp\]
 !et
-The scaled problem can the be written
+The scaled problem can then be written
 
 !bt
 \[ \frac{d^2\bar u}{d\bar t^2} + \beta\hbox{sign}\left(
@@ -914,20 +914,35 @@ Implement the scaled model in b). Run it for some values of
 the dimensionless parameters.
 
 !bsol
-The code can be like this:
+We use Odespy to solve the ODE, which requires rewriting the ODE as a
+system of two first-order ODEs:
+
+!bt
+\begin{align*}
+v' &= - \beta\hbox{sign}(v) - \gamma^{-1}\tanh(\gamma \bar u),
+u' &= v,
+\end{align*}
+!et
+with initial conditions $v(0)=\delta$ and $u(0)=1$. Here, $u(t)$ corresponds
+to the previous $\bar u(\bar t)$, while $v(t)$ corresponds to
+$d\bar u/\bar t (\bar t)$. The code can be like this:
 
 @@@CODE exer-vib/sliding_box.py fromto: def simulate@if __name
 
 We simulate for an almost linear spring in the regime of $\bar u$ (recall
 that $\bar u\in [0,1]$ since $u$ is scaled with $I$), which corresponds
 to $\alpha = 1$ in a) and therefore $\gamma =1$. Then we can try a
-spring whose force quickly flattens out like $\alpha=10$ in a), which
-corresponds to $\gamma = 10$ in the scaled model. After some
+spring whose force quickly flattens out like $\alpha=5$ in a), which
+corresponds to $\gamma = 5$ in the scaled model. A third option is
+to have a truly linear spring, e.g., $\gamma =0.1$. After some
 experimentation we realize that $\beta=0,0.05, 0.1$ are relevant values.
+
+FIGURE: [fig-vib/sliding_box_gamma0_1, width=600 frac=0.8]
 
 FIGURE: [fig-vib/sliding_box_gamma1, width=600 frac=0.8]
 
-FIGURE: [fig-vib/sliding_box_gamma10, width=600 frac=0.8]
+FIGURE: [fig-vib/sliding_box_gamma5, width=600 frac=0.8]
+
 !esol
 !esubex
 

@@ -469,33 +469,35 @@ idx{Cython}
 We now consider the "`wave2D_u0.py`": "${src_wave}/wave2D_u0/wave2D_u0.py"
 code for solving the 2D linear wave equation with constant wave
 velocity and homogeneous Dirichlet boundary conditions $u=0$.
-This code contains a `solver` function, which calls and `advance_*`
-function to advance the numerical scheme one level forward in time.
-The function `advance_scalar` applies standard Python loops to implement
-the scheme, while `advance_vectorized` performs corresponding
-vectorized arithmetics with array slices. The statements of this
-solver are explained in
-ref[Section ref{wave:2D3D:impl}, in particular
-Sections ref{wave2D3D:impl:scalar} and ref{wave2D3D:impl:vectorized}][ in
-cite{Langtangen_deqbook_wave}][in
+We shall in the present chapter extend this code with computational
+modules written in other languages than Python. This extended version is
+called "`wave2D_u0_adv.py`": "${src_softeng2}/wave2D_u0_adv.py".
+
+The `wave2D_u0.py` file contains a `solver` function, which calls and
+`advance_*` function to advance the numerical scheme one level forward
+in time.  The function `advance_scalar` applies standard Python loops
+to implement the scheme, while `advance_vectorized` performs
+corresponding vectorized arithmetics with array slices. The statements
+of this solver are explained in ref[Section ref{wave:2D3D:impl}, in
+particular Sections ref{wave2D3D:impl:scalar} and
+ref{wave2D3D:impl:vectorized}][ in cite{Langtangen_deqbook_wave}][in
 the document "Finite difference methods for wave motion":
-"http://tinyurl.com/k3sdbuv/pub/wave"
-cite{Langtangen_deqbook_wave}].
+"http://tinyurl.com/k3sdbuv/pub/wave" cite{Langtangen_deqbook_wave}].
 
 Although vectorization can bring down the CPU time dramatically
-compared with scalar code, there is still some factor 5-10 to win
-in these types of applications
-by implementing the finite difference scheme in compiled code,
-typically in Fortran, C, or C++. This can quite easily be done by
-adding a little extra code to our program. Cython is an extension of
-Python that offers the easiest way to nail our Python loops in the
-scalar code down to machine code and achieve the efficiency of C.
+compared with scalar code, there is still some factor 5-10 to win in
+these types of applications by implementing the finite difference
+scheme in compiled code, typically in Fortran, C, or C++. This can
+quite easily be done by adding a little extra code to our
+program. Cython is an extension of Python that offers the easiest way
+to nail our Python loops in the scalar code down to machine code and
+achieve the efficiency of C.
 
-Cython can be viewed as an extended Python language where variables are
-declared with types and where functions are marked to be implemented in C.
-Migrating Python code to Cython is done by copying the desired code
-segments to functions (or classes) and placing them in one or more separate
-files with extension `.pyx`.
+Cython can be viewed as an extended Python language where variables
+are declared with types and where functions are marked to be
+implemented in C.  Migrating Python code to Cython is done by copying
+the desired code segments to functions (or classes) and placing them
+in one or more separate files with extension `.pyx`.
 
 ===== Declaring variables and annotating the code =====
 
@@ -658,7 +660,7 @@ module:
 !bc pycod
 import pyximport; pyximport.install()
 !ec
-This makes the `setup.py` script redundant. However, in the `wave2D_u0.py`
+This makes the `setup.py` script redundant. However, in the `wave2D_u0_adv.py`
 code we do not use `pyximport` and require an explicit build process
 of this and many other modules.
 !enotice

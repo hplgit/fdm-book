@@ -23,15 +23,16 @@ def simulate(beta, gamma, delta=0,
     t = np.linspace(0, T, time_steps_per_period*num_periods+1)
     import odespy
     def f(u, t, beta, gamma):
+        # Note the sequence of unknowns: v, u (v=du/dt)
         v, u = u
         return [-beta*np.sign(v) - 1.0/gamma*np.tanh(gamma*u), v]
         #return [-beta*np.sign(v) - u, v]
 
     solver = odespy.RK4(f, f_args=(beta, gamma))
-    solver.set_initial_condition([delta, 1])
+    solver.set_initial_condition([delta, 1]) # sequence must match f
     uv, t = solver.solve(t)
-    u = uv[:,0]
-    v = uv[:,1]
+    u = uv[:,1]  # recall sequence in f: v, u
+    v = uv[:,0]
     return u, t
 
 
@@ -40,15 +41,16 @@ if __name__ == '__main__':
     plot_spring()
 
     beta_values = [0, 0.05, 0.1]
-    gamma_values = [1, 10]
+    gamma_values = [0.1, 1, 5]
     for gamma in gamma_values:
         plt.figure()
         for beta in beta_values:
-            u, t = simulate(beta, gamma, 0, 5, 60)
+            u, t = simulate(beta, gamma, 0, 6, 60)
             plt.plot(t, u)
             plt.hold('on')
-        plt.legend([r'$\beta=%g$, $\gamma=%g$' % (beta, gamma)
-                    for beta in beta_values])
+        plt.legend([r'$\beta=%g$' % beta for beta in beta_values])
+        plt.title(r'$\gamma=%g$' % gamma)
+        plt.xlabel('$t$');  plt.ylabel('$u$')
         filestem = 'tmp_u_gamma%g' % gamma
         plt.savefig(filestem + '.png')
         plt.savefig(filestem + '.pdf')
