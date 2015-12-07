@@ -167,7 +167,7 @@ def solver_dense(
             p = m(i,j);  b[p] = U_Ly(t[n+1])  # boundary
         #print b
 
-        # Solve matrix system A*u = b
+        # Solve matrix system A*c = b
         # (the solve function always returns a new object so we
         # do not bother with inserting the solution in-place
         # with c[:] = ...)
@@ -331,7 +331,7 @@ def solver_sparse(
               (1-theta)*dt*f_a_n[imin:imax,j]
         j = Ny;  b[m(0,j):m(Nx+1,j)] = U_Ly(t[n+1]) # boundary
 
-        # Solve matrix system A*u = b
+        # Solve matrix system A*c = b
         c = scipy.sparse.linalg.spsolve(A, b)
 
         # Fill u with vector c

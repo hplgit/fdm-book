@@ -90,10 +90,10 @@ time level $n+1$. That is, we must solve a system of (linear) algebraic
 equations, which we will write as $Ac=b$, where $A$ is the coefficient
 matrix, $c$ is the vector of unknowns, and $b$ is the right-hand side.
 
-Let us examine the equations in $Ac=b$ on a mesh with $N_x=3$ and $N_y=2$ mesh
-points. The spatial mesh is depicted in Figure ref{diffu:2D:fig:mesh3x2}.
-The equations at the boundary just implement the boundary condition
-$u=0$:
+Let us examine the equations in $Ac=b$ on a mesh with $N_x=3$ and
+$N_y=2$ cells in each direction.  The spatial mesh is depicted in
+Figure ref{diffu:2D:fig:mesh3x2}.  The equations at the boundary just
+implement the boundary condition $u=0$:
 
 !bt
 \[
@@ -109,8 +109,8 @@ u^{n+1}_{2,2}=
 u^{n+1}_{3,2}= 0\tp
 \]
 !et
-We are left with two interior points. The equations
-associated with these points are first the one for $i=1$ and $j=1$:
+We are left with two interior points, with $i=1$, $j=1$ and $i=2$, $j=1$.
+The corresponding equations are
 
 !bt
 \begin{align*}
@@ -130,13 +130,14 @@ F_y
 &\qquad \theta \Delta t f^{n+1}_{i,j} + (1-\theta) \Delta t f^{n}_{i,j},
 \end{align*}
 !et
-and a corresponding equation for $i=2$ and $j=1$. There are in total
-12 unknowns $u^{n+1}_{i,j}$ for $i=0,1,2,3$ and $j=0,1,2$.
-To solve the equations, we need to form a matrix system, and for this
-purpose we need a numbering of the unknowns with one index, not two as used
-in the mesh. We introduce a mapping $m(i,j)$
-from a mesh point with indices $(i,j)$
-to the corresponding unknown $s$ in the equation system:
+
+There are in total 12 unknowns $u^{n+1}_{i,j}$ for $i=0,1,2,3$ and
+$j=0,1,2$.  To solve the equations, we need to form a matrix system $Ac=b$.
+In that system, the solution vector $c$ can only one index. Thus,
+we need a numbering of the unknowns with one
+index, not two as used in the mesh. We introduce a mapping $m(i,j)$
+from a mesh point with indices $(i,j)$ to the corresponding unknown
+$p$ in the equation system:
 
 !bt
 \[ p = m(i,j) = j(N_x+1) + i\tp\]
@@ -169,8 +170,9 @@ We could equally well numbered the equations in other ways, e.g.,
 let the $j$ index be the fastest varying index:
 $p = m(i,j) = i(N_y+1) + j$.
 
-Let us form the coefficient matrix, or more precisely, insert the indices
-corresponding to nonzero elements in the coefficient matrix (the indices
+Let us form the coefficient matrix $A$, or more precisely, insert
+matrix element (according Python's convention with zero as base
+index) for each of the nonzero elements in $A$ (the indices
 run through the values of $p$, i.e., $p=0,\ldots,11$):
 
 !bt
@@ -224,7 +226,8 @@ idx{sparse matrix}
 Let $A_{p,q}$ be the value of element $(p,q)$ in the coefficient matrix $A$,
 where $p$ and $q$ now correspond to the numbering of the unknowns in the
 equation system.
-We have $A_{p,q}=1$ for $p=q=0,1,2,3,4,7,8,9,10,11$. Let $p$ be $m(i,j)$, i.e.,
+We have $A_{p,q}=1$ for $p=q=0,1,2,3,4,7,8,9,10,11$, corresponding
+to all the known boundary values. Let $p$ be $m(i,j)$, i.e.,
 the single index corresponding to mesh point $(i,j)$. Then we have
 
 !bt
@@ -288,7 +291,7 @@ F_y
 Recall that $p=m(i,j)=j(N_x+1)+j$ in this expression.
 
 We can, as an alternative, leave the boundary mesh points out of the
-matrix system. For a mesh with $N_x=4$ and $N_y=3$ there are only two
+matrix system. For a mesh with $N_x=3$ and $N_y=2$ there are only two
 internal mesh points whose unknowns will enter the matrix system.
 We must now number the unknowns at the interior points:
 
@@ -305,7 +308,7 @@ FIGURE: [fig-diffu/mesh4x3, width=700 frac=1] 4x3 2D mesh. label{diffu:2D:fig:me
 
 We can continue with illustrating a bit larger mesh, $N_x=4$ and $N_y=3$,
 see Figure ref{diffu:2D:fig:mesh4x3}. The corresponding coefficient matrix
-with dots for zeros and bullets for non-zeroes look as follows:
+with dots for zeros and bullets for non-zeroes look as follows (values at boundary points are included in the equation system):
 
 !bt
 \[
@@ -348,10 +351,10 @@ the equation system.
 ===== Algorithm for setting up the coefficient matrix =====
 label{diffu:2D:alg}
 
-We have looked at a specific mesh in the previous section and formulated
-the equations and seen what the corresponding coefficient matrix and
-right-hand side are. Now our aim is to set up a general algorithm for any
-choice of $N_x$ and $N_y$ that produces the coefficient matrix and
+We looked at a specific mesh in the previous section, formulated
+the equations, and saw what the corresponding coefficient matrix and
+right-hand side are. Now our aim is to set up a general algorithm, for any
+choice of $N_x$ and $N_y$, that produces the coefficient matrix and
 the right-hand side vector.
 We start with a zero matrix and vector, run through each mesh point,
 and fill in the values depending on whether the mesh point is an interior
@@ -361,7 +364,7 @@ point or on the boundary.
   * for $j=0,\ldots, N_y$
     * $p=j(N_x+1)+i$
     * if point $(i,j)$ is on the boundary:
-      * $A_{p,p}=0$, $b_p=1$
+      * $A_{p,p}=1$, $b_p=0$
     * else:
       * fill $A_{p,m(i-1,j)}$, $A_{p,m(i+1,j)}$, $A_{p,m(i,j)}$, $A_{p,m(i,j-1)}$, $A_{p,m(i,j+1)}$, and $b_p$
 
@@ -371,15 +374,15 @@ treat the interior lines $1\leq j<N_y$, and finally treat the boundary
 line $j=N_y$:
 
  * for $i=0,\ldots,N_x$
-  * boundary $j=0$: $p=j(N_x+1)+i$, $A_{p,p}=0$
+  * boundary $j=0$: $p=j(N_x+1)+i$, $A_{p,p}=1$
  * for $j=0,\ldots,N_y$
-  * boundary $i=0$: $p=j(N_x+1)+i$, $A_{p,p}=0$
+  * boundary $i=0$: $p=j(N_x+1)+i$, $A_{p,p}=1$
   * for $i=1,\ldots, N_x-1$
     * interior point $p=j(N_x+1)+i$
     * fill $A_{p,m(i-1,j)}$, $A_{p,m(i+1,j)}$, $A_{p,m(i,j)}$, $A_{p,m(i,j-1)}$, $A_{p,m(i,j+1)}$, and $b_p$
-  * boundary $i=N_x$: $p=j(N_x+1)+i$, $A_{p,p}=0$
+  * boundary $i=N_x$: $p=j(N_x+1)+i$, $A_{p,p}=1$
  * for $i=0,\ldots,N_x$
-  * boundary $j=N_y$: $p=j(N_x+1)+i$, $A_{p,p}=0$
+  * boundary $j=N_y$: $p=j(N_x+1)+i$, $A_{p,p}=1$
 
 The right-hand side is set up as follows.
 
@@ -400,9 +403,10 @@ label{diffu:2D:impl:dense}
 The goal now is to map the algorithms in the previous section to
 Python code. One should for computational efficiency reasons take
 advantage of the fact that the coefficient matrix is sparse and/or
-banded, i.e., take advantage of all the zeros, but we first demonstrate
+banded, i.e., take advantage of all the zeros; however, we first demonstrate
 how to fill an $N\times N$ dense square matrix, where $N$ is the number
-of unknowns, here $N=(N_x+1)(N_y+1)$.
+of unknowns, here $N=(N_x+1)(N_y+1)$. The dense matrix is much easier
+to understand than the sparse matrix case.
 
 !bc pycod
 import numpy as np
@@ -512,7 +516,7 @@ for n in It[0:-1]:
     for i in Ix:
         p = m(i,j);  b[p] = 0           # boundary
 
-    # Solve matrix system A*u = b
+    # Solve matrix system A*c = b
     c = scipy.linalg.solve(A, b)
 
     # Fill u with vector c
@@ -539,14 +543,14 @@ Therefore, unless you don't want to add SciPy as a dependency to your NumPy prog
 !enotice
 
 The code shown above is available in the `solver_dense` function
-in the file "`diffu2D_u0.py`": "${src_diffu}/diffu2D_u0.py", with the
-exception that the boundary condition may be $u$ specified by functions
-along the four boundary sides.
+in the file "`diffu2D_u0.py`": "${src_diffu}/diffu2D_u0.py", differing only
+in the boundary conditions, which in the code can be an arbitrary function along
+each side of the domain.
 
 We do not bother to look at vectorized versions of filling `A` since
 a dense matrix is just used of pedagogical reasons for the very first
 implementation. Vectorization will be treated when `A` has a sparse
-matrix representation, as Section ref{diffu:2D:impl:sparse}.
+matrix representation, as in Section ref{diffu:2D:impl:sparse}.
 
 !bnotice How to debug the computation of $A$ and $b$
 A good starting point for debugging the filling of $A$ and $b$ is
@@ -669,8 +673,8 @@ sparse matrix data structure `scipy.sparse.diags`.
 
 Let us look closer at the diagonals in the example with a $4\times 3$ mesh
 as depicted in Figure ref{diffu:2D:fig:mesh4x3} and its associated matrix
-visualized by dots for zeros and bullets for nonzeros. We try to generalize
-to an $N_x\times N_y$ mesh.
+visualized by dots for zeros and bullets for nonzeros. From the example
+mesh, we may generalize to an $N_x\times N_y$ mesh.
 
 !bt
 \[
@@ -707,7 +711,7 @@ super-diagonals have $N-1$ elements. By looking at the matrix above,
 we realize that the lower diagonal starts in row $N_x+1$ and goes to
 row $N$, so its length is $N-(N_x+1)$. Similarly, the upper diagonal
 starts at row 0 and lasts to row $N-(N_x+1)$, so it has the same length.
-We from this information declare the diagonals by
+Based on this information, we declare the diagonals by
 
 !bc pycod
 main   = np.zeros(N)            # diagonal
@@ -842,7 +846,7 @@ for n in It[0:-1]:
     for i in Ix:
         p = m(i,j);  b[p] = 0                     # boundary
 
-    # Solve matrix system A*u = b
+    # Solve matrix system A*c = b
     c = scipy.sparse.linalg.spsolve(A, b)
 
     # Fill u with vector c
@@ -890,7 +894,7 @@ for n in It[0:-1]:
           (1-theta)*dt*f_a_n[imin:imax,j]
     j = Ny;  b[m(0,j):m(Nx+1,j)] = 0 # boundary
 
-    # Solve matrix system A*u = b
+    # Solve matrix system A*c = b
     c = scipy.sparse.linalg.spsolve(A, b)
 
     # Fill u with vector c
@@ -912,7 +916,7 @@ The `spsolve` function in `scipy.sparse.linalg` is an efficient version
 of Gaussian elimination suited for matrices described by diagonals.
 Actually, only the matrix elements within the bands (from `lower2`
 to `upper2`) are computed with, and these elements constitute only a
-fraction of all $N^2$ matrix elements, especially for large $N$.
+fraction of all $N^2$ matrix elements, a crucial property for large $N$.
 The Gaussian elimination algorithm for banded matrices is therefore
 much faster and requires much less storage than standard Gaussian elimination
 for a dense matrix.
