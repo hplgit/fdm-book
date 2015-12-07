@@ -1,45 +1,29 @@
 ======= Diffusion in heterogeneous media =======
+label{diffu:varcoeff}
 
-Diffusion in heterogeneous media will normally imply a non-constant
+Diffusion in heterogeneous media normally implies a non-constant
 diffusion coefficient $\alpha = \alpha (x)$.
 A 1D diffusion model with such a variable diffusion coefficient reads
 
-# #if FORMAT in ("latex", "pdflatex")
-!bt
-\begin{alignat}{3}
-\frac{\partial u}{\partial t} &=
-\frac{\partial}{\partial x}\left( \alpha (x) \frac{\partial u}{\partial x^2}
-\right) + f(x,t), \quad & x\in (0,L),\ t\in (0,T]
-label{diffu:pde2}\\
-u(x,0) &= I(x), \quad & x\in [0,L]
-label{diffu:pde2:ic:u}\\
-u(0,t) & = U_L, \quad & t>0,
-label{diffu:pde2:bc:0}\\
-u(L,t) & = U_0, \quad & t>0
-\tp
-label{diffu:pde2:bc:L}
-\end{alignat}
-!et
-# #else
 !bt
 \begin{align}
 \frac{\partial u}{\partial t} &=
 \frac{\partial}{\partial x}\left( \alpha (x) \frac{\partial u}{\partial x^2}
-\right) + f(x,t), \quad x\in (0,L),\ t\in (0,T]
+\right) + f(x,t), \quad &x\in (0,L),\ t\in (0,T],
 label{diffu:pde2}\\
-u(x,0) &= I(x), \quad  x\in [0,L]
+u(x,0) &= I(x), \quad  &x\in [0,L],
 label{diffu:pde2:ic:u}\\
-u(0,t) & = U_0, \quad  t>0,
+u(0,t) & = U_0, \quad  &t>0,
 label{diffu:pde2:bc:0}\\
-u(L,t) & = U_L, \quad  t>0\tp
+u(L,t) & = U_L, \quad  &t>0.
 label{diffu:pde2:bc:L}
 \end{align}
 !et
-# #endif
 A short form of the diffusion equation with variable coefficients is
 $u_t = (\alpha u_x)_x$.
 
 ===== Discretization =====
+label{diffu:varcoeff:discr}
 
 We can discretize (ref{diffu:pde2}) by a $theta$-rule in time
 and centered differences in space:
@@ -64,13 +48,14 @@ Written out, this becomes
 \theta f_i^{n+1} + (1-\theta)f_i^{n},
 \]
 !et
-where an arithmetic mean is to be used for $\dfc_{i+\half}$:
+where, e.g., an arithmetic mean can to be used for $\dfc_{i+\half}$:
 
 !bt
 \[ \dfc_{i+\half} = \half(\dfc_i + \dfc_{i+1})\tp\]
 !et
 
 ===== Stationary solution =====
+label{diffu:varcoeff:stationary}
 
 As $t\rightarrow\infty$, the solution of the above problem will approach
 a stationary limit where $\partial u/\partial t=0$. The governing
@@ -96,6 +81,7 @@ label{diffu:fd2:pde:st:sol}
 !et
 
 ===== Piecewise constant medium =====
+label{diffu:varcoeff:piecewise}
 
 Consider a medium built of $M$ layers. The boundaries between the
 layers are denoted by $b_0, \ldots, b_M$,
@@ -137,9 +123,10 @@ __Remark.__
 It may sound strange to have a discontinuous $\alpha$ in a differential
 equation where one is to differentiate, but a discontinuous $\alpha$
 is compensated by a discontinuous $u_x$ such that $\alpha u_x$ is
-continues and therefore can be differentiated as $(\alpha u_x)_x$.
+continuous and therefore can be differentiated as $(\alpha u_x)_x$.
 
 ===== Implementation =====
+label{diffu:varcoeff:impl}
 
 Programming with piecewise function definition quickly becomes
 cumbersome as the most naive approach is to test for which interval
@@ -147,7 +134,8 @@ $x$ lies, and then start evaluating a formula like
 (ref{diffu:fd2:pde:st:sol:pc}). In Python, vectorized expressions may
 help to speed up the computations.
 The convenience classes `PiecewiseConstant` and
-`IntegratedPiecewiseConstant` were made to simplify programming with
+`IntegratedPiecewiseConstant` in the "`Heaviside`": "${src_diffu}/Heaviside.py"
+module were made to simplify programming with
 functions like (ref{diffu:fd2:pde:st:pc:alpha}) and expressions like
 (ref{diffu:fd2:pde:st:sol:pc}). These utilities not only represent
 piecewise constant functions, but also *smoothed* versions of them
@@ -444,3 +432,4 @@ which is recognized as the variable-coefficient Laplace operator in
 one Cartesian coordinate.
 
 ======= Random walk =======
+label{diffu:randomwalk}

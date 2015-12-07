@@ -1,0 +1,930 @@
+<% src_diffu = 'src' %>
+
+======= Diffusion in 2D =======
+label{diffu:2D}
+
+We now address a diffusion in two space dimensions:
+
+!bt
+\begin{align}
+\frac{\partial u}{\partial t} & = \dfc\left(
+\frac{\partial^2 u}{\partial x^2} +
+\frac{\partial^2 u}{\partial x^2}\right) + f(x,y),
+\end{align}
+!et
+in a domain
+
+!bt
+\[ (x,y)\in (0,L_x)\times (0,L_y),\ t\in (0,T], \]
+!et
+with $u=0$ on the boundary and $u(x,y,0)=I(x,y)$ as initial condition.
+
+===== Discretization =====
+label{diffu:2D:discr}
+
+
+For generality, it is natural to use a $\theta$-rule for the time
+discretization. Standard, second-order accurate finite differences are
+used for the spatial derivatives. We sample the PDE at a space-time
+point $(i,j,n+\half)$ and apply the difference approximations:
+
+!bt
+\begin{align}
+\lbrack D_t u\rbrack^{n+\half} &=
+\theta \lbrack \dfc (D_xD_x u + D_yD_yu) + f\rbrack^{n+1} + \nonumber\\
+&\quad (1-\theta)\lbrack \dfc (D_xD_x u + D_yD_y u) + f\rbrack^{n}\tp
+\end{align}
+!et
+Written out,
+
+!bt
+\begin{align}
+\frac{u^{n+1}_{i,j}-u^n_{i,j}}{\Delta t} &=
+\theta (\dfc
+(\frac{u^{n+1}_{i-1,j} - 2^{n+1}_{i,j} + u^{n+1}_{i+1,j}}{\Delta x^2}) +
+(\frac{u^{n+1}_{i,j-1} - 2^{n+1}_{i,j} + u^{n+1}_{i,j+1}}{\Delta y^2})) +
+f^{n+1}_{i,j})
++ \nonumber\\
+&\quad (1-\theta)(\dfc
+(\frac{u^{n}_{i-1,j} - 2^{n}_{i,j} + u^{n}_{i+1,j}}{\Delta x^2}) +
+(\frac{u^{n}_{i,j-1} - 2^{n}_{i,j} + u^{n}_{i,j+1}}{\Delta y^2})) +
++ f^{n}_{i,j})
+\end{align}
+!et
+We collect the unknowns on the left-hand side
+
+!bt
+\begin{align}
+& u^{n+1}_{i,j} -
+\theta\left(
+F_x
+(u^{n+1}_{i-1,j} - 2^{n+1}_{i,j} + u^{n+1}_{i,j}) +
+F_y
+(u^{n+1}_{i,j-1} - 2^{n+1}_{i,j} + u^{n+1}_{i,j+1})\right)
+= u^n_{i,j} + \nonumber\\
+&\qquad
+(1-\theta)\left(
+F_x
+(u^{n}_{i-1,j} - 2^{n}_{i,j} + u^{n}_{i,j}) +
+F_y
+(u^{n}_{i,j-1} - 2^{n}_{i,j} + u^{n}_{i,j+1})\right) + \nonumber\\
+&\qquad \theta \Delta t f^{n+1}_{i,j} + (1-\theta) \Delta t f^{n}_{i,j},
+label{diffu:2D:theta_scheme2}
+\end{align}
+!et
+where
+
+!bt
+\[ F_x = \frac{\dfc\Delta t}{\Delta x^2},\quad F_y = \frac{\dfc\Delta t}{\Delta x^y},\]
+!et
+are the Fourier numbers in $x$ and $y$ direction, respectively.
+
+FIGURE: [fig-diffu/mesh3x2, width=500 frac=0.7] 3x2 2D mesh. label{diffu:2D:fig:mesh3x2}
+
+===== Numbering of mesh points versus equations and unknowns =====
+label{diffu:2D:numbering}
+
+# Nx=3, Ny=2
+The equations (ref{diffu:2D:theta_scheme2}) are coupled at the new
+time level $n+1$. That is, we must solve a system of (linear) algebraic
+equations, which we will write as $Ac=b$, where $A$ is the coefficient
+matrix, $c$ is the vector of unknowns, and $b$ is the right-hand side.
+
+Let us examine the equations in $Ac=b$ on a mesh with $N_x=3$ and $N_y=2$ mesh
+points. The spatial mesh is depicted in Figure ref{diffu:2D:fig:mesh3x2}.
+The equations at the boundary just implement the boundary condition
+$u=0$:
+
+!bt
+\[
+u^{n+1}_{0,0}=
+u^{n+1}_{1,0}=
+u^{n+1}_{2,0}=
+u^{n+1}_{3,0}=
+u^{n+1}_{0,1}=
+u^{n+1}_{3,1}=
+u^{n+1}_{0,2}=
+u^{n+1}_{1,2}=
+u^{n+1}_{2,2}=
+u^{n+1}_{3,2}= 0\tp
+\]
+!et
+We are left with two interior points. The equations
+associated with these points are first the one for $i=1$ and $j=1$:
+
+!bt
+\begin{align*}
+& u^{n+1}_{i,j} -
+\theta\left(
+F_x
+(u^{n+1}_{i-1,j} - 2^{n+1}_{i,j} + u^{n+1}_{i,j}) +
+F_y
+(u^{n+1}_{i,j-1} - 2^{n+1}_{i,j} + u^{n+1}_{i,j+1})\right)
+= u^n_{i,j} + \\
+&\qquad
+(1-\theta)\left(
+F_x
+(u^{n}_{i-1,j} - 2^{n}_{i,j} + u^{n}_{i,j}) +
+F_y
+(u^{n}_{i,j-1} - 2^{n}_{i,j} + u^{n}_{i,j+1})\right) + \\
+&\qquad \theta \Delta t f^{n+1}_{i,j} + (1-\theta) \Delta t f^{n}_{i,j},
+\end{align*}
+!et
+and a corresponding equation for $i=2$ and $j=1$. There are in total
+12 unknowns $u^{n+1}_{i,j}$ for $i=0,1,2,3$ and $j=0,1,2$.
+To solve the equations, we need to form a matrix system, and for this
+purpose we need a numbering of the unknowns with one index, not two as used
+in the mesh. We introduce a mapping $m(i,j)$
+from a mesh point with indices $(i,j)$
+to the corresponding unknown $s$ in the equation system:
+
+!bt
+\[ p = m(i,j) = j(N_x+1) + i\tp\]
+!et
+When $i$ and $j$ runs through their values we see the following mapping
+to $p$:
+
+!bt
+\begin{align*}
+&(0,0)\rightarrow 0,\
+(0,1)\rightarrow 1,\
+(0,2)\rightarrow 2,\
+(0,3)\rightarrow 3,\\
+&(1,0)\rightarrow 4,\
+(1,1)\rightarrow 5,\
+(1,2)\rightarrow 6,\
+(1,3)\rightarrow 7,\\
+&(2,0)\rightarrow 8,\
+(2,1)\rightarrow 9,\
+(2,2)\rightarrow 10,\
+(2,3)\rightarrow 11\tp
+\end{align*}
+!et
+That is, we number the points along the $x$ axis, starting with $y=0$,
+and the progress one horizontal mesh line at a time.
+In Figure ref{diffu:2D:fig:mesh3x2} you can see that the $(i,j)$ and the
+corresponding single index ($p$) are listed for each mesh point.
+
+We could equally well numbered the equations in other ways, e.g.,
+let the $j$ index be the fastest varying index:
+$p = m(i,j) = i(N_y+1) + j$.
+
+Let us form the coefficient matrix, or more precisely, insert the indices
+corresponding to nonzero elements in the coefficient matrix (the indices
+run through the values of $p$, i.e., $p=0,\ldots,11$):
+
+!bt
+\[
+{\tiny
+\left(\begin{array}{cccccccccccc}
+(0,0) &   0   &   0   &   0   &   0   &   0   &   0   &   0   &   0   &   0   &   0    &   0    \\
+  0   & (1,1) &   0   &   0   &   0   &   0   &   0   &   0   &   0   &   0   &   0    &   0    \\
+  0   &   0   & (2,2) &   0   &   0   &   0   &   0   &   0   &   0   &   0   &   0    &   0    \\
+  0   &   0   &   0   & (3,3) &   0   &   0   &   0   &   0   &   0   &   0   &   0    &   0    \\
+  0   &   0   &   0   &   0   & (4,4) &   0   &   0   &   0   &   0   &   0   &   0    &   0    \\
+  0   & (5,1) &   0   &   0   & (5,4) & (5,5) & (5,6) &   0   &   0   & (5,9) &   0    &   0    \\
+  0   &   0   & (6,2) &   0   &   0   & (6,5) & (6,6) & (6,7) &   0   &   0   & (6,10) &   0    \\
+  0   &   0   &   0   &   0   &   0   &   0   &   0   & (7,7) &   0   &   0   &   0    &   0    \\
+  0   &   0   &   0   &   0   &   0   &   0   &   0   &   0   & (8,8) &   0   &   0    &   0    \\
+  0   &   0   &   0   &   0   &   0   &   0   &   0   &   0   &   0   & (9,9) &   0    &   0    \\
+   0   &    0   &    0   &    0   &    0   &    0   &    0   &    0   &    0   &    0   & (10,10) &    0    \\
+   0   &    0   &    0   &    0   &    0   &    0   &    0   &    0   &    0   &    0   &    0    & (11,11) \\
+\end{array}\right)
+}
+\]
+!et
+Here is a more compact visualization of the coefficient matrix where we
+insert dots for zeros and bullets for non-zero elements:
+
+!bt
+\[
+\footnotesize
+\left(\begin{array}{cccccccccccc}
+\bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \bullet & \cdot & \cdot & \bullet & \bullet & \bullet & \cdot & \cdot & \bullet & \cdot & \cdot \\
+\cdot & \cdot & \bullet & \cdot & \cdot & \bullet & \bullet & \bullet & \cdot & \cdot & \bullet & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet \\
+\end{array}\right)
+\]
+!et
+It is clearly seen that most of the elements are zero. This is a general
+feature of coefficient matrices arising from discretizing PDEs by
+finite difference methods. We say that the matrix is *sparse*.
+
+idx{sparse matrix}
+
+Let $A_{p,q}$ be the value of element $(p,q)$ in the coefficient matrix $A$,
+where $p$ and $q$ now correspond to the numbering of the unknowns in the
+equation system.
+We have $A_{p,q}=1$ for $p=q=0,1,2,3,4,7,8,9,10,11$. Let $p$ be $m(i,j)$, i.e.,
+the single index corresponding to mesh point $(i,j)$. Then we have
+
+!bt
+\begin{align}
+A_{m(i,j),m(i,j)} = A_{p,p} &=
+1 +
+\theta (F_x + F_y),\\
+A_{p, m(i-1,j)} = A_{p,p-1} &= -\theta F_x,\\
+A_{p, m(i+1,j)} = A_{p,p+1} &= -\theta F_x,\\
+A_{p, m(i,j-1)} = A_{p, p-(N_x+1)} &= -\theta F_y,\\
+A_{p, m(i,j+1)} = A_{p, p+(N_x+1)} &= -\theta F_y,\\
+\end{align}
+!et
+for the equations associated with the two interior mesh points.
+At these interior points, the single index $p$ takes on the
+specific values $p=5,6$, corresponding to the
+values $(1,1)$ and $(1,2)$ of the pair $(i,j)$.
+
+The above values for $A_{p,q}$ can be inserted in the matrix:
+
+!bt
+\[
+{\tiny
+\left(\begin{array}{cccccccccccc}
+1 &   0   &   0   &   0   &   0   &   0   &   0   &   0   &   0   &   0   &   0    &   0    \\
+  0   & 1 &   0   &   0   &   0   &   0   &   0   &   0   &   0   &   0   &   0    &   0    \\
+  0   &   0   & 1 &   0   &   0   &   0   &   0   &   0   &   0   &   0   &   0    &   0    \\
+  0   &   0   &   0   & 1 &   0   &   0   &   0   &   0   &   0   &   0   &   0    &   0    \\
+  0   &   0   &   0   &   0   & 1 &   0   &   0   &   0   &   0   &   0   &   0    &   0    \\
+  0   & -\theta F_y &   0   &   0   & -\theta F_x & 1+2\theta F_x & -\theta F_x &   0   &   0   & -\theta F_y &   0    &   0    \\
+  0   &   0   & -\theta F_y &   0   &   0   & -\theta F_x & 1+2\theta F_x & -\theta F_x &   0   &   0   & -\theta F_y &   0    \\
+  0   &   0   &   0   &   0   &   0   &   0   &   0   & 1 &   0   &   0   &   0    &   0    \\
+  0   &   0   &   0   &   0   &   0   &   0   &   0   &   0   & 1 &   0   &   0    &   0    \\
+  0   &   0   &   0   &   0   &   0   &   0   &   0   &   0   &   0   & 1 &   0    &   0    \\
+   0   &    0   &    0   &    0   &    0   &    0   &    0   &    0   &    0   &    0   & 1 &    0    \\
+   0   &    0   &    0   &    0   &    0   &    0   &    0   &    0   &    0   &    0   &    0    & 1 \\
+\end{array}\right)
+}
+\]
+!et
+The corresponding right-hand side vector in the equation system has
+the entries $b_p$, where $p$ numbers the equations. We have
+
+!bt
+\[ b_0=b_1=b_2=b_3=b_4=b_7=b_8=b_9=b_{10}=b_{11}=0,\]
+!et
+for the boundary values. For the equations associated with the
+interior points, we get for $p=5,6$, corresponding to $i=1,2$ and $j=1$:
+
+!bt
+\begin{align*}
+b_p &= u_i +
+(1-\theta)\left(
+F_x
+(u^{n}_{i-1,j} - 2^{n}_{i,j} + u^{n}_{i,j}) +
+F_y
+(u^{n}_{i,j-1} - 2^{n}_{i,j} + u^{n}_{i,j+1})\right) + \\
+&\qquad \theta \Delta t f^{n+1}_{i,j} + (1-\theta) \Delta t f^{n}_{i,j}\tp
+\end{align*}
+!et
+Recall that $p=m(i,j)=j(N_x+1)+j$ in this expression.
+
+We can, as an alternative, leave the boundary mesh points out of the
+matrix system. For a mesh with $N_x=4$ and $N_y=3$ there are only two
+internal mesh points whose unknowns will enter the matrix system.
+We must now number the unknowns at the interior points:
+
+!bt
+\[ p = (j-1)(N_x-1) + i,\]
+!et
+for $i=1,\ldots,N_x-1$, $j=1,\ldots,N_y-1$.
+
+[hpl: Fill in details.]
+
+# Nx=4, Ny=3
+
+FIGURE: [fig-diffu/mesh4x3, width=700 frac=1] 4x3 2D mesh. label{diffu:2D:fig:mesh4x3}
+
+We can continue with illustrating a bit larger mesh, $N_x=4$ and $N_y=3$,
+see Figure ref{diffu:2D:fig:mesh4x3}. The corresponding coefficient matrix
+with dots for zeros and bullets for non-zeroes look as follows:
+
+!bt
+\[
+{\tiny
+\left(\begin{array}{cccccccccccccccccccc}
+\bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \bullet & \cdot & \cdot & \cdot & \bullet & \bullet & \bullet & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \bullet & \bullet & \bullet & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \bullet & \bullet & \bullet & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \bullet & \bullet & \bullet & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \bullet & \bullet & \bullet & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \bullet & \bullet & \bullet & \cdot & \cdot & \cdot & \bullet & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot \\
+\cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet \\
+\end{array}\right)
+}
+\]
+!et
+
+!bnotice The coefficient matrix is banded
+Besides being sparse, we observe that the coefficient matrix is *banded*:
+it has five distinct bands. We have the diagonal $A_{i,i}$, the
+subdiagonal $A_{i-1,j}$, the superdiagonal $A_{i,i+1}$, a lower
+diagonal $A_{i,i-(Nx+1)}$, and an upper diagonal $A_{i,i+(Nx+1)}$.
+These diagonals are important for utilizing efficient algorithms for solving
+the equation system.
+!enotice
+
+===== Algorithm for setting up the coefficient matrix =====
+label{diffu:2D:alg}
+
+We have looked at a specific mesh in the previous section and formulated
+the equations and seen what the corresponding coefficient matrix and
+right-hand side are. Now our aim is to set up a general algorithm for any
+choice of $N_x$ and $N_y$ that produces the coefficient matrix and
+the right-hand side vector.
+We start with a zero matrix and vector, run through each mesh point,
+and fill in the values depending on whether the mesh point is an interior
+point or on the boundary.
+
+ * for $i=0,\ldots,N_x$
+  * for $j=0,\ldots, N_y$
+    * $p=j(N_x+1)+i$
+    * if point $(i,j)$ is on the boundary:
+      * $A_{p,p}=0$, $b_p=1$
+    * else:
+      * fill $A_{p,m(i-1,j)}$, $A_{p,m(i+1,j)}$, $A_{p,m(i,j)}$, $A_{p,m(i,j-1)}$, $A_{p,m(i,j+1)}$, and $b_p$
+
+To ease the test on whether $(i,j)$ is on the boundary or not, we can
+split the loops a bit, starting with the boundary line $j=0$, then
+treat the interior lines $1\leq j<N_y$, and finally treat the boundary
+line $j=N_y$:
+
+ * for $i=0,\ldots,N_x$
+  * boundary $j=0$: $p=j(N_x+1)+i$, $A_{p,p}=0$
+ * for $j=0,\ldots,N_y$
+  * boundary $i=0$: $p=j(N_x+1)+i$, $A_{p,p}=0$
+  * for $i=1,\ldots, N_x-1$
+    * interior point $p=j(N_x+1)+i$
+    * fill $A_{p,m(i-1,j)}$, $A_{p,m(i+1,j)}$, $A_{p,m(i,j)}$, $A_{p,m(i,j-1)}$, $A_{p,m(i,j+1)}$, and $b_p$
+  * boundary $i=N_x$: $p=j(N_x+1)+i$, $A_{p,p}=0$
+ * for $i=0,\ldots,N_x$
+  * boundary $j=N_y$: $p=j(N_x+1)+i$, $A_{p,p}=0$
+
+The right-hand side is set up as follows.
+
+ * for $i=0,\ldots,N_x$
+  * boundary $j=0$: $p=j(N_x+1)+i$, $b_p=0$
+ * for $j=0,\ldots,N_y$
+  * boundary $i=0$: $p=j(N_x+1)+i$, $b_p=0$
+  * for $i=1,\ldots, N_x-1$
+    * interior point $p=j(N_x+1)+i$
+    * fill $b_p$
+  * boundary $i=N_x$: $p=j(N_x+1)+i$, $b_p=0$
+ * for $i=0,\ldots,N_x$
+  * boundary $j=N_y$: $p=j(N_x+1)+i$, $b_p=0$
+
+===== Implementation with a dense coefficient matrix =====
+label{diffu:2D:impl:dense}
+
+The goal now is to map the algorithms in the previous section to
+Python code. One should for computational efficiency reasons take
+advantage of the fact that the coefficient matrix is sparse and/or
+banded, i.e., take advantage of all the zeros, but we first demonstrate
+how to fill an $N\times N$ dense square matrix, where $N$ is the number
+of unknowns, here $N=(N_x+1)(N_y+1)$.
+
+!bc pycod
+import numpy as np
+
+def solver_dense(
+    I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5, user_action=None):
+    """
+    Solve u_t = a*(u_xx + u_yy) + f, u(x,y,0)=I(x,y), with u=0
+    on the boundary, on [0,Lx]x[0,Ly]x[0,T], with time step dt,
+    using the theta-scheme.
+    """
+    x = np.linspace(0, Lx, Nx+1)       # mesh points in x dir
+    y = np.linspace(0, Ly, Ny+1)       # mesh points in y dir
+    dx = x[1] - x[0]
+    dy = y[1] - y[0]
+
+    dt = float(dt)                    # avoid integer division
+    Nt = int(round(T/float(dt)))
+    t = np.linspace(0, Nt*dt, Nt+1)   # mesh points in time
+
+    # Mesh Fourier numbers in each direction
+    Fx = a*dt/dx**2
+    Fy = a*dt/dy**2
+!ec
+The $u^{n+1}_{i,j}$ and $u^n_{i,j}$ mesh functions are represented
+by their spatial values at the mesh points:
+
+!bc pycod
+u   = np.zeros((Nx+1, Ny+1))      # unknown u at new time level
+u_1 = np.zeros((Nx+1, Ny+1))      # u at the previous time level
+!ec
+It is a good habit (for extensions) to
+introduce index sets for all mesh points:
+
+!bc pycod
+Ix = range(0, Nx+1)
+Iy = range(0, Ny+1)
+It = range(0, Nt+1)
+!ec
+The initial condition is easy to fill in:
+
+!bc pycod
+# Load initial condition into u_1
+for i in Ix:
+    for j in Iy:
+        u_1[i,j] = I(x[i], y[j])
+!ec
+The memory for the coefficient matrix and right-hand side vector
+is allocated by
+
+!bc pycod
+N = (Nx+1)*(Ny+1)  # no of unknowns
+A = np.zeros((N, N))
+b = np.zeros(N)
+!ec
+The filling of `A` goes like this:
+
+!bc pycod
+m = lambda i, j: j*(Nx+1) + i
+
+# Equations corresponding to j=0, i=0,1,... (u known)
+j = 0
+for i in Ix:
+    p = m(i,j);  A[p, p] = 1
+
+# Loop over all internal mesh points in y diretion
+# and all mesh points in x direction
+for j in Iy[1:-1]:
+    i = 0;  p = m(i,j);  A[p, p] = 1   # boundary
+    for i in Ix[1:-1]:                 # interior points
+        p = m(i,j)
+        A[p, m(i,j-1)] = - theta*Fy
+        A[p, m(i-1,j)] = - theta*Fx
+        A[p, p]        = 1 + 2*theta*(Fx+Fy)
+        A[p, m(i+1,j)] = - theta*Fx
+        A[p, m(i,j+1)] = - theta*Fy
+    i = Nx;  p = m(i,j);  A[p, p] = 1  # boundary
+# Equations corresponding to j=Ny, i=0,1,... (u known)
+j = Ny
+for i in Ix:
+    p = m(i,j);  A[p, p] = 1
+!ec
+Since `A` is independent of time, it can be filled once and for all before
+the time loop. The right-hand side vector must be filled at each
+time level inside the time loop:
+
+!bc pycod
+import scipy.linalg
+
+for n in It[0:-1]:
+    # Compute b
+    j = 0
+    for i in Ix:
+        p = m(i,j);  b[p] = 0           # boundary
+    for j in Iy[1:-1]:
+        i = 0;  p = m(i,j);  b[p] = 0   # boundary
+        for i in Ix[1:-1]:              # interior points
+            p = m(i,j)
+            b[p] = u_1[i,j] + \
+              (1-theta)*(
+              Fx*(u_1[i+1,j] - 2*u_1[i,j] + u_1[i-1,j]) +\
+              Fy*(u_1[i,j+1] - 2*u_1[i,j] + u_1[i,j-1]))\
+                + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \
+              (1-theta)*dt*f(i*dx,j*dy,n*dt)
+        i = Nx;  p = m(i,j);  b[p] = 0  # boundary
+    j = Ny
+    for i in Ix:
+        p = m(i,j);  b[p] = 0           # boundary
+
+    # Solve matrix system A*u = b
+    c = scipy.linalg.solve(A, b)
+
+    # Fill u with vector c
+    for i in Ix:
+        for j in Iy:
+            u[i,j] = c[m(i,j)]
+
+    # Update u_1 before next step
+    u_1, u = u, u_1
+!ec
+We use `solve` from `scipy.linalg` and not from `numpy.linalg`. The difference
+is stated below.
+
+!bnotice `scipy.linalg` versus `numpy.linalg`
+Quote from the "SciPy documentation":
+"http://docs.scipy.org/doc/scipy/reference/tutorial/linalg.html":
+
+`scipy.linalg` contains all the functions in `numpy.linalg`
+plus some other more advanced ones not contained in `numpy.linalg`.
+
+Another advantage of using `scipy.linalg` over numpy.linalg is that it is always compiled with BLAS/LAPACK support, while for NumPy this is optional. Therefore, the SciPy version might be faster depending on how NumPy was installed.
+
+Therefore, unless you don't want to add SciPy as a dependency to your NumPy program, use `scipy.linalg` instead of `numpy.linalg`.
+!enotice
+
+The code shown above is available in the `solver_dense` function
+in the file "`diffu2D_u0.py`": "${src_diffu}/diffu2D_u0.py", with the
+exception that the boundary condition may be $u$ specified by functions
+along the four boundary sides.
+
+We do not bother to look at vectorized versions of filling `A` since
+a dense matrix is just used of pedagogical reasons for the very first
+implementation. Vectorization will be treated when `A` has a sparse
+matrix representation, as Section ref{diffu:2D:impl:sparse}.
+
+!bnotice How to debug the computation of $A$ and $b$
+A good starting point for debugging the filling of $A$ and $b$ is
+to choose a very coarse mesh, say $N_x=N_y=2$, where there is just
+one internal mesh point, compute the equations by hand, and
+print out `A` and `b` for comparison in the code. If wrong elements
+in `A` or `b` occur, print out each assignment to elements in
+`A` and `b` inside the loops and compare with what you expect.
+!enotice
+
+To let the user store, analyze, or visualize the solution at each
+time level, we include a callback function, named `user_action`,
+to be called before the time loop and in each pass in that loop.
+The function has the signature
+
+!bc pycod
+user_action(u, x, xv, y, yv, t, n)
+!ec
+where `u` is a two-dimensional array holding the solution at time level `n`
+and time `t[n]`. The $x$ and $y$ coordinates of the mesh points are given by
+the arrays `x` and `y`, respectively. The arrays `xv` and `yv` are
+vectorized representations of the mesh points such that vectorized
+function evaluations can be invoked. The `xv` and `yv` arrays are
+defined by
+
+!bc pycod
+xv = x[:,np.newaxis]
+yv = y[np.newaxis,:]
+!ec
+One can then evaluate, e.g., $f(x,y,t)$ at all internal mesh points at time
+level `n` by first evaluating $f$ at all points,
+
+!bc pycod
+f_a = f(xv, yv, t[n])
+!ec
+and then use slices to extract a view of the values at the internal
+mesh points: `f_a[1:-1,1:-1]`.
+The next section features an example on writing a `user_action`
+callback function.
+
+
+===== Verification =====
+label{diffu:2D:verify}
+
+A good test example to start with is one that preserves the solution
+$u=0$, i.e., $f=0$ and $I(x,y)=0$. This trivial solution can uncover
+some bugs.
+
+The first real test example is based on having an exact solution of
+the discrete equations. This solution is linear in time and quadratic
+in space:
+
+!bt
+\[ u(x,y,t) = 5tx(L_x-x)y(y-L_y)\tp\]
+!et
+Inserting this manufactured solution in the PDE shows that the
+source term $f$ must be
+
+!bt
+\[ f(x,y,t) = 5x(L_x-x)y(y-L_y) + 10\dfc t (x(L_x-x)+ y(y-L_y))\tp\]
+!et
+
+We can use the `user_action` function to compare the numerical solution
+with the exact solution at each time level. A suitable helper function
+for checking the solution goes like this:
+
+!bc
+def quadratic(theta, Nx, Ny):
+
+    def u_exact(x, y, t):
+        return 5*t*x*(Lx-x)*y*(Ly-y)
+    def I(x, y):
+        return u_exact(x, y, 0)
+    def f(x, y, t):
+        return 5*x*(Lx-x)*y*(Ly-y) + 10*a*t*(y*(Ly-y)+x*(Lx-x))
+
+    # Use rectangle to detect errors in switching i and j in scheme
+    Lx = 0.75
+    Ly = 1.5
+    a = 3.5
+    dt = 0.5
+    T = 2
+
+    def assert_no_error(u, x, xv, y, yv, t, n):
+        """Assert zero error at all mesh points."""
+        u_e = u_exact(xv, yv, t[n])
+        diff = abs(u - u_e).max()
+        tol = 1E-12
+        msg = 'diff=%g, step %d, time=%g' % (diff, n, t[n])
+        print msg
+        assert diff < tol, msg
+
+    solver_dense(
+        I, a, f, Lx, Ly, Nx, Ny,
+        dt, T, theta, user_action=assert_no_error)
+!ec
+A true test function for checking the quadratic solution for several
+different meshes and $\theta$ values can take the form
+
+!bc pycod
+def test_quadratic():
+    # For each of the three schemes (theta = 1, 0.5, 0), a series of
+    # meshes are tested (Nx > Ny and Nx < Ny)
+    for theta in [1, 0.5, 0]:
+        for Nx in range(2, 6, 2):
+            for Ny in range(2, 6, 2):
+                print 'testing for %dx%d mesh' % (Nx, Ny)
+                quadratic(theta, Nx, Ny)
+!ec
+
+===== Implementation with a sparse coefficient matrix =====
+label{diffu:2D:impl:sparse}
+
+We used a sparse matrix implementation in Section ref{diffu:pde1:impl:sparse}
+for a 1D problem with a tridiagonal matrix. The present matrix, arising
+from a 2D problem, has five diagonals, but we can use the same
+sparse matrix data structure `scipy.sparse.diags`.
+
+=== Understanding the diagonals ===
+
+Let us look closer at the diagonals in the example with a $4\times 3$ mesh
+as depicted in Figure ref{diffu:2D:fig:mesh4x3} and its associated matrix
+visualized by dots for zeros and bullets for nonzeros. We try to generalize
+to an $N_x\times N_y$ mesh.
+
+!bt
+\[
+{\tiny
+\begin{array}{lcccccccccccccccccccc}
+0 =m(0,0) & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+1 = m(1,0) & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+2 = m(2,0) & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+3 = m(3,0) & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+N_x=m(N_x,0) & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+N_x+1=m(0,1) & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+(N_x+1)+1=m(1,1) & \cdot & \bullet & \cdot & \cdot & \cdot & \bullet & \bullet & \bullet & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+(N_x+1)+2=m(2,1) & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \bullet & \bullet & \bullet & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+(N_x+1)+3=m(3,1) & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \bullet & \bullet & \bullet & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+(N_x+1)+N_x=m(N_x,1) & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+2(N_x+1)=m(0,2)& \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot \\
+2(N_x+1)+1=m(1,2)& \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \bullet & \bullet & \bullet & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot \\
+2(N_x+1)+2=m(2,2)& \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \bullet & \bullet & \bullet & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot \\
+2(N_x+1)+3=m(3,2)& \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \bullet & \bullet & \bullet & \cdot & \cdot & \cdot & \bullet & \cdot \\
+2(N_x+1)+N_x=m(N_x,2)& \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot & \cdot \\
+N_y(N_x+1)=m(0,N_y)& \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot & \cdot \\
+N_y(N_x+1)+1=m(1,N_y)& \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot & \cdot \\
+N_y(N_x+1)+2=m(2,N_y)& \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot & \cdot \\
+N_y(N_x+1)+3=m(3,N_y)& \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet & \cdot \\
+N_y(N_x+1)+N_x=m(N_x,N_y)& \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \cdot & \bullet \\
+\end{array}
+}
+\]
+!et
+
+
+The main diagonal has $N=(N_x+1)(N_y+1)$ elements, while the sub- and
+super-diagonals have $N-1$ elements. By looking at the matrix above,
+we realize that the lower diagonal starts in row $N_x+1$ and goes to
+row $N$, so its length is $N-(N_x+1)$. Similarly, the upper diagonal
+starts at row 0 and lasts to row $N-(N_x+1)$, so it has the same length.
+We from this information declare the diagonals by
+
+!bc pycod
+main   = np.zeros(N)            # diagonal
+lower  = np.zeros(N-1)          # subdiagonal
+upper  = np.zeros(N-1)          # superdiagonal
+lower2 = np.zeros(N-(Nx+1))     # lower diagonal
+upper2 = np.zeros(N-(Nx+1))     # upper diagonal
+b      = np.zeros(N)            # right-hand side
+!ec
+
+=== Filling the diagonals ===
+
+We run through all mesh points and fill in elements on the various
+diagonals. The line of mesh points corresponding to $j=0$ are all
+on the boundary, and only the main diagonal gets a contribution:
+
+!bc pycod
+m = lambda i, j: j*(Nx+1) + i
+j = 0; main[m(0,j):m(Nx+1,j)] = 1  # j=0 boundary line
+!ec
+Then we run through all interior $j=\hbox{const}$ lines of mesh points.
+The first and the last point on each line, $i=0$ and $i=N_x$, correspond
+to boundary points:
+
+!bc pycod
+for j in Iy[1:-1]:             # interior mesh lines j=1,...,Ny-1
+    i = 0;   main[m(i,j)] = 1
+    i = Nx;  main[m(i,j)] = 1  # boundary
+!ec
+For the interior mesh points $i=1,\ldots,N_x-1$ on a mesh line $y=\hbox{const}$
+we can start with the main diagonal. The entries to be filled go from
+$i=1$ to $i=N_x-1$ so the relevant slice in the `main` vector is
+`m(1,j):m(Nx,j)`:
+
+!bc pycod
+main[m(1,j):m(Nx,j)] = 1 + 2*theta*(Fx+Fy)
+!ec
+The `upper` array for the superdiagonal has its index 0 corresponding to
+row 0 in the matrix, and the array entries
+to be set go from $m(1,j)$ to $m(N_x-1,j)$:
+
+!bc pycod
+upper[m(1,j):m(Nx,j)] = - theta*Fx
+!ec
+The subdiagonal (`lower` array), however, has its index 0
+corresponding to row 1, so there is an offset of 1 in indices compared to
+the matrix. The first nonzero occurs (interior point) at a mesh line $j=\hbox{const}$ corresponds to matrix row $m(1,j)$, and the corresponding array index
+in `lower` is then $m(1,j)$. To fill the entries from $m(1,j)$ to $m(N_x-1,j)$
+we set the following slice in `lower`:
+
+!bc pycod
+lower_offset = 1
+lower[m(1,j)-lower_offset:m(Nx,j)-lower_offset] = - theta*Fx
+!ec
+
+For the upper diagonal, its index 0 corresponds to matrix row 0, so there
+is no offset and we can set the entries correspondingly to `upper`:
+
+!bc pycod
+upper2[m(1,j):m(Nx,j)] = - theta*Fy
+!ec
+The `lower2` diagonal, however, has its first index 0 corresponding to row
+$N_x+1$, so here we need to subtract the offset $N_x+1$:
+
+!bc pycod
+lower2_offset = Nx+1
+lower2[m(1,j)-lower2_offset:m(Nx,j)-lower2_offset] = - theta*Fy
+!ec
+
+We can now summarize the above code lines for setting the entries in
+the sparse matrix representation of the coefficient matrix:
+
+!bc pycod
+lower_offset = 1
+lower2_offset = Nx+1
+m = lambda i, j: j*(Nx+1) + i
+
+j = 0; main[m(0,j):m(Nx+1,j)] = 1  # j=0 boundary line
+for j in Iy[1:-1]:             # interior mesh lines j=1,...,Ny-1
+    i = 0;   main[m(i,j)] = 1  # boundary
+    i = Nx;  main[m(i,j)] = 1  # boundary
+    # Interior i points: i=1,...,N_x-1
+    lower2[m(1,j)-lower2_offset:m(Nx,j)-lower2_offset] = - theta*Fy
+    lower[m(1,j)-lower_offset:m(Nx,j)-lower_offset] = - theta*Fx
+    main[m(1,j):m(Nx,j)] = 1 + 2*theta*(Fx+Fy)
+    upper[m(1,j):m(Nx,j)] = - theta*Fx
+    upper2[m(1,j):m(Nx,j)] = - theta*Fy
+j = Ny; main[m(0,j):m(Nx+1,j)] = 1  # boundary line
+!ec
+
+The next task is to create the sparse matrix from these diagonals:
+
+!bc pycod
+import scipy.sparse
+
+A = scipy.sparse.diags(
+    diagonals=[main, lower, upper, lower2, upper2],
+    offsets=[0, -lower_offset, lower_offset,
+             -lower2_offset, lower2_offset],
+    shape=(N, N), format='csr')
+!ec
+
+=== Filling the right-hand side; scalar version ===
+
+Setting the entries in the right-hand side is easier since there are no
+offsets in the array to take into account. The is in fact similar to
+the one previously shown when we used a dense matrix representation
+(the right-hand side vector is, of course, independent of what type of
+representation we use for the coefficient matrix). The complete time
+loop goes as follows.
+
+!bc pycod
+import scipy.sparse.linalg
+
+for n in It[0:-1]:
+    # Compute b
+    j = 0
+    for i in Ix:
+        p = m(i,j);  b[p] = 0                     # boundary
+    for j in Iy[1:-1]:
+        i = 0;  p = m(i,j);  b[p] = 0             # boundary
+        for i in Ix[1:-1]:
+            p = m(i,j)                            # interior
+            b[p] = u_1[i,j] + \
+              (1-theta)*(
+              Fx*(u_1[i+1,j] - 2*u_1[i,j] + u_1[i-1,j]) +\
+              Fy*(u_1[i,j+1] - 2*u_1[i,j] + u_1[i,j-1]))\
+                + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \
+              (1-theta)*dt*f(i*dx,j*dy,n*dt)
+        i = Nx;  p = m(i,j);  b[p] = 0            # boundary
+    j = Ny
+    for i in Ix:
+        p = m(i,j);  b[p] = 0                     # boundary
+
+    # Solve matrix system A*u = b
+    c = scipy.sparse.linalg.spsolve(A, b)
+
+    # Fill u with vector c
+    for i in Ix:
+        for j in Iy:
+            u[i,j] = c[m(i,j)]
+
+    # Update u_1 before next step
+    u_1, u = u, u_1
+!ec
+
+=== Filling the right-hand side; vectorized version ===
+
+Since we use a sparse matrix and try to speed up the computations, we
+should examine the loops and see if some can be easily removed by
+vectorization. In the filling of $A$ we have already used vectorized
+expressions at each $j=\hbox{const}$ line of mesh points. We can
+very easily do the same in the code above and remove the need for
+loops over the `i` index:
+
+!bc pycod
+for n in It[0:-1]:
+    # Compute b, vectorized version
+
+    # Precompute f in array so we can make slices
+    f_a_np1 = f(xv, yv, t[n+1])
+    f_a_n   = f(xv, yv, t[n])
+
+    j = 0; b[m(0,j):m(Nx+1,j)] = 0     # boundary
+    for j in Iy[1:-1]:
+        i = 0;   p = m(i,j);  b[p] = 0 # boundary
+        i = Nx;  p = m(i,j);  b[p] = 0 # boundary
+        imin = Ix[1]
+        imax = Ix[-1]  # for slice, max i index is Ix[-1]-1
+        b[m(imin,j):m(imax,j)] = u_1[imin:imax,j] + \
+              (1-theta)*(Fx*(
+          u_1[imin+1:imax+1,j] -
+        2*u_1[imin:imax,j] + \
+          u_1[imin-1:imax-1,j]) +
+                         Fy*(
+          u_1[imin:imax,j+1] -
+        2*u_1[imin:imax,j] +
+          u_1[imin:imax,j-1])) + \
+            theta*dt*f_a_np1[imin:imax,j] + \
+          (1-theta)*dt*f_a_n[imin:imax,j]
+    j = Ny;  b[m(0,j):m(Nx+1,j)] = 0 # boundary
+
+    # Solve matrix system A*u = b
+    c = scipy.sparse.linalg.spsolve(A, b)
+
+    # Fill u with vector c
+    u[:,:] = c.reshape(Ny+1,Nx+1).T
+
+    # Update u_1 before next step
+    u_1, u = u, u_1
+!ec
+The most tricky part of this code snippet is the loading of values in
+the one-dimensional array `c`
+into the two-dimensional array `u`. With our numbering of unknowns
+from left to right along ``horizontal'' mesh lines, the correct
+reordering of the one-dimensional array `c` as a two-dimensional array
+requires first a reshaping as an `(Ny+1,Nx+1)` two-dimensional
+array and then taking the transpose. The result is an `(Nx+1,Ny+1)`
+array compatible with `u` both in size and appearance of the function values.
+
+The `spsolve` function in `scipy.sparse.linalg` is an efficient version
+of Gaussian elimination suited for matrices described by diagonals.
+Actually, only the matrix elements within the bands (from `lower2`
+to `upper2`) are computed with, and these elements constitute only a
+fraction of all $N^2$ matrix elements, especially for large $N$.
+The Gaussian elimination algorithm for banded matrices is therefore
+much faster and requires much less storage than standard Gaussian elimination
+for a dense matrix.
+More precisely, with $b=N_x+1$ as the *bandwidth* of the matrix
+[[[
+
+[hpl: Problem: if $N_x\gg N_y$ one should number the unknowns in $y$
+direction to get a smaller bandwidth.]
+
+The complete code is found in the `solver_sparse` function in the file
+"`diffu2D_u0.py`": "${src_diffu}/diffu2D_u0.py".
+
+===== The Jacobi iterative method =====
+
+So far we have created a linear system $Ac=b$ by
