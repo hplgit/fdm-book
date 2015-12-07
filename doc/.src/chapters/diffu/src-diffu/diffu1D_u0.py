@@ -42,19 +42,23 @@ import scipy.sparse
 import scipy.sparse.linalg
 import numpy as np
 
-def solver_FE_simple(I, a, f, L, Nx, F, T):
+def solver_FE_simple(I, a, f, L, dt, F, T):
     """
     Simplest expression of the computational algorithm
     using the Forward Euler method and explicit Python loops.
     For this method F <= 0.5 for stability.
     """
-    import time;  t0 = time.clock()  # for measuring the CPU time
+    import time;  t0 = time.clock()  # For measuring the CPU time
 
-    x = np.linspace(0, L, Nx+1)   # mesh points in space
-    dx = x[1] - x[0]
-    dt = F*dx**2/a
     Nt = int(round(T/float(dt)))
-    t = np.linspace(0, T, Nt+1)   # mesh points in time
+    t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
+    dx = np.sqrt(a*dt/F)
+    Nx = int(round(L/dx))
+    x = np.linspace(0, L, Nx+1)       # Mesh points in space
+    # Make sure dx and dt are compatible with x and t
+    dx = x[1] - x[0]
+    dt = t[1] - t[0]
+
     u   = np.zeros(Nx+1)
     u_1 = np.zeros(Nx+1)
 
@@ -68,13 +72,6 @@ def solver_FE_simple(I, a, f, L, Nx, F, T):
             u[i] = u_1[i] + F*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) + \
                    dt*f(x[i], t[n])
 
-        u_e = x*(L-x)*5*t[n+1]
-        u_e1 = x*(L-x)*5*t[n]
-        print (u-u_e).max()
-        print F*(u_e1[i-1] - 2*u_e1[i] + u_e1[i+1]), u_e[i] - u_e1[i] + dt*f(x[i], t[n])
-        print u
-        print u_e
-
         # Insert boundary conditions
         u[0] = 0;  u[Nx] = 0
 
@@ -86,18 +83,21 @@ def solver_FE_simple(I, a, f, L, Nx, F, T):
     return u_1, x, t, t1-t0  # u_1 holds latest u
 
 
-def solver_FE(I, a, f, L, Nx, F, T,
+def solver_FE(I, a, f, L, dt, F, T,
               user_action=None, version='scalar'):
     """
     Vectorized implementation of solver_FE_simple.
     """
     import time;  t0 = time.clock()  # for measuring the CPU time
 
-    x = np.linspace(0, L, Nx+1)   # mesh points in space
-    dx = x[1] - x[0]
-    dt = F*dx**2/a
     Nt = int(round(T/float(dt)))
-    t = np.linspace(0, T, Nt+1)   # mesh points in time
+    t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
+    dx = np.sqrt(a*dt/F)
+    Nx = int(round(L/dx))
+    x = np.linspace(0, L, Nx+1)       # Mesh points in space
+    # Make sure dx and dt are compatible with x and t
+    dx = x[1] - x[0]
+    dt = t[1] - t[0]
 
     u   = np.zeros(Nx+1)   # solution array
     u_1 = np.zeros(Nx+1)   # solution at t-dt
@@ -114,7 +114,7 @@ def solver_FE(I, a, f, L, Nx, F, T,
         if version == 'scalar':
             for i in range(1, Nx):
                 u[i] = u_1[i] + F*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) +\
-                       dt*f([xi], t[n])
+                       dt*f(x[i], t[n])
 
         elif version == 'vectorized':
             u[1:Nx] = u_1[1:Nx] +  \
@@ -135,7 +135,7 @@ def solver_FE(I, a, f, L, Nx, F, T,
     return t1-t0
 
 
-def solver_BE_simple(I, a, f, L, Nx, F, T, user_action=None):
+def solver_BE_simple(I, a, f, L, dt, F, T, user_action=None):
     """
     Simplest expression of the computational algorithm
     for the Backward Euler method, using explicit Python loops
@@ -143,11 +143,15 @@ def solver_BE_simple(I, a, f, L, Nx, F, T, user_action=None):
     """
     import time;  t0 = time.clock()  # for measuring the CPU time
 
-    x = np.linspace(0, L, Nx+1)      # mesh points in space
-    dx = x[1] - x[0]
-    dt = F*dx**2/a
     Nt = int(round(T/float(dt)))
-    t = np.linspace(0, T, Nt+1)      # mesh points in time
+    t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
+    dx = np.sqrt(a*dt/F)
+    Nx = int(round(L/dx))
+    x = np.linspace(0, L, Nx+1)       # Mesh points in space
+    # Make sure dx and dt are compatible with x and t
+    dx = x[1] - x[0]
+    dt = t[1] - t[0]
+
     u   = np.zeros(Nx+1)
     u_1 = np.zeros(Nx+1)
 
@@ -185,18 +189,21 @@ def solver_BE_simple(I, a, f, L, Nx, F, T, user_action=None):
 
 
 
-def solver_BE(I, a, f, L, Nx, F, T, user_action=None):
+def solver_BE(I, a, f, L, dt, F, T, user_action=None):
     """
     Vectorized implementation of solver_BE_simple using also
     a sparse (tridiagonal) matrix for efficiency.
     """
     import time;  t0 = time.clock()  # for measuring the CPU time
 
-    x = np.linspace(0, L, Nx+1)      # mesh points in space
-    dx = x[1] - x[0]
-    dt = F*dx**2/a
     Nt = int(round(T/float(dt)))
-    t = np.linspace(0, T, Nt+1)      # mesh points in time
+    t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
+    dx = np.sqrt(a*dt/F)
+    Nx = int(round(L/dx))
+    x = np.linspace(0, L, Nx+1)       # Mesh points in space
+    # Make sure dx and dt are compatible with x and t
+    dx = x[1] - x[0]
+    dt = t[1] - t[0]
 
     u   = np.zeros(Nx+1)   # solution array at t[n+1]
     u_1 = np.zeros(Nx+1)   # solution at t[n]
@@ -246,7 +253,7 @@ def solver_BE(I, a, f, L, Nx, F, T, user_action=None):
     return t1-t0
 
 
-def solver_theta(I, a, f, L, Nx, F, T, theta=0.5, u_L=0, u_R=0,
+def solver_theta(I, a, f, L, dt, F, T, theta=0.5, u_L=0, u_R=0,
                  user_action=None):
     """
     Full solver for the model problem using the theta-rule
@@ -257,11 +264,14 @@ def solver_theta(I, a, f, L, Nx, F, T, theta=0.5, u_L=0, u_R=0,
     """
     import time;  t0 = time.clock()  # for measuring the CPU time
 
-    x = np.linspace(0, L, Nx+1)   # mesh points in space
-    dx = x[1] - x[0]
-    dt = F*dx**2/a
     Nt = int(round(T/float(dt)))
-    t = np.linspace(0, T, Nt+1)   # mesh points in time
+    t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
+    dx = np.sqrt(a*dt/F)
+    Nx = int(round(L/dx))
+    x = np.linspace(0, L, Nx+1)       # Mesh points in space
+    # Make sure dx and dt are compatible with x and t
+    dx = x[1] - x[0]
+    dt = t[1] - t[0]
 
     u   = np.zeros(Nx+1)   # solution array at t[n+1]
     u_1 = np.zeros(Nx+1)   # solution at t[n]
@@ -317,7 +327,7 @@ def solver_theta(I, a, f, L, Nx, F, T, theta=0.5, u_L=0, u_R=0,
     return t1-t0
 
 
-def viz(I, a, L, Nx, F, T, umin, umax,
+def viz(I, a, L, dt, F, T, umin, umax,
         scheme='FE', animate=True, framefiles=True):
 
     def plot_u(u, x, t, n):
@@ -334,15 +344,17 @@ def viz(I, a, L, Nx, F, T, umin, umax,
 
     user_action = plot_u if animate else lambda u,x,t,n: None
 
-    cpu = eval('solver_'+scheme)(I, a, L, Nx, F, T,
+    cpu = eval('solver_'+scheme)(I, a, L, dt, F, T,
                                  user_action=user_action)
     return cpu
 
 
 def plug(scheme='FE', F=0.5, Nx=50):
     L = 1.
-    a = 1
+    a = 1.
     T = 0.1
+    # Compute dt from Nx and F
+    dx = L/Nx;  dt = F/a*dx**2
 
     def I(x):
         """Plug profile as initial condition."""
@@ -351,21 +363,23 @@ def plug(scheme='FE', F=0.5, Nx=50):
         else:
             return 1
 
-    cpu = viz(I, a, L, Nx, F, T,
+    cpu = viz(I, a, L, dt, F, T,
               umin=-0.1, umax=1.1,
               scheme=scheme, animate=True, framefiles=True)
     print 'CPU time:', cpu
 
 def gaussian(scheme='FE', F=0.5, Nx=50, sigma=0.05):
     L = 1.
-    a = 1
+    a = 1.
     T = 0.1
+    # Compute dt from Nx and F
+    dx = L/Nx;  dt = F/a*dx**2
 
     def I(x):
         """Gaussian profile as initial condition."""
         return exp(-0.5*((x-L/2.0)**2)/sigma**2)
 
-    u, cpu = viz(I, a, L, Nx, F, T,
+    u, cpu = viz(I, a, L, dt, F, T,
                  umin=-0.1, umax=1.1,
                  scheme=scheme, animate=True, framefiles=True)
     print 'CPU time:', cpu
@@ -383,7 +397,9 @@ def expsin(scheme='FE', F=0.5, m=3):
         return exact(x, 0)
 
     Nx = 80
-    viz(I, a, L, Nx, F, T, -1, 1, scheme=scheme, animate=True,
+    # Compute dt from Nx and F
+    dx = L/Nx;  dt = F/a*dx**2
+    viz(I, a, L, dt, F, T, -1, 1, scheme=scheme, animate=True,
         framefiles=True)
 
     # Convergence study
@@ -406,11 +422,14 @@ def test_solvers():
         return u_exact(x, 0)
 
     def f(x, t):
-        return x*(L-x)*5 + a*5*t*2
+        return 5*x*(L-x) + 10*a*t
 
     a = 3.5
     L = 1.5
     Nx = 4
+    F = 0.5
+    # Compute dt from Nx and F
+    dx = L/Nx;  dt = F/a*dx**2
 
     def compare(u, x, t, n):      # user_action function
         """Compare exact and computed solution."""
@@ -422,16 +441,16 @@ def test_solvers():
     import functools
     s = functools.partial  # object for calling a function w/args
     solvers = [
-        s(solver_FE_simple, I=I, a=a, f=f, L=L, Nx=Nx, F=0.5, T=0.5),
-        s(solver_FE,        I=I, a=a, f=f, L=L, Nx=Nx, F=0.5, T=2,
+        s(solver_FE_simple, I=I, a=a, f=f, L=L, dt=dt, F=F, T=0.2),
+        s(solver_FE,        I=I, a=a, f=f, L=L, dt=dt, F=F, T=2,
           user_action=compare, version='scalar'),
-        s(solver_FE,        I=I, a=a, f=f, L=L, Nx=Nx, F=0.5, T=2,
+        s(solver_FE,        I=I, a=a, f=f, L=L, dt=dt, F=F, T=2,
           user_action=compare, version='vectorized'),
-        s(solver_BE_simple, I=I, a=a, f=f, L=L, Nx=Nx, F=0.5, T=2,
+        s(solver_BE_simple, I=I, a=a, f=f, L=L, dt=dt, F=F, T=2,
           user_action=compare),
-        s(solver_BE,        I=I, a=a, f=f, L=L, Nx=Nx, F=0.5, T=2,
+        s(solver_BE,        I=I, a=a, f=f, L=L, dt=dt, F=F, T=2,
           user_action=compare),
-        s(solver_theta,     I=I, a=a, f=f, L=L, Nx=Nx, F=0.5, T=2,
+        s(solver_theta,     I=I, a=a, f=f, L=L, dt=dt, F=F, T=2,
           theta=0, u_L=0, u_R=0, user_action=compare),
         ]
     # solver_FE_simple has different return from the others

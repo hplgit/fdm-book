@@ -34,12 +34,14 @@ def solver(I, V, f, c, Lx, Ly, Nx, Ny, dt, T,
     elif version == 'scalar':
         advance = advance_scalar
 
-    x = linspace(0, Lx, Nx+1)  # mesh points in x dir
-    y = linspace(0, Ly, Ny+1)  # mesh points in y dir
+    x = linspace(0, Lx, Nx+1)  # Mesh points in x dir
+    y = linspace(0, Ly, Ny+1)  # Mesh points in y dir
+    # Make sure dx, dy, and dt are compatible with x, y and t
     dx = x[1] - x[0]
     dy = y[1] - y[0]
+    dt = t[1] - t[0]
 
-    xv = x[:,newaxis]          # for vectorized function evaluations
+    xv = x[:,newaxis]          # For vectorized function evaluations
     yv = y[newaxis,:]
 
     stability_limit = (1/float(c))*(1/sqrt(1/dx**2 + 1/dy**2))

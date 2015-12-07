@@ -50,6 +50,9 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
     Nx = int(round(L/dx))
     x = np.linspace(0, L, Nx+1)       # Mesh points in space
     C2 = C**2; dt2 = dt*dt            # Help variables in the scheme
+    # Make sure dx and dt are compatible with x and t
+    dx = x[1] - x[0]
+    dt = t[1] - t[0]
 
     # Wrap user-given f, I, V, U_0, U_L if None or 0
     if f is None or f == 0:

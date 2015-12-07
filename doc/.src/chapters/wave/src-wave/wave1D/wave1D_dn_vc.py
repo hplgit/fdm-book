@@ -47,6 +47,9 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
     dx = dt*c_max/(stability_safety_factor*C)
     Nx = int(round(L/dx))
     x = np.linspace(0, L, Nx+1)          # Mesh points in space
+    # Make sure dx and dt are compatible with x and t
+    dx = x[1] - x[0]
+    dt = t[1] - t[0]
 
     # Treat c(x) as array
     if isinstance(c, (float,int)):
