@@ -3,10 +3,10 @@
 Functions for solving 2D diffusion equations of a simple type
 (constant coefficient):
 
-      u_t = a*(u_xx + u_yy) + f(x,t)    on  (0,Lx)x(0,Ly)
+      u_t = a*(u_xx + u_yy) + f(x,y,t)    on  (0,Lx)x(0,Ly)
 
 with boundary conditions u=0 on x=0,Lx and y=0,Ly for t in (0,T].
-Initial condition: u(x,0)=I(x).
+Initial condition: u(x,y,0)=I(x,y).
 
 The following naming convention of variables are used.
 
@@ -185,7 +185,7 @@ def solver_dense(
         u_1, u = u, u_1
 
     t1 = time.clock()
-    # Return u_1 as solution since we set u_1=u above
+
     return t, t1-t0
 
 import scipy.sparse
@@ -346,7 +346,192 @@ def solver_sparse(
         u_1, u = u, u_1
 
     t1 = time.clock()
-    # Return u_1 as solution since we set u_1=u above
+
+    return t, t1-t0
+
+def solver_sparse_CG(
+    I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5,
+    U_0x=0, U_0y=0, U_Lx=0, U_Ly=0, user_action=None):
+    """
+    Full solver for the model problem using the theta-rule
+    difference approximation in time. Sparse matrix with ILU
+    preconditioning and CG solve.
+    """
+    import time; t0 = time.clock()  # for measuring CPU time
+
+    x = np.linspace(0, Lx, Nx+1)       # mesh points in x dir
+    y = np.linspace(0, Ly, Ny+1)       # mesh points in y dir
+    dx = x[1] - x[0]
+    dy = y[1] - y[0]
+
+    dt = float(dt)                  # avoid integer division
+    Nt = int(round(T/float(dt)))
+    t = np.linspace(0, Nt*dt, Nt+1) # mesh points in time
+
+    # Mesh Fourier numbers in each direction
+    Fx = a*dt/dx**2
+    Fy = a*dt/dy**2
+
+    # Allow f to be None or 0
+    if f is None or f == 0:
+        f = lambda x, y, t: 0
+
+    u   = np.zeros((Nx+1, Ny+1))    # unknown u at new time level
+    u_1 = np.zeros((Nx+1, Ny+1))    # u at the previous time level
+
+    Ix = range(0, Nx+1)
+    Iy = range(0, Ny+1)
+    It = range(0, Nt+1)
+
+    # Make U_0x, U_0y, U_Lx and U_Ly functions if they are float/int
+    if isinstance(U_0x, (float,int)):
+        _U_0x = float(U_0x)  # make copy of U_0x
+        U_0x = lambda t: _U_0x
+    if isinstance(U_0y, (float,int)):
+        _U_0y = float(U_0y)  # make copy of U_0y
+        U_0y = lambda t: _U_0y
+    if isinstance(U_Lx, (float,int)):
+        _U_Lx = float(U_Lx)  # make copy of U_Lx
+        U_Lx = lambda t: _U_Lx
+    if isinstance(U_Ly, (float,int)):
+        _U_Ly = float(U_Ly)  # make copy of U_Ly
+        U_Ly = lambda t: _U_Ly
+
+    # Load initial condition into u_1
+    for i in Ix:
+        for j in Iy:
+            u_1[i,j] = I(x[i], y[j])
+
+    # Two-dim coordinate arrays for vectorized function evaluations
+    xv = x[:,np.newaxis]
+    yv = y[np.newaxis,:]
+
+    if user_action is not None:
+        user_action(u_1, x, xv, y, yv, t, 0)
+
+    N = (Nx+1)*(Ny+1)
+    main   = np.zeros(N)            # diagonal
+    lower  = np.zeros(N-1)          # subdiagonal
+    upper  = np.zeros(N-1)          # superdiagonal
+    lower2 = np.zeros(N-(Nx+1))     # lower diagonal
+    upper2 = np.zeros(N-(Nx+1))     # upper diagonal
+    b      = np.zeros(N)            # right-hand side
+
+    # Precompute sparse matrix
+    lower_offset = 1
+    lower2_offset = Nx+1
+
+    m = lambda i, j: j*(Nx+1) + i
+    j = 0; main[m(0,j):m(Nx+1,j)] = 1  # j=0 boundary line
+    for j in Iy[1:-1]:             # interior mesh lines j=1,...,Ny-1
+        i = 0;   main[m(i,j)] = 1  # boundary
+        i = Nx;  main[m(i,j)] = 1  # boundary
+        # Interior i points: i=1,...,N_x-1
+        lower2[m(1,j)-lower2_offset:m(Nx,j)-lower2_offset] = - theta*Fy
+        lower[m(1,j)-lower_offset:m(Nx,j)-lower_offset] = - theta*Fx
+        main[m(1,j):m(Nx,j)] = 1 + 2*theta*(Fx+Fy)
+        upper[m(1,j):m(Nx,j)] = - theta*Fx
+        upper2[m(1,j):m(Nx,j)] = - theta*Fy
+    j = Ny; main[m(0,j):m(Nx+1,j)] = 1  # boundary line
+
+    A = scipy.sparse.diags(
+        diagonals=[main, lower, upper, lower2, upper2],
+        offsets=[0, -lower_offset, lower_offset,
+                 -lower2_offset, lower2_offset],
+        shape=(N, N), format='csr')
+    #print A.todense()   # Check that A is correct
+
+    # Find preconditioner for A (stays constant the whole time interval)
+    A_ilu = scipy.sparse.linalg.spilu(A)   
+    M = scipy.sparse.linalg.LinearOperator(shape=(N, N), matvec=A_ilu.solve)
+
+    # Time loop
+    for n in It[0:-1]:
+        """
+
+        # Compute b, scalar version
+
+        j = 0
+
+        for i in Ix:
+
+            p = m(i,j);  b[p] = U_0y(t[n+1])          # boundary
+
+        for j in Iy[1:-1]:
+
+            i = 0;  p = m(i,j);  b[p] = U_0x(t[n+1])  # boundary
+
+            for i in Ix[1:-1]:
+
+                p = m(i,j)                            # interior
+
+                b[p] = u_1[i,j] + \
+
+                  (1-theta)*(
+
+                  Fx*(u_1[i+1,j] - 2*u_1[i,j] + u_1[i-1,j]) +\
+
+                  Fy*(u_1[i,j+1] - 2*u_1[i,j] + u_1[i,j-1]))\
+
+                    + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \
+
+                  (1-theta)*dt*f(i*dx,j*dy,n*dt)
+
+            i = Nx;  p = m(i,j);  b[p] = U_Lx(t[n+1]) # boundary
+
+        j = Ny
+
+        for i in Ix:
+
+            p = m(i,j);  b[p] = U_Ly(t[n+1])          # boundary
+
+        #print b
+
+        """
+        # Compute b, vectorized version
+
+        # Precompute f in array so we can make slices
+        f_a_np1 = f(xv, yv, t[n+1])
+        f_a_n   = f(xv, yv, t[n])
+
+        j = 0; b[m(0,j):m(Nx+1,j)] = U_0y(t[n+1])     # boundary
+        for j in Iy[1:-1]:
+            i = 0;   p = m(i,j);  b[p] = U_0x(t[n+1]) # boundary
+            i = Nx;  p = m(i,j);  b[p] = U_Lx(t[n+1]) # boundary
+            imin = Ix[1]
+            imax = Ix[-1]  # for slice, max i index is Ix[-1]-1
+            b[m(imin,j):m(imax,j)] = u_1[imin:imax,j] + \
+                  (1-theta)*(Fx*(
+              u_1[imin+1:imax+1,j] -
+            2*u_1[imin:imax,j] +
+              u_1[imin-1:imax-1,j]) +
+                             Fy*(
+              u_1[imin:imax,j+1] -
+            2*u_1[imin:imax,j] +
+              u_1[imin:imax,j-1])) + \
+                theta*dt*f_a_np1[imin:imax,j] + \
+              (1-theta)*dt*f_a_n[imin:imax,j]
+        j = Ny;  b[m(0,j):m(Nx+1,j)] = U_Ly(t[n+1]) # boundary
+
+        # Solve matrix system A*c = b
+        c, info = scipy.sparse.linalg.cg(A, b, M=M)
+
+	if info != 0:
+	    print 'cg not ok!'
+
+        # Fill u with vector c
+        #for j in Iy:
+        #    u[0:Nx+1,j] = c[m(0,j):m(Nx+1,j)]
+        u[:,:] = c.reshape(Ny+1,Nx+1).T
+
+        if user_action is not None:
+            user_action(u, x, xv, y, yv, t, n+1)
+
+        # Update u_1 before next step
+        u_1, u = u, u_1
+
+    t1 = time.clock()
+
     return t, t1-t0
 
 
@@ -383,6 +568,11 @@ def quadratic(theta, Nx, Ny):
 
     print 'testing sparse matrix'
     t, cpu = solver_sparse(
+        I, a, f, Lx, Ly, Nx, Ny,
+        dt, T, theta, user_action=assert_no_error)
+
+    print 'testing sparse matrix, ILU and CG'
+    t, cpu = solver_sparse_CG(
         I, a, f, Lx, Ly, Nx, Ny,
         dt, T, theta, user_action=assert_no_error)
 
