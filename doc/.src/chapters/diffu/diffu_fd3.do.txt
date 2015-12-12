@@ -475,15 +475,15 @@ for i in Ix:
 # Loop over all internal mesh points in y diretion
 # and all mesh points in x direction
 for j in Iy[1:-1]:
-    i = 0;  p = m(i,j);  A[p, p] = 1   # boundary
-    for i in Ix[1:-1]:                 # interior points
+    i = 0;  p = m(i,j);  A[p, p] = 1   # Boundary
+    for i in Ix[1:-1]:                 # Interior points
         p = m(i,j)
         A[p, m(i,j-1)] = - theta*Fy
         A[p, m(i-1,j)] = - theta*Fx
         A[p, p]        = 1 + 2*theta*(Fx+Fy)
         A[p, m(i+1,j)] = - theta*Fx
         A[p, m(i,j+1)] = - theta*Fy
-    i = Nx;  p = m(i,j);  A[p, p] = 1  # boundary
+    i = Nx;  p = m(i,j);  A[p, p] = 1  # Boundary
 # Equations corresponding to j=Ny, i=0,1,... (u known)
 j = Ny
 for i in Ix:
@@ -500,10 +500,10 @@ for n in It[0:-1]:
     # Compute b
     j = 0
     for i in Ix:
-        p = m(i,j);  b[p] = 0           # boundary
+        p = m(i,j);  b[p] = 0           # Boundary
     for j in Iy[1:-1]:
-        i = 0;  p = m(i,j);  b[p] = 0   # boundary
-        for i in Ix[1:-1]:              # interior points
+        i = 0;  p = m(i,j);  b[p] = 0   # Boundary
+        for i in Ix[1:-1]:              # Interior points
             p = m(i,j)
             b[p] = u_1[i,j] + \
               (1-theta)*(
@@ -511,10 +511,10 @@ for n in It[0:-1]:
               Fy*(u_1[i,j+1] - 2*u_1[i,j] + u_1[i,j-1]))\
                 + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \
               (1-theta)*dt*f(i*dx,j*dy,n*dt)
-        i = Nx;  p = m(i,j);  b[p] = 0  # boundary
+        i = Nx;  p = m(i,j);  b[p] = 0  # Boundary
     j = Ny
     for i in Ix:
-        p = m(i,j);  b[p] = 0           # boundary
+        p = m(i,j);  b[p] = 0           # Boundary
 
     # Solve matrix system A*c = b
     c = scipy.linalg.solve(A, b)
@@ -737,9 +737,9 @@ The first and the last point on each line, $i=0$ and $i=N_x$, correspond
 to boundary points:
 
 !bc pycod
-for j in Iy[1:-1]:             # interior mesh lines j=1,...,Ny-1
+for j in Iy[1:-1]:             # Interior mesh lines j=1,...,Ny-1
     i = 0;   main[m(i,j)] = 1
-    i = Nx;  main[m(i,j)] = 1  # boundary
+    i = Nx;  main[m(i,j)] = 1  # Boundary
 !ec
 For the interior mesh points $i=1,\ldots,N_x-1$ on a mesh line $y=\hbox{const}$
 we can start with the main diagonal. The entries to be filled go from
@@ -790,16 +790,16 @@ lower2_offset = Nx+1
 m = lambda i, j: j*(Nx+1) + i
 
 j = 0; main[m(0,j):m(Nx+1,j)] = 1  # j=0 boundary line
-for j in Iy[1:-1]:             # interior mesh lines j=1,...,Ny-1
-    i = 0;   main[m(i,j)] = 1  # boundary
-    i = Nx;  main[m(i,j)] = 1  # boundary
+for j in Iy[1:-1]:             # Interior mesh lines j=1,...,Ny-1
+    i = 0;   main[m(i,j)] = 1  # Boundary
+    i = Nx;  main[m(i,j)] = 1  # Boundary
     # Interior i points: i=1,...,N_x-1
     lower2[m(1,j)-lower2_offset:m(Nx,j)-lower2_offset] = - theta*Fy
     lower[m(1,j)-lower_offset:m(Nx,j)-lower_offset] = - theta*Fx
     main[m(1,j):m(Nx,j)] = 1 + 2*theta*(Fx+Fy)
     upper[m(1,j):m(Nx,j)] = - theta*Fx
     upper2[m(1,j):m(Nx,j)] = - theta*Fy
-j = Ny; main[m(0,j):m(Nx+1,j)] = 1  # boundary line
+j = Ny; main[m(0,j):m(Nx+1,j)] = 1  # Boundary line
 !ec
 
 The next task is to create the sparse matrix from these diagonals:
@@ -830,21 +830,21 @@ for n in It[0:-1]:
     # Compute b
     j = 0
     for i in Ix:
-        p = m(i,j);  b[p] = 0                     # boundary
+        p = m(i,j);  b[p] = 0                     # Boundary
     for j in Iy[1:-1]:
-        i = 0;  p = m(i,j);  b[p] = 0             # boundary
+        i = 0;  p = m(i,j);  b[p] = 0             # Boundary
         for i in Ix[1:-1]:
-            p = m(i,j)                            # interior
+            p = m(i,j)                            # Interior
             b[p] = u_1[i,j] + \
               (1-theta)*(
               Fx*(u_1[i+1,j] - 2*u_1[i,j] + u_1[i-1,j]) +\
               Fy*(u_1[i,j+1] - 2*u_1[i,j] + u_1[i,j-1]))\
                 + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \
               (1-theta)*dt*f(i*dx,j*dy,n*dt)
-        i = Nx;  p = m(i,j);  b[p] = 0            # boundary
+        i = Nx;  p = m(i,j);  b[p] = 0            # Boundary
     j = Ny
     for i in Ix:
-        p = m(i,j);  b[p] = 0                     # boundary
+        p = m(i,j);  b[p] = 0                     # Boundary
 
     # Solve matrix system A*c = b
     c = scipy.sparse.linalg.spsolve(A, b)
@@ -875,10 +875,10 @@ for n in It[0:-1]:
     f_a_np1 = f(xv, yv, t[n+1])
     f_a_n   = f(xv, yv, t[n])
 
-    j = 0; b[m(0,j):m(Nx+1,j)] = 0     # boundary
+    j = 0; b[m(0,j):m(Nx+1,j)] = 0     # Boundary
     for j in Iy[1:-1]:
-        i = 0;   p = m(i,j);  b[p] = 0 # boundary
-        i = Nx;  p = m(i,j);  b[p] = 0 # boundary
+        i = 0;   p = m(i,j);  b[p] = 0 # Boundary
+        i = Nx;  p = m(i,j);  b[p] = 0 # Boundary
         imin = Ix[1]
         imax = Ix[-1]  # for slice, max i index is Ix[-1]-1
         b[m(imin,j):m(imax,j)] = u_1[imin:imax,j] + \
@@ -892,7 +892,7 @@ for n in It[0:-1]:
           u_1[imin:imax,j-1])) + \
             theta*dt*f_a_np1[imin:imax,j] + \
           (1-theta)*dt*f_a_n[imin:imax,j]
-    j = Ny;  b[m(0,j):m(Nx+1,j)] = 0 # boundary
+    j = Ny;  b[m(0,j):m(Nx+1,j)] = 0 # Boundary
 
     # Solve matrix system A*c = b
     c = scipy.sparse.linalg.spsolve(A, b)
@@ -931,4 +931,219 @@ The complete code is found in the `solver_sparse` function in the file
 
 ===== The Jacobi iterative method =====
 
-So far we have created a linear system $Ac=b$ by
+So far we have created a linear system $Ac=b$ by creating the matrix and
+right-hand side and solved the system by calling an exact algorithm
+based on Gaussian elimination. A much simpler implementation, which
+requires no memory for the coefficient matrix $A$, arises if we solve
+the system by *iterative* methods. These are only approximate, and
+the core algorithm is repeated many times until the solution converges.
+
+To illustrate the idea, we simply the numerical scheme to the
+Backward Euler case, $\theta=1$, so there are fewer terms to write:
+
+!bt
+\begin{align}
+& u^{n+1}_{i,j} -
+\left(
+F_x
+(u^{n+1}_{i-1,j} - 2^{n+1}_{i,j} + u^{n+1}_{i,j}) +
+F_y
+(u^{n+1}_{i,j-1} - 2^{n+1}_{i,j} + u^{n+1}_{i,j+1})\right)
+= + \nonumber\\ &\qquad u^n_{i,j} + \Delta t f^{n+1}_{i,j}
+label{diffu:2D:BE_scheme}
+\end{align}
+!et
+The idea of the *Jacobi* iterative method is to introduce an iteration,
+here with index $r$, where we in each iteration treat $u^{n+1}_{i,j}$
+as unknown, but use values from the previous iteration for
+the other unknowns $u^{n+1}_{i\pm 1,j\pm 1}$. Let $u^{n+1,r}_{i,j}$
+be the approximation to $u^{n+1}_{i,j}$ in iteration $r$, for all
+relevant $i$ and $j$ indices. We first solve with respect to
+$u^{n+1}_{i,j}$ to get the equation to solve:
+
+!bt
+\begin{align}
+& u^{n+1}_{i,j} = (1+2F_x +2F_y)^{-1}
+\left(
+F_x
+(u^{n+1}_{i-1,j} + u^{n+1}_{i,j}) +
+F_y
+(u^{n+1}_{i,j-1} + u^{n+1}_{i,j+1})\right) +
+\nonumber\\ &\qquad
+u^n_{i,j} + \Delta t f^{n+1}_{i,j}
+label{diffu:2D:Jacobi0}
+\end{align}
+!et
+The iteration is introduced by using iteration index $r$, for computed values,
+on the right-hand side and $r$ (unknown in this iteration) on the left-hand
+side:
+
+!bt
+\begin{align}
+& u^{n+1,r+1}_{i,j} = (1+2F_x +2F_y)^{-1}((
+F_x
+(u^{n+1,r}_{i-1,j} + u^{n+1,r}_{i,j}) +
+F_y
+(u^{n+1,r}_{i,j-1} + u^{n+1,r}_{i,j+1})) +
+\nonumber\\ &\qquad
+u^n_{i,j} + \Delta t f^{n+1}_{i,j})
+label{diffu:2D:Jacobi}
+\end{align}
+!et
+We start the iteration with the value at the previous time level:
+
+!bt
+\begin{equation}
+u^{n+1,0}_{i,j} = u^{n}_{i,j},\quad i=0,\ldots,N_x,\ j=0,\ldots,N_y\tp
+\end{equation}
+!et
+
+A common technique in iterative methods is to introduce a *relaxation*,
+which means that the new approximation is a weighted mean of the
+approximation as suggested by the algorithm and the previous approximation.
+Naming the quantity on the left-hand side of (ref{diffu:2D:Jacobi})
+as $u^{n+1,*}_{i,j}$, a new approximation based on relaxation reads
+
+!bt
+\begin{equation}
+u^{n+1,r+1} = \omega u^{n+1,*}_{i,j} + (1-\omega) u^{n+1,r}_{i,j}\tp
+\end{equation}
+!et
+Under-relaxation means $\omega < 1$, while over-relaxation has
+$\omega > 1$.
+
+The iteration can be stopped when the change from one iteration to the
+next is sufficiently small ($\epsilon$), using either an infinity norm,
+
+!bt
+\begin{equation}
+\max_{i,j}\left\vert u^{n+1,r+1}_{i,j}-u^{n+1,r}_{i,j}
+\right\vert \leq \epsilon,
+\end{equation}
+!et
+or an $L^2$ norm,
+
+!bt
+\begin{equation}
+\left(\Delta x\Delta y\sum_{i,j} (u^{n+1,r+1}_{i,j}-u^{n+1,r}_{i,j})^2
+\right)^{\half} \leq \epsilon\tp
+\end{equation}
+!et
+
+[hpl: Residual criterion?]
+
+To make the mathematics as close as possible to what we will write in a
+computer, we may introduce some new notation: $u_{i,j}$ is a short notation
+for $u^{n+1,r+1}_{i,j}$, $u^{-}_{i,j}$ is a short notation for
+$u^{n+1,r}_{i,j}$, and $u^{(s)}_{i,j}$ denotes $u^{n+1-s}_{i,j}$.
+That is, $u_{i,j}$ is the unknown, $u^{-}_{i,j}$
+is its most recently computed approximation, and $s$ counts time levels
+backwards in time. The Jacobi method
+(ref(ref{diffu:2D:Jacobi})) takes the following form with the new
+notation:
+
+!bt
+\begin{align}
+& u_{i,j} = (1+2F_x +2F_y)^{-1}((
+F_x
+(u^{-}_{i-1,j} + u^{-}_{i,j}) +
+F_y
+(u^{n+1,r}_{i,j-1} + u^{n+1,r}_{i,j+1})) +
+\nonumber\\ &\qquad
+u^{(1)}_{i,j} + \Delta t f^{n+1}_{i,j})
+label{diffu:2D:Jacobi2}
+\end{align}
+!et
+We can also quite easily introduce the $\theta$ rule for discretization in
+time and write up the Jacobi iteration in that case as well:
+
+!bt
+\begin{align}
+& u_{i,j} = (1+\theta(2F_x +2F_y))^{-1}(\theta(
+F_x
+(u^{-}_{i-1,j} + u^{-}_{i,j}) +
+F_y
+(u^{n+1,r}_{i,j-1} + u^{n+1,r}_{i,j+1})) +
+\nonumber\\ &\qquad
+u^{(1)}_{i,j} + \theta \Delta t f^{n+1}_{i,j}
++ (1-\theta)\Delta t f^n_{i,j} + \nonumber\\
+&\qquad (1-\theta)(
+F_x(u^{(1)}_{i-1,j}-2u^{(1)}_{i,j} + u^{(1)}_{i+1,j}) +
+F_y(u^{(1)}_{i,j-1}-2u^{(1)}_{i,j} + u^{(1)}_{i,j+1})))\tp
+label{diffu:2D:Jacobi3}
+\end{align}
+!et
+
+===== Implementation of the Jacobi iterative method =====
+
+The Jacobi method needs no coefficient matrix and right-hand side
+vector, but it needs an array for $u$ in the previous iteration.
+We call this array `u_` (using the notation at the end of the previous
+section), the unknown is `u`, and `u_1` is, as usual, the computed solution
+one time level back in time.
+With a $\theta$ rule in time, the time loop can be coded like this:
+
+!bc pycod
+for n in It[0:-1]:
+    # Solve linear system by Jacobi iteration at time level n+1
+    u_[:,:] = u_1  # Start value
+    converged = False
+    r = 0
+    while not converged:
+        if version == 'scalar':
+            j = 0
+            for i in Ix:
+                u[i,j] = U_0y(t[n+1])           # Boundary
+            for j in Iy[1:-1]:
+                i = 0;   u[i,j] = U_0x(t[n+1])  # Boundary
+                i = Nx;  u[i,j] = U_Lx(t[n+1])  # Boundary
+		# Interior points
+                for i in Ix[1:-1]:
+                    u_new = 1.0/(1.0 + 2*Fx + 2*Fy)*(theta*(
+                        Fx*(u_[i+1,j] + u_[i-1,j]) +
+                        Fy*(u_[i,j+1] + u_[i,j-1])) + \
+                    u_1[i,j] + \
+                    (1-theta)*(Fx*(
+                    u_1[i+1,j] - 2*u_1[i,j] + u_1[i-1,j]) +
+                      Fy*(
+                    u_1[i,j+1] - 2*u_1[i,j] + u_1[i,j-1]))\
+                      + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \
+                    (1-theta)*dt*f(i*dx,j*dy,n*dt))
+                    u[i,j] = omega*u_new + (1-omega)*u_[i,j]
+            j = Ny
+            for i in Ix:
+                u[i,j] = U_Ly(t[n+1])      # Boundary
+
+        elif version == 'vectorized':
+            j = 0;  u[:,j] = U_0y(t[n+1])  # Boundary
+            i = 0;  u[i,:] = U_0x(t[n+1])  # Boundary
+            i = Nx; u[i,:] = U_Lx(t[n+1])  # Boundary
+            j = Ny; u[:,j] = U_Ly(t[n+1])  # Boundary
+	    # Internal points
+            f_a_np1 = f(xv, yv, t[n+1])
+            f_a_n   = f(xv, yv, t[n])
+            u_new = 1.0/(1.0 + 2*Fx + 2*Fy)*(theta*(Fx*(
+              u_[2:,1:-1] + u_[:-2,1:-1]) +
+                Fy*(
+              u_[1:-1,2:] + u_[1:-1,:-2])) +\
+            u_1[1:-1,1:-1] + \
+              (1-theta)*(Fx*(
+              u_1[2:,1:-1] - 2*u_1[1:-1,1:-1] + u_1[:-2,1:-1]) +\
+                Fy*(
+              u_1[1:-1,2:] - 2*u_1[1:-1,1:-1] + u_1[1:-1,:-2]))\
+              + theta*dt*f_a_np1[1:-1,1:-1] + \
+              (1-theta)*dt*f_a_n[1:-1,1:-1])
+            u[1:-1,1:-1] = omega*u_new + (1-omega)*u_[1:-1,1:-1]
+        r += 1
+        converged = np.abs(u-u_).max() < tol or r >= max_iter
+        u_[:,:] = u
+
+    # Update u_1 before next step
+    u_1, u = u, u_1
+!ec
+The vectorized version should be quite straightforward to understand
+once one has an understanding of how a standard 2D finite stencil
+is vectorized.
+[hpl: Make references to 1D and 2D wave equation vectorization.]
+
+===== Test problem: diffusion of a sine hill =====
