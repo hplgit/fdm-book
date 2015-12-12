@@ -441,7 +441,7 @@ def solver_classic_iterative(
                     i = 0;   u[i,j] = U_0x(t[n+1])  # Boundary
                     i = Nx;  u[i,j] = U_Lx(t[n+1])  # Boundary
                     for i in Ix[1:-1]:
-                        u_new = 1.0/(1.0 + 2*Fx + 2*Fy)*(theta*(
+                        u_new = 1.0/(1.0 + 2*theta*(Fx + Fy))*(theta*(
                             Fx*(u_[i+1,j] + u__[i-1,j]) +
                             Fy*(u_[i,j+1] + u__[i,j-1])) + \
                         u_1[i,j] + (1-theta)*(
@@ -474,7 +474,7 @@ def solver_classic_iterative(
 #''' % (range(u_.shape[0])[ic],range(u_.shape[0])[im1],range(u_.shape[0])[ip1],
 #       range(u_.shape[1])[ic],range(u_.shape[1])[im1],range(u_.shape[1])[ip1])
                     return \
-                    1.0/(1.0 + 2*Fx + 2*Fy)*(theta*(
+                    1.0/(1.0 + 2*theta*(Fx + Fy))*(theta*(
                         Fx*(u_[ip1,jc] + u_[im1,jc]) +
                         Fy*(u_[ic,jp1] + u_[ic,jm1])) +\
                     u_1[ic,jc] + (1-theta)*(
@@ -598,7 +598,7 @@ def test_quadratic():
                 print 'testing for %dx%d mesh' % (Nx, Ny)
                 quadratic(theta, Nx, Ny)
 
-def test_classic_iterative():
+def demo_classic_iterative():
     Nx = 10
     Ny = 10
     """
@@ -619,6 +619,7 @@ def test_classic_iterative():
     f = lambda x, y, t: 0 if isinstance(x, (float,int)) else \
         np.zeros((Nx+1,Ny+1))
     dt = 0.2
+    dt = 0.05
     T = 0.5
 
     def examine(u, x, xv, y, yv, t, n):
@@ -634,12 +635,12 @@ def test_classic_iterative():
               'error:', abs(u_exact(xv, yv, t[n]).max() - u.max()), A_diff
 
     solver_classic_iterative(
-        I=I, a=a, f=f, Lx=Lx, Ly=Ly, Nx=Nx, Ny=Ny, dt=dt, T=T, theta=1,
+        I=I, a=a, f=f, Lx=Lx, Ly=Ly, Nx=Nx, Ny=Ny, dt=dt, T=T, theta=0.5,
         U_0x=0, U_0y=0, U_Lx=0, U_Ly=0, user_action=examine,
         #version='vectorized', iteration='Jacobi',
-        version='vectorized', iteration='SOR',
+        version='vectorized', iteration='Jacobi',
         omega=1.0, max_iter=100, tol=1E-4)
 
 if __name__ == '__main__':
     #test_quadratic()
-    test_classic_iterative()
+    demo_classic_iterative()
