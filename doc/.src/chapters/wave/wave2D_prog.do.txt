@@ -192,16 +192,17 @@ meshes, and probably useless in 3D beyond debugging of small test cases.
 Vectorization is therefore a must for multi-dimensional
 finite difference computations in Python. For example,
 with a mesh consisting of $30\times 30$ cells, vectorization
-brings down the CPU time by a factor of 70 (!).
+brings down the CPU time by a factor of 70 (!). Equally important,
+vectorized code can also easily be parallelized to take (usually)
+optimal advantage of parallel computer platforms.
 
-In the vectorized case, we must be able to evaluate user-given functions
-like $I(x,y)$ and $f(x,y,t)$ for the entire mesh in one operation (without
-loops). These user-given functions are
-provided as Python functions `I(x,y)`
-and `f(x,y,t)`, respectively.
-Having the one-dimensional coordinate arrays `x` and `y` is not
-sufficient when calling `I` and `f` in a vectorized way.
-We must extend `x` and `y` to their vectorized versions `xv` and `yv`:
+In the vectorized case, we must be able to evaluate user-given
+functions like $I(x,y)$ and $f(x,y,t)$ for the entire mesh in one
+operation (without loops). These user-given functions are provided as
+Python functions `I(x,y)` and `f(x,y,t)`, respectively.  Having the
+one-dimensional coordinate arrays `x` and `y` is not sufficient when
+calling `I` and `f` in a vectorized way.  We must extend `x` and `y`
+to their vectorized versions `xv` and `yv`:
 
 !bc pycod
 from numpy import newaxis
@@ -222,11 +223,12 @@ setting the initial condition is just a matter of
 !bc pycod
 u_1[:,:] = I(xv, yv)
 !ec
-One could also have written `u_1 = I(xv, yv)` and let `u_1` point
-to a new object, but vectorized operations often make use of
-direct insertion in the original array through `u_1[:,:]`, because
-sometimes not all of the array is to be filled by such a function
-evaluation. This is the case with the computational scheme for $u^{n+1}_{i,j}$:
+One could also have written `u_1 = I(xv, yv)` and let `u_1` point to a
+new object, but vectorized operations often make use of direct
+insertion in the original array through `u_1[:,:]`, because sometimes
+not all of the array is to be filled by such a function
+evaluation. This is the case with the computational scheme for
+$u^{n+1}_{i,j}$:
 
 @@@CODE src-wave/wave2D_u0/wave2D_u0.py fromto: def advance_vec@import nose\.tools
 

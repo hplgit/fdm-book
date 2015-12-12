@@ -424,7 +424,7 @@ def solver_classic_iterative(
     # Time loop
     import scipy.linalg
     for n in It[0:-1]:
-        # Solve linear system by Jacobi iteration at time level n+1
+        # Solve linear system by Jacobi or SOR iteration at time level n+1
         u_[:,:] = u_1  # Start value
         converged = False
         r = 0
@@ -484,11 +484,12 @@ def solver_classic_iterative(
                       (1-theta)*dt*f_a_n[ic,jc])
 
                 if iteration == 'Jacobi':
-                    c  = slice(1,-1)
-                    m1 = slice(0,-2)
-                    p1 = slice(2,None)
-                    u_new[c,c] = update(u_, u_1, c, m1, p1, c, m1, p1)
-                    u[c,c] = omega*u_new[c,c] + (1-omega)*u_[c,c]
+                    ic  = jc  = slice(1,-1)
+                    im1 = jm1 = slice(0,-2)
+                    ip1 = jp1 = slice(2,None)
+                    u_new[ic,jc] = update(
+                        u_, u_1, ic, im1, ip1, jc, jm1, jp1)
+                    u[ic,jc] = omega*u_new[ic,jc] + (1-omega)*u_[ic,jc]
                 elif iteration == 'SOR':
                     u_new[:,:] = u_
                     # Red points
@@ -538,8 +539,8 @@ def solver_classic_iterative(
             #print r, np.abs(u-u_).max(), np.sqrt(dx*dy*np.sum((u-u_)**2))
             u_[:,:] = u
 
-        print 't=%.2f: %s (omega=%g) finished in %d iterations' % \
-              (t[n+1], iteration, omega, r)
+        print 't=%.2f: %s %s (omega=%g) finished in %d iterations' % \
+              (t[n+1], version, iteration, omega, r)
 
         if user_action is not None:
             user_action(u, x, xv, y, yv, t, n+1)
@@ -587,6 +588,29 @@ def quadratic(theta, Nx, Ny):
         I, a, f, Lx, Ly, Nx, Ny,
         dt, T, theta, user_action=assert_no_error)
 
+    def assert_small_error(u, x, xv, y, yv, t, n):
+        """Assert small error at all mesh points for iterative methods."""
+        u_e = u_exact(xv, yv, t[n])
+        diff = abs(u - u_e).max()
+        tol = 1E-12
+        tol = 1E-4
+        msg = 'diff=%g, step %d, time=%g' % (diff, n, t[n])
+        print msg
+        assert diff < tol, msg
+
+    for iteration in 'Jacobi', 'SOR':
+        for version in 'scalar', 'vectorized':
+            for theta in 1, 0.5:
+                print 'testing %s, %s version, theta=%g' % \
+                      (iteration, version, theta)
+                t, cpu = solver_classic_iterative(
+                    I=I, a=a, f=f, Lx=Lx, Ly=Ly, Nx=Nx, Ny=Ny,
+                    dt=dt, T=T, theta=theta,
+                    U_0x=0, U_0y=0, U_Lx=0, U_Ly=0,
+                    user_action=assert_small_error,
+                    version=version, iteration=iteration,
+                    omega=1.0, max_iter=100, tol=1E-5)
+
     return t, cpu
 
 def test_quadratic():
@@ -595,19 +619,13 @@ def test_quadratic():
     for theta in [1, 0.5, 0]:
         for Nx in range(2, 6, 2):
             for Ny in range(2, 6, 2):
-                print 'testing for %dx%d mesh' % (Nx, Ny)
+                print '\n*** testing for %dx%d mesh' % (Nx, Ny)
                 quadratic(theta, Nx, Ny)
 
-def demo_classic_iterative():
-    Nx = 10
-    Ny = 10
-    """
-    r b r b r
-    b r b r b
-    r b r b r
-    b r b r b
-    r b r b r
-    """
+def demo_classic_iterative(
+    tol=1E-4, iteration='Jacobi',
+    version='vectorized', theta=0.5,
+    Nx=10, Ny=10):
     Lx = 2.0
     Ly = 1.0
     a = 1.5
@@ -628,19 +646,27 @@ def demo_classic_iterative():
         Fx = a*dt/dx**2;  Fy = a*dt/dy**2
         kx = np.pi/Lx;    ky = np.pi/Ly
         px = kx*dx/2;     py = ky*dy/2
-        A_BE = (1 + 4*Fx*np.sin(px)**2 + 4*Fy*np.sin(py)**2)**(-n)
+        if theta == 1:
+            A_d = (1 + 4*Fx*np.sin(px)**2 + 4*Fy*np.sin(py)**2)**(-n)
+        else:
+            A_d = ((1 - 2*Fx*np.sin(px)**2 - 2*Fy*np.sin(py)**2)/\
+                   (1 + 2*Fx*np.sin(px)**2 + 2*Fy*np.sin(py)**2))**n
         A_e  = np.exp(-a*np.pi**2*(Lx**(-2) + Ly**(-2))*t[n])
-        A_diff = abs(A_e - A_BE)
-        print 'Max u:', u.max(), \
-              'error:', abs(u_exact(xv, yv, t[n]).max() - u.max()), A_diff
+        A_diff = abs(A_e - A_d)
+        u_diff = abs(u_exact(xv, yv, t[n]).max() - u.max())
+        print 'Max u: %.2E' % u.max(), \
+              'error in u: %.2E' % u_diff, 'ampl.: %.2E' % A_diff, \
+              'iter: %.2E' % abs(u_diff - A_diff)
 
     solver_classic_iterative(
-        I=I, a=a, f=f, Lx=Lx, Ly=Ly, Nx=Nx, Ny=Ny, dt=dt, T=T, theta=0.5,
+        I=I, a=a, f=f, Lx=Lx, Ly=Ly, Nx=Nx, Ny=Ny,
+        dt=dt, T=T, theta=theta,
         U_0x=0, U_0y=0, U_Lx=0, U_Ly=0, user_action=examine,
         #version='vectorized', iteration='Jacobi',
-        version='vectorized', iteration='Jacobi',
-        omega=1.0, max_iter=100, tol=1E-4)
+        version=version, iteration=iteration,
+        omega=1.0, max_iter=300, tol=tol)
 
 if __name__ == '__main__':
     #test_quadratic()
-    demo_classic_iterative()
+    demo_classic_iterative(
+        iteration='Jacobi', theta=0.5, tol=1E-4, Nx=20, Ny=20)

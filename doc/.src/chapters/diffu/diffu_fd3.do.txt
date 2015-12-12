@@ -929,7 +929,23 @@ direction to get a smaller bandwidth.]
 The complete code is found in the `solver_sparse` function in the file
 "`diffu2D_u0.py`": "${src_diffu}/diffu2D_u0.py".
 
+=== Verification ===
+
+We can easily extend the function `quadratic` from
+Section ref{diffu:2D:verify} to include a test of the
+`solver_sparse` function as well.
+
+!bc pycod
+def quadratic(theta, Nx, Ny):
+    ...
+    t, cpu = solver_sparse(
+        I, a, f, Lx, Ly, Nx, Ny,
+        dt, T, theta, user_action=assert_no_error)
+!ec
+
 ===== The Jacobi iterative method =====
+
+idx{Jacobi method}
 
 So far we have created a linear system $Ac=b$ by creating the matrix and
 right-hand side and solved the system by calling an exact algorithm
@@ -995,6 +1011,7 @@ We start the iteration with the value at the previous time level:
 !bt
 \begin{equation}
 u^{n+1,0}_{i,j} = u^{n}_{i,j},\quad i=0,\ldots,N_x,\ j=0,\ldots,N_y\tp
+label{diffu:2D:iter:startvector}
 \end{equation}
 !et
 
@@ -1007,6 +1024,7 @@ as $u^{n+1,*}_{i,j}$, a new approximation based on relaxation reads
 !bt
 \begin{equation}
 u^{n+1,r+1} = \omega u^{n+1,*}_{i,j} + (1-\omega) u^{n+1,r}_{i,j}\tp
+label{diffu:2D:iter:relaxation}
 \end{equation}
 !et
 Under-relaxation means $\omega < 1$, while over-relaxation has
@@ -1044,7 +1062,7 @@ notation:
 
 !bt
 \begin{align}
-& u_{i,j} = (1+2F_x +2F_y)^{-1}((
+& u^{*}_{i,j} = (1+2F_x +2F_y)^{-1}((
 F_x
 (u^{-}_{i-1,j} + u^{-}_{i,j}) +
 F_y
@@ -1059,11 +1077,11 @@ time and write up the Jacobi iteration in that case as well:
 
 !bt
 \begin{align}
-& u_{i,j} = (1+\theta(2F_x +2F_y))^{-1}(\theta(
+& u^{*}_{i,j} = (1+ 2\theta(F_x +F_y))^{-1}(\theta(
 F_x
 (u^{-}_{i-1,j} + u^{-}_{i,j}) +
 F_y
-(u^{n+1,r}_{i,j-1} + u^{n+1,r}_{i,j+1})) +
+(u^{-}_{i,j-1} + u^{-}_{i,j+1})) +
 \nonumber\\ &\qquad
 u^{(1)}_{i,j} + \theta \Delta t f^{n+1}_{i,j}
 + (1-\theta)\Delta t f^n_{i,j} + \nonumber\\
@@ -1073,8 +1091,15 @@ F_y(u^{(1)}_{i,j-1}-2u^{(1)}_{i,j} + u^{(1)}_{i,j+1})))\tp
 label{diffu:2D:Jacobi3}
 \end{align}
 !et
+The final update of $u$ applies relaxation:
 
-===== Implementation of the Jacobi iterative method =====
+!bt
+\[ u_{i,j} = \omega u^{*}_{i,j} + (1-\omega)u^{-}_{i,j}\tp\]
+!et
+
+
+===== Implementation of the Jacobi method =====
+label{diffu:2D:Jacobi:impl}
 
 The Jacobi method needs no coefficient matrix and right-hand side
 vector, but it needs an array for $u$ in the previous iteration.
@@ -1099,7 +1124,7 @@ for n in It[0:-1]:
                 i = Nx;  u[i,j] = U_Lx(t[n+1])  # Boundary
 		# Interior points
                 for i in Ix[1:-1]:
-                    u_new = 1.0/(1.0 + 2*Fx + 2*Fy)*(theta*(
+                    u_new = 1.0/(1.0 + 2*theta*(Fx + Fy))*(theta*(
                         Fx*(u_[i+1,j] + u_[i-1,j]) +
                         Fy*(u_[i,j+1] + u_[i,j-1])) + \
                     u_1[i,j] + \
@@ -1122,7 +1147,7 @@ for n in It[0:-1]:
 	    # Internal points
             f_a_np1 = f(xv, yv, t[n+1])
             f_a_n   = f(xv, yv, t[n])
-            u_new = 1.0/(1.0 + 2*Fx + 2*Fy)*(theta*(Fx*(
+            u_new = 1.0/(1.0 + 2*theta*(Fx + Fy))*(theta*(Fx*(
               u_[2:,1:-1] + u_[:-2,1:-1]) +
                 Fy*(
               u_[1:-1,2:] + u_[1:-1,:-2])) +\
@@ -1146,4 +1171,487 @@ once one has an understanding of how a standard 2D finite stencil
 is vectorized.
 [hpl: Make references to 1D and 2D wave equation vectorization.]
 
+The first natural verification is to use the test problem
+from in the function `quadratic` from
+Section ref{diffu:2D:verify}. This problem is known to have no
+approximation error, but any iterative method will produce an
+approximate solution with unknown error. For a tolerance $10^{-k}$
+in the iterative method, we can, e.g., use a tolerance $10^{k-1}$
+for the difference between the exact and the computed solution.
+
+!bc pycod
+def quadratic(theta, Nx, Ny):
+    ...
+    def assert_small_error(u, x, xv, y, yv, t, n):
+        """Assert small error for iterative methods."""
+        u_e = u_exact(xv, yv, t[n])
+        diff = abs(u - u_e).max()
+        tol = 1E-4
+        msg = 'diff=%g, step %d, time=%g' % (diff, n, t[n])
+        assert diff < tol, msg
+
+    for version in 'scalar', 'vectorized':
+        for theta in 1, 0.5:
+            print 'testing Jacobi, %s version, theta=%g' % \
+                  (version, theta)
+            t, cpu = solver_Jacobi(
+                I=I, a=a, f=f, Lx=Lx, Ly=Ly, Nx=Nx, Ny=Ny,
+                dt=dt, T=T, theta=theta,
+                U_0x=0, U_0y=0, U_Lx=0, U_Ly=0,
+                user_action=assert_small_error,
+                version=version, iteration='Jacobi',
+                omega=1.0, max_iter=100, tol=1E-5)
+!ec
+Even for a very coarse $4\times 4$ mesh, the Jacobi method requires
+26 iterations to reach a tolerance of $10^{-5}$,
+which is quite many iterations, given that there are only 25 unknowns.
+
 ===== Test problem: diffusion of a sine hill =====
+label{diffu:2D:Jacobi:impl:hill}
+
+It can be shown that
+
+!bt
+\begin{equation}
+\uex = Ae^{-\dfc\pi^2(L_x^{-2} + L_y^{-2})}
+\sin\left(\frac{\pi}{L_x}x\right)\sin\left(\frac{\pi}{L_y}y\right),
+label{diffu:2D:Jacobi:impl:hill:uex}
+\end{equation}
+!et
+is a solution of the 2D homogeneous diffusion equation
+$u_t = \dfc(u_{xx}+u_{yy})$ (with $f=0$) in
+a rectangle $[0,L_x]\times [0,L_y]$, for any value of the amplitude $A$.
+This solution vanishes at the boundaries,
+and the initial condition is the product of two sines.
+We may choose $A=1$ for simplicity.
+
+It is difficult to know if our Jacobi method works properly since we
+are faced with two sources of errors: one from the discretization,
+$E_\Delta$, and one from the iterative Jacobi method, $E_i$. The total
+error in the computed $u$ can be represented as
+
+!bt
+\[ E_u = E_\Delta + E_I\tp\]
+!et
+One error measure is to look at the maximum value, which is obtained for
+the midpoint $x=L_x/2$ and $y=L_x/2$. This midpoint is represented in
+the discrete `u` if $N_x$ and $N_y$ are even numbers. We can then
+compute $E_u$ as $E_u = |\max \uex - \max u|$, when we know an exact
+solution $\uex$ of the problem.
+
+What about $E_\Delta$? If we use the maximum value as measure of the
+error, we have analytical insight into the approximation error in this
+problem. According to Section ref{diffu:2D:analysis}, the exact
+solution (ref{diffu:2D:Jacobi:impl:hill:uex}) of the PDE problem is
+also an exact solution of the discrete equations, except that the
+damping factor in time is different. More precisely,
+(ref{diffu:2D:analysis:BN:numexact}) and
+(ref{diffu:2D:analysis:BN:numexact}) are solutions of the discrete
+problem for $\theta=1$ (Backward Euler) and $\theta=\half$
+(Crank-Nicolson), respectively.  The factors raised to the power $n$
+is the amplitude error and measures the effect of the discretization,
+i.e.,
+
+!bt
+\begin{align*}
+E_\Delta &= \left(
+\frac{1 - 2(F_x\sin^2 p_x + F_x\sin^2p_y)}{1 + 2(F_x\sin^2 p_x + F_x\sin^2p_y)}
+\right)^n,\quad \theta=half,\\
+E_\Delta &=
+(1 + 4F_x\sin^2 p_x + 4F_y\sin^2 p_y)^{-n},\quad\theta=1\tp
+\end{align*}
+We are now in a position to compute $E_i$ numerically. That is, we can
+compute the error due to iterative solution of the linear system and
+see if it corresponds to the convergence tolerance used in the method.
+Note that the convergence is based on measuring the difference in
+two consecutive approximations, which is not exactly the error in
+due to the iteration, but it is a kind of measure, and it should
+have about the same size as $E_i$.
+
+The function `demo_classic_iterative` in "`diffu2D_u0.py`":
+"${src_diffu}/diffu2D_u0.py" implements the idea above (also for the
+methods in Section ref{diffu:2D:SOR}). The value of $E_i$ is in
+particular printed at each time level. By changing the tolerance in
+the convergence criterion in the Jacobi method, we can see that $E_i$
+is of the same order of magnitude as the prescribed tolerance.  For
+example, $E_\Delta\sim 10^{-2}$ with $N_x=N_y=10$ and $\theta=\half$,
+and as long as $\max u$ has some significant size ($\max u >
+0.02$). An appropriate value of the tolerance is then $10^{-3}$,
+giving $E_i$ around $5\cdot 10^{-3}$, which is an order of magnitude
+smaller than $E_\Delta$.  The corresponding number of Jacobi
+iterations (with $\omega=1$) varies from 31 to 12 (for $\max u >
+0.02$). Changing the tolerance to $10^{-5}$ requires much more
+iterations (61 to 42) without giving any contribution to the overall
+accuracy since the error is dominated by $E_\Delta$.
+
+Also, with a $N_x=N_y=20, the spatial accuracy increases and many more
+iterations are needed (143 to 45), but the dominating error is from
+the time discretization. However, with a finer spatial mesh, a higher
+tolerance in the convergence criterion $10^{-4}$ is needed to keep
+$E_i\sim 10^{-3}$.  More experiments show the disadvantage of the very
+simple Jacobi iteration method: the number of iterations increases
+with the number of unknowns, keeping the tolerance fixed, but the
+tolerance should also be lowered to avoid the iteration error to
+dominate the total error. A small adjustment of the Jacobi method, as
+described in the next section, provides a better method.
+
+===== The Gauss-Seidel and SOR methods =====
+label{diffu:2D:SOR}
+
+idx{Gauss-Seidel method}
+
+If we update the mesh points according to the
+Jacobi method (ref{diffu:2D:Jacobi0})
+for a Backward Euler discretization with a loop over
+$i=1,\ldots,N_x-1$ and $j=1,\ldots,Ny-1$, we realize that
+when $u^{n+1,r+1}_{i,j}$ is computed, $u^{n+1,r+1}_{i-1,j}$
+and $u^{n+1,r+1}_{i,j-1}$ are already computed, so these new
+values can be used rather than
+$u^{n+1,r}_{i-1,j}$ and $u^{n+1,r}_{i,j-1}$ (respectively).
+This idea gives rise to the *Gauss-Seidel* iteration method,
+which mathematically is just a small adjustment of
+(ref{diffu:2D:Jacobi0}):
+
+!bt
+\begin{align}
+& u^{n+1,r+1}_{i,j} = (1+2F_x +2F_y)^{-1}((
+F_x
+(u^{n+1,r+1}_{i-1,j} + u^{n+1,r}_{i,j}) +
+F_y
+(u^{n+1,r+1}_{i,j-1} + u^{n+1,r}_{i,j+1})) +
+\nonumber\\ &\qquad
+u^n_{i,j} + \Delta t f^{n+1}_{i,j})
+label{diffu:2D:SOR}
+\end{align}
+!et
+Observe that the way we access the mesh points in the formula
+(ref{diffu:2D:SOR}) is important: points with $i-1$ must be computed
+before points with $i$, and points with $j-1$ must be computed
+before points with $j$. Any sequence of mesh points can be used
+in the Gauss-Seidel method, but the formula must distinguish between
+already visited points in the current iteration and the points not
+yet visited.
+
+idx{SOR method}
+
+The idea of relaxation (ref{diffu:2D:iter:relaxation}) can equally
+well be applied to the Gauss-Seidel method. Actually, the Gauss-Seidel
+method with an arbitrary $0<\omega\leq 2$ has its own name: the
+*Successive Over-Relaxation* method, abbreviated as SOR.
+
+The SOR method for a $\theta$ rule discretization, with the
+shortened $u$ and $u^{-}$ notation, can be written
+
+!bt
+\begin{align}
+& u^{*}_{i,j} = (1+ 2\theta(F_x +F_y))^{-1}(\theta(
+F_x
+(u_{i-1,j} + u^{-}_{i,j}) +
+F_y
+(u_{i,j-1} + u^{-}_{i,j+1})) +
+\nonumber\\ &\qquad
+u^{(1)}_{i,j} + \theta \Delta t f^{n+1}_{i,j}
++ (1-\theta)\Delta t f^n_{i,j} + \nonumber\\
+&\qquad (1-\theta)(
+F_x(u^{(1)}_{i-1,j}-2u^{(1)}_{i,j} + u^{(1)}_{i+1,j}) +
+F_y(u^{(1)}_{i,j-1}-2u^{(1)}_{i,j} + u^{(1)}_{i,j+1}))),
+label{diffu:2D:SOR3}\\
+u_{i,j} &= \omega u^{*}_{i,j} + (1-\omega)u^{-}_{i,j}
+\end{align}
+!et
+The sequence of mesh points in (ref{diffu:2D:SOR3}) is
+$i=1,\ldots,N_x-1$, $j=1,\ldots,N_y-1$ (but whether $i$ runs faster
+or slower than $j$ does not matter).
+
+
+===== Scalar implementation of the SOR method =====
+label{diffu:2D:SOR:impl:scalar}
+
+Sincce the Jacobi and Gauss-Seidel methods with relaxation
+are so similar, we can easily make a common code for the two:
+
+!bc pycod
+for n in It[0:-1]:
+    # Solve linear system by Jacobi/SOR iteration at time level n+1
+    u_[:,:] = u_1  # Start value
+    converged = False
+    r = 0
+    while not converged:
+        if version == 'scalar':
+            if iteration == 'Jacobi':
+                u__ = u_
+            elif iteration == 'SOR':
+                u__ = u
+            j = 0
+            for i in Ix:
+                u[i,j] = U_0y(t[n+1])  # Boundary
+            for j in Iy[1:-1]:
+                i = 0;   u[i,j] = U_0x(t[n+1])  # Boundary
+                i = Nx;  u[i,j] = U_Lx(t[n+1])  # Boundary
+                for i in Ix[1:-1]:
+                    u_new = 1.0/(1.0 + 2*theta*(Fx + Fy))*(theta*(
+                        Fx*(u_[i+1,j] + u__[i-1,j]) +
+                        Fy*(u_[i,j+1] + u__[i,j-1])) + \
+                    u_1[i,j] + (1-theta)*(
+                      Fx*(
+                    u_1[i+1,j] - 2*u_1[i,j] + u_1[i-1,j]) +
+                      Fy*(
+                    u_1[i,j+1] - 2*u_1[i,j] + u_1[i,j-1]))\
+                      + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \
+                    (1-theta)*dt*f(i*dx,j*dy,n*dt))
+                    u[i,j] = omega*u_new + (1-omega)*u_[i,j]
+                j = Ny
+                for i in Ix:
+                    u[i,j] = U_Ly(t[n+1])  # boundary
+        r += 1
+        converged = np.abs(u-u_).max() < tol or r >= max_iter
+        u_[:,:] = u
+
+    u_1, u = u, u_1  # Get ready for next iteration
+!ec
+The idea here is to introduce `u__` to be used for already computed
+values in the Gauss-Seidel/SOR version of the implementation, or
+just values from the previous iteration in case of the Jacobi method.
+
+===== Vectorized implementation of the SOR method =====
+label{diffu:2D:SOR:impl:vectorized}
+
+Vectorizing the Gauss-Seidel iteration step turns out to be non-trivial.
+The problem is that vectorized operations typically implies
+operations on arrays where the sequence we visit the elements in does
+not matter. In particular, vectorized code is (usually) trivial to
+parallelize. However, in the Gauss-Seidel algorithm the sequence we
+visit the elements in the arrays does matter, and it is well known that
+the basic method as explained above cannot be parallelized.
+
+idx{red-black numbering}
+
+The strategy for vectorizing (and parallelizing) the Gauss-Seidel
+method is to use a special numbering of the mesh points called
+red-black numbering: every other point is red or black as in a
+checkerboard pattern. This numbering requires $N_x$ and $N_y$ to
+be even numbers. Here is an example on a $4\times 3$ mesh:
+
+!bc
+b r b r b
+r b r b r
+b r b r b
+r b r b r
+!ec
+And here is a $6\times 6$ mesh:
+
+!bc
+r b r b r b r
+b r b r b r b
+r b r b r b r
+b r b r b r b
+r b r b r b r
+b r b r b r b
+r b r b r b r
+!ec
+The idea now is to first update all the red points. Each formula for
+updating a red point involves only the black neighbors. Thereafter, we
+update all the black points, and at each black point, only the
+recently computed red points are involved.
+
+The scalar implementation of the red-black numbered Gauss-Seidel
+method is really compact, since we can update values directly in
+the `u` (that guarantees that we use the most recently computed
+values). Here is the relevant code for the Backward Euler
+scheme in time and without a source term:
+
+!bc pycod
+# Update internal points
+for sweep in 'red', 'black':
+    for j in range(1, Ny, 1):
+        if sweep == 'red':
+            start = 1 if j % 2 == 1 else 2
+        elif sweep == 'black':
+            start = 2 if j % 2 == 1 else 1
+        for i in range(start, Nx, 2):
+	    u[i,j] = 1.0/(1.0 + 2*(Fx + Fy))*(
+                     Fx*(u[i+1,j] + u[i-1,j]) +
+                     Fy*(u[i,j+1] + u[i,j-1]) + u_1[i,j])
+!ec
+
+The vectorized version must be based on slices. Looking at a typical
+red-black pattern, e.g.,
+
+!bc
+r b r b r b r
+b r b r b r b
+r b r b r b r
+b r b r b r b
+r b r b r b r
+b r b r b r b
+r b r b r b r
+!ec
+we want to update the internal points (marking boundary points with
+`x`):
+
+!bc
+x x x x x x x
+x r b r b r x
+x b r b r b x
+x r b r b r x
+x b r b r b x
+x r b r b r x
+x x x x x x x
+!ec
+It is impossible to make one slice that picks out all the internal
+red points. Instead, we need two slices. The first involves points
+marked with `R`:
+
+!bc
+x x x x x x x
+x R b R b R x
+x b r b r b x
+x R b R b R x
+x b r b r b x
+x R b R b R x
+x x x x x x x
+!ec
+This slice is specified as `1::2` for `i` and `1::2` for `j`, or with
+`slice` objects:
+
+!bc pycod
+i = slice(1, None, 2);  j = slice(1, None, 2)
+!ec
+The second slice involves the red points with `R`:
+
+!bc
+x x x x x x x
+x r b r b r x
+x b R b R b x
+x r b r b r x
+x b R b R b x
+x r b r b r x
+x x x x x x x
+!ec
+The slices are
+
+!bc pycod
+i = slice(2, None, 2);  j = slice(2, None, 2)
+!ec
+
+For the black points, the first slice involves the `B` points:
+
+!bc
+x x x x x x x
+x r B r B r x
+x b r b r b x
+x r B r B r x
+x b r b r b x
+x r B r B r x
+x x x x x x x
+!ec
+with slice objects
+
+!bc pycod
+i = slice(2, None, 2);  j = slice(1, None, 2)
+!ec
+The second set of black points are shown here:
+
+!bc
+x x x x x x x
+x r b r b r x
+x B r B r B x
+x r b r b r x
+x B r B r B x
+x r b r b r x
+x x x x x x x
+!ec
+with slice objects
+
+!bc pycod
+i = slice(1, None, 2);  j = slice(2, None, 2)
+!ec
+
+That is, we need four set of slices. The simplest way of implementing
+the algorithm is to make a function with variables for the slices
+representing $i$, $i-1$, $i+1$, $j$, $j-1$, and $j+1$, here called
+`ic` (``i center''), `im1` (``i minus 1'', `ip1` (``i plus 1''), `jc`, `jm1`,
+and `jp1`, respectively.
+
+!bc pycod
+def update(u_, u_1, ic, im1, ip1, jc, jm1, jp1):
+    return \
+       1.0/(1.0 + 2*theta*(Fx + Fy))*(theta*(
+           Fx*(u_[ip1,jc] + u_[im1,jc]) +
+           Fy*(u_[ic,jp1] + u_[ic,jm1])) +\
+       u_1[ic,jc] + (1-theta)*(
+         Fx*(u_1[ip1,jc] - 2*u_1[ic,jc] + u_1[im1,jc]) +\
+         Fy*(u_1[ic,jp1] - 2*u_1[ic,jc] + u_1[ic,jm1]))+\
+         theta*dt*f_a_np1[ic,jc] + \
+         (1-theta)*dt*f_a_n[ic,jc])
+!ec
+The formula returned form `update` is to be compared with
+(ref{diffu:2D:SOR3}).
+
+The relaxed Jacobi iteration can be implemented by
+
+!bc pycod
+ic  = jc  = slice(1,-1)
+im1 = jm1 = slice(0,-2)
+ip1 = jp1 = slice(2,None)
+u_new[ic,jc] = update(
+    u_, u_1, ic, im1, ip1, jc, jm1, jp1)
+u[ic,jc] = omega*u_new[ic,jc] + (1-omega)*u_[ic,jc]
+!ec
+
+The Gauss-Seidel (or SOR) updates needs four different steps.
+The `ic` and `jc` slices are specified above. For each of these,
+we must specify the corresponding `im1`, `ip1`, `jm1`, and `jp1`
+slices. The code below contain the details.
+
+!bc pycod
+# Red points
+ic  = slice(1,-1,2)
+im1 = slice(0,-2,2)
+ip1 = slice(2,None,2)
+jc  = slice(1,-1,2)
+jm1 = slice(0,-2,2)
+jp1 = slice(2,None,2)
+u_new[ic,jc] = update(
+    u_new, u_1, ic, im1, ip1, jc, jm1, jp1)
+
+ic  = slice(2,-1,2)
+im1 = slice(1,-2,2)
+ip1 = slice(3,None,2)
+jc  = slice(2,-1,2)
+jm1 = slice(1,-2,2)
+jp1 = slice(3,None,2)
+u_new[ic,jc] = update(
+    u_new, u_1, ic, im1, ip1, jc, jm1, jp1)
+
+# Black points
+ic  = slice(2,-1,2)
+im1 = slice(1,-2,2)
+ip1 = slice(3,None,2)
+jc  = slice(1,-1,2)
+jm1 = slice(0,-2,2)
+jp1 = slice(2,None,2)
+u_new[ic,jc] = update(
+    u_new, u_1, ic, im1, ip1, jc, jm1, jp1)
+
+ic  = slice(1,-1,2)
+im1 = slice(0,-2,2)
+ip1 = slice(2,None,2)
+jc  = slice(2,-1,2)
+jm1 = slice(1,-2,2)
+jp1 = slice(3,None,2)
+u_new[ic,jc] = update(
+    u_new, u_1, ic, im1, ip1, jc, jm1, jp1)
+
+# Relax
+c = slice(1,-1)
+u[c,c] = omega*u_new[c,c] + (1-omega)*u_[c,c]
+!ec
+
+The function `solver_classic_iterative` in
+"`diffu2D_u0.py`": "${src_diffu}/diffu2D_u0.py"
+contains a unified implementation of the relaxed Jacobi and SOR
+methods in scalar and vectorized versions using the techniques
+explained above.
+
+# Experiments with SOR, benefits. Rerun the Jacobi experiments
