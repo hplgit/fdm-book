@@ -350,7 +350,7 @@ def solver_sparse(
     return t, t1-t0
 
 
-def solver_jacobi(
+def solver_classic_iterative(
     I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5,
     U_0x=0, U_0y=0, U_Lx=0, U_Ly=0, user_action=None,
     version='vectorized', iteration='Jacobi',
@@ -378,9 +378,17 @@ def solver_jacobi(
     if f is None or f == 0:
         f = lambda x, y, t: 0
 
+    if version == 'vectorized' and iteration == 'SOR':
+        if (Nx % 2) != 0 or (Ny % 2) != 0:
+            raise ValueError(
+                'Vectorized SOR requires even Nx and Ny (%dx%d)'
+                % (Nx, Ny))
+
     u   = np.zeros((Nx+1, Ny+1))      # unknown u at new time level
     u_1 = np.zeros((Nx+1, Ny+1))      # u at the previous time level
     u_  = np.zeros((Nx+1, Ny+1))      # most recent approx to u
+    if version == 'vectorized':
+        u_new = np.zeros((Nx+1, Ny+1))  # help array
 
     Ix = range(0, Nx+1)
     Iy = range(0, Ny+1)
@@ -421,11 +429,11 @@ def solver_jacobi(
         converged = False
         r = 0
         while not converged:
-            if iteration == 'Jacobi':
-                u__ = u_
-            elif iteration == 'SOR':
-                u__ = u
             if version == 'scalar':
+                if iteration == 'Jacobi':
+                    u__ = u_
+                elif iteration == 'SOR':
+                    u__ = u
                 j = 0
                 for i in Ix:
                     u[i,j] = U_0y(t[n+1])  # Boundary
@@ -436,8 +444,8 @@ def solver_jacobi(
                         u_new = 1.0/(1.0 + 2*Fx + 2*Fy)*(theta*(
                             Fx*(u_[i+1,j] + u__[i-1,j]) +
                             Fy*(u_[i,j+1] + u__[i,j-1])) + \
-                        u_1[i,j] + \
-                        (1-theta)*(Fx*(
+                        u_1[i,j] + (1-theta)*(
+                          Fx*(
                         u_1[i+1,j] - 2*u_1[i,j] + u_1[i-1,j]) +
                           Fy*(
                         u_1[i,j+1] - 2*u_1[i,j] + u_1[i,j-1]))\
@@ -448,8 +456,6 @@ def solver_jacobi(
                 for i in Ix:
                     u[i,j] = U_Ly(t[n+1])  # boundary
             elif version == 'vectorized':
-                if iteration == 'SOR':
-                    raise NotImplementedError
                 j = 0;  u[:,j] = U_0y(t[n+1])  # boundary
                 i = 0;  u[i,:] = U_0x(t[n+1])  # boundary
                 i = Nx; u[i,:] = U_Lx(t[n+1])  # boundary
@@ -457,25 +463,83 @@ def solver_jacobi(
                 # Internal points
                 f_a_np1 = f(xv, yv, t[n+1])
                 f_a_n   = f(xv, yv, t[n])
-                u_new = 1.0/(1.0 + 2*Fx + 2*Fy)*(theta*(Fx*(
-                  u_[2:,1:-1] + u_[:-2,1:-1]) +
-                    Fy*(
-                  u_[1:-1,2:] + u_[1:-1,:-2])) +\
-                u_1[1:-1,1:-1] + \
-                  (1-theta)*(Fx*(
-                  u_1[2:,1:-1] - 2*u_1[1:-1,1:-1] + u_1[:-2,1:-1]) +\
-                    Fy*(
-                  u_1[1:-1,2:] - 2*u_1[1:-1,1:-1] + u_1[1:-1,:-2]))\
-                  + theta*dt*f_a_np1[1:-1,1:-1] + \
-                  (1-theta)*dt*f_a_n[1:-1,1:-1])
-                u[1:-1,1:-1] = omega*u_new + (1-omega)*u_[1:-1,1:-1]
+                def update(u_, u_1, ic, im1, ip1, jc, jm1, jp1):
+                    #print '''
+#ic:  %s
+#im1: %s
+#ip1: %s
+#jc:  %s
+#jm1: %s
+#jp1: %s
+#''' % (range(u_.shape[0])[ic],range(u_.shape[0])[im1],range(u_.shape[0])[ip1],
+#       range(u_.shape[1])[ic],range(u_.shape[1])[im1],range(u_.shape[1])[ip1])
+                    return \
+                    1.0/(1.0 + 2*Fx + 2*Fy)*(theta*(
+                        Fx*(u_[ip1,jc] + u_[im1,jc]) +
+                        Fy*(u_[ic,jp1] + u_[ic,jm1])) +\
+                    u_1[ic,jc] + (1-theta)*(
+                      Fx*(u_1[ip1,jc] - 2*u_1[ic,jc] + u_1[im1,jc]) +\
+                      Fy*(u_1[ic,jp1] - 2*u_1[ic,jc] + u_1[ic,jm1]))+\
+                      theta*dt*f_a_np1[ic,jc] + \
+                      (1-theta)*dt*f_a_n[ic,jc])
+
+                if iteration == 'Jacobi':
+                    c  = slice(1,-1)
+                    m1 = slice(0,-2)
+                    p1 = slice(2,None)
+                    u_new[c,c] = update(u_, u_1, c, m1, p1, c, m1, p1)
+                    u[c,c] = omega*u_new[c,c] + (1-omega)*u_[c,c]
+                elif iteration == 'SOR':
+                    u_new[:,:] = u_
+                    # Red points
+                    ic  = slice(1,-1,2)
+                    im1 = slice(0,-2,2)
+                    ip1 = slice(2,None,2)
+                    jc  = slice(1,-1,2)
+                    jm1 = slice(0,-2,2)
+                    jp1 = slice(2,None,2)
+                    u_new[ic,jc] = update(
+                        u_new, u_1, ic, im1, ip1, jc, jm1, jp1)
+
+                    ic  = slice(2,-1,2)
+                    im1 = slice(1,-2,2)
+                    ip1 = slice(3,None,2)
+                    jc  = slice(2,-1,2)
+                    jm1 = slice(1,-2,2)
+                    jp1 = slice(3,None,2)
+                    u_new[ic,jc] = update(
+                        u_new, u_1, ic, im1, ip1, jc, jm1, jp1)
+
+                    # Black points
+                    ic  = slice(2,-1,2)
+                    im1 = slice(1,-2,2)
+                    ip1 = slice(3,None,2)
+                    jc  = slice(1,-1,2)
+                    jm1 = slice(0,-2,2)
+                    jp1 = slice(2,None,2)
+                    u_new[ic,jc] = update(
+                        u_new, u_1, ic, im1, ip1, jc, jm1, jp1)
+
+                    ic  = slice(1,-1,2)
+                    im1 = slice(0,-2,2)
+                    ip1 = slice(2,None,2)
+                    jc  = slice(2,-1,2)
+                    jm1 = slice(1,-2,2)
+                    jp1 = slice(3,None,2)
+                    u_new[ic,jc] = update(
+                        u_new, u_1, ic, im1, ip1, jc, jm1, jp1)
+
+                    # Relax
+                    c = slice(1,-1)
+                    u[c,c] = omega*u_new[c,c] + (1-omega)*u_[c,c]
+
             r += 1
             converged = np.abs(u-u_).max() < tol or r >= max_iter
             #print r, np.abs(u-u_).max(), np.sqrt(dx*dy*np.sum((u-u_)**2))
             u_[:,:] = u
 
-        print 't=%.2f: Jacobi finished in %d iterations' % \
-              (t[n+1], r)
+        print 't=%.2f: %s (omega=%g) finished in %d iterations' % \
+              (t[n+1], iteration, omega, r)
 
         if user_action is not None:
             user_action(u, x, xv, y, yv, t, n+1)
@@ -534,9 +598,16 @@ def test_quadratic():
                 print 'testing for %dx%d mesh' % (Nx, Ny)
                 quadratic(theta, Nx, Ny)
 
-def test_Jacobi():
+def test_classic_iterative():
     Nx = 10
     Ny = 10
+    """
+    r b r b r
+    b r b r b
+    r b r b r
+    b r b r b
+    r b r b r
+    """
     Lx = 2.0
     Ly = 1.0
     a = 1.5
@@ -554,19 +625,21 @@ def test_Jacobi():
         # Expected error in amplitude
         dx = x[1] - x[0];  dy = y[1] - y[0];  dt = t[1] - t[0]
         Fx = a*dt/dx**2;  Fy = a*dt/dy**2
-        kx = np.pi/Lx;  ky = np.pi/Ly
-        px = kx*dx/2;  py = ky*dy/2
+        kx = np.pi/Lx;    ky = np.pi/Ly
+        px = kx*dx/2;     py = ky*dy/2
         A_BE = (1 + 4*Fx*np.sin(px)**2 + 4*Fy*np.sin(py)**2)**(-n)
         A_e  = np.exp(-a*np.pi**2*(Lx**(-2) + Ly**(-2))*t[n])
         A_diff = abs(A_e - A_BE)
         print 'Max u:', u.max(), \
               'error:', abs(u_exact(xv, yv, t[n]).max() - u.max()), A_diff
 
-    solver_jacobi(
+    solver_classic_iterative(
         I=I, a=a, f=f, Lx=Lx, Ly=Ly, Nx=Nx, Ny=Ny, dt=dt, T=T, theta=1,
         U_0x=0, U_0y=0, U_Lx=0, U_Ly=0, user_action=examine,
-        version='vectorized', omega=1.0, max_iter=100, tol=1E-4)
+        #version='vectorized', iteration='Jacobi',
+        version='vectorized', iteration='SOR',
+        omega=1.0, max_iter=100, tol=1E-4)
 
 if __name__ == '__main__':
     #test_quadratic()
-    test_Jacobi()
+    test_classic_iterative()
