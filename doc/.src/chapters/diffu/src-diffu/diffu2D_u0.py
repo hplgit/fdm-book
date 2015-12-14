@@ -438,11 +438,11 @@ def solver_sparse_CG(
         diagonals=[main, lower, upper, lower2, upper2],
         offsets=[0, -lower_offset, lower_offset,
                  -lower2_offset, lower2_offset],
-        shape=(N, N), format='csr')
+        shape=(N, N), format='csc')
     #print A.todense()   # Check that A is correct
 
     # Find preconditioner for A (stays constant the whole time interval)
-    A_ilu = scipy.sparse.linalg.spilu(scipy.sparse.csc_matrix(A))   
+    A_ilu = scipy.sparse.linalg.spilu(A)   
     M = scipy.sparse.linalg.LinearOperator(shape=(N, N), matvec=A_ilu.solve)
 
     # Time loop
@@ -496,7 +496,7 @@ def solver_sparse_CG(
         j = Ny;  b[m(0,j):m(Nx+1,j)] = U_Ly(t[n+1]) # boundary
 
         # Solve matrix system A*c = b (use previous sol as start vector x0)
-        c, info = scipy.sparse.linalg.cg(A, b, x0 = c, tol=1e-05, maxiter=N, M=M)
+        c, info = scipy.sparse.linalg.cg(A, b, x0 = c, tol=1e-14, maxiter=N, M=M)
 
         if info > 0:
             print 'CG: tolerance not achieved within %d iterations' % info
