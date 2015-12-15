@@ -193,11 +193,14 @@ import scipy.sparse.linalg
 
 def solver_sparse(
     I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5,
-    U_0x=0, U_0y=0, U_Lx=0, U_Ly=0, user_action=None):
+    U_0x=0, U_0y=0, U_Lx=0, U_Ly=0, user_action=None,
+    method='direct', CG_tol=1E-5):
     """
     Full solver for the model problem using the theta-rule
     difference approximation in time. Sparse matrix with
-    dedicated Gaussian elimination algorithm.
+    dedicated Gaussian elimination algorithm (method='direct')
+    or ILU preconditioned Conjugate Gradients (method='CG' with
+    tolerance CG_tol).
     """
     import time; t0 = time.clock()  # for measuring CPU time
 
@@ -283,6 +286,12 @@ def solver_sparse(
         shape=(N, N), format='csr')
     #print A.todense()   # Check that A is correct
 
+    if method == 'CG':
+        # Find ILU preconditioner (constant in time)
+        A_ilu = scipy.sparse.linalg.spilu(A)  # SuperLU defaults
+        M = scipy.sparse.linalg.LinearOperator(
+            shape=(N, N), matvec=A_ilu.solve)
+
     # Time loop
     for n in It[0:-1]:
         """
@@ -332,7 +341,17 @@ def solver_sparse(
         j = Ny;  b[m(0,j):m(Nx+1,j)] = U_Ly(t[n+1]) # Boundary
 
         # Solve matrix system A*c = b
-        c = scipy.sparse.linalg.spsolve(A, b)
+        if method == 'direct':
+            c = scipy.sparse.linalg.spsolve(A, b)
+        elif method == 'CG':
+            x0 = u_1.T.reshape(N)  # Start vector is u_1
+            c, info = scipy.sparse.linalg.cg(
+                A, b, x0=x0, tol=CG_tol, maxiter=N, M=M)
+            if info > 0:
+                print 'CG: tolerance %g not achieved within %d iterations' \
+                      % (CG_tol, info)
+            elif info < 0:
+                print 'CG breakdown'
 
         # Fill u with vector c
         #for j in Iy:  # vectorize y lines
@@ -578,15 +597,16 @@ def quadratic(theta, Nx, Ny):
         print msg
         assert diff < tol, msg
 
-    print 'testing dense matrix'
+    print '\ntesting dense matrix'
     t, cpu = solver_dense(
         I, a, f, Lx, Ly, Nx, Ny,
         dt, T, theta, user_action=assert_no_error)
 
-    print 'testing sparse matrix'
+    print '\ntesting sparse matrix'
     t, cpu = solver_sparse(
         I, a, f, Lx, Ly, Nx, Ny,
-        dt, T, theta, user_action=assert_no_error)
+        dt, T, theta, user_action=assert_no_error,
+        method='direct')
 
     def assert_small_error(u, x, xv, y, yv, t, n):
         """Assert small error at all mesh points for iterative methods."""
@@ -598,18 +618,25 @@ def quadratic(theta, Nx, Ny):
         print msg
         assert diff < tol, msg
 
+    tol = 1E-5  # Tolerance in iterative methods
     for iteration in 'Jacobi', 'SOR':
         for version in 'scalar', 'vectorized':
             for theta in 1, 0.5:
-                print 'testing %s, %s version, theta=%g' % \
-                      (iteration, version, theta)
+                print '\ntesting %s, %s version, theta=%g, tol=%g' % \
+                      (iteration, version, theta, tol)
                 t, cpu = solver_classic_iterative(
                     I=I, a=a, f=f, Lx=Lx, Ly=Ly, Nx=Nx, Ny=Ny,
                     dt=dt, T=T, theta=theta,
                     U_0x=0, U_0y=0, U_Lx=0, U_Ly=0,
                     user_action=assert_small_error,
                     version=version, iteration=iteration,
-                    omega=1.0, max_iter=100, tol=1E-5)
+                    omega=1.0, max_iter=100, tol=tol)
+
+    print '\ntesting CG+ILU, theta=%g, tol=%g' % (theta, tol)
+    solver_sparse(
+        I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5,
+        user_action=assert_small_error,
+        method='CG', CG_tol=tol)
 
     return t, cpu
 
@@ -667,6 +694,6 @@ def demo_classic_iterative(
         omega=1.0, max_iter=300, tol=tol)
 
 if __name__ == '__main__':
-    #test_quadratic()
-    demo_classic_iterative(
-        iteration='Jacobi', theta=0.5, tol=1E-4, Nx=20, Ny=20)
+    test_quadratic()
+    #demo_classic_iterative(
+    #    iteration='Jacobi', theta=0.5, tol=1E-4, Nx=20, Ny=20)
