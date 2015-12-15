@@ -194,13 +194,13 @@ import scipy.sparse.linalg
 def solver_sparse(
     I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5,
     U_0x=0, U_0y=0, U_Lx=0, U_Ly=0, user_action=None,
-    method='direct', CG_tol=1E-5):
+    method='direct', CG_prec='ILU', CG_tol=1E-5):
     """
     Full solver for the model problem using the theta-rule
     difference approximation in time. Sparse matrix with
     dedicated Gaussian elimination algorithm (method='direct')
     or ILU preconditioned Conjugate Gradients (method='CG' with
-    tolerance CG_tol).
+    tolerance CG_tol and preconditioner CG_prec ('ILU' or None)).
     """
     import time; t0 = time.clock()  # for measuring CPU time
 
@@ -287,10 +287,14 @@ def solver_sparse(
     #print A.todense()   # Check that A is correct
 
     if method == 'CG':
-        # Find ILU preconditioner (constant in time)
-        A_ilu = scipy.sparse.linalg.spilu(A)  # SuperLU defaults
-        M = scipy.sparse.linalg.LinearOperator(
-            shape=(N, N), matvec=A_ilu.solve)
+        if CG_prec == 'ILU':
+            # Find ILU preconditioner (constant in time)
+            A_ilu = scipy.sparse.linalg.spilu(A)  # SuperLU defaults
+            M = scipy.sparse.linalg.LinearOperator(
+                shape=(N, N), matvec=A_ilu.solve)
+        else:
+            M = None
+        CG_iter = []  # No of CG iterations at time level n
 
     # Time loop
     for n in It[0:-1]:
@@ -345,13 +349,24 @@ def solver_sparse(
             c = scipy.sparse.linalg.spsolve(A, b)
         elif method == 'CG':
             x0 = u_1.T.reshape(N)  # Start vector is u_1
+            CG_iter.append(0)
+
+            def CG_callback(c_k):
+                """Trick to count the no of iterations in CG."""
+                CG_iter[-1] += 1
+
             c, info = scipy.sparse.linalg.cg(
-                A, b, x0=x0, tol=CG_tol, maxiter=N, M=M)
+                A, b, x0=x0, tol=CG_tol, maxiter=N, M=M,
+                callback=CG_callback)
+
             if info > 0:
                 print 'CG: tolerance %g not achieved within %d iterations' \
                       % (CG_tol, info)
             elif info < 0:
                 print 'CG breakdown'
+            else:
+                print 'CG converged in %d iterations (tol=%g)' \
+                      % (CG_iter[-1], CG_tol)
 
         # Fill u with vector c
         #for j in Iy:  # vectorize y lines
@@ -636,7 +651,13 @@ def quadratic(theta, Nx, Ny):
     solver_sparse(
         I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5,
         user_action=assert_small_error,
-        method='CG', CG_tol=tol)
+        method='CG', CG_prec='ILU', CG_tol=tol)
+
+    print '\ntesting CG, theta=%g, tol=%g' % (theta, tol)
+    solver_sparse(
+        I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5,
+        user_action=assert_small_error,
+        method='CG', CG_prec=None, CG_tol=tol)
 
     return t, cpu
 
