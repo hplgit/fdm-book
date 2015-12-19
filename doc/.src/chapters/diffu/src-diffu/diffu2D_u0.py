@@ -283,7 +283,7 @@ def solver_sparse(
         diagonals=[main, lower, upper, lower2, upper2],
         offsets=[0, -lower_offset, lower_offset,
                  -lower2_offset, lower2_offset],
-        shape=(N, N), format='csr')
+        shape=(N, N), format='csc')
     #print A.todense()   # Check that A is correct
 
     if method == 'CG':
@@ -358,7 +358,7 @@ def solver_sparse(
             c, info = scipy.sparse.linalg.cg(
                 A, b, x0=x0, tol=CG_tol, maxiter=N, M=M,
                 callback=CG_callback)
-            
+            '''
             if info > 0:
                 print 'CG: tolerance %g not achieved within %d iterations' \
                       % (CG_tol, info)
@@ -367,7 +367,7 @@ def solver_sparse(
             else:
                 print 'CG converged in %d iterations (tol=%g)' \
                       % (CG_iter[-1], CG_tol)
-            
+            '''
         # Fill u with vector c
         #for j in Iy:  # vectorize y lines
         #    u[0:Nx+1,j] = c[m(0,j):m(Nx+1,j)]
@@ -755,41 +755,46 @@ def convergence_rates(theta, num_experiments=10):
         u_e = u_exact(p, q, s, xv, yv, t[n])
         #e2_sum += sum((u-u_e)**2)   did not work, switch to dictionary
         # update with error at time t[n]
-        e2_sum['err'] += sum((u-u_e)**2)
+        e2_sum['err'] += np.sum((u-u_e)**2)
+
         if t[n] == T:
             dx = x[1] - x[0]
             dt = t[1] - t[0]
             E = np.sqrt(dt*dx*e2_sum['err'])  # error, 1 simulation, t = [0,T]
             E_values.append(E)
             dt_values.append(dt)
-        if counter['i'] == (num_experiments -1):  # i.e., all num. exp. finished
-            r = [np.log(E_values[i-1]/E_values[i])/
-                 np.log(dt_values[i-1]/dt_values[i])
-                 for i in range(1, num_experiments, 1)]
-            tol = 0.001
-            diff = abs(r_FE_BE_expected - r[-1])
-            if theta == 0:  # i.e., FE
-                msg = 'Forward Euler. r = 1 expected, got=%g' % r[-1]
-            elif theta == 1:  # i.e., BE
-                msg = 'Backward Euler. r = 1 expected, got=%g' % r[-1]   
-            else:  # theta == 0.5, i.e, CN
-                msg = 'Crank-Nicolson. r = 2 expected, got=%g' % r[-1]   
-            #print msg
-            print r
-            assert diff < tol, msg
+            if counter['i'] == num_experiments:  # i.e., all num. exp. finished
+                print '...all experiments finished'
+                r = [np.log(E_values[i+1]/E_values[i])/
+                     np.log(dt_values[i+1]/dt_values[i])
+                     for i in range(0, num_experiments-2, 1)]
+                tol = 0.5
+                if theta == 0:  # i.e., FE
+                    diff = abs(r_FE_BE_expected - r[-1])
+                    msg = 'Forward Euler. r = 1 expected, got=%g' % r[-1]
+                elif theta == 1:  # i.e., BE
+                    diff = abs(r_FE_BE_expected - r[-1])
+                    msg = 'Backward Euler. r = 1 expected, got=%g' % r[-1]   
+                else:  # theta == 0.5, i.e, CN
+                    diff = abs(r_CN_expected - r[-1])
+                    msg = 'Crank-Nicolson. r = 2 expected, got=%g' % r[-1]   
+                #print msg
+                print 'theta: %g' % theta
+                print 'r: ', r
+                assert diff < tol, msg
 
     print '\ntesting convergence rate, sparse matrix, CG, ILU'
     tol = 1E-5  # Tolerance in iterative methods
     counter = {'i' : 0}   # initialize
     for i in range(num_experiments):
-        print 'Experiment no:%d' % i
-        counter['i'] = i
+        print 'Experiment no:%d' % (i+1)
+        counter['i'] += 1
         N = 2**(i+1)            
         Nx = N; Ny = N
         if theta == 0 or theta == 1:  # i.e., FE or BE
             dt = (float(Lx)/N)**2	# i.e., choose dt = dx**2
         else:			      # theta == 0.5, i.e., CN	
-            dt = dx                     # i.e., choose dt = dx
+            dt = float(Lx)/N            # i.e., choose dt = dx
         solver_sparse(
             I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5,
             user_action=assert_correct_convergence_rate,
