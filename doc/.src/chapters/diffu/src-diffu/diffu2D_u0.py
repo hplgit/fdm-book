@@ -75,7 +75,8 @@ def solver_dense(
 
     # Allow f to be None or 0
     if f is None or f == 0:
-        f = lambda x, y, t: 0
+        f = lambda x, y, t: np.zeros((x.size, y.size)) \
+            if isinstance(x, np.ndarray) else 0
 
     u   = np.zeros((Nx+1, Ny+1))      # unknown u at new time level
     u_1 = np.zeros((Nx+1, Ny+1))      # u at the previous time level
@@ -219,7 +220,8 @@ def solver_sparse(
 
     # Allow f to be None or 0
     if f is None or f == 0:
-        f = lambda x, y, t: 0
+        f = lambda x, y, t: np.zeros((x.size, y.size)) \
+            if isinstance(x, np.ndarray) else 0
 
     u   = np.zeros((Nx+1, Ny+1))    # unknown u at new time level
     u_1 = np.zeros((Nx+1, Ny+1))    # u at the previous time level
@@ -410,7 +412,8 @@ def solver_classic_iterative(
 
     # Allow f to be None or 0
     if f is None or f == 0:
-        f = lambda x, y, t: 0
+        f = lambda x, y, t: np.zeros((x.size, y.size)) \
+            if isinstance(x, np.ndarray) else 0
 
     if version == 'vectorized' and iteration == 'SOR':
         if (Nx % 2) != 0 or (Ny % 2) != 0:
@@ -715,14 +718,124 @@ def demo_classic_iterative(
         omega=1.0, max_iter=300, tol=tol)
 
 
-def convergence_rates(theta, num_experiments=10):   
+def convergence_rates(theta, num_experiments=6):
+    """
+    Compute convergence rates. The error measure is the L2 norm
+    of the error mesh function in space and time:
+    E^2 = dt*sum(dx*dy*sum((u_e - u)**2)).
+    """
     # ...for FE and BE, error truncation analysis suggests
     # that the error E goes like C*h**1, where h = dt = dx**2
     # (note that dx = dy is chosen).
     # ...for CN, we similarly have that E goes like
     # C*h**2, where h = dt**2 = dx**2 in this case.
 
-    e2_sum = {'err' : 0}   # initialize 
+    r_FE_BE_expected = 1
+    r_CN_expected = 2
+    E_values  = []
+    h_values = []
+    Lx = 2.0; Ly = 2.0    # Use square domain
+    a = 3.5
+    T = 1
+    kx = np.pi/Lx
+    ky = np.pi/Ly
+    #p = a*(kx**2 + ky**2)  # f=0, slower approach to asymptotic range
+    p = 1
+
+    def u_exact(x, y, t):
+        return np.exp(-p*t)*np.sin(kx*x)*np.sin(ky*y)
+    def I(x, y):
+        return u_exact(x, y, 0)
+    def f(x, y, t):
+        return (-p + a*(kx**2 + ky**2))*np.exp(-p*t)*np.sin(kx*x)*np.sin(ky*y)
+
+    def add_error_contribution(u, x, xv, y, yv, t, n):
+        u_e = u_exact(xv, yv, t[n])
+        E2_sum['err'] += np.sum((u_e - u)**2)
+        if n == 0:
+            # Store away dx, dy, dt in the dict for later use
+            E2_sum['dx'] = x[1] - x[0]
+            E2_sum['dy'] = y[1] - y[0]
+            E2_sum['dt'] = t[1] - t[0]
+
+    def compute_E(h):
+        dx = E2_sum['dx']
+        dy = E2_sum['dy']
+        dt = E2_sum['dt']
+        sum_xyt = E2_sum['err']
+        E = np.sqrt(dt*dx*dy*sum_xyt)  # L2 norm of error mesh func
+        E_values.append(E)
+        h_values.append(h)
+
+    def assert_conv_rates():
+        r = [np.log(E_values[i+1]/E_values[i])/
+             np.log(h_values[i+1]/h_values[i])
+             for i in range(0, num_experiments-2, 1)]
+        tol = 0.5
+        if theta == 0:  # i.e., FE
+            diff = abs(r_FE_BE_expected - r[-1])
+            msg = 'Forward Euler. r = 1 expected, got=%g' % r[-1]
+        elif theta == 1:  # i.e., BE
+            diff = abs(r_FE_BE_expected - r[-1])
+            msg = 'Backward Euler. r = 1 expected, got=%g' % r[-1]
+        else:  # theta == 0.5, i.e, CN
+            diff = abs(r_CN_expected - r[-1])
+            msg = 'Crank-Nicolson. r = 2 expected, got=%g' % r[-1]
+            #print msg
+        print 'theta: %g' % theta
+        print 'r: ', r
+        assert diff < tol, msg
+
+    tol = 1E-5  # Tolerance in iterative methods
+    for method in 'direct', 'CG':
+        print '\ntesting convergence rate, theta=%g, method=%s' % (theta, method)
+        for i in range(num_experiments):
+            # Want to do E2_sum += ... in local functions (closures), but
+            # a stndard variable E2_sum is reported undefined. Trick: use
+            # a dictionary or list instead.
+            E2_sum = {'err' : 0}
+
+            N = 2**(i+1)
+            Nx = N; Ny = N   # We want dx=dy, so Nx=Ny if Lx=Ly
+            dx = float(Lx)/N
+            # Find single discretization parameter h = dt and its relation
+            # to dt, dx and dy (E=C*h^r)
+            if theta == 1:
+                dt = h = dx**2
+            elif theta == 0:
+                h = dx**2
+                K = 1./(4*a)
+                dt = K*h
+            elif theta == 0.5:
+                dt = h = dx
+            if method == 'direct':
+                solver_sparse(
+                    I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5,
+                    user_action=add_error_contribution,
+                    method=method)
+            else:
+                solver_sparse(
+                    I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5,
+                    user_action=add_error_contribution,
+                    method=method, CG_prec='ILU', CG_tol=tol)
+            compute_E(h)
+            print 'Experiment no:%d, %d unknowns' % (i+1, (N+1)**2), E_values[-1]
+        assert_conv_rates()
+
+
+def convergence_rates0(theta, num_experiments=10):
+    # Sveins version
+    """
+    Compute convergence rates. The error measure is the L2 norm
+    of the error mesh function in space and time:
+    E^2 = dt*sum(dx*dy*sum((u_e - u)**2)).
+    """
+    # ...for FE and BE, error truncation analysis suggests
+    # that the error E goes like C*h**1, where h = dt = dx**2
+    # (note that dx = dy is chosen).
+    # ...for CN, we similarly have that E goes like
+    # C*h**2, where h = dt**2 = dx**2 in this case.
+
     r_FE_BE_expected = 1
     r_CN_expected = 2
     E_values  = []
@@ -730,10 +843,12 @@ def convergence_rates(theta, num_experiments=10):
     Lx = 2.0; Ly = 2.0    # Use square domain
     a = 3.5
     T = 2
-    p = 1
-    q = 2*np.pi/Lx 
+    p = 1  # hpl: easier to let p match q and s, so f=0
+    q = 2*np.pi/Lx
     s = 2*np.pi/Ly  # parameters for exact solution, loop later...?
 
+    # hpl: easier to have p,q,s as "global" variables in the function,
+    # they are in I and f anyway...
     def u_exact(p, q, s, x, y, t):
         return np.exp(-p*t)*np.sin(q*x)*np.sin(s*y)
     def I(x, y):
@@ -753,14 +868,12 @@ def convergence_rates(theta, num_experiments=10):
 
     def assert_correct_convergence_rate(u, x, xv, y, yv, t, n):
         u_e = u_exact(p, q, s, xv, yv, t[n])
-        #e2_sum += sum((u-u_e)**2)   did not work, switch to dictionary
-        # update with error at time t[n]
-        e2_sum['err'] += np.sum((u-u_e)**2)
+        E2_sum['err'] += np.sum((u_e - u)**2)
 
-        if t[n] == T:
+        if t[n] == T:  # hpl: dangerous comparison...
             dx = x[1] - x[0]
             dt = t[1] - t[0]
-            E = np.sqrt(dt*dx*e2_sum['err'])  # error, 1 simulation, t = [0,T]
+            E = np.sqrt(dt*dx*E2_sum['err'])  # error, 1 simulation, t = [0,T]
             E_values.append(E)
             dt_values.append(dt)
             if counter['i'] == num_experiments:  # i.e., all num. exp. finished
@@ -774,10 +887,10 @@ def convergence_rates(theta, num_experiments=10):
                     msg = 'Forward Euler. r = 1 expected, got=%g' % r[-1]
                 elif theta == 1:  # i.e., BE
                     diff = abs(r_FE_BE_expected - r[-1])
-                    msg = 'Backward Euler. r = 1 expected, got=%g' % r[-1]   
+                    msg = 'Backward Euler. r = 1 expected, got=%g' % r[-1]
                 else:  # theta == 0.5, i.e, CN
                     diff = abs(r_CN_expected - r[-1])
-                    msg = 'Crank-Nicolson. r = 2 expected, got=%g' % r[-1]   
+                    msg = 'Crank-Nicolson. r = 2 expected, got=%g' % r[-1]
                 #print msg
                 print 'theta: %g' % theta
                 print 'r: ', r
@@ -787,19 +900,22 @@ def convergence_rates(theta, num_experiments=10):
     tol = 1E-5  # Tolerance in iterative methods
     counter = {'i' : 0}   # initialize
     for i in range(num_experiments):
-        print 'Experiment no:%d' % (i+1)
+        # Want to do E2_sum += ... in local functions (closures), but
+        # a stndard variable E2_sum is reported undefined. Trick: use
+        # a dictionary or list instead.
+        E2_sum = {'err' : 0}
         counter['i'] += 1
-        N = 2**(i+1)            
+        N = 2**(i+1)
         Nx = N; Ny = N
         if theta == 0 or theta == 1:  # i.e., FE or BE
             dt = (float(Lx)/N)**2	# i.e., choose dt = dx**2
-        else:			      # theta == 0.5, i.e., CN	
+        else:			      # theta == 0.5, i.e., CN
             dt = float(Lx)/N            # i.e., choose dt = dx
         solver_sparse(
             I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5,
             user_action=assert_correct_convergence_rate,
             method='CG', CG_prec='ILU', CG_tol=tol)
-        e2_sum = {'err' : 0}   # initialize for next experiment
+        print 'Experiment no:%d' % (i+1)
 
 
 def test_convergence_rate():
@@ -816,4 +932,3 @@ if __name__ == '__main__':
     #demo_classic_iterative(
     #    iteration='Jacobi', theta=0.5, tol=1E-4, Nx=20, Ny=20)
     test_convergence_rate()
-

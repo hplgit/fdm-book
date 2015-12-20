@@ -592,7 +592,7 @@ The next section features an example on writing a `user_action`
 callback function.
 
 
-===== Verification =====
+===== Verification: exact numerical solution =====
 label{diffu:2D:verify}
 
 A good test example to start with is one that preserves the solution
@@ -660,6 +660,84 @@ def test_quadratic():
                 print 'testing for %dx%d mesh' % (Nx, Ny)
                 quadratic(theta, Nx, Ny)
 !ec
+
+===== Verification: convergence rates =====
+label{diffu:2D:convrate}
+
+For any manufactured solution of the PDE problem we can compute the
+numerical error and check that this error has the expected dependence
+on the discretization parameters. Truncation error analysis and other
+forms of error analysis point to a formula like
+
+!bt
+\[ E = C_t\Delta t^p + C_x\Delta x^2 + C_y\Delta y^2\]
+!et
+for the error in a 2D problem, where $p$, $C_t$, $C_x$, and $C_y$ are
+unknown constants. A Crank-Nicolson method has $p=2$, while the Forward
+and Backward Euler schemes have $p=1$.
+
+When checking the error formula empirically, we need to reduce it to
+a form $E=Ch^r$ with a single discretization parameter $h$ and some
+rate $r$ to be estimated. For the Backward Euler method,
+where $p=1$, we can introduce a single discretization parameter
+according to
+
+!bt
+\[ h = \Delta x^2 =  \Delta y^2,\quad h = K^{-1}\Delta t,\]
+!et
+where $K$ is a constant. The error formula then becomes
+
+!bt
+\[ E = C_t Kh + C_xh + C_y = \tilde C h,\quad \tilde C = C_tK + C_x + C_y\tp\]
+!et
+The simplest choice is $K=1$, but if we consider
+the Forward Euler method instead, stability requires $\Delta t = hK \leq
+h/(4\dfc)$, so $K\leq 1/(4\dfc)$.
+
+For the Crank-Nicolson method, $p=2$, and we can simply choose
+
+!bt
+\[ h = \Delta x = \Delta y = \Delta t,\]
+!et
+since there is no restriction on $\Delta t$ in terms of $\Delta x$ and
+$\Delta y$.
+
+A frequently used error measure is the $\ell^2$ norm of the error mesh
+point values. Section ref{wave:pde2:fd:MMS} and the formula
+(ref{wave:pde2:fd:MMS:E:l2}) shows the error measure for a 1D
+time-dependent problem. The extension to the current 2D problem
+reads
+
+!bt
+\[ E = \left(\Delta t\Delta x\Delta y \sum_{n=0}^{N_t}
+\sum_{i=0}^{N_x}\sum_{j=0}^{N_y}(\uex(x_i,y_j,t_n)
+- u^n_{i,j})^2\right)^{\half}\tp\]
+!et
+
+One attractive manufactured solution is
+
+!bt
+\[ \uex = e^{-pt}\sin(k_xx)\sin(k_yy),\quad k_x=\frac{\pi}{L_x},
+k_y=\frac{\pi}{L_y},\]
+!et
+where $p$ can be arbitrary. The required source term is
+
+!bt
+\[ f = (\dfc(k_x^2 + k_y^2) - p)\uex\tp\]
+!et
+
+The function `convergence_rates` in
+"`diffu2D_u0.py`": "${src_diffu}/diffu2D_u0.py" implements a convergence
+rate test. Two potential difficulties are important to be aware of:
+
+ o The error formula is assumed to be
+   correct when $h\rightarrow 0$, so for coarse meshes the estimated rate
+   $r$ may be somewhat away from the expected value.
+   Fine meshes may lead to prohobitively long execution times.
+ o Choosing $p=\dfc (k_x^2 + k_y^2)$ in the manufactured solution above
+   seems attractive ($f=0$), but leads to a slower approach to the
+   asymptotic range where the error formula is valid (i.e., $r$
+   fluctuates and needs finer meshes to stabilize).
 
 ===== Implementation with a sparse coefficient matrix =====
 label{diffu:2D:impl:sparse}
