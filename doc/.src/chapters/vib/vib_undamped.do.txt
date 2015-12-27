@@ -29,8 +29,7 @@ point for method development, implementation, and analysis.
 
 idx{vibration ODE} idx{oscillations} idx{mechanical vibrations}
 
-A system that vibrates without damping and external forcing
-can be described by the ODE problem
+The simplest model of a vibrating mechanical system has the following form:
 
 !bt
 \begin{equation}
@@ -40,11 +39,14 @@ label{vib:ode1}
 \end{equation}
 !et
 Here, $\omega$ and $I$ are given constants.
-The exact solution of (ref{vib:ode1}) is
+Section ref{vib:app:mass_spring} derives (ref{vib:ode1}) from physical
+principles and explains what the constants mean.
 
 idx{period (of oscillations)}
 idx{frequency (of oscillations)}
 idx{Hz (unit)}
+
+The exact solution of (ref{vib:ode1}) is
 
 !bt
 \begin{equation}
@@ -191,12 +193,11 @@ and also to generalize the initial condition to $u^{\prime}(0)=V\neq 0$.
 
 === The computational algorithm ===
 
-The steps for solving (ref{vib:ode1}) becomes
+The steps for solving (ref{vib:ode1}) become
 
   o $u^0=I$
   o compute $u^1$ from (ref{vib:ode1:step4b})
-  o for $n=1,2,\ldots,N_t-1$:
-    o compute $u^{n+1}$ from (ref{vib:ode1:step4})
+  o for $n=1,2,\ldots,N_t-1$: compute $u^{n+1}$ from (ref{vib:ode1:step4})
 
 The algorithm is more precisely expressed directly in Python:
 
@@ -211,9 +212,9 @@ for n in range(1, Nt):
     u[n+1] = 2*u[n] - u[n-1] - dt**2*w**2*u[n]
 !ec
 
-!bwarning Remark on using `w` for $\omega$
+!bwarning Remark on using `w` for $\omega$ in computer code
 In the code, we use `w` as the symbol for $\omega$.
-The reason is that this author prefers `w` for readability
+The reason is that the authors prefer `w` for readability
 and comparison with the mathematical $\omega$ instead of
 the full word `omega` as variable name.
 !ewarning
@@ -277,19 +278,24 @@ $u^0,u^1,\ldots,u^{N_t}$ and $t_0,t_1,\ldots,t_{N_t}$, given the
 input $I$, $\omega$, $\Delta t$, and $T$:
 
 @@@CODE src-vib/vib_undamped.py fromto: import numpy@def u_exact
-We do a simple `from module import *` to make the code as close as
-possible to MATLAB, although good programming habits would prefix
-the `numpy` and `matplotlib` calls by (abbreviations of) the module
-name.
-
-[hpl: Refer to right section in decay book for prefix discussion.]
+We have imported `numpy` and `matplotlib` under the names `np` and `plt`,
+respectively, as this is very common in the Python scientific
+computing community and a good programming habit (since we explicitly
+see where the different functions come from).  An alternative is to do
+`from numpy import *` and a similar ``import all'' for Matplotlib to
+avoid the `np` and `plt` prefixes and make the code as close as
+possible to MATLAB. (See ref[Section ref{softeng1:basic:modprefix}][ in
+cite{Langtangen_decay}][the section
+"Prefixing imported functions by the module name": "http://hplgit.github.io/decay-book/doc/pub/book/html/._decay-book009.html#softeng1:basic:modprefix" in the book
+"Finite Difference Computing with Exponential Decay Models": "http://tinyurl.com/nclmcng/web" cite{Langtangen_decay}] for a discussion of the two
+types of import in Python.)
 
 A function for plotting the numerical and the exact solution is also
 convenient to have:
 
 @@@CODE src-vib/vib_undamped.py fromto: def u_exact@def test_three_steps
-A corresponding main program calling these functions for a simulation
-of a given number of periods (`num_periods`) may take the form
+A corresponding main program calling these functions to simulate
+a given number of periods (`num_periods`) may take the form
 
 !bc pycod
 I = 1
@@ -317,11 +323,9 @@ parser.add_argument('--num_periods', type=int, default=5)
 a = parser.parse_args()
 I, w, dt, num_periods = a.I, a.w, a.dt, a.num_periods
 !ec
-Such parsing of the command line is explained in more detailed in
-ref[Section ref{softeng1:basic:UI}][ in cite{Langtangen_decay}][ the
-"section on user interfaces": "..." in cite{Langtangen_decay}].
-
-[hpl: Fix reference to web document.]
+Such parsing of the command line is explained in more detail in
+ref[Section ref{softeng1:basic:UI:options_cml}][ in cite{Langtangen_decay}][ the
+section "Option-value pairs on the command line": "${decay_book_url}/html/._decay-book009.html#softeng1:basic:UI:options_cml" in "Finite Difference Computing with Exponential Decay Models": "http://tinyurl.com/nclmcng/web" cite{Langtangen_decay}].
 
 A typical execution goes like
 
@@ -361,9 +365,14 @@ v[0] = 0
 # Use backward difference at the final mesh point
 v[-1] = (u[-1] - u[-2])/dt
 !ec
-We can get rid of the loop, which is slow for large $N_t$, by
+Since the loop is slow for large $N_t$, we
+can get rid of the loop by
 vectorizing the central difference. The above code segment
-goes as follows in its vectorized version:
+goes as follows in its vectorized version (see ref[Problem
+ref{decay:exer:dudt}][ in cite{Langtangen_decay}][the problem
+"Differentiate a function": "${decay_book}/html/._decay-book005.html#decay:exer:dudt" in
+"Finite Difference Computing with Exponential Decay Models": "http://tinyurl.com/nclmcng/web" cite{Langtangen_decay}]
+for explanation of details):
 
 !bc pycod
 v = np.zeros_like(u)
@@ -376,6 +385,13 @@ v[-1] = (u[-1] - u[-2])/dt         # backward difference
 ===== Verification =====
 label{vib:ode1:verify}
 
+idx{test function}
+idx{pytest}
+idx{nose}
+idx{verification!hand calculations}
+idx{unit testing}
+
+
 === Manual calculation ===
 
 The simplest type of verification, which is also instructive for understanding
@@ -384,11 +400,43 @@ with the aid of a calculator
 and make a function for comparing these results with those from the `solver`
 function. The `test_three_steps` function in
 the file "`vib_undamped.py`": "${src_vib}/vib_undamped.py"
-shows the details how we use the hand calculations to test the code:
+shows the details of how we use the hand calculations to test the code:
 
 @@@CODE src-vib/vib_undamped.py fromto: def test_three_steps@def convergence_rates
+This function is a proper *test function*,
+compliant with the pytest and nose testing
+framework for Python code, because
 
-=== Testing very simple solutions ===
+ * the function name begins with `test_`
+ * the function takes no arguments
+ * the test is formulated as a boolean condition and executed by `assert`
+
+% if BOOK == "book":
+We shall in this book implement all software verification via such
+proper test functions, also known as unit testing.
+% endif
+See ref[Section ref{softeng1:verify:pytest}][ in cite{Langtangen_decay}][the
+section "Unit tests and test functions": "${decay_book_url}/html/._decay-book009.html#softeng1:verify:pytest" in
+"Finite Difference Computing with Exponential Decay Models": "http://tinyurl.com/nclmcng/web" cite{Langtangen_decay}]
+for more details on how to construct test functions and utilize nose
+or pytest for automatic execution of tests. Our recommendation is to
+use pytest and run all test functions in `vib_undamped.py` by
+
+!bc sys
+Terminal> py.test -s -v vib_undamped.py
+============================= test session starts ======...
+platform linux2 -- Python 2.7.9 -- ...
+collected 2 items
+
+vib_undamped.py::test_three_steps PASSED
+vib_undamped.py::test_convergence_rates PASSED
+
+=========================== 2 passed in 0.19 seconds ===...
+!ec
+
+idx{verification!polynomial solutions}
+
+=== Testing very simple polynomial solutions ===
 
 Constructing test problems where the exact solution is constant or
 linear helps initial debugging and verification as one expects any
@@ -397,7 +445,7 @@ precision.  Second-order accurate methods will often also reproduce a
 quadratic solution.  Here $[D_tD_tt^2]^n=2$, which is the exact
 result. A solution $u=t^2$ leads to $u^{\prime\prime}+\omega^2 u=2 + (\omega
 t)^2\neq 0$.  We must therefore add a source in the equation: $u^{\prime\prime} +
-\omega^2 u = f$ to allow a solution $u=t^2$ for $f=(\omega t)^2$.  By
+\omega^2 u = f$ to allow a solution $u=t^2$ for $f=2 + (\omega t)^2$.  By
 simple insertion we can show that the mesh function $u^n = t_n^2$ is
 also a solution of the discrete equations.  Problem
 ref{vib:exer:undamped:verify:linquad} asks you to carry out all
@@ -405,19 +453,24 @@ details to show that linear and quadratic solutions are solutions
 of the discrete equations. Such results are very useful for debugging
 and verification. You are strongly encouraged to do this problem now!
 
+idx{verification!convergence rates}
+
 === Checking convergence rates ===
 
-Empirical computation of convergence rates
-yields a good method for verification. The method and its computational
-are explained in detail ref[in
-Section ref{decay:convergence:rate}][ in
-cite{Langtangen_decay}][for a simple ODE model in the section on "computing convergence rates": "${decay_book}/._book006.html#computing-convergence-rates"
-in cite{Langtangen_decay}]. Readers not familiar with the concept should
-look up this reference before proceeding.
+Empirical computation of convergence rates yields a good method for
+verification. The method and its computational details are explained
+in detail ref[in Section ref{decay:convergence:rate}][ in
+cite{Langtangen_decay}][for a simple ODE model in the section
+"Computing convergence rates":
+"${decay_book_url}/html/._decay-book007.html#decay:convergence:rate"
+in "Finite Difference Computing with Exponential Decay Models":
+"http://tinyurl.com/nclmcng/web" cite{Langtangen_decay}].  Readers not
+familiar with the concept should look up this reference before
+proceeding.
 
 In the present problem, computing convergence rates means that we must
 
- * perform $m$ simulations with halved time steps: $\Delta t_i=2^{-i}\Delta t_0$, $i=0,\ldots,m-1$,
+ * perform $m$ simulations, halving the time steps as: $\Delta t_i=2^{-i}\Delta t_0$, $i=0,\ldots,m-1$,
  * compute the $L^2$ norm of the error,
    $E_i=\sqrt{\Delta t_i\sum_{n=0}^{N_t-1}(u^n-\uex(t_n))^2}$ in each case,
  * estimate the convergence rates $r_i$ based on two consecutive
@@ -428,30 +481,35 @@ In the present problem, computing convergence rates means that we must
    will vary with $i$, we equip it with an index and call it $r_{i-1}$,
    where $i$ runs from $1$ to $m-1$.
 
-The computed rates $r_0,r_1,\ldots,r_{m-2}$ hopefully converges to a
-number, which hopefully is 2, the right one, in the present
-problem. The convergence of the rates demands that the time steps
-$\Delta t_i$ are sufficiently small for the error model $E_i=(\Delta t_i)^r$
+The computed rates $r_0,r_1,\ldots,r_{m-2}$ hopefully converge to the
+number 2 in the present
+problem, because theory (from Section ref{vib:ode1:analysis}) shows
+that the error of the numerical method we use behaves like $\Delta t^2$.
+The convergence of the sequence of rates $r_0,r_1,\ldots,r_{m-2}$
+demands that the time steps
+$\Delta t_i$ are sufficiently small for the error model $E_i=C(\Delta t_i)^r$
 to be valid.
 
 All the implementational details of computing the sequence
 $r_0,r_1,\ldots,r_{m-2}$ appear below.
 
 @@@CODE src-vib/vib_undamped.py fromto: def convergence_rates@def test_convergence
-The expected convergence rate is 2, because we have used
-a second-order finite
-difference approximations $[D_tD_tu]^n$ to the ODE and a
-second-order finite difference formula for the initial condition for
-$u^{\prime}$. Other theoretical error measures also points to
-$r=2$.
+
+The error analysis in Section ref{vib:ode1:analysis} is quite
+detailed and results in $r=2$, but other methods like truncation error
+analysis (see Appendix ref{trunc:vib:undamped}) also points to $r=2$,
+as well as the related quick reasoning that we have used a
+second-order accurate finite difference approximation $[D_tD_tu]^n$ to
+the ODE and a second-order accurate finite difference formula for the
+initial condition for $u^{\prime}$.
 
 In the present problem, when $\Delta t_0$ corresponds to 30 time steps
 per period, the returned `r` list has all its values equal to 2.00
-(if rounded to two decimals). This amazing result means that all
+(if rounded to two decimals). This amazingly accurate result means that all
 $\Delta t_i$ values are well into the asymptotic regime where the
 error model $E_i = C(\Delta t_i)^r$ is valid.
 
-We can now construct a test function that computes convergence rates
+We can now construct a proper test function that computes convergence rates
 and checks that the final (and usually the best) estimate is sufficiently
 close to 2. Here, a rough tolerance of 0.1 is enough. This unit test
 goes like
@@ -461,13 +519,19 @@ The complete code appears in the file `vib_undamped.py`.
 
 ===== Scaled model =====
 
-[hpl: Need reference to scaling book and maybe also decay book.]
+It is advantageous to use dimensionless variables in simulations,
+because fewer parameters need to be set. The present problem is made
+dimensionless by introducing dimensionless variables $\bar t = t/t_c$
+and $\bar u = u/u_c$, where $t_c$ and $u_c$ are characteristic scales
+for $t$ and $u$, respectively. We refer to ref[Section
+ref{sec:scale:vib:undamped}][ in cite{Langtangen_scaling}][the section
+"Undamped vibrations without forcing":
+"http://hplgit.github.io/scaling-book/doc/pub/book/html/._scaling-book006.html#sec:scale:vib:undamped"
+in the book "Scaling of differential equations":
+"http://tinyurl.com/qfjgxmf/web" cite{Langtangen_decay}] for all
+details about this scaling.
 
-It is advantageous to use dimensionless variables in simulations, because
-fewer parameters need to be set. The present problem is made dimensionless
-by introducing dimensionless variables $\bar t = t/t_c$ and $\bar u = u/u_c$,
-where $t_c$ and $u_c$ are characteristic scales for $t$ and $u$,
-respectively. The scaled ODE problem reads
+The scaled ODE problem reads
 
 !bt
 \[ \frac{u_c}{t_c^2}\frac{d^2\bar u}{d\bar t^2} + u_c\bar u = 0,\quad
@@ -697,13 +761,17 @@ slowly.
 
 ===== Using Bokeh to compare graphs =====
 
+
 Instead of a moving plot frame, one can use tools that allows panning
-by the mouse. For example, we can show four periods of a signal in
-a plot and then scroll with the mouse through the rest of the
-simulation. The "Bokeh": "http://bokeh.pydata.org/en/latest/docs/quickstart.html" plotting library offers such tools, but the plot must be displayed in
+by the mouse. For example, we can show four periods of several signals in
+several plots and then scroll with the mouse through the rest of the
+simulation *simultaneously* in all the plot windows.
+The "Bokeh": "http://bokeh.pydata.org/en/latest/docs/quickstart.html" plotting library offers such tools, but the plots must be displayed in
 a web browser. The documentation of Bokeh is excellent, so here we just
 show how the library can be used to compare a set of $u$ curves corresponding
-to long time simulations.
+to long time simulations. (By the way, the guidance to correct
+pronunciation of Bokeh in
+the "documentation": "http://bokeh.pydata.org/en/0.10.0/docs/faq.html#how-do-you-pronounce-bokeh" and on "Wikipedia": "https://en.wikipedia.org/wiki/Bokeh" is not directly compatible with a "YouTube video": "https://www.youtube.com/watch?v=OR8HSHevQTM"...).
 
 Imagine we have performed experiments for a set of $\Delta t$ values.
 We want each curve, together with the exact solution, to appear in
@@ -711,7 +779,7 @@ a plot, and then arrange all plots in a grid-like fashion:
 
 FIGURE: [fig-vib/bokeh_gridplot1, width=800 frac=1]
 
-Furthermore, we want the axis to couple such that if we move into
+Furthermore, we want the axes to couple such that if we move into
 the future in one plot, all the other plots follows (note the
 displaced $t$ axes!):
 
@@ -726,7 +794,7 @@ FIGURE: [fig-vib/bokeh_gridplot_interactive, width=800 frac=1] Interactive Bokeh
 
 A function for creating a Bokeh plot, given a list of `u` arrays
 and corresponding `t` arrays, from different simulations, described
-compactly in a list of strings `legends`, takes the following form:
+compactly in a list of strings `legends`, is implemented below.
 
 @@@CODE src-vib/vib_undamped.py fromto: def bokeh_plot@def demo_bokeh
 A particular example using the `bokeh_plot` function appears below.
@@ -922,8 +990,8 @@ We have
 
 !bt
 \[
-A^n = e^{i\tilde\omega \Delta t\, n}=e^{i\tilde\omega t} =
-\cos (\tilde\omega t) + i\sin(\tilde \omega t)
+A^n = e^{i\tilde\omega \Delta t\, n}=e^{i\tilde\omega t_n} =
+\cos (\tilde\omega t_n) + i\sin(\tilde \omega t_n)
 \tp
 \]
 !et
@@ -936,11 +1004,11 @@ The calculations go as
 \begin{align*}
 [D_tD_t u]^n &= \frac{u^{n+1} - 2u^n + u^{n-1}}{\Delta t^2}\\
 &= I\frac{A^{n+1} - 2A^n + A^{n-1}}{\Delta t^2}\\
-&= \frac{I}{\Delta t^{2}}(e^{i\tilde\omega(t+\Delta t)} - 2e^{i\tilde\omega t} + e^{i\tilde\omega(t-\Delta t)})\\
-&= Ie^{i\tilde\omega t}\frac{1}{\Delta t^2}\left(e^{i\tilde\omega\Delta t} + e^{i\tilde\omega(-\Delta t)} - 2\right)\\
-&= Ie^{i\tilde\omega t}\frac{2}{\Delta t^2}\left(\cosh(i\tilde\omega\Delta t) -1 \right)\\
-&= Ie^{i\tilde\omega t}\frac{2}{\Delta t^2}\left(\cos(\tilde\omega\Delta t) -1 \right)\\
-&= -Ie^{i\tilde\omega t}\frac{4}{\Delta t^2}\sin^2(\frac{\tilde\omega\Delta t}{2})
+&= \frac{I}{\Delta t^{2}}(e^{i\tilde\omega(t_n+\Delta t)} - 2e^{i\tilde\omega t_n} + e^{i\tilde\omega(t_n-\Delta t)})\\
+&= Ie^{i\tilde\omega t_n}\frac{1}{\Delta t^2}\left(e^{i\tilde\omega\Delta t} + e^{i\tilde\omega(-\Delta t)} - 2\right)\\
+&= Ie^{i\tilde\omega t_n}\frac{2}{\Delta t^2}\left(\cosh(i\tilde\omega\Delta t) -1 \right)\\
+&= Ie^{i\tilde\omega t_n}\frac{2}{\Delta t^2}\left(\cos(\tilde\omega\Delta t) -1 \right)\\
+&= -Ie^{i\tilde\omega t_n}\frac{4}{\Delta t^2}\sin^2(\frac{\tilde\omega\Delta t}{2})
 \end{align*}
 !et
 The last line follows from the relation
@@ -948,15 +1016,16 @@ $\cos x - 1 = -2\sin^2(x/2)$ (try `cos(x)-1` in
 "wolframalpha.com": "http://www.wolframalpha.com" to see the formula).
 
 The scheme (ref{vib:ode1:step4})
-with $u^n=Ie^{i\omega\tilde\Delta t\, n}$ inserted now gives
+with $u^n=Ie^{i\tilde\omega\Delta t\, n}$ inserted now gives
 
 !bt
 \begin{equation}
--Ie^{i\tilde\omega t}\frac{4}{\Delta t^2}\sin^2(\frac{\tilde\omega\Delta t}{2})
-+ \omega^2 Ie^{i\tilde\omega t} = 0,
+-Ie^{i\tilde\omega t_n}
+\frac{4}{\Delta t^2}\sin^2(\frac{\tilde\omega\Delta t}{2})
++ \omega^2 Ie^{i\tilde\omega t_n} = 0,
 \end{equation}
 !et
-which after dividing by $Ie^{i\tilde\omega t}$ results in
+which after dividing by $Ie^{i\tilde\omega t_n}$ results in
 !bt
 \begin{equation}
 \frac{4}{\Delta t^2}\sin^2(\frac{\tilde\omega\Delta t}{2}) = \omega^2
@@ -1087,7 +1156,9 @@ label{vib:ode1:analysis:conv}
 
 We can use (ref{vib:ode1:tildeomega:series}), (ref{vib:ode1:en}), or
 (ref{vib:ode1:en2}) to show *convergence* of the
-numerical scheme, i.e., $e^n\rightarrow 0$ as $\Delta t\rightarrow 0$.
+numerical scheme, i.e., $e^n\rightarrow 0$ as $\Delta t\rightarrow 0$,
+which implies that the numerical solution approaches the exact solution
+as $\Delta t$ approaches to zero.
 We have that
 
 !bt
@@ -1098,8 +1169,8 @@ We have that
 = \omega,
 \]
 !et
-by L'Hopital's rule or simply asking `sympy` or
-"WolframAlpha": "http://www.wolframalpha.com/input/?i=%282%2Fx%29*asin%28w*x%2F2%29+as+x-%3E0" about the limit:
+by L'Hopital's rule. This result could also been computed "WolframAlpha": "http://www.wolframalpha.com/input/?i=%282%2Fx%29*asin%28w*x%2F2%29+as+x-%3E0", or
+we could use the limit functionality in `sympy`:
 
 !bc pyshell
 >>> import sympy as sym
@@ -1151,7 +1222,7 @@ expansion of the error yields
 dt**2*t*w**3*sin(t*w)/24 + dt**4*t**2*w**6*cos(t*w)/1152 + O(dt**6)
 !ec
 Since we are mainly interested in the leading-order term in
-such expansions (the term with lowest power in $\Delta t$ and
+such expansions (the term with lowest power in $\Delta t$, which
 goes most slowly to zero), we use the `.as_leading_term(dt)`
 construction to pick out this term:
 
@@ -1162,8 +1233,9 @@ dt**2*t*w**3*sin(t*w)/24
 
 The last result
 means that the leading order global (true) error at a point $t$
-is proportional to $\omega^3t\Delta t^2$. Now, $t$ is related
-to $\Delta t$ through $t=n\Delta t$. The factor
+is proportional to $\omega^3t\Delta t^2$. Considering only the
+discrete $t_n$ values for $t$, $t_n$ is related
+to $\Delta t$ through $t_n=n\Delta t$. The factor
 $\sin(\omega t)$ can at most be 1, so we use this value to
 bound the leading-order expression to its maximum value
 
@@ -1189,7 +1261,7 @@ the square root gives the expression
 \[ ||e^n||_{\ell^2} = \frac{1}{24}\sqrt{\frac{T^3}{3}}\omega^3\Delta t^2\tp\]
 !et
 This is our expression for the global (or integrated) error.
-The main result from this expression is that also the global error
+The main result from this expression is that the global error
 is proportional to $\Delta t^2$.
 
 
@@ -1220,7 +1292,7 @@ idx{stability criterion}
 !bnotice Stability criterion
 We do not tolerate growth in the amplitude since such growth is not
 present in the exact solution. Therefore, we
-must impose a *stability criterion*  that
+must impose a *stability criterion* so that
 the argument in the inverse sine function leads
 to real and not complex values of $\tilde\omega$. The stability
 criterion reads
@@ -1288,7 +1360,7 @@ analysis we can draw three important conclusions:
  o The key parameter in the formulas is $p=\omega\Delta t$.
    The period of oscillations is $P=2\pi/\omega$, and the
    number of time steps per period is $N_P=P/\Delta t$.
-   Therefore, $p=\omega\Delta t = 2\pi N_P$, showing that the
+   Therefore, $p=\omega\Delta t = 2\pi/N_P$, showing that the
    critical parameter is the number of time steps per period.
    The smallest possible $N_P$ is 2, showing that $p\in (0,\pi]$.
  o Provided $p\leq 2$, the amplitude of the numerical solution is
@@ -1360,7 +1432,7 @@ equation. We have from (ref{vib:undamped:FE1}) and
 (ref{vib:undamped:FE2}) applied at levels $n$ and $n-1$ that
 
 !bt
-\[ u^{n+1} = u^n + \Delta t v^n = u^n + \Delta t (v^{n-1} -\Delta t \omega^2 u^{n-1}\tp\]
+\[ u^{n+1} = u^n + \Delta t v^n = u^n + \Delta t (v^{n-1} -\Delta t \omega^2 u^{n-1})\tp\]
 !et
 Since from (ref{vib:undamped:FE1})
 !bt
@@ -1373,17 +1445,25 @@ it follows that
 !et
 which is very close to the centered difference scheme, but
 the last term is evaluated at $t_{n-1}$ instead of $t_n$.
-Dividing by $\Delta t^2$, the left-hand side is an approximation to
+Rewriting, so that $\Delta t^2\omega^2u^{n-1}$ appears alone on the
+right-hand side, and then dividing
+by $\Delta t^2$, the new left-hand side is an approximation to
 $u^{\prime\prime}$ at $t_n$, while the right-hand side is sampled at $t_{n-1}$.
 All terms should be sampled at the same mesh point, so using
-$\omega^2 u^{n-1}$ instead of $\omega^2 u^n$ is an inconsistency
-in the scheme. This inconsistency turns out to be rather
+$\omega^2 u^{n-1}$ instead of $\omega^2 u^n$ points to a kind of
+mathematical error in the derivation of the scheme. This error
+turns out to be rather
 crucial for the accuracy of
-the Forward Euler method applied to vibration problems.
+the Forward Euler method applied to vibration problems (Section ref{vib:model2x2:compare} has examples).
+
+The reasoning above does not imply that the Forward Euler scheme is not
+correct, but more that it is almost equivalent to a second-order accurate
+scheme for the second-order ODE formulation, and that the error
+committed has to do with a wrong sampling point.
 
 ===== The Backward Euler scheme =====
 
-A Backward Euler approximation the ODE system is equally easy to
+A Backward Euler approximation to the ODE system is equally easy to
 write up in the operator notation:
 
 !bt
@@ -1410,7 +1490,8 @@ for the second-order differential equation.
 To this end, we eliminate $v^{n+1}$ in (ref{vib:undamped:BE1})
 using (ref{vib:undamped:BE2}) solved with respect to $v^{n+1}$.
 Thereafter, we eliminate $v^n$ using (ref{vib:undamped:BE1})
-solved with respect to $v^{n+1}$ and replacing $n+1$ by $n$.
+solved with respect to $v^{n+1}$ and also replacing $n+1$ by $n$ and
+$n$ by $n-1$.
 The resulting equation involving only $u^{n+1}$, $u^n$, and $u^{n-1}$
 can be ordered as
 
@@ -1420,20 +1501,24 @@ can be ordered as
 which has almost the same form as the centered scheme for the
 second-order differential equation, but the right-hand side is
 evaluated at $u^{n+1}$ and not $u^n$. This inconsistent sampling
-of terms has a dramatic effect on the numerical solution.
+of terms has a dramatic effect on the numerical solution, as we
+demonstrate in Section ref{vib:model2x2:compare}.
 
 ===== The Crank-Nicolson scheme =====
+label{vib:undamped:CN}
 
 The Crank-Nicolson scheme takes this form in the operator notation:
 
 !bt
 \begin{align}
 \lbrack D_t u &= \overline{v}^t\rbrack^{n+\half},\\
-\lbrack D_t v &= -\omega \overline{u}^t\rbrack^{n+\half}
+\lbrack D_t v &= -\omega^2 \overline{u}^t\rbrack^{n+\half}
 \tp
 \end{align}
 !et
-Writing the equations out shows that this is also a coupled system:
+Writing the equations out and rearranging terms,
+shows that this is also a coupled system of two linear equations
+at each time level:
 
 !bt
 \begin{align}
@@ -1444,14 +1529,35 @@ v^{n+1} + \half\Delta t \omega^2 u^{n+1} &= v^{n}
 \end{align}
 !et
 
-To see the nature of this approximation, and that it is actually
-very promising, we write the equations as follows
+We may compare also this scheme to the centered discretization of
+the second-order ODE. It turns out that the Crank-Nicolson scheme is
+equivalent to the discretization
+
+!bt
+\begin{equation}
+\frac{u^{n+1} - 2u^n + u^{n-1}}{\Delta t^2} = - \omega^2
+\frac{1}{4}(u^{n+1} + 2u^n + u^{n-1}) = -\omega^2 u^{n} +
+\Oof{\Delta t^2}\tp
+label{vib:undamped:CN:equiv_utt}
+\end{equation}
+!et
+That is, the Crank-Nicolson is equivalent to (ref{vib:ode1:step4})
+for the second-order ODE, apart from an extra term of size
+$\Delta t^2$, but this is an error of the same order as in
+the finite difference approximation on the left-hand side of the
+equation anyway. The fact that the Crank-Nicolson scheme is so
+close to (ref{vib:ode1:step4}) makes it a much better method than
+the Forward or Backward Euler methods for vibration problems,
+as will be illustrated in Section ref{vib:model2x2:compare}.
+
+Deriving (ref{vib:undamped:CN:equiv_utt}) is a bit tricky.
+We start with rewriting the Crank-Nicolson equations as follows
 
 !bt
 \begin{align}
 u^{n+1} - u^n &= \frac{1}{2}\Delta t(v^{n+1} + v^n),
 label{vib:undamped:CN3a}\\
-v^{n+1}  &= v^n -\frac{1}{2}\Delta t(u^{n+1} + u^n),
+v^{n+1}  &= v^n -\frac{1}{2}\Delta t\omega^2 (u^{n+1} + u^n),
 label{vib:undamped:CN4a}
 \end{align}
 !et
@@ -1459,7 +1565,7 @@ and add the latter at the previous time level as well:
 
 !bt
 \begin{equation}
-v^{n}  = v^{n-1} -\frac{1}{2}\Delta t(u^{n} + u^{n-1})
+v^{n}  = v^{n-1} -\frac{1}{2}\Delta t\omega^2(u^{n} + u^{n-1})
 label{vib:undamped:CN4b1}
 \end{equation}
 !et
@@ -1468,7 +1574,7 @@ as
 
 !bt
 \begin{equation}
-v^{n+1} + v^n = \frac{2}{\Delta t}(u^{n+1} - u^n)\tp
+v^{n} + v^{n-1} = \frac{2}{\Delta t}(u^{n} - u^{n-1})\tp
 label{vib:undamped:CN4b}
 \end{equation}
 !et
@@ -1478,20 +1584,20 @@ Inserting (ref{vib:undamped:CN4a}) for $v^{n+1}$ in
 (ref{vib:undamped:CN3a}) yields after some reordering:
 
 !bt
-\[ u^{n+1} - n^n = \frac{1}{2}(-\frac{1}{2}\Delta t\omega^2
-(u^{n+1} + 2u^n + u^{n-1}) + v^ + v^{n-1})\tp\]
+\[ u^{n+1} - u^n = \frac{1}{2}(-\frac{1}{2}\Delta t\omega^2
+(u^{n+1} + 2u^n + u^{n-1}) + v^n + v^{n-1})\tp\]
 !et
 Now, $v^n + v^{n-1}$ can be eliminated by means of
 (ref{vib:undamped:CN4b}). The result becomes
 
 !bt
 \begin{equation}
-u^{n+1} - 2u^n + u^{n-1} = \Delta t^2\omega^2
+u^{n+1} - 2u^n + u^{n-1} = -\Delta t^2\omega^2
 \frac{1}{4}(u^{n+1} + 2u^n + u^{n-1})\tp
 label{vib:undamped:CN5}
 \end{equation}
 !et
-We have that
+It can be shown that
 
 !bt
 \[ \frac{1}{4}(u^{n+1} + 2u^n + u^{n-1}) \approx u^n + \Oof{\Delta t^2},\]
@@ -1502,8 +1608,8 @@ the sampling error in the term $\Delta t^2\omega^2 u^n$ is of the same
 order as the approximation errors in the finite differences, i.e.,
 $\Oof{\Delta t^2}$. The Crank-Nicolson scheme written as
 (ref{vib:undamped:CN5}) therefore has consistent sampling of all
-terms at the same time point $t_n$. The implication is a much better
-method than the Forward and Backward Euler schemes.
+terms at the same time point $t_n$.
+
 
 ===== Comparison of schemes =====
 label{vib:model2x2:compare}
@@ -1542,7 +1648,7 @@ That is, the phase plane plot is the curve $(u(t),v(t))$ parameterized
 by $t$. Analytically, $u=I\cos(\omega t)$ and $v=u^{\prime}=-\omega I\sin(\omega t)$.
 The exact curve $(u(t),v(t))$ is therefore an ellipse, which often
 looks like a circle in a plot if the axes are automatically scaled. The
-important feature, however, is that exact curve $(u(t),v(t))$ is
+important feature, however, is that the exact curve $(u(t),v(t))$ is
 closed and repeats itself for every period. Not all numerical schemes
 are capable of doing that, meaning that the amplitude instead shrinks or
 grows with time.
@@ -1571,7 +1677,7 @@ FIGURE: [fig-vib/vib_theta_1_u, width=800 frac=1.0] Comparison of solution curve
 
 ===== Runge-Kutta methods =====
 
-We may run two popular standard methods for first-order ODEs, the 2nd-
+We may run two other popular standard methods for first-order ODEs, the 2nd-
 and 4th-order Runge-Kutta methods, to see how they perform. Figures
 ref{vib:ode1:1st:odespy:RK:phaseplane} and
 ref{vib:ode1:1st:odespy:RK} show the solutions with larger $\Delta
@@ -1621,7 +1727,9 @@ FIGURE: [fig-vib/vib_CN_10_pp, width=800 frac=1.0] Long-time behavior of the Cra
 
 We may try to find exact solutions of the discrete
 equations (ref{vib:undamped:FE1})-(ref{vib:undamped:FE2})
-in the Forward Euler method. An ``ansatz''
+in the Forward Euler method to better understand why this
+otherwise useful method has so bad performance for vibration
+ODEs. An ``ansatz'' for the solution of the discrete equations
 is
 
 !bt
@@ -1630,9 +1738,9 @@ u^n &= IA^n,\\
 v^n &= qIA^n,
 \end{align*}
 !et
-where $q$ and $A$ are unknown numbers. We could have used a complex
+where $q$ and $A$ are scalars to be determined. We could have used a complex
 exponential form $e^{i\tilde\omega n\Delta t}$ since we get
-oscillatory form, but the oscillations grow in the Forward Euler
+oscillatory solutions, but the oscillations grow in the Forward Euler
 method, so the numerical frequency $\tilde\omega$ will be complex
 anyway (producing an exponentially growing amplitude). Therefore, it is
 easier to just work with potentially complex $A$ and $q$ as introduced
@@ -1664,7 +1772,7 @@ which is also convenient
 for further analysis and understanding.
 The polar form $re^{i\theta}$ of a complex number $x+iy$ has
 $r=\sqrt{x^2+y^2}$ and $\theta = \tan^{-1}(y/x)$.
-Hence, the polar form of the two values for $A$ become
+Hence, the polar form of the two values for $A$ becomes
 
 !bt
 \[ 1 \pm \Delta t i\omega = \sqrt{1+\omega^2\Delta t^2}e^{\pm i\tan^{-1}(\omega\Delta t)}\tp\]
@@ -1674,7 +1782,7 @@ Now it is very easy to compute $A^n$:
 !bt
 \[ (1 \pm \Delta t i\omega)^n = (1+\omega^2\Delta t^2)^{n/2}e^{\pm ni\tan^{-1}(\omega\Delta t)}\tp\]
 !et
-Since $\cos (\theta n) = \cos (-\theta n)$, the real part of the two
+Since $\cos (\theta n) = \cos (-\theta n)$, the real parts of the two
 numbers become the same. We therefore continue with the solution that has
 the plus sign.
 
@@ -1719,12 +1827,12 @@ n*(p - p**3/3 + O(p**4))
 This means that the solution for $u^n$ can be written as
 
 !bt
-\[ u^n = (1 + \half n\omega^2\Delta t^2 + \Oof(\Delta t^4))
+\[ u^n = (1 + \half n\omega^2\Delta t^2 + \Oof{\Delta t^4})
 \cos\left(\omega t - \frac{1}{3}\omega t\Delta t^2 + \Oof{\Delta t^4}\right)
 \tp\]
 !et
 The error in the angular frequency is of the same order as in the
-scheme (ref{vib:ode1:step4}) for the second-order ODE, but error
+scheme (ref{vib:ode1:step4}) for the second-order ODE, but the error
 in the amplitude is severe.
 
 
@@ -1744,9 +1852,11 @@ is *constant* for all $t$. Checking that $E(t)$ really remains constant
 brings evidence that the numerical computations are sound.
 It turns out that $E$ is proportional to the mechanical energy
 in the system. Conservation of energy is
-much used to check numerical simulations.
+much used to check numerical simulations, so it is well invested time to
+dive into this subject.
 
 ===== Derivation of the energy expression =====
+label{vib:model1:energy:expr}
 
 We start out with multiplying
 
@@ -1831,7 +1941,7 @@ The derivation demonstrates the famous energy principle that, under
 the right physical circumstances, any
 change in the kinetic energy is due to a change in potential energy
 and vice versa. (This principle breaks down when we introduce damping
-in system, as we do in Section ref{vib:model2}.)
+in the system, as we do in Section ref{vib:model2}.)
 
 The equation $mu^{\prime\prime}+ku=0$ can be divided by $m$ and written as
 $u^{\prime\prime} + \omega^2u=0$ for $\omega=\sqrt{k/m}$. The energy expression
@@ -1842,7 +1952,7 @@ $\tilde E(t)/m$, i.e., mechanical energy per unit mass.
 === Energy of the exact solution  ===
 
 Analytically, we have $u(t)=I\cos\omega t$, if $u(0)=I$ and $u^{\prime}(0)=0$,
-so we can easily check that the energy evolution and confirm that $E(t)$
+so we can easily check the energy evolution and confirm that $E(t)$
 is constant:
 
 !bt
@@ -1937,6 +2047,7 @@ is subtracted.
 # #endif
 
 ===== An error measure based on energy =====
+label{vib:model1:energy:measure}
 
 The constant energy is well expressed by its initial value $E(0)$, so that
 the error in mechanical energy can be computed as a mesh function by
@@ -1954,7 +2065,7 @@ where
 \[ E(0) = {\half}V^2 + \half\omega^2I^2,\]
 !et
 if $u(0)=I$ and $u^{\prime}(0)=V$. Note that we have used
-a centered approximation to $u^{\prime}$: $\u^{\prime}(t_n)\approx
+a centered approximation to $u^{\prime}$: $u^{\prime}(t_n)\approx
 [D_{2t}u]^n$.
 
 A useful norm of the mesh function $e_E^n$
@@ -1968,7 +2079,7 @@ Alternatively, we can compute other norms involving integration over
 all mesh points, but we are often interested in worst case deviation
 of the energy, and then the maximum value is of particular relevance.
 
-A vectorized Python implementation takes the form
+A vectorized Python implementation of $e_E^n$ takes the form
 
 !bc pycod
 # import numpy as np and compute u, t
@@ -1982,33 +2093,105 @@ e_E_norm = np.abs(e_E).max()
 The convergence rates of the quantity `e_E_norm` can be used for verification.
 The value of `e_E_norm` is also useful for comparing schemes
 through their ability to preserve energy. Below is a table demonstrating
-the error in total energy for various schemes. We clearly see that
-the Crank-Nicolson and 4th-order Runge-Kutta schemes are superior to
-the 2nd-order Runge-Kutta method and better compared to the Forward
-and Backward Euler schemes.
+the relative error in total energy for various schemes
+(computed by the "`vib_undamped_odespy.py`": "${src_vib}/vib_undamped_odespy.py"
+program). The test problem is $u^{\prime\prime} + 4\pi^2 u =0$
+with $u(0)=1$ and $u'(0)=0$, so the period is 1 and
+$E(t)\approx 4.93$. We clearly see that
+the Crank-Nicolson and the Runge-Kutta schemes are superior to
+the Forward and Backward Euler schemes already after one period.
 
 |-----------------------------------------------|
-| Method | $T$ | $\Delta t$ | $\max \left\vert e_E^n\right\vert$ |
+| Method | $T$ | $\Delta t$ | $\max \left\vert e_E^n\right\vert/e_E^0$ |
 |---l-------l-------l------------l--------------|
-| Forward Euler | $1$ | $0.05$ | $1.113\cdot 10^{2}$ |
-| Forward Euler | $1$ | $0.025$ | $3.312\cdot 10^{1}$ |
-| Backward Euler | $1$ | $0.05$ | $1.683\cdot 10^{1}$ |
-| Backward Euler | $1$ | $0.025$ | $1.231\cdot 10^{1}$ |
-| Runge-Kutta 2nd-order | $1$ | $0.1$ | $8.401$ |
-| Runge-Kutta 2nd-order | $1$ | $0.05$ | $9.637\cdot 10^{-1}$ |
-| Crank-Nicolson | $1$ | $0.05$ | $9.389\cdot 10^{-1}$ |
-| Crank-Nicolson | $1$ | $0.025$ | $2.411\cdot 10^{-1}$ |
-| Runge-Kutta 4th-order | $1$ | $0.1$ | $2.387$ |
-| Runge-Kutta 4th-order | $1$ | $0.05$ | $6.476\cdot 10^{-1}$ |
-| Crank-Nicolson | $10$ | $0.1$ | $3.389$ |
-| Crank-Nicolson | $10$ | $0.05$ | $9.389\cdot 10^{-1}$ |
-| Runge-Kutta 4th-order | $10$ | $0.1$ | $3.686$ |
-| Runge-Kutta 4th-order | $10$ | $0.05$ | $6.928\cdot 10^{-1}$ |
+| Forward Euler | $1$ | $0.025$ | $1.678\cdot 10^{0}$ |
+| Backward Euler | $1$ | $0.025$ | $6.235\cdot 10^{-1}$ |
+| Crank-Nicolson | $1$ | $0.025$ | $1.221\cdot 10^{-2}$ |
+| Runge-Kutta 2nd-order | $1$ | $0.025$ | $6.076\cdot 10^{-3}$ |
+| Runge-Kutta 4th-order | $1$ | $0.025$ | $8.214\cdot 10^{-3}$ |
 |-----------------------------------------------|
 
-[hpl: The error reductions are not directly in accordance with the
-order of the schemes, probably caused by $\Delta t$ not being in
-the asympotic regime.]
+However, after 10 periods, the picture is much more dramatic:
+
+|-----------------------------------------------|
+| Method | $T$ | $\Delta t$ | $\max \left\vert e_E^n\right\vert/e_E^0$ |
+|---l-------l-------l------------l--------------|
+| Forward Euler | $10$ | $0.025$ | $1.788\cdot 10^{4}$ |
+| Backward Euler | $10$ | $0.025$ | $1.000\cdot 10^{0}$ |
+| Crank-Nicolson | $10$ | $0.025$ | $1.221\cdot 10^{-2}$ |
+| Runge-Kutta 2nd-order | $10$ | $0.025$ | $6.250\cdot 10^{-2}$ |
+| Runge-Kutta 4th-order | $10$ | $0.025$ | $8.288\cdot 10^{-3}$ |
+|-----------------------------------------------|
+
+The Runge-Kutta and Crank-Nicolson methods hardly change their
+energy error with $T$, while the error in the Forward Euler method grows
+to huge levels and a relative error of 1 in the Backward Euler method
+points to $E(t)\rightarrow 0$ as $t$ grows large.
+
+Running multiple values of $\Delta t$, we can get some insight into
+the convergence of the energy error:
+
+|-----------------------------------------------|
+| Method | $T$ | $\Delta t$ | $\max \left\vert e_E^n\right\vert/e_E^0$ |
+|---l-------l-------l------------l--------------|
+| Forward Euler | $10$ | $0.05$ | $1.120\cdot 10^{8}$ |
+| Forward Euler | $10$ | $0.025$ | $1.788\cdot 10^{4}$ |
+| Forward Euler | $10$ | $0.0125$ | $1.374\cdot 10^{2}$ |
+| Backward Euler | $10$ | $0.05$ | $1.000\cdot 10^{0}$ |
+| Backward Euler | $10$ | $0.025$ | $1.000\cdot 10^{0}$ |
+| Backward Euler | $10$ | $0.0125$ | $9.928\cdot 10^{-1}$ |
+| Crank-Nicolson | $10$ | $0.05$ | $4.756\cdot 10^{-2}$ |
+| Crank-Nicolson | $10$ | $0.025$ | $1.221\cdot 10^{-2}$ |
+| Crank-Nicolson | $10$ | $0.0125$ | $3.125\cdot 10^{-3}$ |
+| Runge-Kutta 2nd-order | $10$ | $0.05$ | $6.152\cdot 10^{-1}$ |
+| Runge-Kutta 2nd-order | $10$ | $0.025$ | $6.250\cdot 10^{-2}$ |
+| Runge-Kutta 2nd-order | $10$ | $0.0125$ | $7.631\cdot 10^{-3}$ |
+| Runge-Kutta 4th-order | $10$ | $0.05$ | $3.510\cdot 10^{-2}$ |
+| Runge-Kutta 4th-order | $10$ | $0.025$ | $8.288\cdot 10^{-3}$ |
+| Runge-Kutta 4th-order | $10$ | $0.0125$ | $2.058\cdot 10^{-3}$ |
+|-----------------------------------------------|
+
+A striking fact from this table is that the error of the Forward Euler
+method is reduced by the same factor as $\Delta t$ is reduced by,
+while the error in the
+Crank-Nicolson method has a reduction proportional to $\Delta t^2$ (we cannot
+say anything for the Backward Euler method). However, for the RK2
+method, halving $\Delta t$ reduces the error by almost a factor of 10
+(!), and for the RK4 method the reduction seems proportional to
+$\Delta t^2$ only (and the trend is confirmed by running smaller time
+steps, so for $\Delta t = 3.9\cdot 10^{-4}$ the relative error of RK2
+is a factor 10 smaller than that of RK4!).
+
+# #ifder EXTRA
+# This is not correct - E(t) goes like dt**2, unlikely...
+
+What is the corresponding relative error in energy of the centered
+scheme (ref{vib:ode1:step4}) for the second-order ODE $u^{\prime\prime}
++\omega^2 u=0$? We know that the solution has exact amplitude:
+$u^n = I\cos(\tilde\omega t_n)$. Using that
+
+!bt
+\[ u^n=e^{i\tilde\omega t_n}:\quad [D_{2t} u]^n = u^n\frac{1}{\Delta t}i\sin{(\tilde\omega\Delta t)},\]
+!et
+% if BOOK == "book":
+(see formula (ref{form:exp:fd1c:center}) in Appendix ref{sec:form:fdexp}),
+% endif
+we get
+
+!bt
+\begin{align*}
+e_E^n &= \frac{1}{2}(-\Delta t^{-2}\sin^2(\tilde\omega\Delta t)
++ \omega^2)I^2e^{2\tilde\omega t_n} - \frac{1}{2}\omega^2I^2\\
+&= ((\tilde\omega - \omega)^2 - \frac{1}{3}\tilde\omega^4\Delta t^2
+ + \Oof{\Delta t^4})\frac{1}{2}I^2e^{2\tilde\omega t_n}
+ - \frac{1}{2}\omega^2I^2\tp
+\end{align*}
+!et
+
+!bc
+Series for sin^2(x): x**2 - x**4/3 + 2*x**6/45 + O(x**8)
+!ec
+# #endif
 
 # Should build a verification test on the energy error.
 
@@ -2017,6 +2200,8 @@ the asympotic regime.]
 
 # #ifdef EXTRA
 ===== A discrete expression for the energy =====
+
+[hpl: I don't think this will lead to any good.]
 
 We may take the discrete numerical solution and plug into the
 energy formula. It fulfills the formula if we compute $u'$
@@ -2034,8 +2219,8 @@ $u'$.
 ======= The Euler-Cromer method =======
 label{vib:model2x2:EulerCromer}
 
-While the 4th-order Runge-Kutta method and a
-Crank-Nicolson scheme work well for vibration equation modeled as a
+While the Runge-Kutta methods and the
+Crank-Nicolson scheme work well for the vibration equation modeled as a
 first-order ODE system,
 both were inferior to the straightforward centered
 difference scheme for the second-order equation
@@ -2054,7 +2239,7 @@ notation this is stated as
 !bt
 \begin{align}
 \lbrack D_t^+u &= v\rbrack^n,\\
-\lbrack D_t^-v &= -\omega u\rbrack^{n+1}
+\lbrack D_t^-v &= -\omega^2 u\rbrack^{n+1}
 \tp
 \end{align}
 !et
@@ -2088,11 +2273,11 @@ label{vib:model2x2:EulerCromer:ueq1b}
 The advantage of ordering the ODEs as in
 (ref{vib:model2x2:EulerCromer:veq1b})-(ref{vib:model2x2:EulerCromer:ueq1b})
 becomes evident
-when consider complicated models. Such models are included if
+when considering complicated models. Such models are included if
 we write our vibration ODE more generally as
 
 !bt
-\[ \ddot u + g(u, u^{\prime}, t)=0\tp\]
+\[ u^{\prime\prime} + g(u, u^{\prime}, t)=0\tp\]
 !et
 We can rewrite this second-order ODE as two first-order ODEs,
 
@@ -2112,7 +2297,8 @@ u^{n+1} &= u^n + \Delta t\, v^{n+1}\tp
 !et
 We realize that the first update works well with any $g$ since old
 values $u^n$ and $v^n$ are used. Switching the equations would
-demand $u^n{+1}$ and $v^{n+1}$ values in $g$.
+demand $u^{n+1}$ and $v^{n+1}$ values in $g$ and result in nonlinear
+algebraic equations to be solved at each time level.
 
 
 
@@ -2138,8 +2324,28 @@ but this is not true: the use of a forward and then a backward
 difference make errors cancel so that the overall error in the scheme
 is $\Oof{\Delta t^2}$. This is explained below.
 
+How does the Euler-Cromer method preserve the total energy?
+We may run the example from Section ref{vib:model1:energy:measure}:
+
+|-----------------------------------------------|
+| Method | $T$ | $\Delta t$ | $\max \left\vert e_E^n\right\vert/e_E^0$ |
+|---l-------l-------l------------l--------------|
+| Euler-Cromer | $10$ | $0.05$ | $2.530\cdot 10^{-2}$ |
+| Euler-Cromer | $10$ | $0.025$ | $6.206\cdot 10^{-3}$ |
+| Euler-Cromer | $10$ | $0.0125$ | $1.544\cdot 10^{-3}$ |
+|-----------------------------------------------|
+
+The relative error in the total energy decreases as $\Delta t^2$,
+and the error level is slightly lower than for the Crank-Nicolson and
+Runge-Kutta methods.
+
+
 ===== Equivalence with the scheme for the second-order ODE =====
 label{vib:model2x2:EulerCromer:equiv}
+
+We shall now show that the Euler-Cromer scheme for the system of
+first-order equations is equivalent to the centered finite difference
+method for the second-order vibration ODE (!).
 
 We may eliminate the $v^n$ variable from
 (ref{vib:model2x2:EulerCromer:ueq1})-(ref{vib:model2x2:EulerCromer:veq1})
@@ -2149,7 +2355,7 @@ The $v^{n+1}$ term in (ref{vib:model2x2:EulerCromer:veq1b}) can
 be eliminated from (ref{vib:model2x2:EulerCromer:ueq1b}):
 !bt
 \begin{equation}
-u^{n+1} = u^n + \Delta t (v^n - \omega^2\Delta t^2 u^n)\tp
+u^{n+1} = u^n + \Delta t (v^n - \omega^2\Delta t u^n)\tp
 label{vib:model2x2:EulerCromer:elim1}
 \end{equation}
 !et
@@ -2180,15 +2386,26 @@ Although the Euler-Cromer scheme and the method (ref{vib:ode1:step4}) are
 equivalent, there could be differences in the way they handle
 the initial conditions. Let is look into this topic.
 The initial condition $u^{\prime}=0$ means $u^{\prime}=v=0$.  From
-(ref{vib:model2x2:EulerCromer:ueq1b}) we get $v^1=-\omega^2 u^0$
-and $u^1=u^0 - \omega^2\Delta t^2 u^0$. When using
-a centered approximation of $u^{\prime}(0)=0$ combined with the
-discretization (ref{vib:ode1:step4}) of the second-order ODE, we
-get $u^1=u^0 - \frac{1}{2}\omega^2\Delta t^2 u^0$. The difference
-is $\frac{1}{2}\omega^2\Delta t^2 u^0$, which is of second order in $\Delta t$,
-seemingly
-consistent with the overall error in the scheme for the differential equation
-model.
+(ref{vib:model2x2:EulerCromer:veq1b}) we get
+
+!bt
+\[ v^1=v^0-\Delta t\omega^2 u^0
+=\Delta t\omega^2 u^0,\]
+!et
+and from (ref{vib:model2x2:EulerCromer:ueq1b})
+it follows that
+
+!bt
+\[ u^1=u^0 + \Delta t v^1 = u^0 - \omega^2\Delta t^2 u^0\tp\]
+!et
+When we previously used
+a centered approximation of $u^{\prime}(0)=0$ combined with
+the discretization (ref{vib:ode1:step4}) of the second-order ODE, we
+got a slightly different result:
+$u^1=u^0 - \frac{1}{2}\omega^2\Delta t^2 u^0$. The difference is
+$\frac{1}{2}\omega^2\Delta t^2 u^0$, which is of second order in
+$\Delta t$, seemingly consistent with the overall error in the scheme
+for the differential equation model.
 
 A different view can also be taken.
 If we approximate $u^{\prime}(0)=0$ by a backward difference,
@@ -2213,7 +2430,7 @@ as the overall scheme.
 ===== Implementation =====
 label{vib:model2x2:EulerCromer:impl}
 
-The function below, found in "`vib_EulerCromer.py`": "${src_vib}/vib_EulerCromer.py" implements the Euler-Cromer scheme
+The function below, found in "`vib_EulerCromer.py`": "${src_vib}/vib_EulerCromer.py", implements the Euler-Cromer scheme
 (ref{vib:model2x2:EulerCromer:veq1b})-(ref{vib:model2x2:EulerCromer:ueq1b}):
 
 @@@CODE src-vib/vib_EulerCromer.py fromto: import numpy@def solver_ic
@@ -2241,15 +2458,47 @@ formula (ref{vib:ode1:un:exact}):
 @@@CODE src-vib/vib_undamped_EulerCromer.py fromto: def test_solver@def demo
 
 Another function, `demo`,
-visualizes the difference between Euler-Cromer scheme and the scheme
+visualizes the difference between the Euler-Cromer scheme and the scheme
 (ref{vib:ode1:step4})
 for the second-oder ODE, arising from the mismatch in the first time level.
 
-[hpl: Odespy's Euler-Cromer, but it needs more work with the example code.]
+The Euler-Cromer method is also available in the Odespy package.
+The important thing to remember is that we must order the unknowns as
+$v$ and $u$, so the `u` vector at each time level consists of the
+velocity $v$ as first component and the displacement $u$ as
+second component:
 
-# is anything gained? is v of higher order than D_2t u from the
-# other approach, i.e., if we need v, is this alg better? Probably not
-# since v is related u through a difference
+!bc pycod
+# Define ODE
+def f(u, t, w=1):
+    v, u = u
+    return [-w**2*u, v]
+
+# Initialize solver
+I = 1
+w = 2*np.pi
+import odespy
+solver = odespy.EulerCromer(f, f_kwargs={'w': w})
+solver.set_initial_condition([0, I])
+
+# Compute time mesh
+P = 2*np.pi/w  # duration of one period
+dt = P/timesteps_per_period
+Nt = num_periods*timesteps_per_period
+T = Nt*dt
+import numpy as np
+t_mesh = np.linspace(0, T, Nt+1)
+
+# Solve ODE
+u, t = solver.solve(t_mesh)
+u = u[:,1]  # Extract displacement
+!ec
+
+
+
+# is anything really gained? is v of higher order compared
+# with differentiating u in the 2nd order ODE? most likely,
+# v is 2nd order, v from 2nd-order ODE is 1st order
 
 # make exercises:
 # investigate how important the u^1 wrong formula really is on
@@ -2272,7 +2521,7 @@ $t_{n+1}$ using a three-term Taylor series,
 Using $u^{\prime}=v$ and $u^{\prime\prime}=-\omega^2u$, we get the updating formula
 
 !bt
-\[ u^{n+1} = u^n + v^n\Delta t - \frac{1}{2}\Delta^2\omega^2u^n\tp\]
+\[ u^{n+1} = u^n + v^n\Delta t - \frac{1}{2}\Delta t^2\omega^2u^n\tp\]
 !et
 Second, the first-order equation for $v$,
 
@@ -2306,7 +2555,7 @@ code appears in the file "`vib_undamped_velocity_Verlet.py`": "${src_vib}/vib_un
 @@@CODE src-vib/vib_undamped_velocity_Verlet.py fromto: from vib_undamped@if __name
 We provide the option that this `solver` function returns the same data
 as the `solver` function from Section ref{vib:impl1:solver} (if `return_v`
-is `False`), but we may return `v` along with `u` and `t`.
+is `False`), but alternatievly, it may return `v` along with `u` and `t`.
 
 The error in the Taylor series expansion behind
 (ref{vib:model2x2:Verlet:dueq}) is $\Oof{\Delta t^3}$, while the error

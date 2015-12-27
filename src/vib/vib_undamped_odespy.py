@@ -112,11 +112,13 @@ solvers_accurate = [odespy.RK4(f),
 solvers_CN = [odespy.CrankNicolson(f, nonlinear_solver='Newton')]
 
 if __name__ == '__main__':
+    # Default values
     timesteps_per_period = 20
     solver_collection = 'theta'
     num_periods = 1
+    # Override from command line
     try:
-        # Example: python vib_odespy.py 30 accurate 50
+        # Example: python vib_undamped_odespy.py 30 accurate 50
         timesteps_per_period = int(sys.argv[1])
         solver_collection = sys.argv[2]
         num_periods = int(sys.argv[3])

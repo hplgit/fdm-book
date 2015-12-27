@@ -1,0 +1,432 @@
+======= Random walk =======
+label{diffu:randomwalk}
+
+Models leading to diffusion equations, see Section ref{diffu:app},
+are based on *averaged* reasoning such that the primary quantities
+(concentration, temperature, velocity) have a smooth behavior in
+space and time. The underlying phystical processes involve complicated
+microscopic movement of atoms and molecules, but an average of a large
+number of molecules is thought to be performed in a small volume
+before the modeling starts, and the averaged quantity is assigned as
+a point value at the centroid of the small volume. This means that
+concentration, temperature, and velocity at a space-time point represent
+an average around the point in a small time interval and small spatial
+volume.
+
+Random walk is a principally totally different kind of modeling procedure.
+The idea is to have a large number of ``particles'' that undergo
+random movements. Averaging can then be used to compute
+macroscopic quantities like concentration. The ``particles'' and their
+random movement represent a very simplified microscopic behavior of
+molecules, much simpler and computationally much more efficient than
+direct "molecular simulation": "",
+yet the random walk model has been very powerful to describe a wide
+range of phenomena, including heat conduction, quantum mechanics,
+polymer chains, population genetics, brain research, hazard games, and
+pricing of financial instruments.
+
+It can be shown that random walk, when averaged, produce models that
+are mathematically equivalent to diffusion equations. This is the
+primary reason why we treat random walk in this chapter: two very
+different algorithms (finite difference stencils and random walk)
+solve the same type of problems. The simplicity of the random walk
+algorithm makes it particularly attractive for solving diffusion
+equations on massively parallel computers.
+
+===== Random walk in 1D =====
+
+Imagine that we have some particles that perform random moves, either
+to the right or to the left. We may flip a coin to decide the movement
+of each particle, say head implies movement to the right and tail
+means movement to the left. Each move is one unit length.  Physicists
+use the term *random walk* for this type of movement.
+You may try this yourself: flip the coin and make one step to the left
+or right, and repeat this process.
+
+The movement is also known as "drunkard's walk":
+"https://en.wikipedia.org/wiki/The_Drunkard%27s_Walk". You may have
+experienced this after a very wet night on a pub: you step forward and
+backward in a random fashion.  Since these movements on average make
+you stand still, and since you know that you normally reach home
+within reasonable time, the model is not good for a real walk. We need
+to add a *drift* to the walk, so the probability is greater for going
+forward than backward. This is an easy adjustment, see Exercise
+ref{sec:random:ex1}. What may come as a surprise is the following
+fact: even when there is equal probability of going forward and
+backward, one can prove mathematically that the drunkard will always
+reach his home. Or more precisely, he will get home in finite time
+(``almost surely'' as the mathematicians must add to this statement).
+Exercise ref{sec:random:ex3} asks you to experiment with this fact.
+For many practical purposes, ``finite time'' does not help much as
+there might be more steps involved than the time it takes to get
+sufficiently sober to remove the completely random component of the
+walk.
+
+===== Playing around with some code =====
+
+Python has a `random` module for drawing random numbers, and a function
+`uniform(a, b)` for drawing a uniformly distributed
+random number in the interval $[a,b)$.
+If an event happens with probability $p$, we can simulate this on
+the computer by drawing a random number $r$ in $[0,1)$, since $r\leq p$
+with probability $p$ and $r>p$ with probability $1-p$:
+
+!bc pycod
+import random
+if random.uniform(0, 1) <= p:
+    # Event happens
+else:
+    # Event does not happen
+!ec
+A random walk with $N$ steps, starting at $x_0$, where we move
+to the left with probability $p$ and to the right
+with probability $1-p$ can now be implemented by
+
+!bc pypro
+import random, numpy as np
+
+def random_walk(x0, N, p):
+    position = np.zeros(N)
+    position[0] = x0
+    for i in range(N-1):
+        if random.uniform(0, 1) <= p:
+   	    position[i+1] = position[i] - 1  # Move to the left
+	else:
+   	    position[i+1] = position[i] + 1  # Move to the right
+    return numpy.mean(position), numpy.std(position), position
+!ec
+Here is some interactive experimentation
+
+===== Basic implementation =====
+
+How can we implement $n_s$ random steps of $n_p$ particles in a program?
+Let us introduce a coordinate system where all movements are along
+the $x$ axis. An array of $x$ values then holds the positions of all
+particles. We draw random numbers to simulate flipping a coin, say
+we draw from the integers 1 and 2, where 1 means head (movement to the
+right) and 2 means tail (movement to the left).
+We think the algorithm is conveniently expressed directly as a
+complete Python program:
+
+@@@CODE src-random/walk1D.py
+This program is found in the file "`walk1D.py`":
+"${src_path}/random/walk1D.py".
+
+===== Visualization =====
+
+idx{`time` module}
+
+We may add some visualization of the movements by inserting a `plot`
+command at the end of the `step` loop and a little pause to better
+separate the frames in the animation:
+
+!bc pycod
+    plot(positions, y, 'ko3', axis=[xmin, xmax, -0.2, 0.2])
+    time.sleep(0.2)  # pause
+!ec
+These two statements require `from scitools.std import plot` and
+`import time`.
+
+It is very important that the extent of the axis are kept fixed in
+animations, otherwise one gets a wrong visual impression.  We know
+that in $n_s$ steps, no particle can move longer than $n_s$ unit
+lengths to the right or to the left so the extent of the $x$ axis
+becomes $[-n_s,n_s]$. However, the probability of reaching these lower
+or upper limit is very small.  To be specific, the probability is
+$2^{-n_s}$, which becomes about $10^{-9}$ for 30 steps.  Most of the
+movements will take place in the center of the plot. We may therefore
+shrink the extent of the axis to better view the movements.  It is
+known that the expected extent of the particles is of the order
+$\sqrt{n_s}$, so we may take the maximum and minimum values in the
+plot as $\pm 2\sqrt{n_s}$.  However, if a position of a particle
+exceeds these values, we extend `xmax` and `xmin` by
+$2\sqrt{n_s}$ in positive and negative $x$ direction, respectively.
+
+The $y$ positions of the particles are taken as zero, but it is
+necessary to have some extent of the $y$ axis, otherwise the
+coordinate system collapses and most plotting packages will refuse to
+draw the plot. Here we have just chosen the $y$ axis to go from -0.2
+to 0.2.  You can find the complete program in
+"`walk1Dp.py`": "${src_path}/random/walk1Dp.py".  The `np`
+and `ns` parameters can be set as the first two command-line
+arguments:
+
+!bc sys
+walk1Dp.py 6 200
+!ec
+It is hard to claim that this program has astonishing graphics.
+In Section ref{sec:random:rw2D}, where we let the particles move
+in two space dimensions, the graphics gets much more exciting.
+
+===== Random walk as a difference equation =====
+
+The random walk process can easily be expressed in terms of a
+difference
+equation (see refch[Appendix ref{ch:diffeq}][ cite{Langtangen_TCSE6_diffeq}][the document "Sequences and difference equations": "http://hplgit.github.io/primer.html/doc/pub/diffeq" cite{Langtangen_TCSE6_diffeq}] for an introduction
+to difference equations).
+Let $x_n$ be the
+position of the particle at time $n$. This position is an evolution
+from time $n-1$, obtained by adding a random variable $s$ to the previous
+position $x_{n-1}$, where $s=1$ has probability 1/2 and $s=-1$ has
+probability 1/2. In statistics, the expression *probability of event A*
+is written $\Prob{A}$. We can therefore write
+$\Prob{s=1}=1/2$ and $\Prob{s=-1}=1/2$. The difference equation
+can now be expressed mathematically as
+
+!bt
+\begin{equation}
+x_n = x_{n-1} + s, \quad x_0=0,\quad {\rm P}(s=1)={\rm P}(s=-1)=1/2\tp
+label{sec:random:walk:diffeq}
+\end{equation}
+!et
+This equation governs the motion of one particle. For a collection
+$m$ of particles we introduce $x^{(i)}_n$ as the position of the
+$i$-th particle at the $n$-th time step.
+Each $x^{(i)}_n$ is governed by (ref{sec:random:walk:diffeq}),
+and all the $s$ values in each of the $m$ difference equations
+are independent of each other.
+
+===== Computing statistics of the particle positions =====
+label{sec:random:walk:1D:statistics}
+
+Scientists interested in random walks are in general not interested in
+the graphics of our `walk1D.py` program, but more in the
+statistics of the positions of the particles at each step. We may
+therefore, at each step, compute a histogram of the distribution of
+the particles along the $x$ axis, plus estimate the mean position and
+the standard deviation. These mathematical operations are easily
+accomplished by letting the SciTools function
+`compute_histogram` and the `numpy`
+functions `mean` and `std` operate on the `positions`
+array (see Section ref{sec:random:statistics})
+:
+
+!bc pycod
+    mean_pos  = numpy.mean(positions)
+    stdev_pos = numpy.std(positions)
+    pos, freq = compute_histogram(positions, nbins=int(xmax),
+                                  piecewise_constant=True)
+!ec
+The number of bins in the histogram is just based on the extent of
+the particles. It could also have been a fixed number.
+
+We can plot the particles as circles, as before, and add
+the histogram and vertical lines for the mean and the positive and
+negative standard deviation (the latter indicates the ``width'' of
+the distribution of particles).
+The vertical lines can be defined by the six lists
+
+!bc pycod
+    xmean, ymean   = [mean_pos, mean_pos],     [yminv, ymaxv]
+    xstdv1, ystdv1 = [stdev_pos, stdev_pos],   [yminv, ymaxv]
+    xstdv2, ystdv2 = [-stdev_pos, -stdev_pos], [yminv, ymaxv]
+!ec
+where `yminv` and `ymaxv` are the minimum and maximum
+$y$ values of the vertical lines.
+The following command plots the position of every particle
+as circles, the histogram as a curve,
+and the vertical lines with a thicker line:
+
+!bc pycod
+    plot(positions, y, 'ko3',     # particles as circles
+         pos, freq, 'r',          # histogram
+         xmean, ymean, 'r2',      # mean position as thick line
+         xstdv1, ystdv1, 'b2',    # +1 standard dev.
+         xstdv2, ystdv2, 'b2',    # -1 standard dev.
+         axis=[xmin, xmax, ymin, ymax],
+         title='random walk of %d particles after %d steps' %
+               (np, step+1))
+!ec
+This plot is then created at every step in the random walk.  By
+observing the graphics, one will soon realize that the computation of
+the extent of the $y$ axis in the plot needs some considerations. We
+have found it convenient to base `ymax` on the maximum value of the
+histogram (`max(freq)`), plus some space (chosen as 10 percent of
+`max(freq)`).  However, we do not change the `ymax` value unless it is
+more than 0.1 different from the previous `ymax` value (otherwise the
+axis ``jumps'' too often).  The minimum value, `ymin`, is set to
+`ymin=-0.1*ymax` every time we change the `ymax` value.  The complete
+code is found in the file "`walk1Ds.py`":
+"${src_path}/random/walk1Ds.py".  If you try out 2000 particles and 30
+steps, the final graphics becomes like that in Figure
+ref{fig:random:walk:1D}.  As the number of steps is increased, the
+particles are dispersed in the positive and negative $x$ direction,
+and the histogram gets flatter and flatter. Letting $\hat H(i)$ be the
+histogram value in interval number $i$, and each interval having width
+$\Delta x$, the probability of finding a particle in interval $i$ is
+$\hat H(i)\Delta x$.  It can be shown mathematically that the
+histogram is an approximation to the probability density function of
+the normal distribution with mean zero and standard deviation $s\sim
+\sqrt{n}$, where $n$ is the step number.
+
+FIGURE: [fig-random/randomwalk1D, width=400 frac=0.8] Particle positions (circles), histogram (piecewise constant curve),   and vertical lines indicating the mean value and the standard deviation   from the mean after a one-dimensional random walk of 2000 particles   for 30 steps. label{fig:random:walk:1D}
+
+
+===== Vectorized implementation =====
+label{sec:random:walk:1D:vectorized}
+
+idx{`randint` (from `numpy.random`)}
+idx{`random_integers` (from `numpy.random`)}
+
+There is no problem with the speed of our one-dimensional random walkers
+in the `walk1Dp.py` or `walk1Ds.py` programs,
+but in real-life applications of such
+simulation models, we often have a very large number of particles performing
+a very large number of steps. It is then important to make the implementation
+as efficient as possible. Two loops over all particles and all steps,
+as we have in the programs above, become
+very slow compared to a vectorized implementation.
+
+A vectorized implementation of a one-dimensional walk should utilize
+the functions `randint`
+or `random_integers` from `numpy`'s `random` module. A first idea may be to
+draw steps for all particles at a step simultaneously. Then we repeat
+this process in a loop from 0 to $n_s-1$. However, these repetitions
+are just new vectors of random numbers, and we may avoid the loop
+if we draw $n_p\times n_s$ random numbers at once:
+
+!bc pycod
+moves = numpy.random.randint(1, 3, size=np*ns)
+# or
+moves = numpy.random.random_integers(1, 2, size=np*ns)
+!ec
+The values are now either 1 or 2, but we want $-1$ or $1$.
+A simple scaling and translation of the numbers transform the
+1 and 2 values to $-1$ and $1$ values:
+
+!bc pycod
+moves = 2*moves - 3
+!ec
+Then we can create a two-dimensional array out of `moves` such
+that `moves[i,j]` is the `i`-th step of particle number `j`:
+
+!bc pycod
+moves.shape = (ns, np)
+!ec
+
+It does not make sense to plot the evolution of the particles and the
+histogram in the vectorized version of the code, because the point with
+vectorization is to speed up the calculations, and the visualization
+takes much more time than drawing random numbers, even in the
+`walk1Dp.py` and `walk1Ds.py` programs from
+Section ref{sec:random:walk:1D:statistics}. We therefore just
+compute the positions of the particles inside a loop over the steps
+and some simple statistics. At the end, after $n_s$ steps, we
+plot the histogram of the particle distribution along with circles for
+the positions of the particles. The rest of the program, found in
+the file "`walk1Dv.py`": "${src_path}/random/walk1Dv.py", looks as follows:
+
+!bc pycod
+positions = numpy.zeros(np)
+for step in range(ns):
+    positions += moves[step, :]
+
+    mean_pos = numpy.mean(positions)
+    stdev_pos = numpy.std(positions)
+    print mean_pos, stdev_pos
+
+nbins = int(3*sqrt(ns))    # no of intervals in histogram
+pos, freq = compute_histogram(positions, nbins,
+                              piecewise_constant=True)
+
+plot(positions, zeros(np), 'ko3',
+     pos, freq, 'r',
+     axis=[min(positions), max(positions), -0.01, 1.1*max(freq)],
+     savefig='tmp.pdf')
+!ec
+
+
+!split
+======= Random walk in two space dimensions =======
+label{sec:random:rw2D}
+
+A random walk in two dimensions performs a step either to the north,
+south, west, or east, each one with probability $1/4$.
+To demonstrate this process,
+we introduce $x$ and $y$ coordinates of $n_p$ particles and
+draw random numbers among 1, 2, 3, or 4
+to determine the move.
+The positions of the particles can easily
+be visualized as small circles in an $xy$ coordinate system.
+
+===== Basic implementation =====
+label{sec:random:rw2D:scalar}
+
+The algorithm described above
+is conveniently expressed directly as a complete working program:
+
+@@@CODE src-random/walk2D.py
+The program is found in the file "`walk2D.py`":
+"${src_path}/random/walk2D.py".  Figure
+ref{fig:random:walk:2D:particles} shows two snapshots of the
+distribution of 3000 particles after 40 and 400 steps.  These plots
+were generated with command-line arguments `3000 400 20`, the latter
+implying that we visualize the particles every 20 time steps only.
+
+FIGURE: [fig-random/randomwalk2D, width=400 frac=0.9] Location of 3000 particles starting at the origin and performing a random walk, with 40 steps (left) and 400 steps (right). label{fig:random:walk:2D:particles}
+
+To get a feeling for the two-dimensional random walk you can try out
+only 30 particles for 400 steps and let each step be visualized
+(i.e., command-line arguments `30 400 1`).
+The update of the movements is now fast.
+
+idx{making movie}idx{`convert` program}idx{`animate`}
+
+The `walk2D.py` program dumps the plots to PDF files
+with names of the form `tmp_xxx.pdf`, where `xxx` is
+the step number. We can create a movie out of these individual
+files using the program `convert` from the ImageMagick suite:
+
+!bc sys
+Terminal> convert -delay 50 -loop 1000 tmp_*.pdf movie.gif
+!ec
+All the plots are now put after each other as frames in a movie, with
+a delay of 50 ms between each frame. The movie will run in a loop
+1000 times.
+The resulting movie file is named `movie.gif`, which can
+be viewed by the `animate` program (also from the ImageMagick
+program suite), just write `animate movie.gif`.
+Making and showing the movie are slow processes if a large number of
+steps are included in the movie. The alternative is to make
+a true video file in, e.g., the Flash format:
+
+!bc sys
+Terminal> avconv -r 5 -i tmp_%04d.png -c:v flv movie.flv
+!ec
+This requires the plot files to be in PNG format.
+
+===== Vectorized implementation =====
+label{sec:random:walk:2D:vectorized}
+
+The `walk2D.py` program is quite slow. Now the visualization is much
+faster than the movement of the particles.  Vectorization may speed up
+the `walk2D.py` program significantly.  As in the one-dimensional
+phase, we draw all the movements at once and then invoke a loop over
+the steps to update the $x$ and $y$ coordinates.  We draw $n_s\times
+n_p$ numbers among 1, 2, 3, and 4.  We then reshape the vector of
+random numbers to a two-dimensional array `moves[i, j]`, where `i`
+counts the steps, `j` counts the particles.  The `if` test on whether
+the current move is to the north, south, east, or west can be
+vectorized using the `where`
+# #ifdef PRIMER_BOOK function (see
+Section ref{sec:vec:Heaviside}).
+# #else
+function.
+# #endif
+For example, if the random numbers for all particles in the current step
+are accessible in an array `this_move`, we could update the $x$
+positions by
+
+!bc pycod
+xpositions += np.where(this_move == EAST, 1, 0)
+xpositions -= np.where(this_move == WEST, 1, 0)
+!ec
+provided `EAST` and `WEST` are constants, equal to 3 and 4,
+respectively. A similar construction can be used for the $y$ moves.
+
+The complete program is listed below:
+
+@@@CODE src-random/walk2Dv.py
+You will easily experience that this program, found in the file
+"`walk2Dv.py`": "${src_path}/random/walk2Dc.py", runs significantly
+faster than the `walk2D.py` program.

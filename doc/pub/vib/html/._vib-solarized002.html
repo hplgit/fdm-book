@@ -7,7 +7,7 @@ Automatically generated HTML file from DocOnce source
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="DocOnce: https://github.com/hplgit/doconce/" />
 <meta name="description" content="Finite difference methods for vibration problems">
-<meta name="keywords" content="vibration ODE,oscillations,mechanical vibrations,period (of oscillations),frequency (of oscillations),Hz (unit),mesh finite differences,mesh function,centered difference,finite differences centered,making movies,animation,WebM (video format),Ogg (video format),MP4 (video format),Flash (video format),video formats,HTML5 video tag,error global,stability criterion,phase plane plot,mechanical energy,energy principle,forward-backward Euler-Cromer scheme,nonlinear restoring force,nonlinear spring,forced vibrations,geometric mean,averaging geometric,DOF (degree of freedom),resonance">
+<meta name="keywords" content="vibration ODE,oscillations,mechanical vibrations,period (of oscillations),frequency (of oscillations),Hz (unit),mesh finite differences,mesh function,centered difference,finite differences centered,test function,pytest,nose,verification hand calculations,unit testing,verification polynomial solutions,verification convergence rates,making movies,animation,WebM (video format),Ogg (video format),MP4 (video format),Flash (video format),video formats,HTML5 video tag,error global,stability criterion,phase plane plot,mechanical energy,energy principle,forward-backward Euler-Cromer scheme,nonlinear restoring force,nonlinear spring,forced vibrations,geometric mean,averaging geometric,DOF (degree of freedom),resonance">
 
 <title>Finite difference methods for vibration problems</title>
 
@@ -107,7 +107,10 @@ div { text-align: justify; text-justify: inter-word; }
               ('Computing $u^{\\prime}$', 3, None, '___sec12'),
               ('Verification', 2, 'vib:ode1:verify', 'vib:ode1:verify'),
               ('Manual calculation', 3, None, '___sec14'),
-              ('Testing very simple solutions', 3, None, '___sec15'),
+              ('Testing very simple polynomial solutions',
+               3,
+               None,
+               '___sec15'),
               ('Checking convergence rates', 3, None, '___sec16'),
               ('Scaled model', 2, None, '___sec17'),
               ('Long time simulations',
@@ -153,7 +156,10 @@ div { text-align: justify; text-justify: inter-word; }
                'vib:model2x2'),
               ('The Forward Euler scheme', 2, None, '___sec35'),
               ('The Backward Euler scheme', 2, None, '___sec36'),
-              ('The Crank-Nicolson scheme', 2, None, '___sec37'),
+              ('The Crank-Nicolson scheme',
+               2,
+               'vib:undamped:CN',
+               'vib:undamped:CN'),
               ('Comparison of schemes',
                2,
                'vib:model2x2:compare',
@@ -366,7 +372,6 @@ $$
 \newcommand{\uex}{{u_{\small\mbox{e}}}}
 \newcommand{\normalvec}{\boldsymbol{n}}
 \newcommand{\Oof}[1]{\mathcal{O}(#1)}
-\renewcommand{\u}{\boldsymbol{u}}
 \renewcommand{\v}{\boldsymbol{v}}
 \newcommand{\acc}{\boldsymbol{a}}
 \newcommand{\rpos}{\boldsymbol{r}}
@@ -432,8 +437,7 @@ point for method development, implementation, and analysis.
 <h2 id="___sec1">A basic model for vibrations </h2>
 
 <p>
-A system that vibrates without damping and external forcing
-can be described by the ODE problem
+The simplest model of a vibrating mechanical system has the following form:
 
 $$
 \begin{equation}
@@ -444,6 +448,10 @@ u^{\prime\prime} + \omega^2u = 0,\quad u(0)=I,\ u^{\prime}(0)=0,\ t\in (0,T]
 $$
 
 Here, \( \omega \) and \( I \) are given constants.
+The section <a href="._vib-solarized003.html#vib:app:mass_spring">Oscillating mass attached to a spring</a> derives <a href="#mjx-eqn-1">(1)</a> from physical
+principles and explains what the constants mean.
+
+<p>
 The exact solution of <a href="#mjx-eqn-1">(1)</a> is
 
 $$
@@ -593,17 +601,12 @@ and also to generalize the initial condition to \( u^{\prime}(0)=V\neq 0 \).
 <h3 id="___sec8">The computational algorithm </h3>
 
 <p>
-The steps for solving <a href="#mjx-eqn-1">(1)</a> becomes
+The steps for solving <a href="#mjx-eqn-1">(1)</a> become
 
 <ol>
  <li> \( u^0=I \)</li>
  <li> compute \( u^1 \) from <a href="#mjx-eqn-8">(8)</a></li>
- <li> for \( n=1,2,\ldots,N_t-1 \):</li>
-
-<ol>
-   <li> compute \( u^{n+1} \) from <a href="#mjx-eqn-7">(7)</a></li>
-</ol>
-
+ <li> for \( n=1,2,\ldots,N_t-1 \): compute \( u^{n+1} \) from <a href="#mjx-eqn-7">(7)</a></li>
 </ol>
 
 The algorithm is more precisely expressed directly in Python:
@@ -622,10 +625,10 @@ for n in range(1, Nt):
 </pre></div>
 <p>
 <div class="alert alert-block alert-warning alert-text-normal">
-<b>Remark on using <code>w</code> for \( \omega \).</b>
+<b>Remark on using <code>w</code> for \( \omega \) in computer code.</b>
 <p>
 In the code, we use <code>w</code> as the symbol for \( \omega \).
-The reason is that this author prefers <code>w</code> for readability
+The reason is that the authors prefer <code>w</code> for readability
 and comparison with the mathematical \( \omega \) instead of
 the full word <code>omega</code> as variable name.
 </div>
@@ -710,16 +713,16 @@ input \( I \), \( \omega \), \( \Delta t \), and \( T \):
     <span style="color: #8B008B; font-weight: bold">return</span> u, t
 </pre></div>
 <p>
-We do a simple <code>from module import *</code> to make the code as close as
-possible to MATLAB, although good programming habits would prefix
-the <code>numpy</code> and <code>matplotlib</code> calls by (abbreviations of) the module
-name.
-
-<p>
-
-<!-- begin inline comment -->
-<font color="red">(<b>hpl 2</b>: Refer to right section in decay book for prefix discussion.)</font>
-<!-- end inline comment -->
+We have imported <code>numpy</code> and <code>matplotlib</code> under the names <code>np</code> and <code>plt</code>,
+respectively, as this is very common in the Python scientific
+computing community and a good programming habit (since we explicitly
+see where the different functions come from).  An alternative is to do
+<code>from numpy import *</code> and a similar &quot;import all&quot; for Matplotlib to
+avoid the <code>np</code> and <code>plt</code> prefixes and make the code as close as
+possible to MATLAB. (See the section
+<a href="http://hplgit.github.io/decay-book/doc/pub/book/html/._decay-book009.html#softeng1:basic:modprefix" target="_self">Prefixing imported functions by the module name</a> in the book
+<a href="http://tinyurl.com/nclmcng/web" target="_self">Finite Difference Computing with Exponential Decay Models</a> <a href="._vib-solarized003.html#Langtangen_decay">[1]</a> for a discussion of the two
+types of import in Python.)
 
 <p>
 A function for plotting the numerical and the exact solution is also
@@ -747,8 +750,8 @@ convenient to have:
     plt.savefig(<span style="color: #CD5555">&#39;tmp1.png&#39;</span>);  plt.savefig(<span style="color: #CD5555">&#39;tmp1.pdf&#39;</span>)
 </pre></div>
 <p>
-A corresponding main program calling these functions for a simulation
-of a given number of periods (<code>num_periods</code>) may take the form
+A corresponding main program calling these functions to simulate
+a given number of periods (<code>num_periods</code>) may take the form
 
 <p>
 
@@ -781,15 +784,9 @@ a = parser.parse_args()
 I, w, dt, num_periods = a.I, a.w, a.dt, a.num_periods
 </pre></div>
 <p>
-Such parsing of the command line is explained in more detailed in
+Such parsing of the command line is explained in more detail in
  the
-"section on user interfaces": "..." in <a href="._vib-solarized003.html#Langtangen_decay">[1]</a>.
-
-<p>
-
-<!-- begin inline comment -->
-<font color="red">(<b>hpl 3</b>: Fix reference to web document.)</font>
-<!-- end inline comment -->
+section <a href="http://hplgit.github.io/decay-book/doc/pub/book/html/._decay-book009.html#softeng1:basic:UI:options_cml" target="_self">Option-value pairs on the command line</a> in <a href="http://tinyurl.com/nclmcng/web" target="_self">Finite Difference Computing with Exponential Decay Models</a> <a href="._vib-solarized003.html#Langtangen_decay">[1]</a>.
 
 <p>
 A typical execution goes like
@@ -837,9 +834,13 @@ v[<span style="color: #B452CD">0</span>] = <span style="color: #B452CD">0</span>
 v[-<span style="color: #B452CD">1</span>] = (u[-<span style="color: #B452CD">1</span>] - u[-<span style="color: #B452CD">2</span>])/dt
 </pre></div>
 <p>
-We can get rid of the loop, which is slow for large \( N_t \), by
+Since the loop is slow for large \( N_t \), we
+can get rid of the loop by
 vectorizing the central difference. The above code segment
-goes as follows in its vectorized version:
+goes as follows in its vectorized version (see the problem
+<a href="http://hplgit.github.io/decay-book/doc/pub/book/sphinx/html/._decay-book005.html#decay:exer:dudt" target="_self">Differentiate a function</a> in
+<a href="http://tinyurl.com/nclmcng/web" target="_self">Finite Difference Computing with Exponential Decay Models</a> <a href="._vib-solarized003.html#Langtangen_decay">[1]</a>
+for explanation of details):
 
 <p>
 
@@ -861,7 +862,7 @@ with the aid of a calculator
 and make a function for comparing these results with those from the <code>solver</code>
 function. The <code>test_three_steps</code> function in
 the file <a href="http://tinyurl.com/nm5587k/vib/vib_undamped.py" target="_self"><tt>vib_undamped.py</tt></a>
-shows the details how we use the hand calculations to test the code:
+shows the details of how we use the hand calculations to test the code:
 
 <p>
 
@@ -877,8 +878,39 @@ shows the details how we use the hand calculations to test the code:
     tol = <span style="color: #B452CD">1E-14</span>
     <span style="color: #8B008B; font-weight: bold">assert</span> diff &lt; tol
 </pre></div>
+<p>
+This function is a proper <em>test function</em>,
+compliant with the pytest and nose testing
+framework for Python code, because
 
-<h3 id="___sec15">Testing very simple solutions </h3>
+<ul>
+ <li> the function name begins with <code>test_</code></li>
+ <li> the function takes no arguments</li>
+ <li> the test is formulated as a boolean condition and executed by <code>assert</code></li>
+</ul>
+
+See the
+section <a href="http://hplgit.github.io/decay-book/doc/pub/book/html/._decay-book009.html#softeng1:verify:pytest" target="_self">Unit tests and test functions</a> in
+<a href="http://tinyurl.com/nclmcng/web" target="_self">Finite Difference Computing with Exponential Decay Models</a> <a href="._vib-solarized003.html#Langtangen_decay">[1]</a>
+for more details on how to construct test functions and utilize nose
+or pytest for automatic execution of tests. Our recommendation is to
+use pytest and run all test functions in <code>vib_undamped.py</code> by
+
+<p>
+
+<!-- code=text (!bc sys) typeset with pygments style "perldoc" -->
+<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%">Terminal&gt; py.test -s -v vib_undamped.py
+============================= test session starts ======...
+platform linux2 -- Python 2.7.9 -- ...
+collected 2 items
+
+vib_undamped.py::test_three_steps PASSED
+vib_undamped.py::test_convergence_rates PASSED
+
+=========================== 2 passed in 0.19 seconds ===...
+</pre></div>
+
+<h3 id="___sec15">Testing very simple polynomial solutions </h3>
 
 <p>
 Constructing test problems where the exact solution is constant or
@@ -888,7 +920,7 @@ precision.  Second-order accurate methods will often also reproduce a
 quadratic solution.  Here \( [D_tD_tt^2]^n=2 \), which is the exact
 result. A solution \( u=t^2 \) leads to \( u^{\prime\prime}+\omega^2 u=2 + (\omega
 t)^2\neq 0 \).  We must therefore add a source in the equation: \( u^{\prime\prime} +
-\omega^2 u = f \) to allow a solution \( u=t^2 \) for \( f=(\omega t)^2 \).  By
+\omega^2 u = f \) to allow a solution \( u=t^2 \) for \( f=2 + (\omega t)^2 \).  By
 simple insertion we can show that the mesh function \( u^n = t_n^2 \) is
 also a solution of the discrete equations.  <a href="._vib-solarized003.html#vib:exer:undamped:verify:linquad">Problem 1: Use linear/quadratic functions for verification</a> asks you to carry out all
 details to show that linear and quadratic solutions are solutions
@@ -898,17 +930,19 @@ and verification. You are strongly encouraged to do this problem now!
 <h3 id="___sec16">Checking convergence rates </h3>
 
 <p>
-Empirical computation of convergence rates
-yields a good method for verification. The method and its computational
-are explained in detail for a simple ODE model in the section on <a href="http://hplgit.github.io/decay-book/doc/pub/book/sphinx/._book006.html#computing-convergence-rates" target="_self">computing convergence rates</a>
-in <a href="._vib-solarized003.html#Langtangen_decay">[1]</a>. Readers not familiar with the concept should
-look up this reference before proceeding.
+Empirical computation of convergence rates yields a good method for
+verification. The method and its computational details are explained
+in detail for a simple ODE model in the section
+<a href="http://hplgit.github.io/decay-book/doc/pub/book/html/._decay-book007.html#decay:convergence:rate" target="_self">Computing convergence rates</a>
+in <a href="http://tinyurl.com/nclmcng/web" target="_self">Finite Difference Computing with Exponential Decay Models</a> <a href="._vib-solarized003.html#Langtangen_decay">[1]</a>.  Readers not
+familiar with the concept should look up this reference before
+proceeding.
 
 <p>
 In the present problem, computing convergence rates means that we must
 
 <ul>
- <li> perform \( m \) simulations with halved time steps: \( \Delta t_i=2^{-i}\Delta t_0 \), \( i=0,\ldots,m-1 \),</li>
+ <li> perform \( m \) simulations, halving the time steps as: \( \Delta t_i=2^{-i}\Delta t_0 \), \( i=0,\ldots,m-1 \),</li>
  <li> compute the \( L^2 \) norm of the error,
    \( E_i=\sqrt{\Delta t_i\sum_{n=0}^{N_t-1}(u^n-\uex(t_n))^2} \) in each case,</li>
  <li> estimate the convergence rates \( r_i \) based on two consecutive
@@ -920,10 +954,13 @@ In the present problem, computing convergence rates means that we must
    where \( i \) runs from \( 1 \) to \( m-1 \).</li>
 </ul>
 
-The computed rates \( r_0,r_1,\ldots,r_{m-2} \) hopefully converges to a
-number, which hopefully is 2, the right one, in the present
-problem. The convergence of the rates demands that the time steps
-\( \Delta t_i \) are sufficiently small for the error model \( E_i=(\Delta t_i)^r \)
+The computed rates \( r_0,r_1,\ldots,r_{m-2} \) hopefully converge to the
+number 2 in the present
+problem, because theory (from the section <a href="#vib:ode1:analysis">Analysis of the numerical scheme</a>) shows
+that the error of the numerical method we use behaves like \( \Delta t^2 \).
+The convergence of the sequence of rates \( r_0,r_1,\ldots,r_{m-2} \)
+demands that the time steps
+\( \Delta t_i \) are sufficiently small for the error model \( E_i=C(\Delta t_i)^r \)
 to be valid.
 
 <p>
@@ -963,22 +1000,23 @@ All the implementational details of computing the sequence
     <span style="color: #8B008B; font-weight: bold">return</span> r
 </pre></div>
 <p>
-The expected convergence rate is 2, because we have used
-a second-order finite
-difference approximations \( [D_tD_tu]^n \) to the ODE and a
-second-order finite difference formula for the initial condition for
-\( u^{\prime} \). Other theoretical error measures also points to
-\( r=2 \).
+The error analysis in the section <a href="#vib:ode1:analysis">Analysis of the numerical scheme</a> is quite
+detailed and results in \( r=2 \), but other methods like truncation error
+analysis (see  ref{trunc:vib:undamped}) also points to \( r=2 \),
+as well as the related quick reasoning that we have used a
+second-order accurate finite difference approximation \( [D_tD_tu]^n \) to
+the ODE and a second-order accurate finite difference formula for the
+initial condition for \( u^{\prime} \).
 
 <p>
 In the present problem, when \( \Delta t_0 \) corresponds to 30 time steps
 per period, the returned <code>r</code> list has all its values equal to 2.00
-(if rounded to two decimals). This amazing result means that all
+(if rounded to two decimals). This amazingly accurate result means that all
 \( \Delta t_i \) values are well into the asymptotic regime where the
 error model \( E_i = C(\Delta t_i)^r \) is valid.
 
 <p>
-We can now construct a test function that computes convergence rates
+We can now construct a proper test function that computes convergence rates
 and checks that the final (and usually the best) estimate is sufficiently
 close to 2. Here, a rough tolerance of 0.1 is enough. This unit test
 goes like
@@ -998,17 +1036,17 @@ The complete code appears in the file <code>vib_undamped.py</code>.
 <h2 id="___sec17">Scaled model </h2>
 
 <p>
-
-<!-- begin inline comment -->
-<font color="red">(<b>hpl 4</b>: Need reference to scaling book and maybe also decay book.)</font>
-<!-- end inline comment -->
+It is advantageous to use dimensionless variables in simulations,
+because fewer parameters need to be set. The present problem is made
+dimensionless by introducing dimensionless variables \( \bar t = t/t_c \)
+and \( \bar u = u/u_c \), where \( t_c \) and \( u_c \) are characteristic scales
+for \( t \) and \( u \), respectively. We refer to the section
+<a href="http://hplgit.github.io/scaling-book/doc/pub/book/html/._scaling-book006.html#sec:scale:vib:undamped" target="_self">Undamped vibrations without forcing</a>
+in the book <a href="http://tinyurl.com/qfjgxmf/web" target="_self">Scaling of differential equations</a> <a href="._vib-solarized003.html#Langtangen_decay">[1]</a> for all
+details about this scaling.
 
 <p>
-It is advantageous to use dimensionless variables in simulations, because
-fewer parameters need to be set. The present problem is made dimensionless
-by introducing dimensionless variables \( \bar t = t/t_c \) and \( \bar u = u/u_c \),
-where \( t_c \) and \( u_c \) are characteristic scales for \( t \) and \( u \),
-respectively. The scaled ODE problem reads
+The scaled ODE problem reads
 
 $$ \frac{u_c}{t_c^2}\frac{d^2\bar u}{d\bar t^2} + u_c\bar u = 0,\quad
 u_c\bar u(0) = I,\ \frac{u_c}{t_c}\frac{d\bar u}{d\bar t}(0)=0\tp$$
@@ -1316,19 +1354,22 @@ slowly.
 <p>
 
 <!-- begin inline comment -->
-<font color="red">(<b>hpl 5</b>: Combine two simulations side by side!)</font>
+<font color="red">(<b>hpl 2</b>: Combine two simulations side by side!)</font>
 <!-- end inline comment -->
 
 <h2 id="___sec24">Using Bokeh to compare graphs </h2>
 
 <p>
 Instead of a moving plot frame, one can use tools that allows panning
-by the mouse. For example, we can show four periods of a signal in
-a plot and then scroll with the mouse through the rest of the
-simulation. The <a href="http://bokeh.pydata.org/en/latest/docs/quickstart.html" target="_self">Bokeh</a> plotting library offers such tools, but the plot must be displayed in
+by the mouse. For example, we can show four periods of several signals in
+several plots and then scroll with the mouse through the rest of the
+simulation <em>simultaneously</em> in all the plot windows.
+The <a href="http://bokeh.pydata.org/en/latest/docs/quickstart.html" target="_self">Bokeh</a> plotting library offers such tools, but the plots must be displayed in
 a web browser. The documentation of Bokeh is excellent, so here we just
 show how the library can be used to compare a set of \( u \) curves corresponding
-to long time simulations.
+to long time simulations. (By the way, the guidance to correct
+pronunciation of Bokeh in
+the <a href="http://bokeh.pydata.org/en/0.10.0/docs/faq.html#how-do-you-pronounce-bokeh" target="_self">documentation</a> and on <a href="https://en.wikipedia.org/wiki/Bokeh" target="_self">Wikipedia</a> is not directly compatible with a <a href="https://www.youtube.com/watch?v=OR8HSHevQTM" target="_self">YouTube video</a>...).
 
 <p>
 Imagine we have performed experiments for a set of \( \Delta t \) values.
@@ -1339,7 +1380,7 @@ a plot, and then arrange all plots in a grid-like fashion:
 <center><p><img src="fig-vib/bokeh_gridplot1.png" align="bottom" width=800></p></center>
 
 <p>
-Furthermore, we want the axis to couple such that if we move into
+Furthermore, we want the axes to couple such that if we move into
 the future in one plot, all the other plots follows (note the
 displaced \( t \) axes!):
 
@@ -1378,7 +1419,7 @@ the mouse inside one of the plots to scroll into the future!
 <p>
 A function for creating a Bokeh plot, given a list of <code>u</code> arrays
 and corresponding <code>t</code> arrays, from different simulations, described
-compactly in a list of strings <code>legends</code>, takes the following form:
+compactly in a list of strings <code>legends</code>, is implemented below.
 
 <p>
 
@@ -1709,8 +1750,8 @@ with a sine or cosine function.)
 We have
 
 $$
-A^n = e^{i\tilde\omega \Delta t\, n}=e^{i\tilde\omega t} =
-\cos (\tilde\omega t) + i\sin(\tilde \omega t)
+A^n = e^{i\tilde\omega \Delta t\, n}=e^{i\tilde\omega t_n} =
+\cos (\tilde\omega t_n) + i\sin(\tilde \omega t_n)
 \tp
 $$
 
@@ -1724,11 +1765,11 @@ $$
 \begin{align*}
 [D_tD_t u]^n &= \frac{u^{n+1} - 2u^n + u^{n-1}}{\Delta t^2}\\ 
 &= I\frac{A^{n+1} - 2A^n + A^{n-1}}{\Delta t^2}\\ 
-&= \frac{I}{\Delta t^{2}}(e^{i\tilde\omega(t+\Delta t)} - 2e^{i\tilde\omega t} + e^{i\tilde\omega(t-\Delta t)})\\ 
-&= Ie^{i\tilde\omega t}\frac{1}{\Delta t^2}\left(e^{i\tilde\omega\Delta t} + e^{i\tilde\omega(-\Delta t)} - 2\right)\\ 
-&= Ie^{i\tilde\omega t}\frac{2}{\Delta t^2}\left(\cosh(i\tilde\omega\Delta t) -1 \right)\\ 
-&= Ie^{i\tilde\omega t}\frac{2}{\Delta t^2}\left(\cos(\tilde\omega\Delta t) -1 \right)\\ 
-&= -Ie^{i\tilde\omega t}\frac{4}{\Delta t^2}\sin^2(\frac{\tilde\omega\Delta t}{2})
+&= \frac{I}{\Delta t^{2}}(e^{i\tilde\omega(t_n+\Delta t)} - 2e^{i\tilde\omega t_n} + e^{i\tilde\omega(t_n-\Delta t)})\\ 
+&= Ie^{i\tilde\omega t_n}\frac{1}{\Delta t^2}\left(e^{i\tilde\omega\Delta t} + e^{i\tilde\omega(-\Delta t)} - 2\right)\\ 
+&= Ie^{i\tilde\omega t_n}\frac{2}{\Delta t^2}\left(\cosh(i\tilde\omega\Delta t) -1 \right)\\ 
+&= Ie^{i\tilde\omega t_n}\frac{2}{\Delta t^2}\left(\cos(\tilde\omega\Delta t) -1 \right)\\ 
+&= -Ie^{i\tilde\omega t_n}\frac{4}{\Delta t^2}\sin^2(\frac{\tilde\omega\Delta t}{2})
 \end{align*}
 $$
 
@@ -1738,17 +1779,18 @@ The last line follows from the relation
 
 <p>
 The scheme <a href="#mjx-eqn-7">(7)</a>
-with \( u^n=Ie^{i\omega\tilde\Delta t\, n} \) inserted now gives
+with \( u^n=Ie^{i\tilde\omega\Delta t\, n} \) inserted now gives
 
 $$
 \begin{equation}
--Ie^{i\tilde\omega t}\frac{4}{\Delta t^2}\sin^2(\frac{\tilde\omega\Delta t}{2})
-+ \omega^2 Ie^{i\tilde\omega t} = 0,
+-Ie^{i\tilde\omega t_n}
+\frac{4}{\Delta t^2}\sin^2(\frac{\tilde\omega\Delta t}{2})
++ \omega^2 Ie^{i\tilde\omega t_n} = 0,
 \tag{16}
 \end{equation}
 $$
 
-which after dividing by \( Ie^{i\tilde\omega t} \) results in
+which after dividing by \( Ie^{i\tilde\omega t_n} \) results in
 $$
 \begin{equation}
 \frac{4}{\Delta t^2}\sin^2(\frac{\tilde\omega\Delta t}{2}) = \omega^2
@@ -1893,7 +1935,9 @@ by doing <a href="._vib-solarized003.html#vib:exer:discrete:omega">Exercise 10: 
 <p>
 We can use <a href="#mjx-eqn-19">(19)</a>, <a href="#mjx-eqn-21">(21)</a>, or
 <a href="#mjx-eqn-22">(22)</a> to show <em>convergence</em> of the
-numerical scheme, i.e., \( e^n\rightarrow 0 \) as \( \Delta t\rightarrow 0 \).
+numerical scheme, i.e., \( e^n\rightarrow 0 \) as \( \Delta t\rightarrow 0 \),
+which implies that the numerical solution approaches the exact solution
+as \( \Delta t \) approaches to zero.
 We have that
 
 $$
@@ -1903,8 +1947,8 @@ $$
 = \omega,
 $$
 
-by L'Hopital's rule or simply asking <code>sympy</code> or
-<a href="http://www.wolframalpha.com/input/?i=%282%2Fx%29*asin%28w*x%2F2%29+as+x-%3E0" target="_self">WolframAlpha</a> about the limit:
+by L'Hopital's rule. This result could also been computed <a href="http://www.wolframalpha.com/input/?i=%282%2Fx%29*asin%28w*x%2F2%29+as+x-%3E0" target="_self">WolframAlpha</a>, or
+we could use the limit functionality in <code>sympy</code>:
 
 <p>
 
@@ -1967,7 +2011,7 @@ dt**<span style="color: #B452CD">2</span>*t*w**<span style="color: #B452CD">3</s
 </pre></div>
 <p>
 Since we are mainly interested in the leading-order term in
-such expansions (the term with lowest power in \( \Delta t \) and
+such expansions (the term with lowest power in \( \Delta t \), which
 goes most slowly to zero), we use the <code>.as_leading_term(dt)</code>
 construction to pick out this term:
 
@@ -1980,8 +2024,9 @@ dt**<span style="color: #B452CD">2</span>*t*w**<span style="color: #B452CD">3</s
 <p>
 The last result
 means that the leading order global (true) error at a point \( t \)
-is proportional to \( \omega^3t\Delta t^2 \). Now, \( t \) is related
-to \( \Delta t \) through \( t=n\Delta t \). The factor
+is proportional to \( \omega^3t\Delta t^2 \). Considering only the
+discrete \( t_n \) values for \( t \), \( t_n \) is related
+to \( \Delta t \) through \( t_n=n\Delta t \). The factor
 \( \sin(\omega t) \) can at most be 1, so we use this value to
 bound the leading-order expression to its maximum value
 
@@ -2005,7 +2050,7 @@ the square root gives the expression
 $$ ||e^n||_{\ell^2} = \frac{1}{24}\sqrt{\frac{T^3}{3}}\omega^3\Delta t^2\tp$$
 
 This is our expression for the global (or integrated) error.
-The main result from this expression is that also the global error
+The main result from this expression is that the global error
 is proportional to \( \Delta t^2 \).
 
 <h2 id="___sec32">Stability </h2>
@@ -2037,7 +2082,7 @@ exponent.
 <p>
 We do not tolerate growth in the amplitude since such growth is not
 present in the exact solution. Therefore, we
-must impose a <em>stability criterion</em>  that
+must impose a <em>stability criterion</em> so that
 the argument in the inverse sine function leads
 to real and not complex values of \( \tilde\omega \). The stability
 criterion reads
@@ -2123,7 +2168,7 @@ analysis we can draw three important conclusions:
 <li> The key parameter in the formulas is \( p=\omega\Delta t \).
    The period of oscillations is \( P=2\pi/\omega \), and the
    number of time steps per period is \( N_P=P/\Delta t \).
-   Therefore, \( p=\omega\Delta t = 2\pi N_P \), showing that the
+   Therefore, \( p=\omega\Delta t = 2\pi/N_P \), showing that the
    critical parameter is the number of time steps per period.
    The smallest possible \( N_P \) is 2, showing that \( p\in (0,\pi] \).</li>
 <li> Provided \( p\leq 2 \), the amplitude of the numerical solution is
@@ -2196,7 +2241,7 @@ centered difference scheme for the second-order differential
 equation. We have from <a href="#mjx-eqn-27">(27)</a> and
 <a href="#mjx-eqn-28">(28)</a> applied at levels \( n \) and \( n-1 \) that
 
-$$ u^{n+1} = u^n + \Delta t v^n = u^n + \Delta t (v^{n-1} -\Delta t \omega^2 u^{n-1}\tp$$
+$$ u^{n+1} = u^n + \Delta t v^n = u^n + \Delta t (v^{n-1} -\Delta t \omega^2 u^{n-1})\tp$$
 
 Since from <a href="#mjx-eqn-27">(27)</a>
 $$ v^{n-1} = \frac{1}{\Delta t}(u^{n}-u^{n-1}),$$
@@ -2207,18 +2252,27 @@ $$ u^{n+1} = 2u^n - u^{n-1} -\Delta t^2\omega^2 u^{n-1},$$
 
 which is very close to the centered difference scheme, but
 the last term is evaluated at \( t_{n-1} \) instead of \( t_n \).
-Dividing by \( \Delta t^2 \), the left-hand side is an approximation to
+Rewriting, so that \( \Delta t^2\omega^2u^{n-1} \) appears alone on the
+right-hand side, and then dividing
+by \( \Delta t^2 \), the new left-hand side is an approximation to
 \( u^{\prime\prime} \) at \( t_n \), while the right-hand side is sampled at \( t_{n-1} \).
 All terms should be sampled at the same mesh point, so using
-\( \omega^2 u^{n-1} \) instead of \( \omega^2 u^n \) is an inconsistency
-in the scheme. This inconsistency turns out to be rather
+\( \omega^2 u^{n-1} \) instead of \( \omega^2 u^n \) points to a kind of
+mathematical error in the derivation of the scheme. This error
+turns out to be rather
 crucial for the accuracy of
-the Forward Euler method applied to vibration problems.
+the Forward Euler method applied to vibration problems (the section <a href="#vib:model2x2:compare">Comparison of schemes</a> has examples).
+
+<p>
+The reasoning above does not imply that the Forward Euler scheme is not
+correct, but more that it is almost equivalent to a second-order accurate
+scheme for the second-order ODE formulation, and that the error
+committed has to do with a wrong sampling point.
 
 <h2 id="___sec36">The Backward Euler scheme </h2>
 
 <p>
-A Backward Euler approximation the ODE system is equally easy to
+A Backward Euler approximation to the ODE system is equally easy to
 write up in the operator notation:
 
 $$
@@ -2249,7 +2303,8 @@ for the second-order differential equation.
 To this end, we eliminate \( v^{n+1} \) in <a href="#mjx-eqn-31">(31)</a>
 using <a href="#mjx-eqn-32">(32)</a> solved with respect to \( v^{n+1} \).
 Thereafter, we eliminate \( v^n \) using <a href="#mjx-eqn-31">(31)</a>
-solved with respect to \( v^{n+1} \) and replacing \( n+1 \) by \( n \).
+solved with respect to \( v^{n+1} \) and also replacing \( n+1 \) by \( n \) and
+\( n \) by \( n-1 \).
 The resulting equation involving only \( u^{n+1} \), \( u^n \), and \( u^{n-1} \)
 can be ordered as
 
@@ -2258,9 +2313,10 @@ $$ \frac{u^{n+1}-2u^n+u^{n-1}}{\Delta t^2} = -\omega^2 u^{n+1},$$
 which has almost the same form as the centered scheme for the
 second-order differential equation, but the right-hand side is
 evaluated at \( u^{n+1} \) and not \( u^n \). This inconsistent sampling
-of terms has a dramatic effect on the numerical solution.
+of terms has a dramatic effect on the numerical solution, as we
+demonstrate in the section <a href="#vib:model2x2:compare">Comparison of schemes</a>.
 
-<h2 id="___sec37">The Crank-Nicolson scheme </h2>
+<h2 id="vib:undamped:CN">The Crank-Nicolson scheme</h2>
 
 <p>
 The Crank-Nicolson scheme takes this form in the operator notation:
@@ -2269,13 +2325,15 @@ $$
 \begin{align}
 \lbrack D_t u &= \overline{v}^t\rbrack^{n+\half},
 \tag{33}\\ 
-\lbrack D_t v &= -\omega \overline{u}^t\rbrack^{n+\half}
+\lbrack D_t v &= -\omega^2 \overline{u}^t\rbrack^{n+\half}
 \tp
 \tag{34}
 \end{align}
 $$
 
-Writing the equations out shows that this is also a coupled system:
+Writing the equations out and rearranging terms,
+shows that this is also a coupled system of two linear equations
+at each time level:
 
 $$
 \begin{align}
@@ -2289,15 +2347,38 @@ v^{n+1} + \half\Delta t \omega^2 u^{n+1} &= v^{n}
 $$
 
 <p>
-To see the nature of this approximation, and that it is actually
-very promising, we write the equations as follows
+We may compare also this scheme to the centered discretization of
+the second-order ODE. It turns out that the Crank-Nicolson scheme is
+equivalent to the discretization
+
+$$
+\begin{equation}
+\frac{u^{n+1} - 2u^n + u^{n-1}}{\Delta t^2} = - \omega^2
+\frac{1}{4}(u^{n+1} + 2u^n + u^{n-1}) = -\omega^2 u^{n} +
+\Oof{\Delta t^2}\tp
+\tag{37}
+\end{equation}
+$$
+
+That is, the Crank-Nicolson is equivalent to <a href="#mjx-eqn-7">(7)</a>
+for the second-order ODE, apart from an extra term of size
+\( \Delta t^2 \), but this is an error of the same order as in
+the finite difference approximation on the left-hand side of the
+equation anyway. The fact that the Crank-Nicolson scheme is so
+close to <a href="#mjx-eqn-7">(7)</a> makes it a much better method than
+the Forward or Backward Euler methods for vibration problems,
+as will be illustrated in the section <a href="#vib:model2x2:compare">Comparison of schemes</a>.
+
+<p>
+Deriving <a href="#mjx-eqn-37">(37)</a> is a bit tricky.
+We start with rewriting the Crank-Nicolson equations as follows
 
 $$
 \begin{align}
 u^{n+1} - u^n &= \frac{1}{2}\Delta t(v^{n+1} + v^n),
-\tag{37}\\ 
-v^{n+1}  &= v^n -\frac{1}{2}\Delta t(u^{n+1} + u^n),
-\tag{38}
+\tag{38}\\ 
+v^{n+1}  &= v^n -\frac{1}{2}\Delta t\omega^2 (u^{n+1} + u^n),
+\tag{39}
 \end{align}
 $$
 
@@ -2305,52 +2386,51 @@ and add the latter at the previous time level as well:
 
 $$
 \begin{equation}
-v^{n}  = v^{n-1} -\frac{1}{2}\Delta t(u^{n} + u^{n-1})
-\tag{39}
-\end{equation}
-$$
-
-We can also rewrite <a href="#mjx-eqn-37">(37)</a> at the previous time level
-as
-
-$$
-\begin{equation}
-v^{n+1} + v^n = \frac{2}{\Delta t}(u^{n+1} - u^n)\tp
+v^{n}  = v^{n-1} -\frac{1}{2}\Delta t\omega^2(u^{n} + u^{n-1})
 \tag{40}
 \end{equation}
 $$
 
-Inserting <a href="#mjx-eqn-38">(38)</a> for \( v^{n+1} \) in
-<a href="#mjx-eqn-37">(37)</a> and
-<a href="#mjx-eqn-39">(39)</a> for \( v^{n} \) in
-<a href="#mjx-eqn-37">(37)</a> yields after some reordering:
-
-$$ u^{n+1} - n^n = \frac{1}{2}(-\frac{1}{2}\Delta t\omega^2
-(u^{n+1} + 2u^n + u^{n-1}) + v^ + v^{n-1})\tp$$
-
-Now, \( v^n + v^{n-1} \) can be eliminated by means of
-<a href="#mjx-eqn-40">(40)</a>. The result becomes
+We can also rewrite <a href="#mjx-eqn-38">(38)</a> at the previous time level
+as
 
 $$
 \begin{equation}
-u^{n+1} - 2u^n + u^{n-1} = \Delta t^2\omega^2
-\frac{1}{4}(u^{n+1} + 2u^n + u^{n-1})\tp
+v^{n} + v^{n-1} = \frac{2}{\Delta t}(u^{n} - u^{n-1})\tp
 \tag{41}
 \end{equation}
 $$
 
-We have that
+Inserting <a href="#mjx-eqn-39">(39)</a> for \( v^{n+1} \) in
+<a href="#mjx-eqn-38">(38)</a> and
+<a href="#mjx-eqn-40">(40)</a> for \( v^{n} \) in
+<a href="#mjx-eqn-38">(38)</a> yields after some reordering:
+
+$$ u^{n+1} - u^n = \frac{1}{2}(-\frac{1}{2}\Delta t\omega^2
+(u^{n+1} + 2u^n + u^{n-1}) + v^n + v^{n-1})\tp$$
+
+Now, \( v^n + v^{n-1} \) can be eliminated by means of
+<a href="#mjx-eqn-41">(41)</a>. The result becomes
+
+$$
+\begin{equation}
+u^{n+1} - 2u^n + u^{n-1} = -\Delta t^2\omega^2
+\frac{1}{4}(u^{n+1} + 2u^n + u^{n-1})\tp
+\tag{42}
+\end{equation}
+$$
+
+It can be shown that
 
 $$ \frac{1}{4}(u^{n+1} + 2u^n + u^{n-1}) \approx u^n + \Oof{\Delta t^2},$$
 
-meaning that <a href="#mjx-eqn-41">(41)</a> is an approximation to
+meaning that <a href="#mjx-eqn-42">(42)</a> is an approximation to
 the centered scheme <a href="#mjx-eqn-7">(7)</a> for the second-order ODE where
 the sampling error in the term \( \Delta t^2\omega^2 u^n \) is of the same
 order as the approximation errors in the finite differences, i.e.,
 \( \Oof{\Delta t^2} \). The Crank-Nicolson scheme written as
-<a href="#mjx-eqn-41">(41)</a> therefore has consistent sampling of all
-terms at the same time point \( t_n \). The implication is a much better
-method than the Forward and Backward Euler schemes.
+<a href="#mjx-eqn-42">(42)</a> therefore has consistent sampling of all
+terms at the same time point \( t_n \).
 
 <h2 id="vib:model2x2:compare">Comparison of schemes</h2>
 
@@ -2414,7 +2494,7 @@ That is, the phase plane plot is the curve \( (u(t),v(t)) \) parameterized
 by \( t \). Analytically, \( u=I\cos(\omega t) \) and \( v=u^{\prime}=-\omega I\sin(\omega t) \).
 The exact curve \( (u(t),v(t)) \) is therefore an ellipse, which often
 looks like a circle in a plot if the axes are automatically scaled. The
-important feature, however, is that exact curve \( (u(t),v(t)) \) is
+important feature, however, is that the exact curve \( (u(t),v(t)) \) is
 closed and repeats itself for every period. Not all numerical schemes
 are capable of doing that, meaning that the amplitude instead shrinks or
 grows with time.
@@ -2454,7 +2534,7 @@ solutions.
 <h2 id="___sec39">Runge-Kutta methods </h2>
 
 <p>
-We may run two popular standard methods for first-order ODEs, the 2nd-
+We may run two other popular standard methods for first-order ODEs, the 2nd-
 and 4th-order Runge-Kutta methods, to see how they perform. Figures
 <a href="#vib:ode1:1st:odespy:RK:phaseplane">9</a> and
 <a href="#vib:ode1:1st:odespy:RK">10</a> show the solutions with larger \( \Delta
@@ -2502,7 +2582,9 @@ is computed by a series of famous methods for first-order ODEs.
 <p>
 We may try to find exact solutions of the discrete
 equations <a href="#mjx-eqn-27">(27)</a>-<a href="#mjx-eqn-28">(28)</a>
-in the Forward Euler method. An &quot;ansatz&quot;
+in the Forward Euler method to better understand why this
+otherwise useful method has so bad performance for vibration
+ODEs. An &quot;ansatz&quot; for the solution of the discrete equations
 is
 
 $$
@@ -2512,9 +2594,9 @@ v^n &= qIA^n,
 \end{align*}
 $$
 
-where \( q \) and \( A \) are unknown numbers. We could have used a complex
+where \( q \) and \( A \) are scalars to be determined. We could have used a complex
 exponential form \( e^{i\tilde\omega n\Delta t} \) since we get
-oscillatory form, but the oscillations grow in the Forward Euler
+oscillatory solutions, but the oscillations grow in the Forward Euler
 method, so the numerical frequency \( \tilde\omega \) will be complex
 anyway (producing an exponentially growing amplitude). Therefore, it is
 easier to just work with potentially complex \( A \) and \( q \) as introduced
@@ -2546,7 +2628,7 @@ which is also convenient
 for further analysis and understanding.
 The polar form \( re^{i\theta} \) of a complex number \( x+iy \) has
 \( r=\sqrt{x^2+y^2} \) and \( \theta = \tan^{-1}(y/x) \).
-Hence, the polar form of the two values for \( A \) become
+Hence, the polar form of the two values for \( A \) becomes
 
 $$ 1 \pm \Delta t i\omega = \sqrt{1+\omega^2\Delta t^2}e^{\pm i\tan^{-1}(\omega\Delta t)}\tp$$
 
@@ -2554,7 +2636,7 @@ Now it is very easy to compute \( A^n \):
 
 $$ (1 \pm \Delta t i\omega)^n = (1+\omega^2\Delta t^2)^{n/2}e^{\pm ni\tan^{-1}(\omega\Delta t)}\tp$$
 
-Since \( \cos (\theta n) = \cos (-\theta n) \), the real part of the two
+Since \( \cos (\theta n) = \cos (-\theta n) \), the real parts of the two
 numbers become the same. We therefore continue with the solution that has
 the plus sign.
 
@@ -2569,10 +2651,10 @@ $$
 \begin{align}
 u^n & =
 I(1+\omega^2\Delta t^2)^{n/2}\cos (n\tan^{-1}(\omega\Delta t)),
-\tag{42}\\ 
+\tag{43}\\ 
 v^n &=- \omega
 I(1+\omega^2\Delta t^2)^{n/2}\sin (n\tan^{-1}(\omega\Delta t))\tp
-\tag{43}
+\tag{44}
 \end{align}
 $$
 
@@ -2609,12 +2691,12 @@ n*(p - p**<span style="color: #B452CD">3</span>/<span style="color: #B452CD">3</
 <p>
 This means that the solution for \( u^n \) can be written as
 
-$$ u^n = (1 + \half n\omega^2\Delta t^2 + \Oof(\Delta t^4))
+$$ u^n = (1 + \half n\omega^2\Delta t^2 + \Oof{\Delta t^4})
 \cos\left(\omega t - \frac{1}{3}\omega t\Delta t^2 + \Oof{\Delta t^4}\right)
 \tp$$
 
 The error in the angular frequency is of the same order as in the
-scheme <a href="#mjx-eqn-7">(7)</a> for the second-order ODE, but error
+scheme <a href="#mjx-eqn-7">(7)</a> for the second-order ODE, but the error
 in the amplitude is severe.
 
 <h1 id="vib:model1:energy">Energy considerations</h1>
@@ -2630,7 +2712,8 @@ is <em>constant</em> for all \( t \). Checking that \( E(t) \) really remains co
 brings evidence that the numerical computations are sound.
 It turns out that \( E \) is proportional to the mechanical energy
 in the system. Conservation of energy is
-much used to check numerical simulations.
+much used to check numerical simulations, so it is well invested time to
+dive into this subject.
 
 <h2 id="___sec42">Derivation of the energy expression </h2>
 
@@ -2658,7 +2741,7 @@ where we have introduced
 $$
 \begin{equation}
 E(t) = \half(u^{\prime})^2 + \half\omega^2u^2\tp
-\tag{44}
+\tag{45}
 \end{equation}
 $$
 
@@ -2697,7 +2780,7 @@ where
 $$
 \begin{equation}
 E_k(t) = \frac{1}{2}mv^2,\quad v=u^{\prime},
-\tag{45}
+\tag{46}
 \end{equation}
 $$
 
@@ -2706,7 +2789,7 @@ is the <em>kinetic energy</em> of the system, and
 $$
 \begin{equation}
 E_p(t) = {\half}ku^2
-\tag{46}
+\tag{47}
 \end{equation}
 $$
 
@@ -2715,7 +2798,7 @@ The derivation demonstrates the famous energy principle that, under
 the right physical circumstances, any
 change in the kinetic energy is due to a change in potential energy
 and vice versa. (This principle breaks down when we introduce damping
-in system, as we do in the section <a href="._vib-solarized003.html#vib:model2">Generalization: damping, nonlinear spring, and external excitation</a>.)
+in the system, as we do in the section <a href="._vib-solarized003.html#vib:model2">Generalization: damping, nonlinear spring, and external excitation</a>.)
 
 <p>
 The equation \( mu^{\prime\prime}+ku=0 \) can be divided by \( m \) and written as
@@ -2729,7 +2812,7 @@ The equation \( mu^{\prime\prime}+ku=0 \) can be divided by \( m \) and written 
 
 <p>
 Analytically, we have \( u(t)=I\cos\omega t \), if \( u(0)=I \) and \( u^{\prime}(0)=0 \),
-so we can easily check that the energy evolution and confirm that \( E(t) \)
+so we can easily check the energy evolution and confirm that \( E(t) \)
 is constant:
 
 $$ E(t) = {\half}I^2 (-\omega\sin\omega t)^2
@@ -2749,7 +2832,7 @@ $$
 e_E^n = \half\left(\frac{u^{n+1}-u^{n-1}}{2\Delta t}\right)^2
 + \half\omega^2 (u^n)^2 - E(0),
 \quad n=1,\ldots,N_t-1,
-\tag{47}
+\tag{48}
 \end{equation}
 $$
 
@@ -2758,7 +2841,7 @@ where
 $$ E(0) = {\half}V^2 + \half\omega^2I^2,$$
 
 if \( u(0)=I \) and \( u^{\prime}(0)=V \). Note that we have used
-a centered approximation to \( u^{\prime} \): \( \u^{\prime}(t_n)\approx
+a centered approximation to \( u^{\prime} \): \( u^{\prime}(t_n)\approx
 [D_{2t}u]^n \).
 
 <p>
@@ -2773,7 +2856,7 @@ all mesh points, but we are often interested in worst case deviation
 of the energy, and then the maximum value is of particular relevance.
 
 <p>
-A vectorized Python implementation takes the form
+A vectorized Python implementation of \( e_E^n \) takes the form
 
 <p>
 
@@ -2789,39 +2872,109 @@ e_E_norm = np.abs(e_E).max()
 The convergence rates of the quantity <code>e_E_norm</code> can be used for verification.
 The value of <code>e_E_norm</code> is also useful for comparing schemes
 through their ability to preserve energy. Below is a table demonstrating
-the error in total energy for various schemes. We clearly see that
-the Crank-Nicolson and 4th-order Runge-Kutta schemes are superior to
-the 2nd-order Runge-Kutta method and better compared to the Forward
-and Backward Euler schemes.
+the relative error in total energy for various schemes
+(computed by the <a href="http://tinyurl.com/nm5587k/vib/vib_undamped_odespy.py" target="_self"><tt>vib_undamped_odespy.py</tt></a>
+program). The test problem is \( u^{\prime\prime} + 4\pi^2 u =0 \)
+with \( u(0)=1 \) and \( u'(0)=0 \), so the period is 1 and
+\( E(t)\approx 4.93 \). We clearly see that
+the Crank-Nicolson and the Runge-Kutta schemes are superior to
+the Forward and Backward Euler schemes already after one period.
 
 <p>
 <table border="1">
 <thead>
-<tr><th align="center">        Method       </th> <td align="center">\( T \) </td> <td align="center">\( \Delta t \)</td> <td align="center">\( \max \left\vert e_E^n\right\vert \)</td> </tr>
+<tr><th align="center">        Method       </th> <td align="center">\( T \)</td> <td align="center">\( \Delta t \)</td> <td align="center">\( \max \left\vert e_E^n\right\vert/e_E^0 \)</td> </tr>
 </thead>
 <tbody>
-<tr><td align="left">   Forward Euler            </td> <td align="left">   \( 1 \)     </td> <td align="left">   \( 0.05 \)        </td> <td align="left">   \( 1.113\cdot 10^{2} \)                   </td> </tr>
-<tr><td align="left">   Forward Euler            </td> <td align="left">   \( 1 \)     </td> <td align="left">   \( 0.025 \)       </td> <td align="left">   \( 3.312\cdot 10^{1} \)                   </td> </tr>
-<tr><td align="left">   Backward Euler           </td> <td align="left">   \( 1 \)     </td> <td align="left">   \( 0.05 \)        </td> <td align="left">   \( 1.683\cdot 10^{1} \)                   </td> </tr>
-<tr><td align="left">   Backward Euler           </td> <td align="left">   \( 1 \)     </td> <td align="left">   \( 0.025 \)       </td> <td align="left">   \( 1.231\cdot 10^{1} \)                   </td> </tr>
-<tr><td align="left">   Runge-Kutta 2nd-order    </td> <td align="left">   \( 1 \)     </td> <td align="left">   \( 0.1 \)         </td> <td align="left">   \( 8.401 \)                               </td> </tr>
-<tr><td align="left">   Runge-Kutta 2nd-order    </td> <td align="left">   \( 1 \)     </td> <td align="left">   \( 0.05 \)        </td> <td align="left">   \( 9.637\cdot 10^{-1} \)                  </td> </tr>
-<tr><td align="left">   Crank-Nicolson           </td> <td align="left">   \( 1 \)     </td> <td align="left">   \( 0.05 \)        </td> <td align="left">   \( 9.389\cdot 10^{-1} \)                  </td> </tr>
-<tr><td align="left">   Crank-Nicolson           </td> <td align="left">   \( 1 \)     </td> <td align="left">   \( 0.025 \)       </td> <td align="left">   \( 2.411\cdot 10^{-1} \)                  </td> </tr>
-<tr><td align="left">   Runge-Kutta 4th-order    </td> <td align="left">   \( 1 \)     </td> <td align="left">   \( 0.1 \)         </td> <td align="left">   \( 2.387 \)                               </td> </tr>
-<tr><td align="left">   Runge-Kutta 4th-order    </td> <td align="left">   \( 1 \)     </td> <td align="left">   \( 0.05 \)        </td> <td align="left">   \( 6.476\cdot 10^{-1} \)                  </td> </tr>
-<tr><td align="left">   Crank-Nicolson           </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.1 \)         </td> <td align="left">   \( 3.389 \)                               </td> </tr>
-<tr><td align="left">   Crank-Nicolson           </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.05 \)        </td> <td align="left">   \( 9.389\cdot 10^{-1} \)                  </td> </tr>
-<tr><td align="left">   Runge-Kutta 4th-order    </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.1 \)         </td> <td align="left">   \( 3.686 \)                               </td> </tr>
-<tr><td align="left">   Runge-Kutta 4th-order    </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.05 \)        </td> <td align="left">   \( 6.928\cdot 10^{-1} \)                  </td> </tr>
+<tr><td align="left">   Forward Euler            </td> <td align="left">   \( 1 \)    </td> <td align="left">   \( 0.025 \)       </td> <td align="left">   \( 1.678\cdot 10^{0} \)                         </td> </tr>
+<tr><td align="left">   Backward Euler           </td> <td align="left">   \( 1 \)    </td> <td align="left">   \( 0.025 \)       </td> <td align="left">   \( 6.235\cdot 10^{-1} \)                        </td> </tr>
+<tr><td align="left">   Crank-Nicolson           </td> <td align="left">   \( 1 \)    </td> <td align="left">   \( 0.025 \)       </td> <td align="left">   \( 1.221\cdot 10^{-2} \)                        </td> </tr>
+<tr><td align="left">   Runge-Kutta 2nd-order    </td> <td align="left">   \( 1 \)    </td> <td align="left">   \( 0.025 \)       </td> <td align="left">   \( 6.076\cdot 10^{-3} \)                        </td> </tr>
+<tr><td align="left">   Runge-Kutta 4th-order    </td> <td align="left">   \( 1 \)    </td> <td align="left">   \( 0.025 \)       </td> <td align="left">   \( 8.214\cdot 10^{-3} \)                        </td> </tr>
 </tbody>
 </table>
 <p>
+However, after 10 periods, the picture is much more dramatic:
 
-<!-- begin inline comment -->
-<font color="red">(<b>hpl 6</b>: The error reductions are not directly in accordance with the order of the schemes, probably caused by \( \Delta t \) not being in the asympotic regime.)</font>
-<!-- end inline comment -->
+<p>
+<table border="1">
+<thead>
+<tr><th align="center">        Method       </th> <td align="center">\( T \) </td> <td align="center">\( \Delta t \)</td> <td align="center">\( \max \left\vert e_E^n\right\vert/e_E^0 \)</td> </tr>
+</thead>
+<tbody>
+<tr><td align="left">   Forward Euler            </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.025 \)       </td> <td align="left">   \( 1.788\cdot 10^{4} \)                         </td> </tr>
+<tr><td align="left">   Backward Euler           </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.025 \)       </td> <td align="left">   \( 1.000\cdot 10^{0} \)                         </td> </tr>
+<tr><td align="left">   Crank-Nicolson           </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.025 \)       </td> <td align="left">   \( 1.221\cdot 10^{-2} \)                        </td> </tr>
+<tr><td align="left">   Runge-Kutta 2nd-order    </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.025 \)       </td> <td align="left">   \( 6.250\cdot 10^{-2} \)                        </td> </tr>
+<tr><td align="left">   Runge-Kutta 4th-order    </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.025 \)       </td> <td align="left">   \( 8.288\cdot 10^{-3} \)                        </td> </tr>
+</tbody>
+</table>
+<p>
+The Runge-Kutta and Crank-Nicolson methods hardly change their
+energy error with \( T \), while the error in the Forward Euler method grows
+to huge levels and a relative error of 1 in the Backward Euler method
+points to \( E(t)\rightarrow 0 \) as \( t \) grows large.
 
+<p>
+Running multiple values of \( \Delta t \), we can get some insight into
+the convergence of the energy error:
+
+<p>
+<table border="1">
+<thead>
+<tr><th align="center">        Method       </th> <td align="center">\( T \) </td> <td align="center">\( \Delta t \)</td> <td align="center">\( \max \left\vert e_E^n\right\vert/e_E^0 \)</td> </tr>
+</thead>
+<tbody>
+<tr><td align="left">   Forward Euler            </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.05 \)        </td> <td align="left">   \( 1.120\cdot 10^{8} \)                         </td> </tr>
+<tr><td align="left">   Forward Euler            </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.025 \)       </td> <td align="left">   \( 1.788\cdot 10^{4} \)                         </td> </tr>
+<tr><td align="left">   Forward Euler            </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.0125 \)      </td> <td align="left">   \( 1.374\cdot 10^{2} \)                         </td> </tr>
+<tr><td align="left">   Backward Euler           </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.05 \)        </td> <td align="left">   \( 1.000\cdot 10^{0} \)                         </td> </tr>
+<tr><td align="left">   Backward Euler           </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.025 \)       </td> <td align="left">   \( 1.000\cdot 10^{0} \)                         </td> </tr>
+<tr><td align="left">   Backward Euler           </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.0125 \)      </td> <td align="left">   \( 9.928\cdot 10^{-1} \)                        </td> </tr>
+<tr><td align="left">   Crank-Nicolson           </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.05 \)        </td> <td align="left">   \( 4.756\cdot 10^{-2} \)                        </td> </tr>
+<tr><td align="left">   Crank-Nicolson           </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.025 \)       </td> <td align="left">   \( 1.221\cdot 10^{-2} \)                        </td> </tr>
+<tr><td align="left">   Crank-Nicolson           </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.0125 \)      </td> <td align="left">   \( 3.125\cdot 10^{-3} \)                        </td> </tr>
+<tr><td align="left">   Runge-Kutta 2nd-order    </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.05 \)        </td> <td align="left">   \( 6.152\cdot 10^{-1} \)                        </td> </tr>
+<tr><td align="left">   Runge-Kutta 2nd-order    </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.025 \)       </td> <td align="left">   \( 6.250\cdot 10^{-2} \)                        </td> </tr>
+<tr><td align="left">   Runge-Kutta 2nd-order    </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.0125 \)      </td> <td align="left">   \( 7.631\cdot 10^{-3} \)                        </td> </tr>
+<tr><td align="left">   Runge-Kutta 4th-order    </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.05 \)        </td> <td align="left">   \( 3.510\cdot 10^{-2} \)                        </td> </tr>
+<tr><td align="left">   Runge-Kutta 4th-order    </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.025 \)       </td> <td align="left">   \( 8.288\cdot 10^{-3} \)                        </td> </tr>
+<tr><td align="left">   Runge-Kutta 4th-order    </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.0125 \)      </td> <td align="left">   \( 2.058\cdot 10^{-3} \)                        </td> </tr>
+</tbody>
+</table>
+<p>
+A striking fact from this table is that the error of the Forward Euler
+method is reduced proportional to \( \Delta t \), while that for the
+Crank-Nicolson has a reduction proportional to \( \Delta t^2 \) (we cannot
+say anything for the Backward Euler method). However, for the RK2
+methods, halving \( \Delta t \) reduces the error by almost a factor of 10
+(!), and for the RK4 method the reduction seems proportional to
+\( \Delta t^2 \) only (and the trend is confirmed by running smaller time
+steps, so for \( \Delta t = 3.9\cdot 10^{-4} \) the relative error of RK2
+is a factor 10 smaller than that of RK4!).
+
+<p>
+What is the corresponding relative error in energy of the centered
+scheme <a href="#mjx-eqn-7">(7)</a> for the second-order ODE \( u^{\prime\prime}
++\omega^2 u=0 \)? We know that the solution has exact amplitude:
+\( u^n = I\cos(\tilde\omega t_n) \). Using that
+
+$$ u^n=e^{i\tilde\omega t_n}:\quad [D_{2t} u]^n = u^n\frac{1}{\Delta t}i\sin{(\tilde\omega\Delta t)},$$
+
+we get
+
+$$
+e_E^n = \frac{1}{2}(-\Delta t^{-2}\sin^2(\tilde\omega\Delta t)
++ \frac{1}{2}\omega^2)\cos(\tilde\omega t_n)
+= ((\tilde\omega - \omega)^2 - \frac{1}{3}\tilde\omega^4\Delta t^2
+ + \Oof{\Delta t^4})\frac{1}{2}\cos(\tilde\omega t_n)\tp
+ $$
+
+<p>
+
+<!-- code=text typeset with pygments style "perldoc" -->
+<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%">Series for sin^2(x): x**2 - x**4/3 + 2*x**6/45 + O(x**8)
+</pre></div>
 <p>
 <!-- Should build a verification test on the energy error. -->
 
@@ -2832,8 +2985,8 @@ and Backward Euler schemes.
 <h1 id="vib:model2x2:EulerCromer">The Euler-Cromer method</h1>
 
 <p>
-While the 4th-order Runge-Kutta method and a
-Crank-Nicolson scheme work well for vibration equation modeled as a
+While the Runge-Kutta methods and the
+Crank-Nicolson scheme work well for the vibration equation modeled as a
 first-order ODE system,
 both were inferior to the straightforward centered
 difference scheme for the second-order equation
@@ -2851,10 +3004,10 @@ notation this is stated as
 $$
 \begin{align}
 \lbrack D_t^+u &= v\rbrack^n,
-\tag{48}\\ 
+\tag{49}\\ 
 \lbrack D_t^-v &= -\omega u\rbrack^{n+1}
 \tp
-\tag{49}
+\tag{50}
 \end{align}
 $$
 
@@ -2862,17 +3015,17 @@ We can write out the formulas and collect the unknowns on the left-hand side:
 $$
 \begin{align}
 u^{n+1} &= u^n + \Delta t v^n,
-\tag{50}\\ 
+\tag{51}\\ 
 v^{n+1} &= v^n -\Delta t \omega^2u^{n+1}
-\tag{51}
+\tag{52}
 \tp
 \end{align}
 $$
 
 We realize that after \( u^{n+1} \) has been computed from
-<a href="#mjx-eqn-50">(50)</a>, it may be used directly
+<a href="#mjx-eqn-51">(51)</a>, it may be used directly
 in
-<a href="#mjx-eqn-51">(51)</a> to compute \( v^{n+1} \).
+<a href="#mjx-eqn-52">(52)</a> to compute \( v^{n+1} \).
 
 <p>
 In physics, it is more common to update the \( v \) equation first, with
@@ -2882,14 +3035,14 @@ difference that applies the most recently computed \( v \) value:
 $$
 \begin{align}
 v^{n+1} &= v^n -\Delta t \omega^2u^{n},
-\tag{52}\\ 
+\tag{53}\\ 
 u^{n+1} &= u^n + \Delta t v^{n+1}\tp
-\tag{53}
+\tag{54}
 \end{align}
 $$
 
 The advantage of ordering the ODEs as in
-<a href="#mjx-eqn-52">(52)</a>-<a href="#mjx-eqn-53">(53)</a>
+<a href="#mjx-eqn-53">(53)</a>-<a href="#mjx-eqn-54">(54)</a>
 becomes evident
 when consider complicated models. Such models are included if
 we write our vibration ODE more generally as
@@ -2921,11 +3074,11 @@ demand \( u^n{+1} \) and \( v^{n+1} \) values in \( g \).
 <p>
 <!-- Despite using a backward difference, there is no need to solve a coupled -->
 <!-- system for \( u^{n+1} \) and \( v^{n+1} \) because the structure of the ODEs -->
-<!-- allows <a href="#mjx-eqn-50">(50)</a> -->
+<!-- allows <a href="#mjx-eqn-51">(51)</a> -->
 
 <p>
 The scheme
-<a href="#mjx-eqn-52">(52)</a>-<a href="#mjx-eqn-53">(53)</a>
+<a href="#mjx-eqn-53">(53)</a>-<a href="#mjx-eqn-54">(54)</a>
 goes under several names: forward-backward scheme, <a href="http://en.wikipedia.org/wiki/Semi-implicit_Euler_method" target="_self">semi-implicit Euler method</a>, semi-explicit Euler,
 symplectic Euler,
 Newton-Stormer-Verlet,
@@ -2941,28 +3094,28 @@ is \( \Oof{\Delta t^2} \). This is explained below.
 
 <p>
 We may eliminate the \( v^n \) variable from
-<a href="#mjx-eqn-50">(50)</a>-<a href="#mjx-eqn-51">(51)</a>
+<a href="#mjx-eqn-51">(51)</a>-<a href="#mjx-eqn-52">(52)</a>
 or
-<a href="#mjx-eqn-52">(52)</a>-<a href="#mjx-eqn-53">(53)</a>.
-The \( v^{n+1} \) term in <a href="#mjx-eqn-52">(52)</a> can
-be eliminated from <a href="#mjx-eqn-53">(53)</a>:
+<a href="#mjx-eqn-53">(53)</a>-<a href="#mjx-eqn-54">(54)</a>.
+The \( v^{n+1} \) term in <a href="#mjx-eqn-53">(53)</a> can
+be eliminated from <a href="#mjx-eqn-54">(54)</a>:
 $$
 \begin{equation}
 u^{n+1} = u^n + \Delta t (v^n - \omega^2\Delta t^2 u^n)\tp
-\tag{54}
+\tag{55}
 \end{equation}
 $$
 
 The \( v^{n} \) quantity can be expressed by \( u^n \) and \( u^{n-1} \)
-using <a href="#mjx-eqn-53">(53)</a>:
+using <a href="#mjx-eqn-54">(54)</a>:
 $$ v^{n} = \frac{u^n - u^{n-1}}{\Delta t},
 $$
 
-and when this is inserted in <a href="#mjx-eqn-54">(54)</a> we get
+and when this is inserted in <a href="#mjx-eqn-55">(55)</a> we get
 $$
 \begin{equation}
 u^{n+1} = 2u^n - u^{n-1} - \Delta t^2 \omega^2u^{n},
-\tag{55}
+\tag{56}
 \end{equation}
 $$
 
@@ -2982,7 +3135,7 @@ Although the Euler-Cromer scheme and the method <a href="#mjx-eqn-7">(7)</a> are
 equivalent, there could be differences in the way they handle
 the initial conditions. Let is look into this topic.
 The initial condition \( u^{\prime}=0 \) means \( u^{\prime}=v=0 \).  From
-<a href="#mjx-eqn-53">(53)</a> we get \( v^1=-\omega^2 u^0 \)
+<a href="#mjx-eqn-54">(54)</a> we get \( v^1=-\omega^2 u^0 \)
 and \( u^1=u^0 - \omega^2\Delta t^2 u^0 \). When using
 a centered approximation of \( u^{\prime}(0)=0 \) combined with the
 discretization <a href="#mjx-eqn-7">(7)</a> of the second-order ODE, we
@@ -2999,13 +3152,13 @@ If we approximate \( u^{\prime}(0)=0 \) by a backward difference,
 with <a href="#mjx-eqn-7">(7)</a>, it results in
 \( u^1=u^0 - \omega^2\Delta t^2 u^0 \). This means that
 the Euler-Cromer method based on
-<a href="#mjx-eqn-53">(53)</a>-<a href="#mjx-eqn-52">(52)</a>
+<a href="#mjx-eqn-54">(54)</a>-<a href="#mjx-eqn-53">(53)</a>
 corresponds to using only a first-order approximation to the initial condition
 in the method from the section <a href="#vib:ode1:fdm">A centered finite difference scheme</a>.
 
 <p>
 Correspondingly, using the formulation
-<a href="#mjx-eqn-50">(50)</a>-<a href="#mjx-eqn-51">(51)</a>
+<a href="#mjx-eqn-51">(51)</a>-<a href="#mjx-eqn-52">(52)</a>
 with \( v^n=0 \) leads to \( u^1=u^0 \), which can be interpreted as using
 a forward difference approximation for the initial condition \( u^{\prime}(0)=0 \).
 Both Euler-Cromer formulations lead to slightly different values for
@@ -3017,7 +3170,7 @@ as the overall scheme.
 
 <p>
 The function below, found in <a href="http://tinyurl.com/nm5587k/vib/vib_EulerCromer.py" target="_self"><tt>vib_EulerCromer.py</tt></a> implements the Euler-Cromer scheme
-<a href="#mjx-eqn-52">(52)</a>-<a href="#mjx-eqn-53">(53)</a>:
+<a href="#mjx-eqn-53">(53)</a>-<a href="#mjx-eqn-54">(54)</a>:
 
 <p>
 
@@ -3087,7 +3240,7 @@ for the second-oder ODE, arising from the mismatch in the first time level.
 <p>
 
 <!-- begin inline comment -->
-<font color="red">(<b>hpl 7</b>: Odespy's Euler-Cromer, but it needs more work with the example code.)</font>
+<font color="red">(<b>hpl 3</b>: Odespy's Euler-Cromer, but it needs more work with the example code.)</font>
 <!-- end inline comment -->
 
 <p>
@@ -3134,16 +3287,16 @@ To summarize, we have the scheme
 $$
 \begin{align}
 u^{n+1} &= u^n + v^n\Delta t - \frac{1}{2}\Delta^2\omega^2u^n
-\tag{56} \\ 
+\tag{57} \\ 
 v^{n+1} &= v^n -\frac{1}{2}\Delta t\omega^2 (u^n + u^{n+1}),
-\tag{57}
+\tag{58}
 \end{align}
 $$
 
 known as the <em>velocity Verlet</em> algorithm.
 Observe that this scheme is explicit since \( u^{n+1} \) in
-<a href="#mjx-eqn-57">(57)</a> is already computed
-from <a href="#mjx-eqn-56">(56)</a>.
+<a href="#mjx-eqn-58">(58)</a> is already computed
+from <a href="#mjx-eqn-57">(57)</a>.
 
 <p>
 The algorithm can be straightforwardly implemented as shown below (the
@@ -3183,7 +3336,7 @@ is <code>False</code>), but we may return <code>v</code> along with <code>u</cod
 
 <p>
 The error in the Taylor series expansion behind
-<a href="#mjx-eqn-56">(56)</a> is \( \Oof{\Delta t^3} \), while the error
+<a href="#mjx-eqn-57">(57)</a> is \( \Oof{\Delta t^3} \), while the error
 in the central difference for \( v \) is \( \Oof{\Delta t^2} \).  The overall
 error is then no better than \( \Oof{\Delta t^2} \), which can be verified
 empirically using the <code>convergence_rates</code> function from
