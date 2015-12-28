@@ -36,12 +36,13 @@ The solution at all spatial points at a new time level is stored in an
 array `u` of length $N_x+1$. We need to decide what do to with
 this solution, e.g., visualize the curve, analyze the values, or write
 the array to file for later use. The decision about what to do is left to
-the user in the form of a user-suppled supplied function
+the user in the form of a user-suppled function
+
 !bc pycod
 user_action(u, x, t, n)
 !ec
 where `u` is the solution at the spatial points `x` at time `t[n]`.
-The `user_action` function is call from the solver at each time level `n`.
+The `user_action` function is called from the solver at each time level `n`.
 
 If the user wants to plot the solution or store the solution at a
 time point, she needs to write such a function and take appropriate
@@ -215,7 +216,7 @@ notation `frame_*.png` expands to the correct set of files.
 ## No longer in Ubuntu
 # #endif
 
-The `viz` function creates a `ffmpeg` or `avconv` command
+The `viz` function creates an `ffmpeg` or `avconv` command
 with the proper arguments for each of the formats Flash, MP4, WebM,
 and Ogg. The task is greatly simplified by having a
 `codec2ext` dictionary for mapping
@@ -228,7 +229,7 @@ Only
 two formats are actually needed to ensure that all browsers can
 successfully play the video: MP4 and WebM.
 
-Some animations consisting of a large number of plot files may not
+Some animations having a large number of plot files may not
 be properly combined into a video using `ffmpeg` or `avconv`.
 A method that always works is to play the PNG files as an animation
 in a browser using JavaScript code in an HTML file.
@@ -295,7 +296,7 @@ label{wave:pde1:guitar:I}
 We choose $L=75$ cm, $x_0=0.8L$, $a=5$ mm, and a time frequency
 $\nu = 440$ Hz. The relation between the wave speed $c$ and $\nu$ is
 $c=\nu\lambda$, where $\lambda$ is the wavelength, taken as $2L$ because
-the longest wave on the string form half a wavelength. There is no
+the longest wave on the string forms half a wavelength. There is no
 external force, so $f=0$, and the string is at rest initially so
 that $V=0$.
 
@@ -332,8 +333,13 @@ the mathematical problem we can often reduce the need to estimate
 physical parameters dramatically. The scaling technique
 consists of introducing new
 independent and dependent variables, with the aim that the absolute
-value of these is not very large or small, but preferably around unity
-in size. We introduce the dimensionless variables
+values of these lie in $[0,1]$. We introduce the dimensionless variables
+(details are found in
+ref[Section ref{sec:scale:wave:bc_u0}][ in cite{Langtangen_scaling}][the section
+"Homogeneous Dirichlet conditions in 1D":
+"http://hplgit.github.io/scaling-book/doc/pub/book/html/._scaling-book007.html#sec:scale:wave:bc_u0"
+in the book "Scaling of differential equations":
+"http://tinyurl.com/qfjgxmf/web" cite{Langtangen_scaling}]
 
 !bt
 \[ \bar x = \frac{x}{L},\quad \bar t = \frac{c}{L}t,\quad
@@ -345,26 +351,36 @@ Here, $L$ is a typical length scale, e.g., the length of the domain,
 and $a$ is a typical size of $u$, e.g., determined from the
 initial condition: $a=\max_x|I(x)|$.
 
-Inserting these new variables in the PDE and noting that
+We get by the chain rule that
 
 !bt
-\[ \frac{\partial u}{\partial t} = \frac{aL}{c}\frac{\partial\bar u}{\partial\bar t},\]
+\[ \frac{\partial u}{\partial t} =
+\frac{\partial}{\partial\bar t}\left(\frac{\bar u}{a}\right)
+\frac{d\bar t}{dt} =
+\frac{\partial\bar u}{\partial\bar t}\frac{1}{a}\frac{c}{L}
+= \frac{ac}{L}\frac{\partial\bar u}{\partial\bar t}\tp\]
 !et
-by the chain rule, one gets
+Similarly,
 
 !bt
-\[ \frac{a^2L^2}{c^2}\frac{\partial^2\bar u}{\partial\bar t^2}
-= \frac{a^2c^2}{L^2}\frac{\partial^2\bar u}{\partial\bar x^2},\]
+\[ \frac{\partial u}{\partial x} =
+= \frac{a}{L}\frac{\partial\bar u}{\partial\bar x}\tp\]
 !et
-in case $f=0$.
+Inserting the dimensionless variables in the PDE gives, in case $f=0$,
+
+!bt
+\[ \frac{a^2c^2}{L^2}\frac{\partial^2\bar u}{\partial\bar t^2}
+= \frac{a^2c^2}{L^2}\frac{\partial^2\bar u}{\partial\bar x^2}\tp\]
+!et
 Dropping the bars, we arrive at the scaled PDE
 
 !bt
 \begin{equation}
 \frac{\partial^2 u}{\partial t^2} = \frac{\partial^2 u}{\partial x^2},
+\quad x\in (0,1),\ t\in (0,cT/L),
 \end{equation}
 !et
-which has not parameter $c^2$ anymore. The initial conditions are scaled
+which has no parameter $c^2$ anymore. The initial conditions are scaled
 as
 
 !bt
@@ -404,8 +420,8 @@ set to the desired number of periods times 2.
 
 Why the dimensionless period is 2 can be explained by the following
 reasoning.
-Suppose as $u$ behaves as $\cos (\omega t)$ in time in variables
-with dimension. The corresponding period is then $P=2\pi/\omega$, but
+Suppose that $u$ behaves as $\cos (\omega t)$ in time in the original
+problem with dimensions. The corresponding period is then $P=2\pi/\omega$, but
 we need to estimate $\omega$. A typical solution of the wave
 equation is $u(x,t)=A\cos(kx)\cos(\omega t)$, where $A$ is an amplitude
 and $k$ is related to the wave length $\lambda$ in space: $\lambda = 2\pi/k$.
@@ -523,7 +539,7 @@ u2[1:n-1] = u[0:n-2] - 2*u[1:n-1] + u[2:n]   # alternative
 The first expression's right-hand side is realized by the
 following steps, involving temporary arrays with intermediate results,
 since each array operation can only involve one or two arrays.
-The `numpy` package performs the first line above in
+The `numpy` package performs (behind the scenes) the first line above in
 four steps:
 
 !bc
@@ -583,7 +599,7 @@ version becomes
 !bc pycod
 u2[1:-1] = u[:-2] - 2*u[1:-1] + u[2:] + f(x[1:-1])
 !ec
-Obviously, `f` must be able to take an array as argument for `f[x[1:-1])`
+Obviously, `f` must be able to take an array as argument for `f(x[1:-1])`
 to make sense.
 
 ===== Finite difference schemes expressed as slices =====
@@ -678,10 +694,13 @@ for our efficiency measurements.
 
 One solution is to copy the `viz` code from `wave1D_u0` into
 `wave1D_u0v.py` and add a `version` argument to the `solver_function` call.
-Taking into account how much quite complicated animation code we
+Taking into account how much animation code we
 then duplicate, this is not a good idea.
-Introducing the `version` argument in `wave1D_u0.viz` is not
-a good solution since `version` has no meaning in that file.
+Alternatively,
+introducing the `version` argument in `wave1D_u0.viz`, so that this function
+can be imported into `wave1D_u0v.py`, is not
+a good solution either, since `version` has no meaning in that file.
+We need better ideas!
 
 === Solution 1 ===
 
@@ -697,7 +716,7 @@ calls `wave1D_u0.viz`:
 
 === Solution 2 ===
 
-There is a more advanced, fancier solution featuring a very useful trick:
+There is a more advanced and fancier solution featuring a very useful trick:
 we can make a new function that will always call `wave1D_u0v.solver`
 with `version='scalar'`. The `functools.partial` function from
 standard Python takes a function `func` as argument and
@@ -948,7 +967,7 @@ Redo Exercise ref{wave:exer:store:list} using a class for the
 user action function. That is, define a class `Action` where
 the `all_u` list is an attribute, and implement the user action
 function as a method (the special method `__call__` is a natural
-choice). The class versions avoids that the user action function
+choice). The class versions avoid that the user action function
 depends on parameters defined outside the function (such as `all_u`
 in Exercise ref{wave:exer:store:list}).
 
@@ -1007,8 +1026,8 @@ have
 \[ F_i = \int_{x_0}^{x_i} f(x) dx\tp\]
 !et
 The exact integral of a piecewise linear function $f(x)$ is
-given by the Trapezoidal rule. S
-how that if $F_{i}$ is already computed, we can find $F_{i+1}$
+given by the Trapezoidal rule. Show
+that if $F_{i}$ is already computed, we can find $F_{i+1}$
 from
 
 !bt

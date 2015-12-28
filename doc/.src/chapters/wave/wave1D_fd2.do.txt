@@ -75,9 +75,9 @@ we have that
 !bt
 \[
 \left.\frac{\partial}{\partial n}\right\vert_{x=L} =
-\frac{\partial}{\partial x},\quad
+\left.\frac{\partial}{\partial x}\right\vert_{x=L},\quad
 \left.\frac{\partial}{\partial n}\right\vert_{x=0} = -
-\frac{\partial}{\partial x}\tp
+\left.\frac{\partial}{\partial x}\right\vert_{x=0}\tp
 \]
 !et
 
@@ -216,7 +216,7 @@ boundary conditions $u_x = 0$ at $x=0$ and $x=L$.
 It would be nice to modify the `test_quadratic` test case from the
 `wave1D_u0.py` with Dirichlet conditions, described in Section
 ref{wave:pde1:impl:vec:verify:quadratic}. However, the Neumann
-conditions requires the polynomial variation in $x$ direction to
+conditions require the polynomial variation in the $x$ direction to
 be of third degree, which causes challenging problems when
 designing a test where the numerical solution is known exactly.
 Exercise ref{wave:fd2:exer:verify:cubic} outlines ideas and code
@@ -372,7 +372,7 @@ label{wave:pde1:verify}
 
 How can we test that the Neumann conditions are correctly implemented?
 The `solver` function in the `wave1D_dn.py` program described in the
-box above accepts Dirichlet and Neumann conditions at $x=0$ and $x=L$.
+box above accepts Dirichlet or Neumann conditions at $x=0$ and $x=L$.
 It is tempting to apply a quadratic solution as described in
 Sections ref{wave:pde2:fd} and ref{wave:pde1:impl:verify:quadratic},
 but it turns out that this solution is no longer an exact solution
@@ -712,7 +712,7 @@ $[D_x(q D_x u)]^n_i$ with harmonic averaging of $q$ yields
 a better solution than arithmetic averaging or
 (ref{wave:pde2:var:c:chainrule_scheme}).
 In the literature, the discretization $[D_x(q D_x u)]^n_i$ totally
-dominant and very few mention the possibility of
+dominants and very few mention the possibility of
 (ref{wave:pde2:var:c:chainrule_scheme}).
 !ewarning
 
@@ -836,7 +836,8 @@ discretized as
 
 !bt
 \[ [D_{2x} u]^n_i =
-\frac{u_{i+1}^{n} - u_{i-1}^n}{2\Delta x} = 0\quad u_{i+1}^n = u_{i-1}^n,
+\frac{u_{i+1}^{n} - u_{i-1}^n}{2\Delta x} = 0\quad\Rightarrow\quad
+u_{i+1}^n = u_{i-1}^n,
 \]
 !et
 for $i=N_x$. Using the scheme (ref{wave:pde2:var:c:scheme:impl})
@@ -848,11 +849,11 @@ u^{n+1}_i &= - u_i^{n-1}  + 2u_i^n + \nonumber\\
 &\quad \left(\frac{\Delta t}{\Delta x}\right)^2 \left(
 q_{i+\half}(u_{i-1}^n - u_{i}^n) -
 q_{i-\half}(u_{i}^n - u_{i-1}^n)\right)
-+ \Delta t^2 f^n_i
-label{wave:pde2:var:c:scheme:impl:Neumann0}\\
++ \Delta t^2 f^n_i\\
 &= - u_i^{n-1}  + 2u_i^n + \left(\frac{\Delta t}{\Delta x}\right)^2
 (q_{i+\half} + q_{i-\half})(u_{i-1}^n - u_{i}^n) +
-\Delta t^2 f^n_i\\
+\Delta t^2 f^n_i
+label{wave:pde2:var:c:scheme:impl:Neumann0}\\
 &\approx - u_i^{n-1}  + 2u_i^n + \left(\frac{\Delta t}{\Delta x}\right)^2
 2q_{i}(u_{i-1}^n - u_{i}^n) + \Delta t^2 f^n_i
 \tp
@@ -989,7 +990,7 @@ A natural scheme for (ref{wave:pde2:var:c:pde2}) is
 \end{equation}
 !et
 We realize that the $\varrho$ coefficient poses no particular
-difficulty, since $\varrho$ enters the formula just a simple factor
+difficulty, since $\varrho$ enters the formula just as a simple factor
 in front of a derivative. There is hence no need for any averaging
 of $\varrho$. Often, $\varrho$ will be moved to the right-hand side,
 also without any difficulty:
@@ -1086,7 +1087,7 @@ u[i] = U_L(t[n+1])
 The `solver` function is a natural extension of the simplest
 `solver` function in the initial `wave1D_u0.py` program,
 extended with Neumann boundary conditions ($u_x=0$),
-a the time-varying Dirichlet conditions, as well as
+time-varying Dirichlet conditions, as well as
 a variable wave velocity. The different code segments needed
 to make these extensions have been shown and commented upon in the
 preceding text. We refer to the `solver` function in the
@@ -1285,7 +1286,7 @@ $f(x_0+h) = f(x_0-h)$.
 !esubex
 
 !bsubex
-Perform simulations of the complete wave problem from
+Perform simulations of the complete wave problem
 on $[-L,L]$. Thereafter, utilize the
 symmetry of the solution and run a simulation
 in half of the domain $[0,L]$, using a boundary condition
@@ -1473,7 +1474,7 @@ normal to the boundary, which is needed in generalizations of
 the open boundary conditions in higher dimensions. Test the effect
 of having a slightly wrong wave velocity in
 (ref{wave:app:exer:radiationBC:eq:op:1storder}).
-Make a movies to illustrate what happens.
+Make movies to illustrate what happens.
 !esubex
 
 !bremarks
@@ -1496,7 +1497,7 @@ idx{boundary conditions!periodic}
 
 It is frequently of interest to follow wave motion over large
 distances and long times. A straightforward approach is to
-work with a very large domain, but might lead to a lot of
+work with a very large domain, but that might lead to a lot of
 computations in areas of the domain where the waves cannot
 be noticed. A more efficient approach is to let a right-going
 wave out of the domain and at the same time let it enter
@@ -1741,7 +1742,7 @@ solution $u$ of the discrete PDE problem.
 
 !bhint
 To turn a `sympy` expression `e`, depending on a series of
-symbols, say `x`, `t`, `dx`, `dt`, `L`, and `c`, into plain
+symbols, say `x`, `t`, `dx`, `dt`, `L`, and `c`, into a plain
 Python function `e_exact(x,t,L,dx,dt,c)`, one can write
 
 !bc pycod
@@ -1767,7 +1768,7 @@ condition, we seek $u$ such that
 since this $u$ will fit the discrete boundary condition.
 Assuming $u=T(t)\sum_{j=0}^3a_jx^j$, we can use the above equation to
 determine the coefficients $a_1,a_2,a_3$. A value, e.g., 1 can be used for
-$a_0$. The following `sumpy` code computes this $u$:
+$a_0$. The following `sympy` code computes this $u$:
 
 !bc pycod
 def test_cubic2():
