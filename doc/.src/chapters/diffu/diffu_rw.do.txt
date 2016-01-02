@@ -34,35 +34,103 @@ algorithm makes it particularly attractive for solving diffusion
 equations on massively parallel computers.
 
 ===== Random walk in 1D =====
+label{diffu:randomwalk:1D}
 
 Imagine that we have some particles that perform random moves, either
 to the right or to the left. We may flip a coin to decide the movement
 of each particle, say head implies movement to the right and tail
 means movement to the left. Each move is one unit length.  Physicists
 use the term *random walk* for this type of movement.
+The movement is also known as "drunkard's walk":
+"https://en.wikipedia.org/wiki/The_Drunkard%27s_Walk".
 You may try this yourself: flip the coin and make one step to the left
 or right, and repeat this process.
 
-The movement is also known as "drunkard's walk":
-"https://en.wikipedia.org/wiki/The_Drunkard%27s_Walk". You may have
-experienced this after a very wet night on a pub: you step forward and
-backward in a random fashion.  Since these movements on average make
-you stand still, and since you know that you normally reach home
-within reasonable time, the model is not good for a real walk. We need
-to add a *drift* to the walk, so the probability is greater for going
-forward than backward. This is an easy adjustment, see Exercise
-ref{sec:random:ex1}. What may come as a surprise is the following
-fact: even when there is equal probability of going forward and
-backward, one can prove mathematically that the drunkard will always
-reach his home. Or more precisely, he will get home in finite time
-(``almost surely'' as the mathematicians must add to this statement).
-Exercise ref{sec:random:ex3} asks you to experiment with this fact.
-For many practical purposes, ``finite time'' does not help much as
-there might be more steps involved than the time it takes to get
-sufficiently sober to remove the completely random component of the
-walk.
+We introduce the symbol $N$ for the number of steps in a random walk.
+Figure ref{diffu:randomwalk:1D:fig:ensamble} shows four different
+random walks with $N=200$.
+
+FIGURE: [fig-diffu/random_walk_ensamble4, width=800 frac=1] Ensamble of 4 random walks, each with 200 steps. label{diffu:randomwalk:1D:fig:ensamble}
+
+
+===== Statistical considerations =====
+label{diffu:randomwalk:1D:EVar}
+
+Let $S_k$ be the stochastic variable representing a step to the left
+or to the right in step number $k$. We have that $S_k=-1$ with
+probability $p$ and $S_k=1$ with probability $q=1-p$. The variable
+$S_k$ is known as a "Bernoulli variable":
+"https://en.wikipedia.org/wiki/Bernoulli_distribution". The
+expectation of $S_k$ is
+
+!bt
+\[ \E{S_k} = p\cdot (-1) + q\cdot 1 = 1 - 2p,\]
+!et
+and the variance is
+
+!bt
+\[ \Var{S_k} = \E{S_k^2} - \E{S_k}^2 = 1 - (1-2p)^2 = 4p(1-p)\tp\]
+
+The position after $K$ steps is another stochastic variable
+
+!bt
+\[ X_K = \sum_{k=0}^{K-1} S_k\tp\]
+!et
+The expected position is
+
+!bt
+\[ \E{X_K} = \E{\sum_{k=0}^{K-1} S_k} = \sum_{k=0}^{K-1} \E{S_k}= K(1-2p)\tp\]
+!et
+All the $S_k$ variables are independent. The variance therefore becomes
+
+!bt
+\[ \Var{X_K} = \Var{\sum_{k=0}^{K-1} S_k} = \sum_{k=0}^{K-1} \Var{S_k}=
+K4p(1-p)\tp\]
+!et
+We see that $\Var{X_K}$ is proportional with the number of steps $K$.
+For the very important case $p=q=\half$, $\E{X_K}=0$ and $\Var{X_K}=K$.
+
+We can also easily find the probablility distribution of $X_K$ because
+the random walk is a binomial process ($K$ Bernoulli experiments).
+$\hbox{P}(X_K=x)$ means that we have taken $K$ steps and that we are located
+at position $x$. There must have been $x$ steps to the right (say ``tail'')
+and $K-x$ steps to the left (say ``head''). The
+"binomial distribution": "https://en.wikipedia.org/wiki/Binomial_distribution"
+gives
+
+!bt
+\[ \hbox{P}(X_K=x) = \frac{K!}{x!(K-x)!}p^x(1-p)^{K-x}\tp\]
+!et
+No! Cannot do expectation now and get the right formula...
+Central limit theorem gives Gaussian with the above parameters...
+
+How can we estimate $\E{X_K}=0$ and $\Var{X_K}=N$?
+We must have many random walks of the type in
+Figure{diffu:randomwalk:1D:fig:ensamble}. For a given $K$, say $K=100$,
+we find all the values of $X_K$, name them $x_{0,K}$, $x_{1,K}$,
+$x_{2,K}$, and so on. The empirical estimate of $\E{X_K}$ is the
+average,
+
+!bt
+\[ \E{X_K} \approx = \frac{1}{W}\sum_{i=0}^{W-1} x_{i,K},\]
+!et
+while an emprical estimate of $\Var{X_K}$ is
+
+!bt
+\[ \Var{X_K} \approx \frac{1}{W}\sum_{i=0}^{W-1} (x_{i,K})^2 -
+\left(\frac{1}{W}\sum_{i=0}^{W-1} x_{i,K}\right)^2\tp\]
+!et
+That is, we take the statistics for a given $K$ accross the ensamble
+of random walks (``vertically'' in
+Figure{diffu:randomwalk:1D:fig:ensamble}).
+## Why not horizonally? one can also compute
+##statistics ``horizontally'' if....but variance increases with N,
+##for large periods the path is away from 0...
 
 ===== Playing around with some code =====
+label{diffu:randomwalk:1D:code1}
+
+=== Scalar code ===
 
 Python has a `random` module for drawing random numbers, and a function
 `uniform(a, b)` for drawing a uniformly distributed
@@ -73,7 +141,8 @@ with probability $p$ and $r>p$ with probability $1-p$:
 
 !bc pycod
 import random
-if random.uniform(0, 1) <= p:
+r = random.uniform(0, 1)
+if r <= p:
     # Event happens
 else:
     # Event does not happen
@@ -85,17 +154,221 @@ with probability $1-p$ can now be implemented by
 !bc pypro
 import random, numpy as np
 
-def random_walk(x0, N, p):
+def random_walk1D(x0, N, p):
+    """1D random walk with 1 particle."""
+    # Store position in step k in position[k]
     position = np.zeros(N)
     position[0] = x0
-    for i in range(N-1):
-        if random.uniform(0, 1) <= p:
-   	    position[i+1] = position[i] - 1  # Move to the left
-	else:
-   	    position[i+1] = position[i] + 1  # Move to the right
-    return numpy.mean(position), numpy.std(position), position
+    current_pos = x0
+    for k in range(N-1):
+        r = random.uniform(0, 1)
+        if r <= p:
+            current_pos -= 1
+        else:
+            current_pos += 1
+        position[k+1] = current_pos
+    return position
 !ec
-Here is some interactive experimentation
+
+idx{vectorization}
+
+=== Vectorized code ===
+
+Since $N$ is supposed to be large and we want to repeat the process for
+many particles, we should speed up the code as much as possible.
+Vectorization is the obvious technique here: we draw all the random
+numbers at once with aid of `numpy`, and then we formulate vector
+operations to get rid of the loop over the steps (`k`).
+The `numpy.random` module has vectorized versions of the functions in
+Python's plain `random` module. For example, `numpy.random.uniform(a, b, N)`
+returns `N` random numbers uniformly distributed between `a` (included)
+and `b` (not included).
+
+We can then make an array of all the steps in a random walk: if
+the random number is less than or equal to $p$, the step is $-1$,
+otherwise the step is $1$:
+
+!bc pycod
+r = np.random.uniform(0, 1, size=N)
+steps = np.where(r <= p, -1, 1)
+!ec
+The value of `position[k]` is the sum of all steps up to step `k`.
+Such sums are often needed in vectorized algorithms and therefore
+available by the `numpy.cumsum` function:
+
+!bc pyshell
+>>> import numpy as np
+>>> np.cumsum(np.array([1,3,4,6]))
+array([ 1,  4,  8, 14])
+!ec
+The resulting array in this demo has elements $1$, $1+3=4$, $1+3+4=8$,
+and $1+3+4+6=14$.
+
+We can now vectorize the `random_walk1D` function:
+
+@@@CODE src-diffu/random_walk1D.py fromto: def random_walk1D_vec@def test_random_walk1D
+
+idx{seed (random numbers)}
+
+=== Fixing the random sequence ===
+
+During software development with random numbers it is advantageous to
+always generate the same sequence of random numbers as this may help
+debugging processes. To fix the sequence, we set a *seed* of the random
+number generator to some chosen integer, e.g.,
+
+!bc pycod
+np.random.seed(10)
+!ec
+Calls to `random_walk1D_vec` give positions of the particle as
+depicted in Figure ref{diffu:randomwalk:1D:code1}. The particle starts
+at the origin and moves with $p=\half$. Since the seed is the same,
+the plot to the left is just a magnification of the first 1/50 steps in
+the plot to the right.
+# demo_random_walk1D produced the plots
+
+FIGURE: [fig-diffu/rw1D_1sample, width=800 frac=1] 1,000 (left) and 50,000 (right) steps of a random walk. label{diffu:randomwalk:1D:code1}
+
+=== Verification ===
+
+When we have a scalar and a vectorized code, it is always a good idea to
+develop a unit test for checking that they produce the same result.
+A problem in the present context is that the two versions apply to different
+random number generators. For a test to be meaningful, we need to fix
+the seed and use the same generator. This means that the scalar version
+must either use `np.random` or have this as an option. An option
+is the most flexible choice:
+
+!bc
+import random
+
+def random_walk1D(x0, N, p, random=random):
+    ...
+    r = random.uniform(0, 1)
+!ec
+If we send in `random=np.random`, the `r` variable will be computed
+by `np.random.uniform`, and the sequence of random numbers will be
+the same as in the vectorized version that employs the same generator
+(given that the seed is also the same). A proper test function may be
+to check that the positions in the walk are the same in the scalar and
+vectorized implementations:
+
+@@@CODE src-diffu/random_walk1D.py fromto: def test_random_walk1D@# We do not
+Note that we employ `==` for arrays with real numbers, which is normally
+an inadequate test due to rounding errors, but in the present case,
+all arithmetics constists of adding or subtracting one, so these operations
+are expected to have no rounding errors. Comparing two `numpy` arrays
+with `==` results in a boolean array, so we need to call the `all()`
+method to ensure that all elements are `True`, i.e., that all elements
+in the two arrays match each other pairwise.
+
+
+===== Equivalence with diffusion =====
+label{diffu:randomwalk:1D:pde}
+
+The original random walk algorithm can be said to
+work with dimensionless coordinates $\bar x_i = -N + i$, $i=0,1,\ldots, 2N+1$
+($i\in [-N,N]$), and $\bar t_n=n$, $n=0,1,\ldots,N$.
+A mesh with spacings $\Delta x$ and $\Delta t$ with dimensions can be introduced
+by
+
+!bt
+\[ x_i = X_0 + \bar x_i \Delta x,\quad\t_n = \bar t_n\Delta t\tp\]
+!et
+If we implement the algorithm with dimensionless coordinates, we can just
+use this rescaling to obtain the movement in a coordinate system
+without unit spacings.
+
+Let $P^{n+1}_i$ be the probability of finding the particle at mesh point
+$\bar x_i$ at time $\bar t_{n+1}$. We can reach mesh point $(i,n+1)$ in two
+ways: either coming in from the left from $(i-1,n)$ or from the
+right ($i+1,n)$. Both has probability $\half$ (if we assume
+$p=q=\half$). The fundamental equation for $P^{n+1}_i$ is
+
+!bt
+\begin{equation}
+P^{n+1}_i = \half P^{n}_{i-1} + \haf P^{n}_{i+1}\tp
+label{diffu:randomwalk:1D:pde:Markov}
+\end{equation}
+!et
+(This equation is easiest to understand if one looks at the random walk
+as a Markov process applies the transition probabilities, but this is
+beyond scope of the present text.)
+
+Subtracting $P^{n}_i$ from (reflabel{diffu:randomwalk:1D}) results
+in
+
+!bt
+\[
+P^{n+1}_i - P^{n}_i = \half (P^{n}_{i-1} -2P^{n}_i + \haf P^{n}_{i+1})\tp
+\]
+!et
+Readers who have seen the Forward Euler discretization of a 1D
+diffusion equation recognize this scheme as very close to such a
+discretization. We have
+
+!bt
+\[ \frac{\partial}{\partial t}P(x_i,t_{n})
+= \frac{P^{n+1}_i - P^{n}_i}{\Delta t} + \Oof{\Delta t},\]
+!et
+or in dimensionless coordinates
+
+!bt
+\[ \frac{\partial}{\partial\bar t}P(\bar x_i,\bar t_n)
+\approx P^{n+1}_i - P^{n}_i\tp\]
+!et
+Similarly, we have
+
+!bt
+\begin{align*}
+\frac{\partial^2}{\partial x^2}P(x_i,t_n) &=
+\frac{P^{n}_{i-1} -2P^{n}_i + \haf P^{n}_{i+1}}{\Delta x^2}
++ \Oof{\Delta x^2},\\
+\frac{\partial^2}{\partial x^2}P(\bar x_i,\bar t_n) &\approx
+P^{n}_{i-1} -2P^{n}_i + \haf P^{n}_{i+1}\tp
+\end{align*}
+!et
+Equation (reflabel{diffu:randomwalk:1D}) is therefore equivalent with
+the dimensionless diffusion equation
+
+!bt
+\begin{equation}
+\frac{\partial P}{\partial\bar t} = \frac{\partial^2 P}{\partial \bar x^2},
+\end{eequation}
+!et
+or the diffusion equation
+
+!bt
+\begin{equation}
+\frac{\partial P}{\partial t} = D\frac{\partial^2 P}{\partial x^2},
+\end{eequation}
+!et
+with diffusion coefficeint
+
+!bt
+\[ D = \frac{\Delta x^2}{\Delta t}\tp\]
+!et
+This derivation shows the tight link between random walk and diffusion.
+If we keep track of where the particle is, and repeat the process
+many times, or run the algorithms for lots of particles, the histogram
+of the positions will approximate the solution of the diffusion equation
+for the local probability $P^n_i$.
+
+===== Implementation of multiple walks; scalar version =====
+
+Our next task is to implement an ensamble of walks (for statistics,
+see Section ref{diffu:randomwalk:1D:EVar})
+and also provide data from
+the walks such that we can compute the probabilities of the position
+as introduced in the previous section. An appropriate representation
+of probabilities $P^n_i$ are histograms for a few selected values of $n$.
+
+Section ref{diffu:randomwalk:1D:EVar}
+`position[k]` holds $\sum_i x_{i,k},
+`position2[k]` holds $\sum_i (x_{i,k})^2,
+histogram...
+
+
 
 ===== Basic implementation =====
 
