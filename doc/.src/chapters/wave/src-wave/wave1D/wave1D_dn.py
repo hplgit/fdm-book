@@ -234,7 +234,7 @@ def viz(I, V, f, c, U_0, U_L, L, dt, C, T, umin, umax,
 
 def test_constant():
     """
-    Check the scalar and vectorized versions work for
+    Check the scalar and vectorized versions for
     a constant u(x,t). We simulate in [0, L] and apply
     Neumann and Dirichlet conditions at both ends.
     """
@@ -270,7 +270,7 @@ def test_constant():
 
 def test_quadratic():
     """
-    Check the scalar and vectorized versions work for
+    Check the scalar and vectorized versions for
     a quadratic u(x,t)=x(L-x)(1+t/2) that is exactly reproduced.
     We simulate in [0, L].
     Note: applying a symmetry condition at the end x=L/2

@@ -208,7 +208,7 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
 
 def test_quadratic():
     """
-    Check the scalar and vectorized versions work for
+    Check the scalar and vectorized versions for
     a quadratic u(x,t)=x(L-x)(1+t/2) that is exactly reproduced,
     provided c(x) is constant.
     We simulate in [0, L/2] and apply a symmetry condition

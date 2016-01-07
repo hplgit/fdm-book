@@ -6,8 +6,9 @@ import odespy
 import numpy as np
 
 def f(u, t, w=1):
-    u, v = u  # u is array of length 2 holding our [u, v]
-    return [v, -w**2*u]
+    # v, u numbering for EulerCromer to work well
+    v, u = u  # u is array of length 2 holding our [v, u]
+    return [-w**2*u, v]
 
 def run_solvers_and_plot(solvers, timesteps_per_period=20,
                          num_periods=1, I=1, w=2*np.pi):
@@ -20,12 +21,12 @@ def run_solvers_and_plot(solvers, timesteps_per_period=20,
     legends = []
     for solver in solvers:
         solver.set(f_kwargs={'w': w})
-        solver.set_initial_condition([I, 0])
+        solver.set_initial_condition([0, I])
         u, t = solver.solve(t_mesh)
 
         # Compute energy
         dt = t[1] - t[0]
-        E = 0.5*((u[2:,0] - u[:-2,0])/(2*dt))**2 + 0.5*w**2*u[1:-1,0]**2
+        E = 0.5*((u[2:,1] - u[:-2,1])/(2*dt))**2 + 0.5*w**2*u[1:-1,1]**2
         # Compute error in energy
         E0 = 0.5*0**2 + 0.5*w**2*I**2
         e_E = E - E0
@@ -37,17 +38,19 @@ def run_solvers_and_plot(solvers, timesteps_per_period=20,
         # Make plots
         if num_periods <= 80:
             plt.figure(1)
+            # u(t) vs t
             if len(t_mesh) <= 50:
-                plt.plot(t, u[:,0])             # markers by default
+                plt.plot(t, u[:,1])             # markers by default
             else:
-                plt.plot(t, u[:,0], '-2')       # no markers
+                plt.plot(t, u[:,1], '-2')       # no markers
             plt.hold('on')
             legends.append(solver_name)
             plt.figure(2)
+            # Phase space plot
             if len(t_mesh) <= 50:
-                plt.plot(u[:,0], u[:,1])        # markers by default
+                plt.plot(u[:,1], u[:,0])        # markers by default
             else:
-                plt.plot(u[:,0], u[:,1], '-2')  # no markers
+                plt.plot(u[:,1], u[:,0], '-2')  # no markers
             plt.hold('on')
 
         if num_periods > 20:
@@ -110,13 +113,16 @@ solvers_accurate = [odespy.RK4(f),
                     odespy.CrankNicolson(f, nonlinear_solver='Newton'),
                     odespy.DormandPrince(f, atol=0.001, rtol=0.02)]
 solvers_CN = [odespy.CrankNicolson(f, nonlinear_solver='Newton')]
+solvers_EC = [odespy.EulerCromer(f)]
 
 if __name__ == '__main__':
+    # Default values
     timesteps_per_period = 20
     solver_collection = 'theta'
     num_periods = 1
+    # Override from command line
     try:
-        # Example: python vib_odespy.py 30 accurate 50
+        # Example: python vib_undamped_odespy.py 30 accurate 50
         timesteps_per_period = int(sys.argv[1])
         solver_collection = sys.argv[2]
         num_periods = int(sys.argv[3])

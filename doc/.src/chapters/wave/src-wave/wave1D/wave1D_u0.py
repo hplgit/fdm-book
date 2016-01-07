@@ -128,7 +128,7 @@ def test_constant():
     assert np.abs(u - u_const).max() < tol
 
 def viz(
-    I, V, f, c, L, dt, C, T,  # PDE paramteres
+    I, V, f, c, L, dt, C, T,  # PDE parameters
     umin, umax,               # Interval for u in plots
     animate=True,             # Simulation with animation?
     tool='matplotlib',        # 'matplotlib' or 'scitools'

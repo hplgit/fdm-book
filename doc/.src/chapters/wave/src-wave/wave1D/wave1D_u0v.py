@@ -88,7 +88,7 @@ def solver(I, V, f, c, L, dt, C, T, user_action=None,
     return u, x, t, cpu_time
 
 def viz(
-    I, V, f, c, L, dt, C, T,  # PDE paramteres
+    I, V, f, c, L, dt, C, T,  # PDE parameters
     umin, umax,               # Interval for u in plots
     animate=True,             # Simulation with animation?
     tool='matplotlib',        # 'matplotlib' or 'scitools'
@@ -119,7 +119,7 @@ def viz(
 
 def test_quadratic():
     """
-    Check the scalar and vectorized versions work for
+    Check the scalar and vectorized versions for
     a quadratic u(x,t)=x(L-x)(1+t/2) that is exactly reproduced.
     """
     # The following function must work for x as array or scalar
