@@ -469,7 +469,6 @@ def random_walksdD_vec(x0, N, p, num_walks=1, num_times=1):
     pos_hist[:,:,:] = walks[:,pos_hist_times,:]
     return position, position2, pos_hist, np.array(pos_hist_times)
 
-
 def test_random_walksdD():
     # For fixed seed, check that scalar and vectorized versions
     # produce the same result

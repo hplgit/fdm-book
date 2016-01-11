@@ -4,7 +4,7 @@ label{diffu:randomwalk}
 Models leading to diffusion equations, see Section ref{diffu:app},
 are based on *averaged* reasoning such that the primary quantities
 (concentration, temperature, velocity) have a smooth behavior in
-space and time. The underlying phystical processes involve complicated
+space and time. The underlying physical processes involve complicated
 microscopic movement of atoms and molecules, but an average of a large
 number of molecules is thought to be performed in a small volume
 before the modeling starts, and the averaged quantity is assigned as
@@ -47,10 +47,10 @@ You may try this yourself: flip the coin and make one step to the left
 or right, and repeat this process.
 
 We introduce the symbol $N$ for the number of steps in a random walk.
-Figure ref{diffu:randomwalk:1D:fig:ensamble} shows four different
+Figure ref{diffu:randomwalk:1D:fig:ensemble} shows four different
 random walks with $N=200$.
 
-FIGURE: [fig-diffu/random_walk_ensamble4, width=800 frac=1] Ensamble of 4 random walks, each with 200 steps. label{diffu:randomwalk:1D:fig:ensamble}
+FIGURE: [fig-diffu/rw1D_ensemble4, width=800 frac=1] Ensemble of 4 random walks, each with 200 steps. label{diffu:randomwalk:1D:fig:ensemble}
 
 
 ===== Statistical considerations =====
@@ -72,6 +72,7 @@ and the variance is
 
 !bt
 \[ \Var{S_k} = \E{S_k^2} - \E{S_k}^2 = 1 - (1-2p)^2 = 4p(1-p)\tp\]
+!et
 
 The position after $k$ steps is another stochastic variable
 
@@ -95,7 +96,7 @@ For the very important case $p=q=\half$, $\E{\bar X_k}=0$ and
 $\Var{\bar X_k}=k$.
 
 # #ifdef WRONG
-We can also easily find the probablility distribution of $X_K$ because
+We can also easily find the probability distribution of $X_K$ because
 the random walk is a binomial process ($K$ Bernoulli experiments).
 $\hbox{P}(X_K=x)$ means that we have taken $K$ steps and that we are located
 at position $x$. There must have been $x$ steps to the right (say ``tail'')
@@ -112,7 +113,7 @@ Central limit theorem gives Gaussian with the above parameters...
 
 How can we estimate $\E{\bar X_k}=0$ and $\Var{\bar X_k}=N$?
 We must have many random walks of the type in
-Figure{diffu:randomwalk:1D:fig:ensamble}. For a given $k$, say $k=100$,
+Figure ref{diffu:randomwalk:1D:fig:ensamble}. For a given $k$, say $k=100$,
 we find all the values of $\bar X_k$, name them $\bar x_{0,k}$, $\bar x_{1,k}$,
 $\bar x_{2,k}$, and so on. The empirical estimate of $\E{\bar X_k}$ is the
 average,
@@ -120,15 +121,15 @@ average,
 !bt
 \[ \E{\bar X_k} \approx = \frac{1}{W}\sum_{i=0}^{W-1} \bar x_{i,k},\]
 !et
-while an emprical estimate of $\Var{\bar X_k}$ is
+while an empirical estimate of $\Var{\bar X_k}$ is
 
 !bt
 \[ \Var{\bar X_k} \approx \frac{1}{W}\sum_{i=0}^{W-1} (\bar x_{i,k})^2 -
 \left(\frac{1}{W}\sum_{i=0}^{W-1} \bar x_{i,k}\right)^2\tp\]
 !et
-That is, we take the statistics for a given $K$ accross the ensamble
+That is, we take the statistics for a given $K$ across the ensemble
 of random walks (``vertically'' in
-Figure{diffu:randomwalk:1D:fig:ensamble}). The key quantities
+Figure ref{diffu:randomwalk:1D:fig:ensemble}). The key quantities
 to record are $\sum_i \bar x_{i,k}$ and $\sum_i \bar x_{i,k}^2$.
 ## Why not horizonally? one can also compute
 ##statistics ``horizontally'' if....but variance increases with N,
@@ -213,7 +214,7 @@ and $1+3+4+6=14$.
 
 We can now vectorize the `random_walk1D` function:
 
-@@@CODE src-diffu/random_walk1D.py fromto: def random_walk1D_vec@def test_random_walk1D
+@@@CODE src-diffu/random_walk.py fromto: def random_walk1D_vec@def test_random_walk1D
 This code runs about 10 times faster than the scalar version.
 With a parallel `numpy` library, the code can also automatically take
 advantage of hardware for parallel computing.
@@ -231,13 +232,13 @@ number generator to some chosen integer, e.g.,
 np.random.seed(10)
 !ec
 Calls to `random_walk1D_vec` give positions of the particle as
-depicted in Figure ref{diffu:randomwalk:1D:code1}. The particle starts
+depicted in Figure ref{diffu:randomwalk:1D:code1:fig1}. The particle starts
 at the origin and moves with $p=\half$. Since the seed is the same,
 the plot to the left is just a magnification of the first 1/50 steps in
 the plot to the right.
 # demo_random_walk1D produced the plots
 
-FIGURE: [fig-diffu/rw1D_1sample, width=800 frac=1] 1,000 (left) and 50,000 (right) steps of a random walk. label{diffu:randomwalk:1D:code1}
+FIGURE: [fig-diffu/rw1D_1sample, width=800 frac=1] 1,000 (left) and 50,000 (right) steps of a random walk. label{diffu:randomwalk:1D:code1:fig1}
 
 === Verification ===
 
@@ -263,10 +264,10 @@ the same as in the vectorized version that employs the same generator
 to check that the positions in the walk are the same in the scalar and
 vectorized implementations:
 
-@@@CODE src-diffu/random_walk1D.py fromto: def test_random_walk1D@# We do not
+@@@CODE src-diffu/random_walk.py fromto: def test_random_walk1D@# We do not
 Note that we employ `==` for arrays with real numbers, which is normally
 an inadequate test due to rounding errors, but in the present case,
-all arithmetics constists of adding or subtracting one, so these operations
+all arithmetics consists of adding or subtracting one, so these operations
 are expected to have no rounding errors. Comparing two `numpy` arrays
 with `==` results in a boolean array, so we need to call the `all()`
 method to ensure that all elements are `True`, i.e., that all elements
@@ -283,7 +284,7 @@ spacings $\Delta x$ and $\Delta t$ with dimensions can be introduced
 by
 
 !bt
-\[ x_i = X_0 + \bar x_i \Delta x,\quad\t_n = \bar t_n\Delta t\tp\]
+\[ x_i = X_0 + \bar x_i \Delta x,\quad t_n = \bar t_n\Delta t\tp\]
 !et
 If we implement the algorithm with dimensionless coordinates, we can just
 use this rescaling to obtain the movement in a coordinate system
@@ -297,7 +298,7 @@ $p=q=\half$). The fundamental equation for $P^{n+1}_i$ is
 
 !bt
 \begin{equation}
-P^{n+1}_i = \half P^{n}_{i-1} + \haf P^{n}_{i+1}\tp
+P^{n+1}_i = \half P^{n}_{i-1} + \half P^{n}_{i+1}\tp
 label{diffu:randomwalk:1D:pde:Markov}
 \end{equation}
 !et
@@ -305,12 +306,12 @@ label{diffu:randomwalk:1D:pde:Markov}
 as a Markov process applies the transition probabilities, but this is
 beyond scope of the present text.)
 
-Subtracting $P^{n}_i$ from (reflabel{diffu:randomwalk:1D}) results
+Subtracting $P^{n}_i$ from (ref{diffu:randomwalk:1D}) results
 in
 
 !bt
 \[
-P^{n+1}_i - P^{n}_i = \half (P^{n}_{i-1} -2P^{n}_i + \haf P^{n}_{i+1})\tp
+P^{n+1}_i - P^{n}_i = \half (P^{n}_{i-1} -2P^{n}_i + \half P^{n}_{i+1})\tp
 \]
 !et
 Readers who have seen the Forward Euler discretization of a 1D
@@ -332,13 +333,13 @@ Similarly, we have
 !bt
 \begin{align*}
 \frac{\partial^2}{\partial x^2}P(x_i,t_n) &=
-\frac{P^{n}_{i-1} -2P^{n}_i + \haf P^{n}_{i+1}}{\Delta x^2}
+\frac{P^{n}_{i-1} -2P^{n}_i + \half P^{n}_{i+1}}{\Delta x^2}
 + \Oof{\Delta x^2},\\
 \frac{\partial^2}{\partial x^2}P(\bar x_i,\bar t_n) &\approx
-P^{n}_{i-1} -2P^{n}_i + \haf P^{n}_{i+1}\tp
+P^{n}_{i-1} -2P^{n}_i + \half P^{n}_{i+1}\tp
 \end{align*}
 !et
-Equation (reflabel{diffu:randomwalk:1D}) is therefore equivalent with
+Equation (ref{diffu:randomwalk:1D}) is therefore equivalent with
 the dimensionless diffusion equation
 
 !bt
@@ -346,7 +347,7 @@ the dimensionless diffusion equation
 \frac{\partial P}{\partial\bar t} = \frac{1}{2}
 \frac{\partial^2 P}{\partial \bar x^2},
 label{diffu:randomwalk:1D:pde:dimless}
-\end{eequation}
+\end{equation}
 !et
 or the diffusion equation
 
@@ -354,9 +355,9 @@ or the diffusion equation
 \begin{equation}
 \frac{\partial P}{\partial t} = D\frac{\partial^2 P}{\partial x^2},
 label{diffu:randomwalk:1D:pde:dim}
-\end{eequation}
+\end{equation}
 !et
-with diffusion coefficeint
+with diffusion coefficient
 
 !bt
 \[ D = \frac{\Delta x^2}{2\Delta t}\tp\]
@@ -382,7 +383,7 @@ where $\dfc = \half$.
 
 ===== Implementation of multiple walks =====
 
-Our next task is to implement an ensamble of walks (for statistics,
+Our next task is to implement an ensemble of walks (for statistics,
 see Section ref{diffu:randomwalk:1D:EVar})
 and also provide data from
 the walks such that we can compute the probabilities of the position
@@ -393,11 +394,11 @@ To estimate the expectation and variance of the random walks,
 Section ref{diffu:randomwalk:1D:EVar} points to recording
 $\sum_i x_{i,k}$ and $\sum_i x_{i,k}^2$, where $x_{i,k}$ is the
 position at time/step level $k$ in random walk number $i$.
-The histogram of position will need needs the invidual values $x_{i,k}$
+The histogram of position will need needs the individual values $x_{i,k}$
 for all $i$ values and some selected $k$ values.
 
-We introduce `position[k]` to hold $\sum_i x_{i,k},
-`position2[k]` to told $\sum_i (x_{i,k})^2, and
+We introduce `position[k]` to hold $\sum_i x_{i,k}$,
+`position2[k]` to hold $\sum_i (x_{i,k})^2$, and
 `pos_hist[i,k]` to hold $x_{i,k}$. A selection of $k$ values can be
 specified by saying how many, `num_times`, and let them be equally
 spaced through time:
@@ -413,7 +414,7 @@ real division rounded to an integer.
 The scalar implementation of running `num_walks` random walks may take
 the form
 
-@@@CODE src-diffu/random_walk1D.py fromto: def random_walks1D\(@def random_walks1D_vec
+@@@CODE src-diffu/random_walk.py fromto: def random_walks1D\(@def random_walks1D_vec
 
 === Vectorized version ===
 
@@ -424,7 +425,7 @@ we can find the corresponding positions by indexing with the
 list `pos_hist_times`: `position[post_hist_times]`, which are to be
 inserted in `pos_hist[n,:]`.
 
-@@@CODE src-diffu/random_walk1D.py fromto: def random_walks1D_vec1@def random_walks1D_vec2
+@@@CODE src-diffu/random_walk.py fromto: def random_walks1D_vec1@def random_walks1D_vec2
 
 === Improved vectorized version ===
 
@@ -452,7 +453,7 @@ numbers to $\pm 1$, then we reshape the array such that the steps
 of each walk are stored in the rows.
 The next step is to sum up the steps in each walk. We need the
 `np.cumsum` function for this, with the argument `axis=1` for
-indicating a sum across the colums:
+indicating a sum across the columns:
 
 We need a cumulative sum over the rows, which is computed using
 the `axis=1` argument:
@@ -488,7 +489,7 @@ pos_hist[:,:] = walks[:,pos_hist_times]
 The complete vectorized algorithm without any loop can now be
 summarized:
 
-@@@CODE src-diffu/random_walk1D.py fromto: def random_walks1D_vec2@def test_random_walks1D
+@@@CODE src-diffu/random_walk.py fromto: def random_walks1D_vec2@def test_random_walks1D
 
 What is the gain of the vectorized implementations? One important gain
 is that each vectorized operation can be automatically parallelized
@@ -496,46 +497,50 @@ if one applies a parallel `numpy` library like "Numba": "http://numba.pydata.org
 is significant. With $N=1,000$ and 50,000 repeated walks,
 the two vectorized versions run about 25 times faster than the scalar
 version. The downside of vectorization of random walks is the large
-arrays that arise.
+arrays that arise, especially the version in `random_walks1D_vec2`.
 # CPU:
 # N=1000, 50K walks
 # scalar: 42, vec1: 1.7, vec2: 1.7, factors 25 and 25
 
+=== Remark on vectorized code and parallelization ===
+
+[[[ COMMENT on `vec2` vs `vec1` for storage and parallelization.
+
 === Test function ===
 
 During program development, it is highly recommended to carry out
-computations by hand for, e.g., $N=4$ and `num_walks=3`.
-Normally, this is done by executing the program with these parameters
-and checking with pen and paper that the computations make sense.
-The next step is to use this test for correctness in a formal test function.
+computations by hand for, e.g., $N=4$ and `num_walks=3`.  Normally,
+this is done by executing the program with these parameters and
+checking with pen and paper that the computations make sense.  The
+next step is to use this test for correctness in a formal test
+function.
 
 First, we need to check that the simulation of multiple random walks
-reproduces the results of `random_walk1D`, `random_walk1D_vec1`,
-and `random_walk1D_vec2`for
-the first walk, if the seed is the same. Second, we run three
-random walks with $N=4$ with the scalar and the two
-vectorized versions and check that
-the returned arrays are identical.
+reproduces the results of `random_walk1D`, `random_walk1D_vec1`, and
+`random_walk1D_vec2` for the first walk, if the seed is the
+same. Second, we run three random walks with $N=4$ with the scalar and
+the two vectorized versions and check that the returned arrays are
+identical.
 
-For this type of test to be successful, we must be
-sure that exactly the same set of random numbers are used in the
-three versions, a fact that requires the same random number generator
-and the same seed, of course, but also the same sequence of compuations.
-This is not unexpectedly the case with the three `random_walk1D*`
-functions we have presented. The critical issue in `random_walk1D_vec1`
-is that the first random numbers are used for the first walk, the second
-set of random numbers is used for the second walk and so, to be compatible
+For this type of test to be successful, we must be sure that exactly
+the same set of random numbers are used in the three versions, a fact
+that requires the same random number generator and the same seed, of
+course, but also the same sequence of computations.  This is not
+unexpectedly the case with the three `random_walk1D*` functions we
+have presented. The critical issue in `random_walk1D_vec1` is that the
+first random numbers are used for the first walk, the second set of
+random numbers is used for the second walk and so, to be compatible
 with how the random numbers are used in the function `random_walk1D`.
 For the function `random_walk1D_vec2` the situation is a bit more
 complicated since we generate all the random numbers at once.
 However, the critical step now is the reshaping of the array returned
-from `np.where`: we must reshape as `(num_walks, N)` to ensure that the
-frist $N$ random numbers are used for the first walk, the next $N$ numbers
-are used for the second walk, and so on.
+from `np.where`: we must reshape as `(num_walks, N)` to ensure that
+the first $N$ random numbers are used for the first walk, the next $N$
+numbers are used for the second walk, and so on.
 
 We arrive at the test function below.
 
-@@@CODE src-diffu/random_walk1D.py fromto: def test_random_walks1D@def demo_random_walks1D
+@@@CODE src-diffu/random_walk.py fromto: def test_random_walks1D@def demo_random_walks1D
 Such test functions are indispensable for further development of the code
 as we can anytime test that the basic computations are still correct.
 
@@ -558,7 +563,7 @@ ref{diffu:randomwalk:1D:fig:demo1:HistX}. The dashed red line is the
 theoretical distribution (ref{diffu:randomwalk:1D:pde:dimless:sol})
 arising from solving the diffusion equation
 (ref{diffu:randomwalk:1D:pde:dimless}) instead. As always, one needs
-significantly more statisticals samples to estimate a histogram
+significantly more statistical samples to estimate a histogram
 accurately than the expectation or variance.
 
 FIGURE: [fig-diffu/rw1D_EX_100_10000_100000_1000000, width=800 frac=1] Estimated expected value for 1000 steps, using 100 walks (upper left), 10,000 (upper right), 100,000 (lower left), and 1,000,000 (lower right). label{diffu:randomwalk:1D:fig:demo1:EX}
@@ -581,7 +586,7 @@ pointing downwards. The module `avplotter` in SciTools has a class `Plotter`
 for plotting functions in the terminal window with the aid of ascii symbols
 only. Below is the code required to visualize a simple random walk,
 starting at the origin, and considered over
-when the point $x=-1$ is reached. We use a spaing $\Delta x = 0.05$ (so
+when the point $x=-1$ is reached. We use a spacing $\Delta x = 0.05$ (so
 $x=-1$ corresponds to $i=-20$).
 
 !bc pycod
@@ -697,7 +702,7 @@ where $W(t)$ is a "Wiener process":
 "https://en.wikipedia.org/wiki/Wiener_process". Then $X$ is also a
 Wiener process. It follows from the stochastic ODE $dX=dW$ that the
 probability distribution of $X$ is given by the "Fokker-Planck
-equation": "https://en.wikipedia.org/wiki/Fokker–Planck_equation"
+equation": "https://en.wikipedia.org/wiki/Fokker-Planck_equation"
 (ref{diffu:randomwalk:1D:pde:dimless}).  In other words, the key
 results for random walk can be derived in alternative ways.
 
@@ -712,14 +717,14 @@ The most obvious generalization of 1D random walk to two spatial
 dimensions is to allow movements to the north, east, south, and west,
 with equal probability $\frac{1}{4}$.
 
-@@@CODE src-diffu/random_walk1D.py fromto: def random_walk2D@def demo_random_walk2D
+@@@CODE src-diffu/random_walk.py fromto: def random_walk2D@def demo_random_walk2D
 The left plot in Figure ref{diffu:randomwalk:2D:fig:rect_vs_diag} provides
 an example on 200 steps with this kind of walk. We may refer to this walk
 as a walk on a *rectangular mesh* as we move from any spatial
 mesh point $(i,j)$ to one of its four neighbors in the rectangular directions:
 $(i+1,j)$, $(i-1,j)$, $(i,j+1)$, or $(i,j-1)$.
 
-FIGURE: [fig-diffu/rw2D_sample200, width=800 frac=1] Random walks in 2D with 200 stps: rectangular mesh (left) and diagonal mesh (right). label{diffu:randomwalk:2D:fig:rect_vs_diag}
+FIGURE: [fig-diffu/rw2D_sample200, width=800 frac=1] Random walks in 2D with 200 steps: rectangular mesh (left) and diagonal mesh (right). label{diffu:randomwalk:2D:fig:rect_vs_diag}
 
 
 From a programming point of view, especially when implementing a random
@@ -730,12 +735,12 @@ $(i+1,j-1)$, or $(i-1,j-1)$. We can with such a *diagonal* mesh
 draw a Bernoulli variable for the step in each spatial direction and
 trivially write code that works in any number of spatial directions:
 
-@@@CODE src-diffu/random_walk1D.py fromto: def random_walkdD\(@def random_walkdD_vec\(
+@@@CODE src-diffu/random_walk.py fromto: def random_walkdD\(@def random_walkdD_vec\(
 
 A vectorized version is desired. We follow the ideas from Section
 ref{diffu:randomwalk:1D:code1}, but each step is now a vector i $d$
 spatial dimensions. We therefore need to draw $Nd$ random numbers in `r`,
-comupute steps in the various directions through `np.where(r <=p, -1, 1)`
+compute steps in the various directions through `np.where(r <=p, -1, 1)`
 (each step being $-1$ or $1$),
 and then we can reshape this array to an $N\times d$ array of step
 *vectors*. Doing an `np.cumsum` summation along axis 0 will add
@@ -755,10 +760,17 @@ array([[ 0,  1],
 With such summation of step vectors, we get all the positions to be
 filled in the `position` array:
 
-@@@CODE src-diffu/random_walk1D.py fromto: def random_walkdD_vec\(@def demo_random_walkdD
-
+@@@CODE src-diffu/random_walk.py fromto: def random_walkdD_vec\(@def demo_random_walkdD
 
 FIGURE: [fig-diffu/rw2D_samples_5000, width=800 frac=1] Random walks with 5000 steps in 2D. label{diffu:randomwalk:2D:fig:samples}
+
+=== Scalar code ===
+
+@@@CODE src-diffu/random_walk.py fromto: def random_walksdD\(@def random_walksdD_vec
+
+=== Vectorized code ===
+
+@@@CODE src-diffu/random_walk.py fromto: def random_walksdD_vec@def test_random_walksdD
 
 # 2D N=4M
 # scalar/vec (1 walk): 25
