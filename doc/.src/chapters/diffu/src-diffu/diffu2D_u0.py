@@ -386,6 +386,16 @@ def solver_sparse(
     return t, t1-t0
 
 
+def omega_optimal(Lx, Ly, Nx, Ny):
+    """Return the optimal omega for SOR according to 2D formula."""
+    dx = Lx/float(Nx)
+    dy = Ly/float(Ny)
+    rho = (np.cos(np.pi/Nx) + (dx/dy)**2*np.cos(np.pi/Ny))/\
+          (1 + (dx/dy)**2)
+    omega = 2.0/(1 + np.sqrt(1-rho**2))
+    return omega
+
+
 def solver_classic_iterative(
     I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5,
     U_0x=0, U_0y=0, U_Lx=0, U_Ly=0, user_action=None,
@@ -394,6 +404,7 @@ def solver_classic_iterative(
     """
     Full solver for the model problem using the theta-rule
     difference approximation in time. Jacobi or SOR iteration.
+    (omega='optimal' applies an omega according a formula.)
     """
     import time; t0 = time.clock()     # for measuring CPU time
 
@@ -420,6 +431,9 @@ def solver_classic_iterative(
             raise ValueError(
                 'Vectorized SOR requires even Nx and Ny (%dx%d)'
                 % (Nx, Ny))
+    if version == 'SOR':
+        if omega == 'optimal':
+            omega = omega_optimal(Lx, Ly, Nx, Ny)
 
     u   = np.zeros((Nx+1, Ny+1))      # unknown u at new time level
     u_1 = np.zeros((Nx+1, Ny+1))      # u at the previous time level
@@ -926,6 +940,76 @@ def test_convergence_rate():
 
     for theta in [1, 0.5, 0]:
         convergence_rates(theta, num_experiments=6)
+
+
+def efficiency():
+    """Measure the efficiency of iterative methods."""
+    # JUST A SKETCH!
+    cpu = {}
+
+    # Find a more advanced example and use large Nx, Ny
+    def u_exact(x, y, t):
+        return 5*t*x*(Lx-x)*y*(Ly-y)
+    def I(x, y):
+        return u_exact(x, y, 0)
+    def f(x, y, t):
+        return 5*x*(Lx-x)*y*(Ly-y) + 10*a*t*(y*(Ly-y)+x*(Lx-x))
+
+    # Use rectangle to detect errors in switching i and j in scheme
+    Lx = 0.75
+    Ly = 1.5
+    a = 3.5
+    dt = 0.5
+    T = 2
+
+    print '\ntesting sparse matrix LU solver'
+    t, cpu = solver_sparse(
+        I, a, f, Lx, Ly, Nx, Ny,
+        dt, T, theta, user_action=None,
+        method='direct')
+
+    theta = 0.5
+    tol = 1E-5  # Tolerance in iterative methods
+    # Testing Jacobi and Gauss-Seidel
+    for iteration in 'Jacobi', 'SOR':
+        for version in 'scalar', 'vectorized':
+            print '\ntesting %s, %s version, theta=%g, tol=%g' % \
+                  (iteration, version, theta, tol)
+            t, cpu_ = solver_classic_iterative(
+                I=I, a=a, f=f, Lx=Lx, Ly=Ly, Nx=Nx, Ny=Ny,
+                dt=dt, T=T, theta=theta,
+                U_0x=0, U_0y=0, U_Lx=0, U_Ly=0,
+                user_action=None,
+                version=version, iteration=iteration,
+                omega=1.0, max_iter=100, tol=tol)
+            cpu[iteration+'_'+version] = cpu_
+
+    for omega in 'optimal', 1.2, 1.5:
+        print '\ntesting SOR, omega:', omega
+        t, cpu_ = solver_classic_iterative(
+            I=I, a=a, f=f, Lx=Lx, Ly=Ly, Nx=Nx, Ny=Ny,
+            dt=dt, T=T, theta=theta,
+            U_0x=0, U_0y=0, U_Lx=0, U_Ly=0,
+            user_action=None,
+            version=version, iteration=iteration,
+            omega=1.0, max_iter=100, tol=tol)
+        cpu['SOR(omega=%g)' % omega] = cpu_
+
+    print '\ntesting CG+ILU, theta=%g, tol=%g' % (theta, tol)
+    t, cpu_ = solver_sparse(
+        I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5,
+        user_action=None,
+        method='CG', CG_prec='ILU', CG_tol=tol)
+    cpu['CG+ILU'] = cpu_
+
+    print '\ntesting CG, theta=%g, tol=%g' % (theta, tol)
+    t, cpu_ = solver_sparse(
+        I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5,
+        user_action=None,
+        method='CG', CG_prec=None, CG_tol=tol)
+    cpu['CG'] = cpu_
+
+    return t, cpu
 
 if __name__ == '__main__':
     #test_quadratic()
