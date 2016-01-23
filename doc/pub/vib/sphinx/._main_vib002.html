@@ -318,7 +318,7 @@ of a constant vanishes (in particular, <span class="math">\([D_{2t}I]^n=0\)</spa
 the discrete equations. The constant should therefore be reproduced
 to machine precision. The function <code class="docutils literal"><span class="pre">test_constant</span></code> in <code class="docutils literal"><span class="pre">vib.py</span></code>
 implements this test.</p>
-<p>[<strong>hpl 4</strong>: Add verification tests for constant, linear, quadratic. Check how many bugs that are caught by these tests.]</p>
+<p>[<strong>hpl 3</strong>: Add verification tests for constant, linear, quadratic. Check how many bugs that are caught by these tests.]</p>
 </div>
 <div class="section" id="linear-solution">
 <h3>Linear solution<a class="headerlink" href="#linear-solution" title="Permalink to this headline">¶</a></h3>
@@ -470,7 +470,7 @@ v^0 = V,\]</div>
 <div class="math" id="eq-auto26">
 \[\tag{81}
 u^0 = I{\thinspace .}\]</div>
-<p>[<strong>hpl 5</strong>: odespy for the generalized problem]</p>
+<p>[<strong>hpl 4</strong>: odespy for the generalized problem]</p>
 </div>
 </div>
 <div class="section" id="exercises-and-problems">
@@ -565,8 +565,8 @@ Will a polynomial of degree three fulfill the discrete equations?</p>
 Implement a <code class="docutils literal"><span class="pre">solver</span></code> function for computing the numerical
 solution of this problem.</p>
 <p><strong>g)</strong>
-Write a nose test for checking that the quadratic solution
-is computed to correctly (too machine precision, but the
+Write a test function for checking that the quadratic solution
+is computed correctly (too machine precision, but the
 round-off errors accumulate and increase with <span class="math">\(T\)</span>) by the <code class="docutils literal"><span class="pre">solver</span></code>
 function.</p>
 <p>Filename: <code class="docutils literal"><span class="pre">vib_undamped_verify_mms</span></code>.</p>
@@ -661,7 +661,7 @@ for <span class="math">\(t\in (0,T]\)</span>. The total energy of the solution
 constant.
 The error in energy can be computed as explained in
 the section <a class="reference internal" href="._main_vib001.html#vib-model1-energy"><span class="std std-ref">Energy considerations</span></a>.</p>
-<p>Make a nose test in a file <code class="docutils literal"><span class="pre">test_error_conv.py</span></code>, where code from
+<p>Make a test function in a file <code class="docutils literal"><span class="pre">test_error_conv.py</span></code>, where code from
 <code class="docutils literal"><span class="pre">vib_undamped.py</span></code> is imported, but the <code class="docutils literal"><span class="pre">convergence_rates</span></code> and
 <code class="docutils literal"><span class="pre">test_convergence_rates</span></code> functions are copied and modified to also
 incorporate computations of the error in energy and the convergence
@@ -680,7 +680,7 @@ Filename: <code class="docutils literal"><span class="pre">vib_verify_mms</span>
 </div>
 <div class="section" id="exercise-10-use-an-exact-discrete-solution-for-verification">
 <span id="vib-exer-discrete-omega"></span><h2>Exercise 10: Use an exact discrete solution for verification<a class="headerlink" href="#exercise-10-use-an-exact-discrete-solution-for-verification" title="Permalink to this headline">¶</a></h2>
-<p>Write a nose test function in a separate file
+<p>Write a test function in a separate file
 that employs the exact discrete solution
 <a class="reference internal" href="._main_vib001.html#eq-vib-ode1-un-exact"><span class="std std-ref">(20)</span></a> to verify the implementation of the
 <code class="docutils literal"><span class="pre">solver</span></code> function in the file <code class="docutils literal"><span class="pre">vib_undamped.py</span></code>.
@@ -978,6 +978,58 @@ The friction force is proportional to the normal force on the surface,
 \[\tag{86}
 m\ddot u + \mu mg\hbox{sign}(\dot u) + s(u) = 0,\quad u(0)=I,\ \dot u(0)=V{\thinspace .}\]</div>
 </div>
+<div class="section" id="vehicle-on-a-bumpy-road">
+<span id="vib-app-bumpy"></span><h2>Vehicle on a bumpy road<a class="headerlink" href="#vehicle-on-a-bumpy-road" title="Permalink to this headline">¶</a></h2>
+<div class="figure" id="id7">
+<span id="vib-app-bumpy-fig-sketch"></span><a class="reference internal image-reference" href="_images/bumpy_sketch.png"><img alt="_images/bumpy_sketch.png" src="_images/bumpy_sketch.png" style="width: 400px;" /></a>
+<p class="caption"><span class="caption-text"><em>Sketch one-wheel vehicle on a bumpy road</em></span></p>
+</div>
+<p>We consider a very simplistic vehicle, on one wheel, rolling along a
+bumpy road. The oscillatory nature of the road will induce an external
+forcing on the spring system in the vehicle and cause vibrations.
+Figure <a class="reference internal" href="#vib-app-bumpy-fig-sketch"><span class="std std-ref">Sketch one-wheel vehicle on a bumpy road</span></a> outlines the situation.</p>
+<p>To derive the equation that governs the motion, we must first establish
+the position vector of the black mass at the top of the spring.
+Suppose the spring has length <span class="math">\(L\)</span> without any elongation or compression,
+suppose the radius of the wheel is <span class="math">\(R\)</span>, and suppose the height of the
+black mass at the top is <span class="math">\(H\)</span>. With the aid of the <span class="math">\(\boldsymbol{r}_0\)</span> vector
+in Figure <a class="reference internal" href="#vib-app-bumpy-fig-sketch"><span class="std std-ref">Sketch one-wheel vehicle on a bumpy road</span></a>, the position <span class="math">\(\boldsymbol{r}\)</span> of
+the center point of the mass is</p>
+<div class="math" id="eq-auto27">
+\[\tag{87}
+\boldsymbol{r} = \boldsymbol{r}_0 + 2R\boldsymbol{j} + L\boldsymbol{j} + u\boldsymbol{j} + \frac{1}{2} H\boldsymbol{j},\\]</div>
+<p>where <span class="math">\(u\)</span> is the elongation or compression in the spring according to
+the (unknown and to be computed) displacement <span class="math">\(u\)</span>. If the vehicle travels
+with constant horizontal velocity <span class="math">\(v\)</span> and <span class="math">\(h(x)\)</span> is the shape of the
+road, then the vector <span class="math">\(\boldsymbol{r}_0\)</span> is</p>
+<div class="math">
+\[\boldsymbol{r}_0 = vt\boldsymbol{i} + h(vt)\boldsymbol{j},\]</div>
+<p>if the motion starts from <span class="math">\(x=0\)</span> at time <span class="math">\(t=0\)</span>.</p>
+<p>The forces on the mass is the gravity, the spring force, and an optional
+damping force that is proportional to the vertical velocity <span class="math">\(\dot u\)</span>. Newton&#8217;s
+second law of motion then tells that</p>
+<div class="math">
+\[m\ddot\boldsymbol{r} = -mg\boldsymbol{j} - s(u) - b\dot u\boldsymbol{j}{\thinspace .}\]</div>
+<p>This leads to</p>
+<div class="math">
+\[m\ddot u = - s(u) - b\dot u - mg -mh''(vt)v^2\]</div>
+<p>To simplify a little bit, we omit the gravity force <span class="math">\(mg\)</span> in comparison with
+the other terms. Introducing <span class="math">\(u'\)</span> for <span class="math">\(\dot u\)</span> then gives a standard
+damped, vibration equation with external forcing (here from the bumpy road):</p>
+<div class="math" id="eq-auto28">
+\[\tag{88}
+mu'' + bu' + s(u) =  -mh''(vt)v^2{\thinspace .}\]</div>
+<p>Since the road is normally known just as a set of array values, <span class="math">\(h''\)</span> must
+be computed by finite differences. Let <span class="math">\(\Delta x\)</span> be the spacing between
+measured values <span class="math">\(h_i= h(i\Delta x)\)</span> on the road. The discrete second-order
+derivative <span class="math">\(h''\)</span> reads</p>
+<div class="math">
+\[q_i = \frac{h_{i-1} - 2h_i + h_{i+1}}{\Delta x^2}, \quad i=1,\ldots,N_x-1,\]</div>
+<p>with simply setting the end points as <span class="math">\(q_0=q_1\)</span> and <span class="math">\(q_{N_x}=q_{N_x-1}\)</span>.
+The term <span class="math">\(-mh''(vt)v^2\)</span> corresponds to a force with discrete time values</p>
+<div class="math">
+\[F^n = -mq_n v^2,\quad \Delta t = v^{-1}\Delta x{\thinspace .}\]</div>
+</div>
 <div class="section" id="a-jumping-washing-machine">
 <span id="vib-app-washmach"></span><h2>A jumping washing machine<a class="headerlink" href="#a-jumping-washing-machine" title="Permalink to this headline">¶</a></h2>
 <p>A washing machine is placed on four springs with efficient dampers.
@@ -985,36 +1037,37 @@ If the machine contains just a few clothes, the circular motion of
 the machine induces a sinusoidal external force and the machine will
 jump up and down if the frequency of the external force is close to
 the natural frequency of the machine and its spring-damper system.</p>
-<p>[<strong>hpl 6</strong>: Not finished. This is a good example on resonance.]</p>
+<p>[<strong>hpl 5</strong>: Not finished. This is a good example on resonance.]</p>
 </div>
 <div class="section" id="motion-of-a-pendulum">
 <span id="vib-app-pendulum"></span><h2>Motion of a pendulum<a class="headerlink" href="#motion-of-a-pendulum" title="Permalink to this headline">¶</a></h2>
 <p>A classical problem in mechanics is the motion of a pendulum. We first
-consider a <a class="reference external" href="https://en.wikipedia.org/wiki/Pendulum">simple pendulum</a>:
-a small body of mass <span class="math">\(m\)</span> is attached to a massless wire and can oscillate back and forth
-in the gravity field. Figure <a class="reference internal" href="#vib-app-pendulum-fig-problem"><span class="std std-ref">Sketch of a simple pendulum</span></a> shows
-a sketch of the problem.</p>
-<div class="figure" id="id7">
+consider a <a class="reference external" href="https://en.wikipedia.org/wiki/Pendulum">simple pendulum</a>: a small body of mass <span class="math">\(m\)</span> is
+attached to a massless wire and can oscillate back and forth in the
+gravity field. Figure <a class="reference internal" href="#vib-app-pendulum-fig-problem"><span class="std std-ref">Sketch of a simple pendulum</span></a> shows a sketch
+of the problem.</p>
+<div class="figure" id="id8">
 <span id="vib-app-pendulum-fig-problem"></span><a class="reference internal image-reference" href="_images/pendulum_problem.png"><img alt="_images/pendulum_problem.png" src="_images/pendulum_problem.png" style="width: 300px;" /></a>
 <p class="caption"><span class="caption-text"><em>Sketch of a simple pendulum</em></span></p>
 </div>
-<p>The motion is governed by Newton&#8217;s 2nd law, so we need to find expressions
-for the forces and the acceleration. Three forces on the body are
-considered: an unknown force <span class="math">\(S\)</span> from the wire, the gravity force <span class="math">\(mg\)</span>,
-and an air resistance force, <span class="math">\(\frac{1}{2}C_D\varrho A |v|v\)</span>,
-hereafter called the drag force,
-directed against the velocity of the body. Here, <span class="math">\(C_D\)</span> is a drag coefficient,
-<span class="math">\(\varrho\)</span> is the density of air, <span class="math">\(A\)</span> is the cross section area of the body,
-and <span class="math">\(v\)</span> is the velocity.</p>
+<p>The motion is governed by Newton&#8217;s 2nd law, so we need to find
+expressions for the forces and the acceleration. Three forces on the
+body are considered: an unknown force <span class="math">\(S\)</span> from the wire, the gravity
+force <span class="math">\(mg\)</span>, and an air resistance force, <span class="math">\(\frac{1}{2}C_D\varrho A|v|v\)</span>,
+hereafter called the drag force, directed against the velocity
+of the body. Here, <span class="math">\(C_D\)</span> is a drag coefficient, <span class="math">\(\varrho\)</span> is the
+density of air, <span class="math">\(A\)</span> is the cross section area of the body, and <span class="math">\(v\)</span> is
+the velocity.</p>
 <p>We introduce a coordinate system with polar coordinates and unit
-vectors <span class="math">\({\boldsymbol{i}_r}\)</span> and <span class="math">\(\boldsymbol{i}_{\theta}\)</span> as shown in Figure <a class="reference internal" href="#vib-app-pendulum-fig-forces"><span class="std std-ref">Forces acting on a simple pendulum</span></a>.
-The position of the center of mass of the body is</p>
+vectors <span class="math">\({\boldsymbol{i}_r}\)</span> and <span class="math">\(\boldsymbol{i}_{\theta}\)</span> as shown in Figure
+<a class="reference internal" href="#vib-app-pendulum-fig-forces"><span class="std std-ref">Forces acting on a simple pendulum</span></a>.  The position of the center of mass
+of the body is</p>
 <div class="math">
 \[\boldsymbol{r}(t) = x_0\boldsymbol{i} + y_0\boldsymbol{j} + L{\boldsymbol{i}_r},\]</div>
 <p>where <span class="math">\(\boldsymbol{i}\)</span> and <span class="math">\(\boldsymbol{j}\)</span> are unit vectors in the corresponding Cartesian
 coordinate system in the <span class="math">\(x\)</span> and <span class="math">\(y\)</span> directions, respectively. We have
 that <span class="math">\({\boldsymbol{i}_r} = \cos\theta\boldsymbol{i} +\sin\theta\boldsymbol{j}\)</span>.</p>
-<div class="figure" id="id8">
+<div class="figure" id="id9">
 <span id="vib-app-pendulum-fig-forces"></span><a class="reference internal image-reference" href="_images/pendulum_forces.png"><img alt="_images/pendulum_forces.png" src="_images/pendulum_forces.png" style="width: 400px;" /></a>
 <p class="caption"><span class="caption-text"><em>Forces acting on a simple pendulum</em></span></p>
 </div>
@@ -1045,23 +1098,23 @@ The acceleration is</p>
 = mL\ddot\theta\dot\theta\boldsymbol{i}_{\theta} - L\dot\theta^2{\boldsymbol{i}_r},\]</div>
 <p>leading to two component equations</p>
 <div class="math" id="eq-vib-app-pendulum-ir">
-\[\tag{87}
+\[\tag{89}
 -S + mg\cos\theta = -L\dot\theta^2,\]</div>
 <div class="math" id="eq-vib-app-pendulum-ith">
-\[\tag{88}
+\[\tag{90}
 -mg\sin\theta - \frac{1}{2}C_D\varrho AL^2|\dot\theta|\dot\theta
     = mL\ddot\theta{\thinspace .}\]</div>
-<p>From <a class="reference internal" href="#eq-vib-app-pendulum-ir"><span class="std std-ref">(87)</span></a> we get an expression for
-<span class="math">\(S=mg\cos\theta + L\dot\theta^2\)</span>, and from <a class="reference internal" href="#eq-vib-app-pendulum-ith"><span class="std std-ref">(88)</span></a>
+<p>From <a class="reference internal" href="#eq-vib-app-pendulum-ir"><span class="std std-ref">(89)</span></a> we get an expression for
+<span class="math">\(S=mg\cos\theta + L\dot\theta^2\)</span>, and from <a class="reference internal" href="#eq-vib-app-pendulum-ith"><span class="std std-ref">(90)</span></a>
 we get a differential equation for the angle <span class="math">\(\theta(t)\)</span>. This latter
 equation is ordered as</p>
 <div class="math" id="eq-vib-app-pendulum-thetaeq">
-\[\tag{89}
+\[\tag{91}
 m\ddot\theta + + \frac{1}{2}C_D\varrho AL|\dot\theta|\dot\theta
     + \frac{mg}{L}\sin\theta = 0{\thinspace .}\]</div>
 <p>Two initial conditions are needed: <span class="math">\(\theta=\Theta\)</span> and <span class="math">\(\dot\theta = \Omega\)</span>.
 Normally, the pendulum motion is started from rest, which means <span class="math">\(\Omega =0\)</span>.</p>
-<p>Equation <a class="reference internal" href="#eq-vib-app-pendulum-thetaeq"><span class="std std-ref">(89)</span></a> fits the general model
+<p>Equation <a class="reference internal" href="#eq-vib-app-pendulum-thetaeq"><span class="std std-ref">(91)</span></a> fits the general model
 used in <a class="reference internal" href="#eq-vib-ode2"><span class="std std-ref">(59)</span></a> in the section <a class="reference internal" href="#vib-model2"><span class="std std-ref">Generalization: damping, nonlinear spring, and external excitation</span></a> if we define
 <span class="math">\(u=\theta\)</span>, <span class="math">\(f(u^{\prime}) = \frac{1}{2}C_D\varrho AL|\dot\theta|\dot\theta\)</span>,
 <span class="math">\(s(u) = L^{-1}mg\sin u\)</span>, and <span class="math">\(F=0\)</span>.
@@ -1078,10 +1131,10 @@ with respect to <span class="math">\((x_0,y_0)\)</span>. The vector equation rea
 <p>The component equation in <span class="math">\(\boldsymbol{i}_{\theta}\)</span> direction gives the equation of motion
 for <span class="math">\(\theta(t)\)</span>:</p>
 <div class="math" id="eq-vib-app-pendulum-thetaeq-physical">
-\[\tag{90}
+\[\tag{92}
 I\ddot\theta + \frac{1}{2}C_D\varrho AL^3|\dot\theta|\dot\theta
     + mgL\sin\theta = 0{\thinspace .}\]</div>
-<p>[<strong>hpl 7</strong>: Scale the equations to arrive at the model problem with <span class="math">\(\sin\theta\)</span> spring.]</p>
+<p>[<strong>hpl 6</strong>: Scale the equations to arrive at the model problem with <span class="math">\(\sin\theta\)</span> spring.]</p>
 </div>
 <div class="section" id="motion-of-an-elastic-pendulum">
 <span id="vib-app-pendulum-elastic"></span><h2>Motion of an elastic pendulum<a class="headerlink" href="#motion-of-an-elastic-pendulum" title="Permalink to this headline">¶</a></h2>
@@ -1121,18 +1174,18 @@ the air resistance term (but <a class="reference internal" href="#vib-exer-pendu
 asks you to include it).</p>
 <p>Newton&#8217;s second law of motion applied to the body now results in</p>
 <div class="math" id="eq-vib-app-pendulum-elastic-eq1">
-\[\tag{91}
+\[\tag{93}
 m\ddot\boldsymbol{r} = -k(L-L_0)\boldsymbol{n} - mg\boldsymbol{j}\]</div>
 <p>The two components of
-<a class="reference internal" href="#eq-vib-app-pendulum-elastic-eq1"><span class="std std-ref">(91)</span></a> are</p>
-<div class="math" id="eq-auto27">
-\[\tag{92}
+<a class="reference internal" href="#eq-vib-app-pendulum-elastic-eq1"><span class="std std-ref">(93)</span></a> are</p>
+<div class="math" id="eq-auto29">
+\[\tag{94}
 \ddot x = -\frac{k}{m}(L-L_0)n_x,\]</div>
 <div class="math" id="eq-vib-app-pendulum-elastic-eq2a">
-\[\tag{93}
+\[\tag{95}
 .. _Eq:vib:app:pendulum_elastic:eq2b:\]</div>
 <div class="math">
-\[\tag{94}
+\[\tag{96}
 \ddot y = - \frac{k}{m}(L-L_0)n_y - g
     {\thinspace .}\]</div>
 <div class="section" id="remarks-about-an-elastic-vs-a-non-elastic-pendulum">
@@ -1212,25 +1265,25 @@ y(0) &amp; =(L_0+mg/k)(1-\cos\Theta),
 y'(0) &amp;= 0{\thinspace .}\end{split}\]</div>
 <p>We insert <span class="math">\(n_x\)</span> and <span class="math">\(n_y\)</span>  in the ODEs:</p>
 <div class="math" id="eq-vib-app-pendulum-elastic-x">
-\[\tag{95}
+\[\tag{97}
 \ddot x = -\frac{k}{m}\left(1 -\frac{L_0}{L}\right)(x-x_0),\]</div>
 <div class="math" id="eq-vib-app-pendulum-elastic-y">
-\[\tag{96}
+\[\tag{98}
 \ddot y = -\frac{k}{m}\left(1 -\frac{L_0}{L}\right)(y-y_0) - g,\]</div>
 <div class="math" id="eq-vib-app-pendulum-elastic-l">
-\[\tag{97}
+\[\tag{99}
 L = \sqrt{(x-x_0)^2 + (y-y_0)^2},\]</div>
 <div class="math" id="eq-vib-app-pendulum-elastic-x0">
-\[\tag{98}
+\[\tag{100}
 x(0) = (L_0+mg/k)\sin\Theta,\]</div>
 <div class="math" id="eq-vib-app-pendulum-elastic-vx0">
-\[\tag{99}
+\[\tag{101}
 x'(0) = 0,\]</div>
 <div class="math" id="eq-vib-app-pendulum-elastic-y0">
-\[\tag{100}
+\[\tag{102}
 y(0)  =(L_0+mg/k)(1-\cos\Theta),\]</div>
 <div class="math" id="eq-vib-app-pendulum-elastic-vy0">
-\[\tag{101}
+\[\tag{103}
 y'(0) = 0{\thinspace .}\]</div>
 </div>
 <div class="section" id="scaling-3">
@@ -1239,7 +1292,7 @@ y'(0) = 0{\thinspace .}\]</div>
 and a classic, non-elastic pendulum. The latter problem is obtained
 by letting <span class="math">\(k\rightarrow\infty\)</span>. Unfortunately,
 a serious problem with the ODEs
-<a class="reference internal" href="#eq-vib-app-pendulum-elastic-x"><span class="std std-ref">(95)</span></a>-<a class="reference internal" href="#eq-vib-app-pendulum-elastic-y"><span class="std std-ref">(96)</span></a> is that for large <span class="math">\(k\)</span>, we have a very large factor <span class="math">\(k/m\)</span> multiplied by a
+<a class="reference internal" href="#eq-vib-app-pendulum-elastic-x"><span class="std std-ref">(97)</span></a>-<a class="reference internal" href="#eq-vib-app-pendulum-elastic-y"><span class="std std-ref">(98)</span></a> is that for large <span class="math">\(k\)</span>, we have a very large factor <span class="math">\(k/m\)</span> multiplied by a
 very small number <span class="math">\(1-L_0/L\)</span>, since for large <span class="math">\(k\)</span>, <span class="math">\(L\approx L_0\)</span> (very
 small deformations of the wire). The product is subject to
 significant round-off errors for many relevant physical values of
@@ -1294,28 +1347,28 @@ stretched length in equilibrium. The non-elastic pendulum will have
 <span class="math">\(\beta =1\)</span> (<span class="math">\(k\rightarrow\infty\)</span>).
 With <span class="math">\(\beta\)</span> the ODEs read</p>
 <div class="math" id="eq-vib-app-pendulum-elastic-x-s">
-\[\tag{102}
+\[\tag{104}
 \frac{d^2\bar x}{d\bar t^2} =
     -\frac{\beta}{1-\beta}\left(1- \frac{\beta}{\bar L}\right)\bar x,\]</div>
 <div class="math" id="eq-vib-app-pendulum-elastic-y-s">
-\[\tag{103}
+\[\tag{105}
 \frac{d^2\bar y}{d\bar t^2} =
     -\frac{\beta}{1-\beta}\left(1- \frac{\beta}{\bar L}\right)(\bar y-1)
     -\beta,\]</div>
 <div class="math" id="eq-vib-app-pendulum-elastic-l-s">
-\[\tag{104}
+\[\tag{106}
 \bar L = \sqrt{\bar x^2 + (\bar y-1)^2},\]</div>
 <div class="math" id="eq-vib-app-pendulum-elastic-x0-s">
-\[\tag{105}
+\[\tag{107}
 \bar x(0) = (1+\epsilon)\sin\Theta,\]</div>
 <div class="math" id="eq-vib-app-pendulum-elastic-vx0-s">
-\[\tag{106}
+\[\tag{108}
 \frac{d\bar x}{d\bar t}(0) = 0,\]</div>
 <div class="math" id="eq-vib-app-pendulum-elastic-y0-s">
-\[\tag{107}
+\[\tag{109}
 \bar y(0) = 1 - (1+\epsilon)\cos\Theta,\]</div>
 <div class="math" id="eq-vib-app-pendulum-elastic-vy0-s">
-\[\tag{108}
+\[\tag{110}
 \frac{d\bar y}{d\bar t}(0) = 0,\]</div>
 <p>We have here added a parameter <span class="math">\(\epsilon\)</span>, which is an additional
 downward stretch of the wire at <span class="math">\(t=0\)</span>. This parameter makes it possible
@@ -1360,14 +1413,14 @@ denoted by <span class="math">\(h\)</span> and <span class="math">\(v\)</span> i
 \[h'(t)= v(t),\quad v'(t) = a(t),\]</div>
 <p>combined with Newton&#8217;s second law gives the ODE model</p>
 <div class="math" id="eq-vib-app-bouncing-ball-h2eq">
-\[\tag{109}
+\[\tag{111}
 h^{\prime\prime}(t) = -g,\]</div>
 <p>or expressed alternatively as a system of first-order equations:</p>
 <div class="math" id="eq-vib-app-bouncing-ball-veq">
-\[\tag{110}
+\[\tag{112}
 v'(t) = -g,\]</div>
 <div class="math" id="eq-vib-app-bouncing-ball-heq">
-\[\tag{111}
+\[\tag{113}
 h'(t) = v(t){\thinspace .}\]</div>
 <p>These equations govern the motion as long as the ball is away from
 the ground by a small distance <span class="math">\(\epsilon_h &gt; 0\)</span>. When <span class="math">\(h&lt;\epsilon_h\)</span>,
@@ -1389,8 +1442,8 @@ when modeling electric circuits.
 The current <span class="math">\(I(t)\)</span> in a
 circuit with an inductor with inductance <span class="math">\(L\)</span>, a capacitor with
 capacitance <span class="math">\(C\)</span>, and overall resistance <span class="math">\(R\)</span>, is governed by</p>
-<div class="math" id="eq-auto28">
-\[\tag{112}
+<div class="math" id="eq-auto30">
+\[\tag{114}
 \ddot I + \frac{R}{L}\dot I + \frac{1}{LC}I = \dot V(t),\]</div>
 <p>where <span class="math">\(V(t)\)</span> is the voltage source powering the circuit.
 This equation has the same form as the general model considered in
@@ -1439,8 +1492,8 @@ the dimensionless parameters.</p>
 <span id="vib-exer-bouncing-ball"></span><h2>Exercise 20: Simulate a bouncing ball<a class="headerlink" href="#exercise-20-simulate-a-bouncing-ball" title="Permalink to this headline">¶</a></h2>
 <p>The section <a class="reference internal" href="#vib-app-bouncing-ball"><span class="std std-ref">Bouncing ball</span></a> presents a model for a bouncing
 ball.
-Choose one of the two ODE formulation, <a class="reference internal" href="#eq-vib-app-bouncing-ball-h2eq"><span class="std std-ref">(109)</span></a> or
-<a class="reference internal" href="#eq-vib-app-bouncing-ball-veq"><span class="std std-ref">(110)</span></a>-<a class="reference internal" href="#eq-vib-app-bouncing-ball-heq"><span class="std std-ref">(111)</span></a>,
+Choose one of the two ODE formulation, <a class="reference internal" href="#eq-vib-app-bouncing-ball-h2eq"><span class="std std-ref">(111)</span></a> or
+<a class="reference internal" href="#eq-vib-app-bouncing-ball-veq"><span class="std std-ref">(112)</span></a>-<a class="reference internal" href="#eq-vib-app-bouncing-ball-heq"><span class="std std-ref">(113)</span></a>,
 and simulate the motion of a bouncing ball. Plot <span class="math">\(h(t)\)</span>. Think about how to
 plot <span class="math">\(v(t)\)</span>.</p>
 <p><strong>Hint.</strong>
@@ -1560,6 +1613,14 @@ Springer,
 <a class="reference external" href="http://tinyurl.com/nclmcng/web">http://tinyurl.com/nclmcng/web</a>.</td></tr>
 </tbody>
 </table>
+<table class="docutils citation" frame="void" id="ref2" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[Ref2]</td><td><strong>H. P. Langtangen and G. K. Pedersen</strong>. <em>Scaling of Differential Equations</em>,
+2015,
+<a class="reference external" href="http://tinyurl.com/qfjgxmf/web">http://tinyurl.com/qfjgxmf/web</a>.</td></tr>
+</tbody>
+</table>
 </div>
 
 
@@ -1622,6 +1683,7 @@ Springer,
 </ul>
 </li>
 <li><a class="reference internal" href="#a-sliding-mass-attached-to-a-spring">A sliding mass attached to a spring</a></li>
+<li><a class="reference internal" href="#vehicle-on-a-bumpy-road">Vehicle on a bumpy road</a></li>
 <li><a class="reference internal" href="#a-jumping-washing-machine">A jumping washing machine</a></li>
 <li><a class="reference internal" href="#motion-of-a-pendulum">Motion of a pendulum</a></li>
 <li><a class="reference internal" href="#motion-of-an-elastic-pendulum">Motion of an elastic pendulum</a><ul>

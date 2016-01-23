@@ -389,7 +389,7 @@ the discrete equations. The constant should therefore be reproduced
 to machine precision. The function ``test_constant`` in ``vib.py``
 implements this test.
 
-[**hpl 4**: Add verification tests for constant, linear, quadratic. Check how many bugs that are caught by these tests.]
+[**hpl 3**: Add verification tests for constant, linear, quadratic. Check how many bugs that are caught by these tests.]
 
 Linear solution
 ~~~~~~~~~~~~~~~
@@ -622,7 +622,7 @@ The initial conditions are trivially set as
         
         
 
-[**hpl 5**: odespy for the generalized problem]
+[**hpl 4**: odespy for the generalized problem]
 
 Exercises and Problems
 ======================
@@ -737,8 +737,8 @@ Implement a ``solver`` function for computing the numerical
 solution of this problem.
 
 **g)**
-Write a nose test for checking that the quadratic solution
-is computed to correctly (too machine precision, but the
+Write a test function for checking that the quadratic solution
+is computed correctly (too machine precision, but the
 round-off errors accumulate and increase with :math:`T`) by the ``solver``
 function.
 
@@ -897,7 +897,7 @@ constant.
 The error in energy can be computed as explained in
 the section :ref:`vib:model1:energy`.
 
-Make a nose test in a file ``test_error_conv.py``, where code from
+Make a test function in a file ``test_error_conv.py``, where code from
 ``vib_undamped.py`` is imported, but the ``convergence_rates`` and
 ``test_convergence_rates`` functions are copied and modified to also
 incorporate computations of the error in energy and the convergence
@@ -930,7 +930,7 @@ Filename: ``vib_verify_mms``.
 Exercise 10: Use an exact discrete solution for verification
 ------------------------------------------------------------
 
-Write a nose test function in a separate file
+Write a test function in a separate file
 that employs the exact discrete solution
 :ref:`(20) <Eq:vib:ode1:un:exact>` to verify the implementation of the
 ``solver`` function in the file ``vib_undamped.py``.
@@ -1408,6 +1408,91 @@ The equation of motion becomes
         
         
 
+.. _vib:app:bumpy:
+
+Vehicle on a bumpy road
+-----------------------
+
+.. _vib:app:bumpy:fig:sketch:
+
+.. figure:: bumpy_sketch.png
+   :width: 400
+
+   *Sketch one-wheel vehicle on a bumpy road*
+
+We consider a very simplistic vehicle, on one wheel, rolling along a
+bumpy road. The oscillatory nature of the road will induce an external
+forcing on the spring system in the vehicle and cause vibrations.
+Figure :ref:`vib:app:bumpy:fig:sketch` outlines the situation.
+
+To derive the equation that governs the motion, we must first establish
+the position vector of the black mass at the top of the spring.
+Suppose the spring has length :math:`L` without any elongation or compression,
+suppose the radius of the wheel is :math:`R`, and suppose the height of the
+black mass at the top is :math:`H`. With the aid of the :math:`\boldsymbol{r}_0` vector
+in Figure :ref:`vib:app:bumpy:fig:sketch`, the position :math:`\boldsymbol{r}` of
+the center point of the mass is
+
+.. _Eq:_auto27:
+
+.. math::
+
+    \tag{87}
+    \boldsymbol{r} = \boldsymbol{r}_0 + 2R\boldsymbol{j} + L\boldsymbol{j} + u\boldsymbol{j} + \frac{1}{2} H\boldsymbol{j},\ 
+        
+        
+
+where :math:`u` is the elongation or compression in the spring according to
+the (unknown and to be computed) displacement :math:`u`. If the vehicle travels
+with constant horizontal velocity :math:`v` and :math:`h(x)` is the shape of the
+road, then the vector :math:`\boldsymbol{r}_0` is
+
+.. math::
+         \boldsymbol{r}_0 = vt\boldsymbol{i} + h(vt)\boldsymbol{j},
+
+if the motion starts from :math:`x=0` at time :math:`t=0`.
+
+The forces on the mass is the gravity, the spring force, and an optional
+damping force that is proportional to the vertical velocity :math:`\dot u`. Newton's
+second law of motion then tells that
+
+.. math::
+         m\ddot\boldsymbol{r} = -mg\boldsymbol{j} - s(u) - b\dot u\boldsymbol{j}{\thinspace .}
+
+This leads to
+
+.. math::
+        
+        m\ddot u = - s(u) - b\dot u - mg -mh''(vt)v^2
+        
+
+To simplify a little bit, we omit the gravity force :math:`mg` in comparison with
+the other terms. Introducing :math:`u'` for :math:`\dot u` then gives a standard
+damped, vibration equation with external forcing (here from the bumpy road):
+
+.. _Eq:_auto28:
+
+.. math::
+
+    \tag{88}
+    mu'' + bu' + s(u) =  -mh''(vt)v^2{\thinspace .}
+        
+        
+
+Since the road is normally known just as a set of array values, :math:`h''` must
+be computed by finite differences. Let :math:`\Delta x` be the spacing between
+measured values :math:`h_i= h(i\Delta x)` on the road. The discrete second-order
+derivative :math:`h''` reads
+
+.. math::
+         q_i = \frac{h_{i-1} - 2h_i + h_{i+1}}{\Delta x^2}, \quad i=1,\ldots,N_x-1,
+
+with simply setting the end points as :math:`q_0=q_1` and :math:`q_{N_x}=q_{N_x-1}`.
+The term :math:`-mh''(vt)v^2` corresponds to a force with discrete time values
+
+.. math::
+         F^n = -mq_n v^2,\quad \Delta t = v^{-1}\Delta x{\thinspace .}
+
 .. _vib:app:washmach:
 
 A jumping washing machine
@@ -1419,7 +1504,7 @@ the machine induces a sinusoidal external force and the machine will
 jump up and down if the frequency of the external force is close to
 the natural frequency of the machine and its spring-damper system.
 
-[**hpl 6**: Not finished. This is a good example on resonance.]
+[**hpl 5**: Not finished. This is a good example on resonance.]
 
 .. _vib:app:pendulum:
 
@@ -1427,10 +1512,10 @@ Motion of a pendulum
 --------------------
 
 A classical problem in mechanics is the motion of a pendulum. We first
-consider a `simple pendulum <https://en.wikipedia.org/wiki/Pendulum>`__:
-a small body of mass :math:`m` is attached to a massless wire and can oscillate back and forth
-in the gravity field. Figure :ref:`vib:app:pendulum:fig_problem` shows
-a sketch of the problem.
+consider a `simple pendulum <https://en.wikipedia.org/wiki/Pendulum>`__: a small body of mass :math:`m` is
+attached to a massless wire and can oscillate back and forth in the
+gravity field. Figure :ref:`vib:app:pendulum:fig_problem` shows a sketch
+of the problem.
 
 .. _vib:app:pendulum:fig_problem:
 
@@ -1439,18 +1524,19 @@ a sketch of the problem.
 
    *Sketch of a simple pendulum*
 
-The motion is governed by Newton's 2nd law, so we need to find expressions
-for the forces and the acceleration. Three forces on the body are
-considered: an unknown force :math:`S` from the wire, the gravity force :math:`mg`,
-and an air resistance force, :math:`\frac{1}{2}C_D\varrho A |v|v`,
-hereafter called the drag force,
-directed against the velocity of the body. Here, :math:`C_D` is a drag coefficient,
-:math:`\varrho` is the density of air, :math:`A` is the cross section area of the body,
-and :math:`v` is the velocity.
+The motion is governed by Newton's 2nd law, so we need to find
+expressions for the forces and the acceleration. Three forces on the
+body are considered: an unknown force :math:`S` from the wire, the gravity
+force :math:`mg`, and an air resistance force, :math:`\frac{1}{2}C_D\varrho A|v|v`,
+hereafter called the drag force, directed against the velocity
+of the body. Here, :math:`C_D` is a drag coefficient, :math:`\varrho` is the
+density of air, :math:`A` is the cross section area of the body, and :math:`v` is
+the velocity.
 
 We introduce a coordinate system with polar coordinates and unit
-vectors :math:`{\boldsymbol{i}_r}` and :math:`\boldsymbol{i}_{\theta}` as shown in Figure :ref:`vib:app:pendulum:fig_forces`.
-The position of the center of mass of the body is
+vectors :math:`{\boldsymbol{i}_r}` and :math:`\boldsymbol{i}_{\theta}` as shown in Figure
+:ref:`vib:app:pendulum:fig_forces`.  The position of the center of mass
+of the body is
 
 .. math::
          \boldsymbol{r}(t) = x_0\boldsymbol{i} + y_0\boldsymbol{j} + L{\boldsymbol{i}_r},
@@ -1505,7 +1591,7 @@ leading to two component equations
 
 .. math::
 
-    \tag{87}
+    \tag{89}
     -S + mg\cos\theta = -L\dot\theta^2,
         
         
@@ -1514,14 +1600,14 @@ leading to two component equations
 
 .. math::
 
-    \tag{88}
+    \tag{90}
     -mg\sin\theta - \frac{1}{2}C_D\varrho AL^2|\dot\theta|\dot\theta
         = mL\ddot\theta{\thinspace .}
         
         
 
-From :ref:`(87) <Eq:vib:app:pendulum:ir>` we get an expression for
-:math:`S=mg\cos\theta + L\dot\theta^2`, and from :ref:`(88) <Eq:vib:app:pendulum:ith>`
+From :ref:`(89) <Eq:vib:app:pendulum:ir>` we get an expression for
+:math:`S=mg\cos\theta + L\dot\theta^2`, and from :ref:`(90) <Eq:vib:app:pendulum:ith>`
 we get a differential equation for the angle :math:`\theta(t)`. This latter
 equation is ordered as
 
@@ -1529,7 +1615,7 @@ equation is ordered as
 
 .. math::
 
-    \tag{89}
+    \tag{91}
     m\ddot\theta + + \frac{1}{2}C_D\varrho AL|\dot\theta|\dot\theta
         + \frac{mg}{L}\sin\theta = 0{\thinspace .}
         
@@ -1538,7 +1624,7 @@ equation is ordered as
 Two initial conditions are needed: :math:`\theta=\Theta` and :math:`\dot\theta = \Omega`.
 Normally, the pendulum motion is started from rest, which means :math:`\Omega =0`.
 
-Equation :ref:`(89) <Eq:vib:app:pendulum:thetaeq>` fits the general model
+Equation :ref:`(91) <Eq:vib:app:pendulum:thetaeq>` fits the general model
 used in :ref:`(59) <Eq:vib:ode2>` in the section :ref:`vib:model2` if we define
 :math:`u=\theta`, :math:`f(u^{\prime}) = \frac{1}{2}C_D\varrho AL|\dot\theta|\dot\theta`,
 :math:`s(u) = L^{-1}mg\sin u`, and :math:`F=0`.
@@ -1562,13 +1648,13 @@ for :math:`\theta(t)`:
 
 .. math::
 
-    \tag{90}
+    \tag{92}
     I\ddot\theta + \frac{1}{2}C_D\varrho AL^3|\dot\theta|\dot\theta
         + mgL\sin\theta = 0{\thinspace .}
         
         
 
-[**hpl 7**: Scale the equations to arrive at the model problem with :math:`\sin\theta` spring.]
+[**hpl 6**: Scale the equations to arrive at the model problem with :math:`\sin\theta` spring.]
 
 .. _vib:app:pendulum_elastic:
 
@@ -1625,19 +1711,19 @@ Newton's second law of motion applied to the body now results in
 
 .. math::
 
-    \tag{91}
+    \tag{93}
     m\ddot\boldsymbol{r} = -k(L-L_0)\boldsymbol{n} - mg\boldsymbol{j}
         
         
 
 The two components of
-:ref:`(91) <Eq:vib:app:pendulum_elastic:eq1>` are
+:ref:`(93) <Eq:vib:app:pendulum_elastic:eq1>` are
 
-.. _Eq:_auto27:
+.. _Eq:_auto29:
 
 .. math::
 
-    \tag{92}
+    \tag{94}
     \ddot x = -\frac{k}{m}(L-L_0)n_x,
         
         
@@ -1646,12 +1732,12 @@ The two components of
 
 .. math::
 
-    \tag{93}
+    \tag{95}
     .. _Eq:vib:app:pendulum_elastic:eq2b:
 
 .. math::
 
-    \tag{94}
+    \tag{96}
     \ddot y = - \frac{k}{m}(L-L_0)n_y - g
         {\thinspace .}
         
@@ -1753,7 +1839,7 @@ We insert :math:`n_x` and :math:`n_y`  in the ODEs:
 
 .. math::
 
-    \tag{95}
+    \tag{97}
     \ddot x = -\frac{k}{m}\left(1 -\frac{L_0}{L}\right)(x-x_0),
         
         
@@ -1762,7 +1848,7 @@ We insert :math:`n_x` and :math:`n_y`  in the ODEs:
 
 .. math::
 
-    \tag{96}
+    \tag{98}
     \ddot y = -\frac{k}{m}\left(1 -\frac{L_0}{L}\right)(y-y_0) - g,
         
         
@@ -1771,7 +1857,7 @@ We insert :math:`n_x` and :math:`n_y`  in the ODEs:
 
 .. math::
 
-    \tag{97}
+    \tag{99}
     L = \sqrt{(x-x_0)^2 + (y-y_0)^2},
         
         
@@ -1780,7 +1866,7 @@ We insert :math:`n_x` and :math:`n_y`  in the ODEs:
 
 .. math::
 
-    \tag{98}
+    \tag{100}
     x(0) = (L_0+mg/k)\sin\Theta,
         
         
@@ -1789,7 +1875,7 @@ We insert :math:`n_x` and :math:`n_y`  in the ODEs:
 
 .. math::
 
-    \tag{99}
+    \tag{101}
     x'(0) = 0,
         
         
@@ -1798,7 +1884,7 @@ We insert :math:`n_x` and :math:`n_y`  in the ODEs:
 
 .. math::
 
-    \tag{100}
+    \tag{102}
     y(0)  =(L_0+mg/k)(1-\cos\Theta),
         
         
@@ -1807,7 +1893,7 @@ We insert :math:`n_x` and :math:`n_y`  in the ODEs:
 
 .. math::
 
-    \tag{101}
+    \tag{103}
     y'(0) = 0{\thinspace .}
         
         
@@ -1819,7 +1905,7 @@ The elastic pendulum model can be used to study both an elastic pendulum
 and a classic, non-elastic pendulum. The latter problem is obtained
 by letting :math:`k\rightarrow\infty`. Unfortunately,
 a serious problem with the ODEs
-:ref:`(95) <Eq:vib:app:pendulum_elastic:x>`-:ref:`(96) <Eq:vib:app:pendulum_elastic:y>` is that for large :math:`k`, we have a very large factor :math:`k/m` multiplied by a
+:ref:`(97) <Eq:vib:app:pendulum_elastic:x>`-:ref:`(98) <Eq:vib:app:pendulum_elastic:y>` is that for large :math:`k`, we have a very large factor :math:`k/m` multiplied by a
 very small number :math:`1-L_0/L`, since for large :math:`k`, :math:`L\approx L_0` (very
 small deformations of the wire). The product is subject to
 significant round-off errors for many relevant physical values of
@@ -1897,7 +1983,7 @@ With :math:`\beta` the ODEs read
 
 .. math::
 
-    \tag{102}
+    \tag{104}
     \frac{d^2\bar x}{d\bar t^2} =
         -\frac{\beta}{1-\beta}\left(1- \frac{\beta}{\bar L}\right)\bar x,
         
@@ -1907,7 +1993,7 @@ With :math:`\beta` the ODEs read
 
 .. math::
 
-    \tag{103}
+    \tag{105}
     \frac{d^2\bar y}{d\bar t^2} =
         -\frac{\beta}{1-\beta}\left(1- \frac{\beta}{\bar L}\right)(\bar y-1)
         -\beta,
@@ -1918,7 +2004,7 @@ With :math:`\beta` the ODEs read
 
 .. math::
 
-    \tag{104}
+    \tag{106}
     \bar L = \sqrt{\bar x^2 + (\bar y-1)^2},
         
         
@@ -1927,7 +2013,7 @@ With :math:`\beta` the ODEs read
 
 .. math::
 
-    \tag{105}
+    \tag{107}
     \bar x(0) = (1+\epsilon)\sin\Theta,
         
         
@@ -1936,7 +2022,7 @@ With :math:`\beta` the ODEs read
 
 .. math::
 
-    \tag{106}
+    \tag{108}
     \frac{d\bar x}{d\bar t}(0) = 0,
         
         
@@ -1945,7 +2031,7 @@ With :math:`\beta` the ODEs read
 
 .. math::
 
-    \tag{107}
+    \tag{109}
     \bar y(0) = 1 - (1+\epsilon)\cos\Theta,
         
         
@@ -1954,7 +2040,7 @@ With :math:`\beta` the ODEs read
 
 .. math::
 
-    \tag{108}
+    \tag{110}
     \frac{d\bar y}{d\bar t}(0) = 0,
         
         
@@ -2014,7 +2100,7 @@ combined with Newton's second law gives the ODE model
 
 .. math::
 
-    \tag{109}
+    \tag{111}
     h^{\prime\prime}(t) = -g,
         
         
@@ -2025,7 +2111,7 @@ or expressed alternatively as a system of first-order equations:
 
 .. math::
 
-    \tag{110}
+    \tag{112}
     v'(t) = -g,
          
         
@@ -2034,7 +2120,7 @@ or expressed alternatively as a system of first-order equations:
 
 .. math::
 
-    \tag{111}
+    \tag{113}
     h'(t) = v(t){\thinspace .}
         
         
@@ -2061,11 +2147,11 @@ The current :math:`I(t)` in a
 circuit with an inductor with inductance :math:`L`, a capacitor with
 capacitance :math:`C`, and overall resistance :math:`R`, is governed by
 
-.. _Eq:_auto28:
+.. _Eq:_auto30:
 
 .. math::
 
-    \tag{112}
+    \tag{114}
     \ddot I + \frac{R}{L}\dot I + \frac{1}{LC}I = \dot V(t),
         
         
@@ -2156,8 +2242,8 @@ Exercise 20: Simulate a bouncing ball
 
 The section :ref:`vib:app:bouncing_ball` presents a model for a bouncing
 ball.
-Choose one of the two ODE formulation, :ref:`(109) <Eq:vib:app:bouncing:ball:h2eq>` or
-:ref:`(110) <Eq:vib:app:bouncing:ball:veq>`-:ref:`(111) <Eq:vib:app:bouncing:ball:heq>`,
+Choose one of the two ODE formulation, :ref:`(111) <Eq:vib:app:bouncing:ball:h2eq>` or
+:ref:`(112) <Eq:vib:app:bouncing:ball:veq>`-:ref:`(113) <Eq:vib:app:bouncing:ball:heq>`,
 and simulate the motion of a bouncing ball. Plot :math:`h(t)`. Think about how to
 plot :math:`v(t)`.
 
@@ -2358,4 +2444,9 @@ References
    Springer,
    2015,
    `http://tinyurl.com/nclmcng/web <http://tinyurl.com/nclmcng/web>`_.
+
+.. [Ref2]
+   **H. P. Langtangen and G. K. Pedersen**. *Scaling of Differential Equations*,
+   2015,
+   `http://tinyurl.com/qfjgxmf/web <http://tinyurl.com/qfjgxmf/web>`_.
 
