@@ -170,9 +170,15 @@ div { text-align: justify; text-justify: inter-word; }
                1,
                'vib:model1:energy',
                'vib:model1:energy'),
-              ('Derivation of the energy expression', 2, None, '___sec42'),
+              ('Derivation of the energy expression',
+               2,
+               'vib:model1:energy:expr',
+               'vib:model1:energy:expr'),
               ('Energy of the exact solution', 3, None, '___sec43'),
-              ('An error measure based on energy', 2, None, '___sec44'),
+              ('An error measure based on energy',
+               2,
+               'vib:model1:energy:measure',
+               'vib:model1:energy:measure'),
               ('The Euler-Cromer method',
                1,
                'vib:model2x2:EulerCromer',
@@ -299,6 +305,10 @@ div { text-align: justify; text-justify: inter-word; }
                2,
                'vib:app:mass_sliding',
                'vib:app:mass_sliding'),
+              ('Vehicle on a bumpy road',
+               2,
+               'vib:app:bumpy',
+               'vib:app:bumpy'),
               ('A jumping washing machine',
                2,
                'vib:app:washmach',
@@ -314,17 +324,17 @@ div { text-align: justify; text-justify: inter-word; }
               ('Remarks about an elastic vs a non-elastic pendulum',
                3,
                None,
-               '___sec90'),
-              ('Initial conditions', 3, None, '___sec91'),
-              ('The complete ODE problem', 3, None, '___sec92'),
-              ('Scaling', 3, None, '___sec93'),
-              ('Remark on the non-elastic limit', 3, None, '___sec94'),
+               '___sec91'),
+              ('Initial conditions', 3, None, '___sec92'),
+              ('The complete ODE problem', 3, None, '___sec93'),
+              ('Scaling', 3, None, '___sec94'),
+              ('Remark on the non-elastic limit', 3, None, '___sec95'),
               ('Bouncing ball',
                2,
                'vib:app:bouncing_ball',
                'vib:app:bouncing_ball'),
-              ('Electric circuits', 2, None, '___sec96'),
-              ('Exercises', 1, None, '___sec97'),
+              ('Electric circuits', 2, None, '___sec97'),
+              ('Exercises', 1, None, '___sec98'),
               ('Exercise 18: Simulate resonance',
                2,
                'vib:exer:resonance',
@@ -345,8 +355,8 @@ div { text-align: justify; text-justify: inter-word; }
                2,
                'vib:exer:pendulum_elastic_drag',
                'vib:exer:pendulum_elastic_drag'),
-              ('Remarks', 3, None, '___sec103'),
-              ('References', 1, None, '___sec104')]}
+              ('Remarks', 3, None, '___sec104'),
+              ('References', 1, None, '___sec105')]}
 end of tocinfo -->
 
 <body>
@@ -1002,7 +1012,8 @@ All the implementational details of computing the sequence
 <p>
 The error analysis in the section <a href="#vib:ode1:analysis">Analysis of the numerical scheme</a> is quite
 detailed and results in \( r=2 \), but other methods like truncation error
-analysis (see  ref{trunc:vib:undamped}) also points to \( r=2 \),
+analysis
+also points to \( r=2 \),
 as well as the related quick reasoning that we have used a
 second-order accurate finite difference approximation \( [D_tD_tu]^n \) to
 the ODE and a second-order accurate finite difference formula for the
@@ -1042,7 +1053,7 @@ dimensionless by introducing dimensionless variables \( \bar t = t/t_c \)
 and \( \bar u = u/u_c \), where \( t_c \) and \( u_c \) are characteristic scales
 for \( t \) and \( u \), respectively. We refer to the section
 <a href="http://hplgit.github.io/scaling-book/doc/pub/book/html/._scaling-book006.html#sec:scale:vib:undamped" target="_self">Undamped vibrations without forcing</a>
-in the book <a href="http://tinyurl.com/qfjgxmf/web" target="_self">Scaling of differential equations</a> <a href="._vib-solarized003.html#Langtangen_decay">[1]</a> for all
+in the book <a href="http://tinyurl.com/qfjgxmf/web" target="_self">Scaling of differential equations</a> <a href="._vib-solarized003.html#Langtangen_scaling">[2]</a> for all
 details about this scaling.
 
 <p>
@@ -2447,8 +2458,9 @@ a sketch of the code.
 <span style="color: #8B008B; font-weight: bold">import</span> <span style="color: #008b45; text-decoration: underline">numpy</span> <span style="color: #8B008B; font-weight: bold">as</span> <span style="color: #008b45; text-decoration: underline">np</span>
 
 <span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">f</span>(u, t, w=<span style="color: #B452CD">1</span>):
-    u, v = u  <span style="color: #228B22"># u is array of length 2 holding our [u, v]</span>
-    <span style="color: #8B008B; font-weight: bold">return</span> [v, -w**<span style="color: #B452CD">2</span>*u]
+    <span style="color: #228B22"># v, u numbering for EulerCromer to work well</span>
+    v, u = u  <span style="color: #228B22"># u is array of length 2 holding our [v, u]</span>
+    <span style="color: #8B008B; font-weight: bold">return</span> [-w**<span style="color: #B452CD">2</span>*u, v]
 
 <span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">run_solvers_and_plot</span>(solvers, timesteps_per_period=<span style="color: #B452CD">20</span>,
                          num_periods=<span style="color: #B452CD">1</span>, I=<span style="color: #B452CD">1</span>, w=<span style="color: #B452CD">2</span>*np.pi):
@@ -2461,7 +2473,7 @@ a sketch of the code.
     legends = []
     <span style="color: #8B008B; font-weight: bold">for</span> solver <span style="color: #8B008B">in</span> solvers:
         solver.set(f_kwargs={<span style="color: #CD5555">&#39;w&#39;</span>: w})
-        solver.set_initial_condition([I, <span style="color: #B452CD">0</span>])
+        solver.set_initial_condition([<span style="color: #B452CD">0</span>, I])
         u, t = solver.solve(t_mesh)
 </pre></div>
 <p>
@@ -2715,7 +2727,7 @@ in the system. Conservation of energy is
 much used to check numerical simulations, so it is well invested time to
 dive into this subject.
 
-<h2 id="___sec42">Derivation of the energy expression </h2>
+<h2 id="vib:model1:energy:expr">Derivation of the energy expression</h2>
 
 <p>
 We start out with multiplying
@@ -2821,7 +2833,7 @@ $$ E(t) = {\half}I^2 (-\omega\sin\omega t)^2
 \tp
 $$
 
-<h2 id="___sec44">An error measure based on energy </h2>
+<h2 id="vib:model1:energy:measure">An error measure based on energy</h2>
 
 <p>
 The constant energy is well expressed by its initial value \( E(0) \), so that
@@ -2944,37 +2956,16 @@ the convergence of the energy error:
 </table>
 <p>
 A striking fact from this table is that the error of the Forward Euler
-method is reduced proportional to \( \Delta t \), while that for the
-Crank-Nicolson has a reduction proportional to \( \Delta t^2 \) (we cannot
+method is reduced by the same factor as \( \Delta t \) is reduced by,
+while the error in the
+Crank-Nicolson method has a reduction proportional to \( \Delta t^2 \) (we cannot
 say anything for the Backward Euler method). However, for the RK2
-methods, halving \( \Delta t \) reduces the error by almost a factor of 10
+method, halving \( \Delta t \) reduces the error by almost a factor of 10
 (!), and for the RK4 method the reduction seems proportional to
 \( \Delta t^2 \) only (and the trend is confirmed by running smaller time
 steps, so for \( \Delta t = 3.9\cdot 10^{-4} \) the relative error of RK2
 is a factor 10 smaller than that of RK4!).
 
-<p>
-What is the corresponding relative error in energy of the centered
-scheme <a href="#mjx-eqn-7">(7)</a> for the second-order ODE \( u^{\prime\prime}
-+\omega^2 u=0 \)? We know that the solution has exact amplitude:
-\( u^n = I\cos(\tilde\omega t_n) \). Using that
-
-$$ u^n=e^{i\tilde\omega t_n}:\quad [D_{2t} u]^n = u^n\frac{1}{\Delta t}i\sin{(\tilde\omega\Delta t)},$$
-
-we get
-
-$$
-e_E^n = \frac{1}{2}(-\Delta t^{-2}\sin^2(\tilde\omega\Delta t)
-+ \frac{1}{2}\omega^2)\cos(\tilde\omega t_n)
-= ((\tilde\omega - \omega)^2 - \frac{1}{3}\tilde\omega^4\Delta t^2
- + \Oof{\Delta t^4})\frac{1}{2}\cos(\tilde\omega t_n)\tp
- $$
-
-<p>
-
-<!-- code=text typeset with pygments style "perldoc" -->
-<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%">Series for sin^2(x): x**2 - x**4/3 + 2*x**6/45 + O(x**8)
-</pre></div>
 <p>
 <!-- Should build a verification test on the energy error. -->
 
@@ -3005,7 +2996,7 @@ $$
 \begin{align}
 \lbrack D_t^+u &= v\rbrack^n,
 \tag{49}\\ 
-\lbrack D_t^-v &= -\omega u\rbrack^{n+1}
+\lbrack D_t^-v &= -\omega^2 u\rbrack^{n+1}
 \tp
 \tag{50}
 \end{align}
@@ -3044,10 +3035,10 @@ $$
 The advantage of ordering the ODEs as in
 <a href="#mjx-eqn-53">(53)</a>-<a href="#mjx-eqn-54">(54)</a>
 becomes evident
-when consider complicated models. Such models are included if
+when considering complicated models. Such models are included if
 we write our vibration ODE more generally as
 
-$$ \ddot u + g(u, u^{\prime}, t)=0\tp$$
+$$ u^{\prime\prime} + g(u, u^{\prime}, t)=0\tp$$
 
 We can rewrite this second-order ODE as two first-order ODEs,
 
@@ -3069,7 +3060,8 @@ $$
 
 We realize that the first update works well with any \( g \) since old
 values \( u^n \) and \( v^n \) are used. Switching the equations would
-demand \( u^n{+1} \) and \( v^{n+1} \) values in \( g \).
+demand \( u^{n+1} \) and \( v^{n+1} \) values in \( g \) and result in nonlinear
+algebraic equations to be solved at each time level.
 
 <p>
 <!-- Despite using a backward difference, there is no need to solve a coupled -->
@@ -3090,7 +3082,32 @@ but this is not true: the use of a forward and then a backward
 difference make errors cancel so that the overall error in the scheme
 is \( \Oof{\Delta t^2} \). This is explained below.
 
+<p>
+How does the Euler-Cromer method preserve the total energy?
+We may run the example from the section <a href="#vib:model1:energy:measure">An error measure based on energy</a>:
+
+<p>
+<table border="1">
+<thead>
+<tr><th align="center">   Method   </th> <td align="center">\( T \) </td> <td align="center">\( \Delta t \)</td> <td align="center">\( \max \left\vert e_E^n\right\vert/e_E^0 \)</td> </tr>
+</thead>
+<tbody>
+<tr><td align="left">   Euler-Cromer    </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.05 \)        </td> <td align="left">   \( 2.530\cdot 10^{-2} \)                        </td> </tr>
+<tr><td align="left">   Euler-Cromer    </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.025 \)       </td> <td align="left">   \( 6.206\cdot 10^{-3} \)                        </td> </tr>
+<tr><td align="left">   Euler-Cromer    </td> <td align="left">   \( 10 \)    </td> <td align="left">   \( 0.0125 \)      </td> <td align="left">   \( 1.544\cdot 10^{-3} \)                        </td> </tr>
+</tbody>
+</table>
+<p>
+The relative error in the total energy decreases as \( \Delta t^2 \),
+and the error level is slightly lower than for the Crank-Nicolson and
+Runge-Kutta methods.
+
 <h2 id="vib:model2x2:EulerCromer:equiv">Equivalence with the scheme for the second-order ODE</h2>
+
+<p>
+We shall now show that the Euler-Cromer scheme for the system of
+first-order equations is equivalent to the centered finite difference
+method for the second-order vibration ODE (!).
 
 <p>
 We may eliminate the \( v^n \) variable from
@@ -3101,7 +3118,7 @@ The \( v^{n+1} \) term in <a href="#mjx-eqn-53">(53)</a> can
 be eliminated from <a href="#mjx-eqn-54">(54)</a>:
 $$
 \begin{equation}
-u^{n+1} = u^n + \Delta t (v^n - \omega^2\Delta t^2 u^n)\tp
+u^{n+1} = u^n + \Delta t (v^n - \omega^2\Delta t u^n)\tp
 \tag{55}
 \end{equation}
 $$
@@ -3135,15 +3152,24 @@ Although the Euler-Cromer scheme and the method <a href="#mjx-eqn-7">(7)</a> are
 equivalent, there could be differences in the way they handle
 the initial conditions. Let is look into this topic.
 The initial condition \( u^{\prime}=0 \) means \( u^{\prime}=v=0 \).  From
-<a href="#mjx-eqn-54">(54)</a> we get \( v^1=-\omega^2 u^0 \)
-and \( u^1=u^0 - \omega^2\Delta t^2 u^0 \). When using
-a centered approximation of \( u^{\prime}(0)=0 \) combined with the
-discretization <a href="#mjx-eqn-7">(7)</a> of the second-order ODE, we
-get \( u^1=u^0 - \frac{1}{2}\omega^2\Delta t^2 u^0 \). The difference
-is \( \frac{1}{2}\omega^2\Delta t^2 u^0 \), which is of second order in \( \Delta t \),
-seemingly
-consistent with the overall error in the scheme for the differential equation
-model.
+<a href="#mjx-eqn-53">(53)</a> we get
+
+$$ v^1=v^0-\Delta t\omega^2 u^0
+=\Delta t\omega^2 u^0,$$
+
+and from <a href="#mjx-eqn-54">(54)</a>
+it follows that
+
+$$ u^1=u^0 + \Delta t v^1 = u^0 - \omega^2\Delta t^2 u^0\tp$$
+
+When we previously used
+a centered approximation of \( u^{\prime}(0)=0 \) combined with
+the discretization <a href="#mjx-eqn-7">(7)</a> of the second-order ODE, we
+got a slightly different result:
+\( u^1=u^0 - \frac{1}{2}\omega^2\Delta t^2 u^0 \). The difference is
+\( \frac{1}{2}\omega^2\Delta t^2 u^0 \), which is of second order in
+\( \Delta t \), seemingly consistent with the overall error in the scheme
+for the differential equation model.
 
 <p>
 A different view can also be taken.
@@ -3169,7 +3195,7 @@ as the overall scheme.
 <h2 id="vib:model2x2:EulerCromer:impl">Implementation</h2>
 
 <p>
-The function below, found in <a href="http://tinyurl.com/nm5587k/vib/vib_EulerCromer.py" target="_self"><tt>vib_EulerCromer.py</tt></a> implements the Euler-Cromer scheme
+The function below, found in <a href="http://tinyurl.com/nm5587k/vib/vib_EulerCromer.py" target="_self"><tt>vib_EulerCromer.py</tt></a>, implements the Euler-Cromer scheme
 <a href="#mjx-eqn-53">(53)</a>-<a href="#mjx-eqn-54">(54)</a>:
 
 <p>
@@ -3233,20 +3259,48 @@ formula <a href="#mjx-eqn-20">(20)</a>:
 </pre></div>
 <p>
 Another function, <code>demo</code>,
-visualizes the difference between Euler-Cromer scheme and the scheme
+visualizes the difference between the Euler-Cromer scheme and the scheme
 <a href="#mjx-eqn-7">(7)</a>
 for the second-oder ODE, arising from the mismatch in the first time level.
 
 <p>
-
-<!-- begin inline comment -->
-<font color="red">(<b>hpl 3</b>: Odespy's Euler-Cromer, but it needs more work with the example code.)</font>
-<!-- end inline comment -->
+The Euler-Cromer method is also available in the Odespy package.
+The important thing to remember is that we must order the unknowns as
+\( v \) and \( u \), so the <code>u</code> vector at each time level consists of the
+velocity \( v \) as first component and the displacement \( u \) as
+second component:
 
 <p>
-<!-- is anything gained? is v of higher order than D_2t u from the -->
-<!-- other approach, i.e., if we need v, is this alg better? Probably not -->
-<!-- since v is related u through a difference -->
+
+<!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
+<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%"><span style="color: #228B22"># Define ODE</span>
+<span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">f</span>(u, t, w=<span style="color: #B452CD">1</span>):
+    v, u = u
+    <span style="color: #8B008B; font-weight: bold">return</span> [-w**<span style="color: #B452CD">2</span>*u, v]
+
+<span style="color: #228B22"># Initialize solver</span>
+I = <span style="color: #B452CD">1</span>
+w = <span style="color: #B452CD">2</span>*np.pi
+<span style="color: #8B008B; font-weight: bold">import</span> <span style="color: #008b45; text-decoration: underline">odespy</span>
+solver = odespy.EulerCromer(f, f_kwargs={<span style="color: #CD5555">&#39;w&#39;</span>: w})
+solver.set_initial_condition([<span style="color: #B452CD">0</span>, I])
+
+<span style="color: #228B22"># Compute time mesh</span>
+P = <span style="color: #B452CD">2</span>*np.pi/w  <span style="color: #228B22"># duration of one period</span>
+dt = P/timesteps_per_period
+Nt = num_periods*timesteps_per_period
+T = Nt*dt
+<span style="color: #8B008B; font-weight: bold">import</span> <span style="color: #008b45; text-decoration: underline">numpy</span> <span style="color: #8B008B; font-weight: bold">as</span> <span style="color: #008b45; text-decoration: underline">np</span>
+t_mesh = np.linspace(<span style="color: #B452CD">0</span>, T, Nt+<span style="color: #B452CD">1</span>)
+
+<span style="color: #228B22"># Solve ODE</span>
+u, t = solver.solve(t_mesh)
+u = u[:,<span style="color: #B452CD">1</span>]  <span style="color: #228B22"># Extract displacement</span>
+</pre></div>
+<p>
+<!-- is anything really gained? is v of higher order compared -->
+<!-- with differentiating u in the 2nd order ODE? most likely, -->
+<!-- v is 2nd order, v from 2nd-order ODE is 1st order -->
 
 <p>
 <!-- make exercises: -->
@@ -3271,7 +3325,7 @@ $$ u(t_{n+1}) = u(t_n) + u^{\prime}(t_n)\Delta t + \frac{1}{2}u^{\prime\prime}(t
 
 Using \( u^{\prime}=v \) and \( u^{\prime\prime}=-\omega^2u \), we get the updating formula
 
-$$ u^{n+1} = u^n + v^n\Delta t - \frac{1}{2}\Delta^2\omega^2u^n\tp$$
+$$ u^{n+1} = u^n + v^n\Delta t - \frac{1}{2}\Delta t^2\omega^2u^n\tp$$
 
 Second, the first-order equation for \( v \),
 
@@ -3332,7 +3386,7 @@ code appears in the file <a href="http://tinyurl.com/nm5587k/vib/vib_undamped_ve
 <p>
 We provide the option that this <code>solver</code> function returns the same data
 as the <code>solver</code> function from the section <a href="#vib:impl1:solver">Making a solver function</a> (if <code>return_v</code>
-is <code>False</code>), but we may return <code>v</code> along with <code>u</code> and <code>t</code>.
+is <code>False</code>), but alternatively, it may return <code>v</code> along with <code>u</code> and <code>t</code>.
 
 <p>
 The error in the Taylor series expansion behind

@@ -96,15 +96,18 @@ def random_walks1D(x0, N, p, num_walks=1, num_times=1,
     position2 = np.zeros(N+1)   # Accumulated positions**2
     position2[0] = x0**2*num_walks
     # Histogram at num_times selected time points
-    pos_hist = []
+    pos_hist = np.zeros((num_walks, num_times))
     pos_hist_times = [(N//num_times)*i for i in range(num_times)]
-    print 'save at times', pos_hist_times
+    #print 'save hist:', post_hist_times
 
     for n in range(num_walks):
+        num_times_counter = 0
         current_pos = x0
         for k in range(N):
             if k in pos_hist_times:
-                pos_hist.append(current_pos)
+                #print 'save, k:', k, num_times_counter, n
+                pos_hist[n,num_times_counter] = current_pos
+                num_times_counter += 1
             # current_pos corresponds to step k+1
             r = random.uniform(0, 1)
             if r <= p:
@@ -113,7 +116,6 @@ def random_walks1D(x0, N, p, num_walks=1, num_times=1,
                 current_pos += 1
             position [k+1] += current_pos
             position2[k+1] += current_pos**2
-    pos_hist = np.array(pos_hist).reshape(num_walks, num_times)
     return position, position2, pos_hist, np.array(pos_hist_times)
 
 def random_walks1D_vec1(x0, N, p, num_walks=1, num_times=1):
@@ -556,6 +558,121 @@ def demo_random_walksdD_timing():
     print 'CPU vectorized: %.1f' % cpu_vec
     print 'CPU scalar/vectorized: %.1f' % (cpu_scalar/cpu_vec)
 
+# Reversed loops in 1D walks (all functions named walks1D2)
+
+def random_walks1D2(x0, N, p, num_walks=1, num_times=1,
+                    random=random):
+    """Simulate num_walks random walks from x0 with N steps."""
+    position = np.zeros(N+1)    # Accumulated positions
+    position[0] = x0*num_walks
+    position2 = np.zeros(N+1)   # Accumulated positions**2
+    position2[0] = x0**2*num_walks
+    # Histogram at num_times selected time points
+    pos_hist = np.zeros((num_walks, num_times))
+    pos_hist_times = [(N//num_times)*i for i in range(num_times)]
+
+    current_pos = x0 + np.zeros(num_walks)
+    num_times_counter = -1
+
+    for k in range(N):
+        if k in pos_hist_times:
+	    num_times_counter += 1
+	    store_hist = True  # Store histogram data for this k
+	else:
+	    store_hist = False
+
+        for n in range(num_walks):
+            # current_pos corresponds to step k+1
+            r = random.uniform(0, 1)
+            if r <= p:
+                current_pos[n] -= 1
+            else:
+                current_pos[n] += 1
+            position [k+1] += current_pos[n]
+            position2[k+1] += current_pos[n]**2
+            if store_hist:
+                pos_hist[n,num_times_counter] = current_pos[n]
+    return position, position2, pos_hist, np.array(pos_hist_times)
+
+def random_walks1D2_vec1(x0, N, p, num_walks=1, num_times=1):
+    """Vectorized version of random_walks1D2."""
+    position  = np.zeros(N+1)    # Accumulated positions
+    position2 = np.zeros(N+1)    # Accumulated positions**2
+    # Histogram at num_times selected time points
+    pos_hist = np.zeros((num_walks, num_times))
+    pos_hist_times = [(N//num_times)*i for i in range(num_times)]
+
+    current_pos = np.zeros(num_walks)
+    current_pos[0] = x0
+    num_times_counter = -1
+
+    for k in range(N):
+        if k in pos_hist_times:
+	    num_times_counter += 1
+	    store_hist = True  # Store histogram data for this k
+	else:
+	    store_hist = False
+
+        # Move all walks one step
+        r = np.random.uniform(0, 1, size=num_walks)
+        steps = np.where(r <= p, -1, 1)
+        current_pos += steps
+        position[k+1]  = np.sum(current_pos)
+        position2[k+1] = np.sum(current_pos**2)
+        if store_hist:
+            pos_hist[:,num_times_counter] = current_pos
+    return position, position2, pos_hist, np.array(pos_hist_times)
+
+def test_random_walks1D2():
+    x0 = 0;  N = 4;  p = 0.5
+    num_walks = 3
+    num_times = N
+    np.random.seed(10)
+    serial_computed = random_walks1D2(
+        x0, N, p, num_walks, num_times, random=np.random)
+    np.random.seed(10)
+    vectorized_computed = random_walks1D2_vec1(
+        x0, N, p, num_walks, num_times)
+    # Can test without tolerance since everything is +/- 1
+    return_values = ['pos', 'pos2', 'pos_hist', 'pos_hist_times']
+    for s, v, r in zip(serial_computed,
+                       vectorized_computed,
+                       return_values):
+        msg = '%s: %s (serial) vs %s (vectorized)' % (r, s, v)
+        assert (s == v).all(), msg
+
+def demo_random_walks1D2_timing():
+    """Timing of random 1D walks with reversed loops."""
+    import time
+    x0 = 0
+    N = 1000
+    num_walks = 50000
+    p = 0.5
+
+    t0 = time.clock()
+    np.random.seed(10)
+    pos, pos2, pos_hist, pos_hist_times = random_walks1D2(
+        x0, N, p, num_walks, num_times=4,
+        random=np.random)
+    t1 = time.clock()
+    cpu_scalar = t1 - t0
+    print 'CPU scalar: %.1f' % cpu_scalar
+    np.random.seed(10)
+    pos, pos2, pos_hist, pos_hist_times = random_walks1D2_vec1(
+        x0, N, p, num_walks, num_times=4)
+    t2 = time.clock()
+    cpu_vec1 = t2 - t1
+    print 'CPU vectorized1: %.1f' % cpu_vec1
+    print 'CPU scalar/vectorized1: %.1f' % (cpu_scalar/cpu_vec1)
+    # Compare with the other version without loops too
+    np.random.seed(10)
+    pos, pos2, pos_hist, pos_hist_times = random_walks1D_vec2(
+        x0, N, p, num_walks, num_times=4)
+    t3 = time.clock()
+    cpu_vec2 = t3 - t2
+    print 'CPU vectorized2: %.1f' % cpu_vec2
+    print 'CPU scalar/vectorized2: %.1f' % (cpu_scalar/cpu_vec2)
+
 if __name__ == '__main__':
     #demo_fig_random_walk1D(N=200)
     #demo_random_walks1D(N=1000, num_walks=1000000)
@@ -567,4 +684,6 @@ if __name__ == '__main__':
     #test_random_walks1D()
     #demo_random_walksdD_timing()
     #demo_random_walks1D_timing()
-    demo_random_walk1D_timing()
+    demo_random_walks1D2_timing()
+    print '----'
+    demo_random_walks1D_timing()
