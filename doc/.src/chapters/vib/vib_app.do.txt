@@ -305,7 +305,7 @@ where $\ii$ and $\jj$ are unit vectors in the corresponding Cartesian
 coordinate system in the $x$ and $y$ directions, respectively. We have
 that $\ir = \cos\theta\ii +\sin\theta\jj$.
 
-FIGURE: [fig-vib/pendulum_forces, width=400 frac=0.5] Forces acting on a simple pendulum. label{vib:app:pendulum:fig_forces}
+FIGURE: [fig-vib/pendulum_forces, width=500 frac=0.65] Forces acting on a simple pendulum. label{vib:app:pendulum:fig_forces}
 
 The forces are now expressed as follows.
 
@@ -335,9 +335,9 @@ since $\frac{d}{d\theta}\ith = -\ir$.
 Newton's 2nd law of motion becomes
 
 !bt
-\[ -S\ir + mg(-\sin\theta\ith + \cos\theta\ir) -
-\frac{1}{2}C_D\varrho AL^2|\dot\theta|\dot\theta\ith
-= mL\ddot\theta\dot\theta\ith - L\dot\theta^2\ir,\]
+\[ -S\ir + mg(-\sin\theta\,\ith + \cos\theta\,\ir) -
+\frac{1}{2}C_D\varrho AL^2|\dot\theta|\dot\theta\,\ith
+= mL\ddot\theta\dot\theta\,\ith - L\dot\theta^2\ir,\]
 !et
 leading to two component equations
 
@@ -367,7 +367,7 @@ Normally, the pendulum motion is started from rest, which means $\Omega =0$.
 
 Equation (ref{vib:app:pendulum:thetaeq}) fits the general model
 used in (ref{vib:ode2}) in Section ref{vib:model2} if we define
-$u=\theta$, $f(u^{\prime}) = \frac{1}{2}C_D\varrho AL|\dot\theta|\dot\theta$,
+$u=\theta$, $f(u^{\prime}) = \frac{1}{2}C_D\varrho AL|\dot u|\dot u$,
 $s(u) = L^{-1}mg\sin u$, and $F=0$.
 If the body is a sphere with radius $R$, we can take $C_D=0.4$ and $A=\pi R^2$.
 Exercise ref{vib:exer:pendulum_simple} asks you to scale the equations
@@ -430,12 +430,12 @@ MOVIE: [https://github.com/hplgit/pysketcher/raw/master/doc/pub/tutorial/mov-tut
 Dynamic physical sketches, coupled to the numerical solution of
 differential equations, requires a program to produce a sketch for
 the situation at each time level.
-"Pysketcher": "https://github.com/hplgit/pysketcher" is such tool.
+"Pysketcher": "https://github.com/hplgit/pysketcher" is such a tool.
 In fact (and not surprising!) Figures ref{vib:app:pendulum:fig_problem} and
 ref{vib:app:pendulum:fig_forces} were drawn using Pysketcher.
 The details of the drawings are explained in the
 "Pysketcher tutorial": "http://hplgit.github.io/pysketcher/doc/web/index.html".
-Here, we outline how Pysketcher can be used to create an animated
+Here, we outline how this type of sketch can be used to create an animated
 body diagram during the motion of a pendulum.
 
 Pysketcher is actually a layer of useful abstractions on top of
@@ -454,7 +454,7 @@ Let us start with the most familiar part of the current problem:
 writing the solver function. We use Odespy for this purpose.
 We also work with dimensionless equations. Since $\theta$ can be
 viewed as dimensionless, we only need to introduce a dimensionless time,
-here taken as $\bar t = t/sqrt{L/g}$.
+here taken as $\bar t = t/\sqrt{L/g}$.
 The resulting dimensionless mathematical model for $\theta$,
 the dimensionless angular velocity $\omega$, the
 dimensionless wire force $\bar S$, and the dimensionless
@@ -462,7 +462,7 @@ drag force $\bar D$ is then
 
 !bt
 \begin{align}
-\frac{d^2\theta}{d\bar t^2} + \alpha|\omega|\omega + \sin\theta &=0,
+\frac{d\omega}{d\bar t} &= - \alpha|\omega|\omega - \sin\theta,
 label{vib:app:pendulum_bodydia:eqth}\\
 \frac{d\theta}{d\bar t} &= \omega,
 label{vib:app:pendulum_bodydia:eqomega}\\
@@ -525,7 +525,7 @@ for time_level, t_ in enumerate(t):
 The individual sketches are (by the `sketch` function) saved in files
 with names `tmp_%04d.png`. These can be combined to videos using
 (e.g.) `ffmpeg`. A complete function `animate` for running the
-simulation and create the visualization in terms of video files is
+simulation and creating video files is
 listed below.
 
 @@@CODE src-vib/pendulum_body_diagram.py fromto: def animate@if __name
@@ -839,7 +839,7 @@ close to 1.)
 ===== Vehicle on a bumpy road =====
 label{vib:app:bumpy}
 
-FIGURE: [fig-vib/bumpy_sketch, width=400 frac=0.6] Sketch one-wheel vehicle on a bumpy road. label{vib:app:bumpy:fig:sketch}
+FIGURE: [fig-vib/bumpy_sketch, width=400 frac=0.6] Sketch of one-wheel vehicle on a bumpy road. label{vib:app:bumpy:fig:sketch}
 
 We consider a very simplistic vehicle, on one wheel, rolling along a
 bumpy road. The oscillatory nature of the road will induce an external
@@ -860,7 +860,8 @@ the center point of the mass is
 \end{equation}
 !et
 where $u$ is the elongation or compression in the spring according to
-the (unknown and to be computed) displacement $u$. If the vehicle travels
+the (unknown and to be computed) vertical displacement $u$ relative to the
+road. If the vehicle travels
 with constant horizontal velocity $v$ and $h(x)$ is the shape of the
 road, then the vector $\rpos_0$ is
 
@@ -886,7 +887,7 @@ m\ddot u = - s(u) - b\dot u - mg -mh''(vt)v^2
 
 To simplify a little bit, we omit the gravity force $mg$ in comparison with
 the other terms. Introducing $u'$ for $\dot u$ then gives a standard
-damped, vibration equation with external forcing (here from the bumpy road):
+damped, vibration equation with external forcing:
 
 !bt
 \begin{equation}
@@ -899,9 +900,10 @@ measured values $h_i= h(i\Delta x)$ on the road. The discrete second-order
 derivative $h''$ reads
 
 !bt
-\[ q_i = \frac{h_{i-1} - 2h_i + h_{i+1}}{\Delta x^2}, \quad i=1,\ldots,N_x-1,\]
+\[ q_i = \frac{h_{i-1} - 2h_i + h_{i+1}}{\Delta x^2}, \quad i=1,\ldots,N_x-1\tp\]
 !et
-with simply setting the end points as $q_0=q_1$ and $q_{N_x}=q_{N_x-1}$.
+We may for maximum simplicity set
+the end points as $q_0=q_1$ and $q_{N_x}=q_{N_x-1}$.
 The term $-mh''(vt)v^2$ corresponds to a force with discrete time values
 
 !bt
@@ -915,7 +917,7 @@ This force can be directly used in a numerical model
 Software for computing $u$ and also making an animated sketch of
 the motion like we did in Section ref{vib:app:pendulum_bodydia}
 is found in a separate project on the web:
-URL: "https://github.com/hplgit/bumpy", see the
+URL: "https://github.com/hplgit/bumpy". You may start looking at the
 "tutorial":
 % if FORMAT == 'pdflatex':
 "http://hplgit.github.io/bumpy/doc/pub/bumpy.pdf".
@@ -926,9 +928,10 @@ URL: "https://github.com/hplgit/bumpy", see the
 ===== Bouncing ball =====
 label{vib:app:bouncing_ball}
 
-A bouncing ball is a body in free vertically fall until it impacts the
-ground. During the impact, some kinetic energy is lost, and a new
-motion upwards with reduced velocity starts.  At some point the
+A bouncing ball is a ball in free vertically fall until it impacts the
+ground, but during the impact, some kinetic energy is lost, and a new
+motion upwards with reduced velocity starts. After the motion is retarded,
+a new free fall starts, and the process is repeated. At some point the
 velocity close to the ground is so small that the ball is considered
 to be finally at rest.
 
