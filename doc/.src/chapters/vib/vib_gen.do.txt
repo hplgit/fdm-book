@@ -482,24 +482,93 @@ Consider the ODE problem
 !bt
 \[ u^{\prime\prime} + \omega^2u=f(t), \quad u(0)=I,\ u^{\prime}(0)=V,\ t\in(0,T]\tp\]
 !et
-Discretize this equation according to
-$[D_tD_t u + \omega^2 u = f]^n$.
 
 !bsubex
-Derive the equation for the
-first time step ($u^1$).
+Discretize this equation according to $[D_tD_t u + \omega^2 u = f]^n$ and
+derive the equation for the first time step ($u^1$).
+
+!bsol
+For the requested discretization, we get
+!bt
+\[ \frac{u^{n+1} - 2u^n + u^{n-1}}{\Delta t^2} + \omega^2u^n = f^n\tp\]
+!et
+To derive the equation for $u^1$, we first find the expression for $u^{n+1}$ from the
+discretized form of the equation. Isolating $u^{n+1}$, we get
+!bt
+\[ u^{n+1} = \left(2 - (\Delta t\omega)^2\right)u^n - u^{n-1} + \Delta t^2 f^n\tp\]
+!et
+With $n = 0$, this expression gives
+!bt
+\[ u^1 = \left(2 - (\Delta t\omega)^2\right)u^0 - u^{-1} + \Delta t^2 f^n\tp\]
+!et
+Here, however, we get a problem with $u^{-1}$, which appears on the right hand side.
+To get around that problem, we realize that the initial condition $u^{\prime} = V$ might
+be approximated by use of a centered difference approximation as
+!bt
+\[ \frac{u^1 - u^{-1}}{2\Delta t} = V,\]
+!et
+which means that
+!bt
+\[ u^{-1} = u^1 - 2\Delta t V\tp\]
+!et
+Inserting this expression for $u^{-1}$ into the expression for $u^1$, we get
+!bt
+\[ u^1 = \left(2 - (\Delta t\omega)^2\right)u^0 - (u^1 - 2\Delta t V) + \Delta t^2 f^n\tp\]
+!et
+Finally, after isolating $u^1$ on the left hand side, we arrive at
+\[ u^1 = \left(1 - \frac{1}{2}(\Delta t\omega)^2\right)u^0 + \Delta t V + \frac{1}{2}\Delta t^2 f^n\tp\]
+!esol
 !esubex
 
 !bsubex
-For verification purposes,
-we use the method of manufactured solutions (MMS) with the
-choice of $\uex(x,t)= ct+d$.
-Find restrictions on $c$ and $d$ from
-the initial conditions. Compute the corresponding source term $f$ by term.
+For verification purposes, we use the method of manufactured solutions (MMS) with the
+choice of $\uex(t)= ct+d$. Find restrictions on $c$ and $d$ from
+the initial conditions. Compute the corresponding source term $f$.
 Show that $[D_tD_t t]^n=0$ and use the fact
 that the $D_tD_t$ operator is linear,
 $[D_tD_t (ct+d)]^n = c[D_tD_t t]^n + [D_tD_t d]^n = 0$, to show that
 $\uex$ is also a perfect solution of the discrete equations.
+
+!bsol
+The initial conditions $u(0)=I$ and $u^{\prime}(0)=V$ give demands
+$\uex(0)=I$ and $\uex^{\prime}(0)=V$, which imply that
+$d = I$ and {c = V}.
+
+To compute the source term $f$, we insert the chosen solution $\uex$ into
+the ODE. This gives
+!bt
+\[ 0 + \omega^2(ct+d)=f(t),\]
+!et
+which implies that
+!bt
+\[ f(t)=\omega^2(Vt+I)\tp\]
+!et
+To show that $[D_tD_t t]^n=0$, we proceed as
+!bt
+\begin{align}
+[D_tD_t t]^n &= \frac{t^{n+1} - 2t^n + t^{n-1}}{\Delta t^2}, \nonumber \\
+             &= \frac{(n+1)\Delta t - 2n\Delta t + (n-1)\Delta t}{\Delta t^2}, \nonumber \\
+             &= \frac{n\Delta t + \Delta t - 2n\Delta t + n\Delta t - \Delta t}{\Delta t^2}, \nonumber \\
+             &= 0\tp \nonumber
+\end{align}
+!et
+Finally, we show that the chosen $\uex$ is also a perfect solution of the discrete equations.
+If we start by inserting $\uex$ into 
+!bt
+\[[D_tD_t u + \omega^2u = f]^n,\]
+!et
+as well as the expression found for $f$.
+We get
+!bt
+\[[D_tD_t (Vt+I) + \omega^2(Vt+I) = \omega^2(Vt+I)]^n,\]
+!et
+which can be rewritten as
+!bt
+\[[D_tD_t (Vt+I)]^n + [\omega^2(Vt+I)]^n = [\omega^2(Vt+I)]^n\tp\]
+!et
+Now, since the first term here is zero, we see that the discrete equation is
+fulfilled exactly for the chosen $\uex$ function.
+!esol
 !esubex
 
 !bsubex

@@ -980,26 +980,27 @@ Consider the ODE problem
 
 $$ u^{\prime\prime} + \omega^2u=f(t), \quad u(0)=I,\ u^{\prime}(0)=V,\ t\in(0,T]\tp$$
 
-Discretize this equation according to
-\( [D_tD_t u + \omega^2 u = f]^n \).
-
 <p>
 <b>a)</b>
-Derive the equation for the
-first time step (\( u^1 \)).
+Discretize this equation according to \( [D_tD_t u + \omega^2 u = f]^n \) and
+derive the equation for the first time step (\( u^1 \)).
 
 <p>
+<!-- removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+ -->
+<p>
 <b>b)</b>
-For verification purposes,
-we use the method of manufactured solutions (MMS) with the
-choice of \( \uex(x,t)= ct+d \).
-Find restrictions on \( c \) and \( d \) from
-the initial conditions. Compute the corresponding source term \( f \) by term.
+For verification purposes, we use the method of manufactured solutions (MMS) with the
+choice of \( \uex(t)= ct+d \). Find restrictions on \( c \) and \( d \) from
+the initial conditions. Compute the corresponding source term \( f \).
 Show that \( [D_tD_t t]^n=0 \) and use the fact
 that the \( D_tD_t \) operator is linear,
 \( [D_tD_t (ct+d)]^n = c[D_tD_t t]^n + [D_tD_t d]^n = 0 \), to show that
 \( \uex \) is also a perfect solution of the discrete equations.
 
+<p>
+<!-- removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+ -->
 <p>
 <b>c)</b>
 Use <code>sympy</code> to do the symbolic calculations above. Here is a
@@ -1786,7 +1787,7 @@ that \( \ir = \cos\theta\ii +\sin\theta\jj \).
 <center> <!-- figure -->
 <hr class="figure">
 <center><p class="caption">Figure 17:  Forces acting on a simple pendulum. <div id="vib:app:pendulum:fig_forces"></div> </p></center>
-<p><img src="fig-vib/pendulum_forces.png" align="bottom" width=400></p>
+<p><img src="fig-vib/pendulum_forces.png" align="bottom" width=500></p>
 </center>
 
 <p>
@@ -1819,9 +1820,9 @@ since \( \frac{d}{d\theta}\ith = -\ir \).
 <p>
 Newton's 2nd law of motion becomes
 
-$$ -S\ir + mg(-\sin\theta\ith + \cos\theta\ir) -
-\frac{1}{2}C_D\varrho AL^2|\dot\theta|\dot\theta\ith
-= mL\ddot\theta\dot\theta\ith - L\dot\theta^2\ir,$$
+$$ -S\ir + mg(-\sin\theta\,\ith + \cos\theta\,\ir) -
+\frac{1}{2}C_D\varrho AL^2|\dot\theta|\dot\theta\,\ith
+= mL\ddot\theta\dot\theta\,\ith - L\dot\theta^2\ir,$$
 
 leading to two component equations
 
@@ -1854,7 +1855,7 @@ Normally, the pendulum motion is started from rest, which means \( \Omega =0 \).
 <p>
 Equation <a href="#mjx-eqn-89">(89)</a> fits the general model
 used in <a href="#mjx-eqn-59">(59)</a> in the section <a href="#vib:model2">Generalization: damping, nonlinear spring, and external excitation</a> if we define
-\( u=\theta \), \( f(u^{\prime}) = \frac{1}{2}C_D\varrho AL|\dot\theta|\dot\theta \),
+\( u=\theta \), \( f(u^{\prime}) = \frac{1}{2}C_D\varrho AL|\dot u|\dot u \),
 \( s(u) = L^{-1}mg\sin u \), and \( F=0 \).
 If the body is a sphere with radius \( R \), we can take \( C_D=0.4 \) and \( A=\pi R^2 \).
 <a href="#vib:exer:pendulum_simple">Exercise 21: Simulate a simple pendulum</a> asks you to scale the equations
@@ -1918,12 +1919,12 @@ if (!!(window.safari)) {
 Dynamic physical sketches, coupled to the numerical solution of
 differential equations, requires a program to produce a sketch for
 the situation at each time level.
-<a href="https://github.com/hplgit/pysketcher" target="_self">Pysketcher</a> is such tool.
+<a href="https://github.com/hplgit/pysketcher" target="_self">Pysketcher</a> is such a tool.
 In fact (and not surprising!) Figures <a href="#vib:app:pendulum:fig_problem">16</a> and
 <a href="#vib:app:pendulum:fig_forces">17</a> were drawn using Pysketcher.
 The details of the drawings are explained in the
 <a href="http://hplgit.github.io/pysketcher/doc/web/index.html" target="_self">Pysketcher tutorial</a>.
-Here, we outline how Pysketcher can be used to create an animated
+Here, we outline how this type of sketch can be used to create an animated
 body diagram during the motion of a pendulum.
 
 <p>
@@ -1944,7 +1945,7 @@ Let us start with the most familiar part of the current problem:
 writing the solver function. We use Odespy for this purpose.
 We also work with dimensionless equations. Since \( \theta \) can be
 viewed as dimensionless, we only need to introduce a dimensionless time,
-here taken as \( \bar t = t/sqrt{L/g} \).
+here taken as \( \bar t = t/\sqrt{L/g} \).
 The resulting dimensionless mathematical model for \( \theta \),
 the dimensionless angular velocity \( \omega \), the
 dimensionless wire force \( \bar S \), and the dimensionless
@@ -1952,7 +1953,7 @@ drag force \( \bar D \) is then
 
 $$
 \begin{align}
-\frac{d^2\theta}{d\bar t^2} + \alpha|\omega|\omega + \sin\theta &=0,
+\frac{d\omega}{d\bar t} &= - \alpha|\omega|\omega - \sin\theta,
 \tag{91}\\ 
 \frac{d\theta}{d\bar t} &= \omega,
 \tag{92}\\ 
@@ -2128,7 +2129,7 @@ make a sketch at each level:
 The individual sketches are (by the <code>sketch</code> function) saved in files
 with names <code>tmp_%04d.png</code>. These can be combined to videos using
 (e.g.) <code>ffmpeg</code>. A complete function <code>animate</code> for running the
-simulation and create the visualization in terms of video files is
+simulation and creating video files is
 listed below.
 
 <p>
@@ -2159,7 +2160,7 @@ listed below.
     <span style="color: #8B008B; font-weight: bold">import</span> <span style="color: #008b45; text-decoration: underline">time</span>
     <span style="color: #8B008B; font-weight: bold">for</span> time_level, t_ <span style="color: #8B008B">in</span> <span style="color: #658b00">enumerate</span>(t):
         sketch(theta, S, mg, drag, t_, time_level)
-        time.sleep(<span style="color: #B452CD">0.2</span>)
+        time.sleep(<span style="color: #B452CD">0.2</span>)  <span style="color: #228B22"># Pause between each frame on the screen</span>
 
     <span style="color: #228B22"># Make videos</span>
     prog = <span style="color: #CD5555">&#39;ffmpeg&#39;</span>
@@ -2493,7 +2494,7 @@ close to 1.)
 <p>
 <center> <!-- figure -->
 <hr class="figure">
-<center><p class="caption">Figure 18:  Sketch one-wheel vehicle on a bumpy road. <div id="vib:app:bumpy:fig:sketch"></div> </p></center>
+<center><p class="caption">Figure 18:  Sketch of one-wheel vehicle on a bumpy road. <div id="vib:app:bumpy:fig:sketch"></div> </p></center>
 <p><img src="fig-vib/bumpy_sketch.png" align="bottom" width=400></p>
 </center>
 
@@ -2520,7 +2521,8 @@ $$
 $$
 
 where \( u \) is the elongation or compression in the spring according to
-the (unknown and to be computed) displacement \( u \). If the vehicle travels
+the (unknown and to be computed) vertical displacement \( u \) relative to the
+road. If the vehicle travels
 with constant horizontal velocity \( v \) and \( h(x) \) is the shape of the
 road, then the vector \( \rpos_0 \) is
 
@@ -2544,7 +2546,7 @@ $$
 <p>
 To simplify a little bit, we omit the gravity force \( mg \) in comparison with
 the other terms. Introducing \( u' \) for \( \dot u \) then gives a standard
-damped, vibration equation with external forcing (here from the bumpy road):
+damped, vibration equation with external forcing:
 
 $$
 \begin{equation}
@@ -2558,9 +2560,10 @@ be computed by finite differences. Let \( \Delta x \) be the spacing between
 measured values \( h_i= h(i\Delta x) \) on the road. The discrete second-order
 derivative \( h'' \) reads
 
-$$ q_i = \frac{h_{i-1} - 2h_i + h_{i+1}}{\Delta x^2}, \quad i=1,\ldots,N_x-1,$$
+$$ q_i = \frac{h_{i-1} - 2h_i + h_{i+1}}{\Delta x^2}, \quad i=1,\ldots,N_x-1\tp$$
 
-with simply setting the end points as \( q_0=q_1 \) and \( q_{N_x}=q_{N_x-1} \).
+We may for maximum simplicity set
+the end points as \( q_0=q_1 \) and \( q_{N_x}=q_{N_x-1} \).
 The term \( -mh''(vt)v^2 \) corresponds to a force with discrete time values
 
 $$ F^n = -mq_n v^2,\quad \Delta t = v^{-1}\Delta x\tp$$
@@ -2572,15 +2575,16 @@ $$ [mD_tD_t u + bD_{2t} u + s(u) = F]^n\tp$$
 Software for computing \( u \) and also making an animated sketch of
 the motion like we did in the section <a href="#vib:app:pendulum_bodydia">Dynamic body diagram during pendulum motion</a>
 is found in a separate project on the web:
-<a href="https://github.com/hplgit/bumpy" target="_self"><tt>https://github.com/hplgit/bumpy</tt></a>, see the
+<a href="https://github.com/hplgit/bumpy" target="_self"><tt>https://github.com/hplgit/bumpy</tt></a>. You may start looking at the
 <a href="http://hplgit.github.io/bumpy/doc/pub/bumpy.html" target="_self">tutorial</a>.
 
 <h2 id="vib:app:bouncing_ball">Bouncing ball</h2>
 
 <p>
-A bouncing ball is a body in free vertically fall until it impacts the
-ground. During the impact, some kinetic energy is lost, and a new
-motion upwards with reduced velocity starts.  At some point the
+A bouncing ball is a ball in free vertically fall until it impacts the
+ground, but during the impact, some kinetic energy is lost, and a new
+motion upwards with reduced velocity starts. After the motion is retarded,
+a new free fall starts, and the process is repeated. At some point the
 velocity close to the ground is so small that the ball is considered
 to be finally at rest.
 
@@ -3000,12 +3004,10 @@ resistance.
     <em>Finite Difference Computing with Exponential Decay Models</em>,
     Springer,
     2015,
-    \urlhttp://tinyurl.com/nclmcng/web,
     <a href="http://tinyurl.com/nclmcng/web" target="_self"><tt>http://tinyurl.com/nclmcng/web</tt></a>.</li>
  <li> <div id="Langtangen_scaling"></div> <b>H. P. Langtangen and G. K. Pedersen</b>. 
     <em>Scaling of Differential Equations</em>,
     2015,
-    \urlhttp://tinyurl.com/qfjgxmf/web,
     <a href="http://tinyurl.com/qfjgxmf/web" target="_self"><tt>http://tinyurl.com/qfjgxmf/web</tt></a>.</li>
 </ol>
 

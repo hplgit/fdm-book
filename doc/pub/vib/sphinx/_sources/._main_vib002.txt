@@ -639,23 +639,22 @@ Consider the ODE problem
 .. math::
          u^{\prime\prime} + \omega^2u=f(t), \quad u(0)=I,\ u^{\prime}(0)=V,\ t\in(0,T]{\thinspace .}
 
-Discretize this equation according to
-:math:`[D_tD_t u + \omega^2 u = f]^n`.
-
 **a)**
-Derive the equation for the
-first time step (:math:`u^1`).
+Discretize this equation according to :math:`[D_tD_t u + \omega^2 u = f]^n` and
+derive the equation for the first time step (:math:`u^1`).
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
 
 **b)**
-For verification purposes,
-we use the method of manufactured solutions (MMS) with the
-choice of :math:`{u_{\small\mbox{e}}}(x,t)= ct+d`.
-Find restrictions on :math:`c` and :math:`d` from
-the initial conditions. Compute the corresponding source term :math:`f` by term.
+For verification purposes, we use the method of manufactured solutions (MMS) with the
+choice of :math:`{u_{\small\mbox{e}}}(t)= ct+d`. Find restrictions on :math:`c` and :math:`d` from
+the initial conditions. Compute the corresponding source term :math:`f`.
 Show that :math:`[D_tD_t t]^n=0` and use the fact
 that the :math:`D_tD_t` operator is linear,
 :math:`[D_tD_t (ct+d)]^n = c[D_tD_t t]^n + [D_tD_t d]^n = 0`, to show that
 :math:`{u_{\small\mbox{e}}}` is also a perfect solution of the discrete equations.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
 
 **c)**
 Use ``sympy`` to do the symbolic calculations above. Here is a
@@ -1467,7 +1466,7 @@ that :math:`{\boldsymbol{i}_r} = \cos\theta\boldsymbol{i} +\sin\theta\boldsymbol
 .. _vib:app:pendulum:fig_forces:
 
 .. figure:: pendulum_forces.png
-   :width: 400
+   :width: 500
 
    *Forces acting on a simple pendulum*
 
@@ -1501,9 +1500,9 @@ since :math:`\frac{d}{d\theta}\boldsymbol{i}_{\theta} = -{\boldsymbol{i}_r}`.
 Newton's 2nd law of motion becomes
 
 .. math::
-         -S{\boldsymbol{i}_r} + mg(-\sin\theta\boldsymbol{i}_{\theta} + \cos\theta{\boldsymbol{i}_r}) -
-        \frac{1}{2}C_D\varrho AL^2|\dot\theta|\dot\theta\boldsymbol{i}_{\theta}
-        = mL\ddot\theta\dot\theta\boldsymbol{i}_{\theta} - L\dot\theta^2{\boldsymbol{i}_r},
+         -S{\boldsymbol{i}_r} + mg(-\sin\theta\,\boldsymbol{i}_{\theta} + \cos\theta\,{\boldsymbol{i}_r}) -
+        \frac{1}{2}C_D\varrho AL^2|\dot\theta|\dot\theta\,\boldsymbol{i}_{\theta}
+        = mL\ddot\theta\dot\theta\,\boldsymbol{i}_{\theta} - L\dot\theta^2{\boldsymbol{i}_r},
 
 leading to two component equations
 
@@ -1546,7 +1545,7 @@ Normally, the pendulum motion is started from rest, which means :math:`\Omega =0
 
 Equation :ref:`(89) <Eq:vib:app:pendulum:thetaeq>` fits the general model
 used in :ref:`(59) <Eq:vib:ode2>` in the section :ref:`vib:model2` if we define
-:math:`u=\theta`, :math:`f(u^{\prime}) = \frac{1}{2}C_D\varrho AL|\dot\theta|\dot\theta`,
+:math:`u=\theta`, :math:`f(u^{\prime}) = \frac{1}{2}C_D\varrho AL|\dot u|\dot u`,
 :math:`s(u) = L^{-1}mg\sin u`, and :math:`F=0`.
 If the body is a sphere with radius :math:`R`, we can take :math:`C_D=0.4` and :math:`A=\pi R^2`.
 :ref:`vib:exer:pendulum_simple` asks you to scale the equations
@@ -1617,12 +1616,12 @@ diagram.
 Dynamic physical sketches, coupled to the numerical solution of
 differential equations, requires a program to produce a sketch for
 the situation at each time level.
-`Pysketcher <https://github.com/hplgit/pysketcher>`__ is such tool.
+`Pysketcher <https://github.com/hplgit/pysketcher>`__ is such a tool.
 In fact (and not surprising!) Figures :ref:`vib:app:pendulum:fig_problem` and
 :ref:`vib:app:pendulum:fig_forces` were drawn using Pysketcher.
 The details of the drawings are explained in the
 `Pysketcher tutorial <http://hplgit.github.io/pysketcher/doc/web/index.html>`__.
-Here, we outline how Pysketcher can be used to create an animated
+Here, we outline how this type of sketch can be used to create an animated
 body diagram during the motion of a pendulum.
 
 Pysketcher is actually a layer of useful abstractions on top of
@@ -1642,7 +1641,7 @@ Let us start with the most familiar part of the current problem:
 writing the solver function. We use Odespy for this purpose.
 We also work with dimensionless equations. Since :math:`\theta` can be
 viewed as dimensionless, we only need to introduce a dimensionless time,
-here taken as :math:`\bar t = t/sqrt{L/g}`.
+here taken as :math:`\bar t = t/\sqrt{L/g}`.
 The resulting dimensionless mathematical model for :math:`\theta`,
 the dimensionless angular velocity :math:`\omega`, the
 dimensionless wire force :math:`\bar S`, and the dimensionless
@@ -1653,7 +1652,7 @@ drag force :math:`\bar D` is then
 .. math::
 
     \tag{91}
-    \frac{d^2\theta}{d\bar t^2} + \alpha|\omega|\omega + \sin\theta =0,
+    \frac{d\omega}{d\bar t} = - \alpha|\omega|\omega - \sin\theta,
         
         
 
@@ -1843,7 +1842,7 @@ make a sketch at each level:
 The individual sketches are (by the ``sketch`` function) saved in files
 with names ``tmp_%04d.png``. These can be combined to videos using
 (e.g.) ``ffmpeg``. A complete function ``animate`` for running the
-simulation and create the visualization in terms of video files is
+simulation and creating video files is
 listed below.
 
 .. code-block:: python
@@ -1873,7 +1872,7 @@ listed below.
             import time
             for time_level, t_ in enumerate(t):
                 sketch(theta, S, mg, drag, t_, time_level)
-                time.sleep(0.2)
+                time.sleep(0.2)  # Pause between each frame on the screen
         
             # Make videos
             prog = 'ffmpeg'
@@ -2315,7 +2314,7 @@ Vehicle on a bumpy road
 .. figure:: bumpy_sketch.png
    :width: 400
 
-   *Sketch one-wheel vehicle on a bumpy road*
+   *Sketch of one-wheel vehicle on a bumpy road*
 
 We consider a very simplistic vehicle, on one wheel, rolling along a
 bumpy road. The oscillatory nature of the road will induce an external
@@ -2340,7 +2339,8 @@ the center point of the mass is
         
 
 where :math:`u` is the elongation or compression in the spring according to
-the (unknown and to be computed) displacement :math:`u`. If the vehicle travels
+the (unknown and to be computed) vertical displacement :math:`u` relative to the
+road. If the vehicle travels
 with constant horizontal velocity :math:`v` and :math:`h(x)` is the shape of the
 road, then the vector :math:`\boldsymbol{r}_0` is
 
@@ -2365,7 +2365,7 @@ This leads to
 
 To simplify a little bit, we omit the gravity force :math:`mg` in comparison with
 the other terms. Introducing :math:`u'` for :math:`\dot u` then gives a standard
-damped, vibration equation with external forcing (here from the bumpy road):
+damped, vibration equation with external forcing:
 
 .. _Eq:_auto29:
 
@@ -2382,9 +2382,10 @@ measured values :math:`h_i= h(i\Delta x)` on the road. The discrete second-order
 derivative :math:`h''` reads
 
 .. math::
-         q_i = \frac{h_{i-1} - 2h_i + h_{i+1}}{\Delta x^2}, \quad i=1,\ldots,N_x-1,
+         q_i = \frac{h_{i-1} - 2h_i + h_{i+1}}{\Delta x^2}, \quad i=1,\ldots,N_x-1{\thinspace .}
 
-with simply setting the end points as :math:`q_0=q_1` and :math:`q_{N_x}=q_{N_x-1}`.
+We may for maximum simplicity set
+the end points as :math:`q_0=q_1` and :math:`q_{N_x}=q_{N_x-1}`.
 The term :math:`-mh''(vt)v^2` corresponds to a force with discrete time values
 
 .. math::
@@ -2398,7 +2399,7 @@ This force can be directly used in a numerical model
 Software for computing :math:`u` and also making an animated sketch of
 the motion like we did in the section :ref:`vib:app:pendulum_bodydia`
 is found in a separate project on the web:
-`<https://github.com/hplgit/bumpy>`_, see the
+`<https://github.com/hplgit/bumpy>`_. You may start looking at the
 `tutorial <http://hplgit.github.io/bumpy/doc/pub/bumpy.html>`__.
 
 .. _vib:app:bouncing_ball:
@@ -2406,9 +2407,10 @@ is found in a separate project on the web:
 Bouncing ball
 -------------
 
-A bouncing ball is a body in free vertically fall until it impacts the
-ground. During the impact, some kinetic energy is lost, and a new
-motion upwards with reduced velocity starts.  At some point the
+A bouncing ball is a ball in free vertically fall until it impacts the
+ground, but during the impact, some kinetic energy is lost, and a new
+motion upwards with reduced velocity starts. After the motion is retarded,
+a new free fall starts, and the process is repeated. At some point the
 velocity close to the ground is so small that the ball is considered
 to be finally at rest.
 
