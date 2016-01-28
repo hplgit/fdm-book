@@ -1262,6 +1262,27 @@ Fill in the various functions such that the calls in the <code>main</code>
 function works.
 
 <p>
+<!-- --- begin solution of exercise --- -->
+
+<p>
+<a class="glyphicon glyphicon-hand-right showdetails" data-toggle="collapse"
+ data-target="#exer_1_3" style="font-size: 80%;"></a>
+<b>Solution.</b>
+<div class="collapse-group">
+<p><div class="collapse" id="exer_1_3">
+
+<p>
+See final code presented below
+
+<p>
+</div></p>
+</div>
+</p>
+
+<p>
+<!-- --- end solution of exercise --- -->
+
+<p>
 <b>d)</b>
 The purpose now is to choose a quadratic function
 \( \uex = bt^2 + ct + d \) as exact solution. Extend the <code>sympy</code>
@@ -1274,8 +1295,50 @@ to <code>linear</code>.)
 <!-- is correct. -->
 
 <p>
+<!-- --- begin solution of exercise --- -->
+
+<p>
+<a class="glyphicon glyphicon-hand-right showdetails" data-toggle="collapse"
+ data-target="#exer_1_4" style="font-size: 80%;"></a>
+<b>Solution.</b>
+<div class="collapse-group">
+<p><div class="collapse" id="exer_1_4">
+
+<p>
+See final code presented below
+
+<p>
+</div></p>
+</div>
+</p>
+
+<p>
+<!-- --- end solution of exercise --- -->
+
+<p>
 <b>e)</b>
 Will a polynomial of degree three fulfill the discrete equations?
+
+<p>
+<!-- --- begin solution of exercise --- -->
+
+<p>
+<a class="glyphicon glyphicon-hand-right showdetails" data-toggle="collapse"
+ data-target="#exer_1_5" style="font-size: 80%;"></a>
+<b>Solution.</b>
+<div class="collapse-group">
+<p><div class="collapse" id="exer_1_5">
+
+<p>
+No, see final code presented below
+
+<p>
+</div></p>
+</div>
+</p>
+
+<p>
+<!-- --- end solution of exercise --- -->
 
 <p>
 <b>f)</b>
@@ -1283,11 +1346,171 @@ Implement a <code>solver</code> function for computing the numerical
 solution of this problem.
 
 <p>
+<!-- --- begin solution of exercise --- -->
+
+<p>
+<a class="glyphicon glyphicon-hand-right showdetails" data-toggle="collapse"
+ data-target="#exer_1_6" style="font-size: 80%;"></a>
+<b>Solution.</b>
+<div class="collapse-group">
+<p><div class="collapse" id="exer_1_6">
+
+<p>
+See final code presented below
+
+<p>
+</div></p>
+</div>
+</p>
+
+<p>
+<!-- --- end solution of exercise --- -->
+
+<p>
 <b>g)</b>
 Write a test function for checking that the quadratic solution
-is computed correctly (too machine precision, but the
+is computed correctly (to machine precision, but the
 round-off errors accumulate and increase with \( T \)) by the <code>solver</code>
 function.
+
+<p>
+<!-- --- begin solution of exercise --- -->
+
+<p>
+<a class="glyphicon glyphicon-hand-right showdetails" data-toggle="collapse"
+ data-target="#exer_1_7" style="font-size: 80%;"></a>
+<b>Solution.</b>
+<div class="collapse-group">
+<p><div class="collapse" id="exer_1_7">
+
+<p>
+
+<!-- code=python (!bc pypro) typeset with pygments style "default" -->
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">sympy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">sym</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
+
+V, t, I, w, dt <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>symbols(<span style="color: #BA2121">&#39;V t I w dt&#39;</span>)  <span style="color: #408080; font-style: italic"># global symbols</span>
+f <span style="color: #666666">=</span> <span style="color: #008000">None</span>  <span style="color: #408080; font-style: italic"># global variable for the source term in the ODE</span>
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">ode_source_term</span>(u):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return the terms in the ODE that the source term</span>
+<span style="color: #BA2121; font-style: italic">    must balance, here u&#39;&#39; + w**2*u.</span>
+<span style="color: #BA2121; font-style: italic">    u is symbolic Python function of t.&quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">return</span> sym<span style="color: #666666">.</span>diff(u(t), t, t) <span style="color: #666666">+</span> w<span style="color: #666666">**2*</span>u(t)
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">residual_discrete_eq</span>(u):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return the residual of the discrete eq. with u inserted.&quot;&quot;&quot;</span>
+    R <span style="color: #666666">=</span> DtDt(u, dt) <span style="color: #666666">+</span> w<span style="color: #666666">**2*</span>u(t) <span style="color: #666666">-</span> f
+    <span style="color: #008000; font-weight: bold">return</span> sym<span style="color: #666666">.</span>simplify(R)
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">residual_discrete_eq_step1</span>(u):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return the residual of the discrete eq. at the first</span>
+<span style="color: #BA2121; font-style: italic">    step with u inserted.&quot;&quot;&quot;</span>
+    half <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>Rational(<span style="color: #666666">1</span>,<span style="color: #666666">2</span>)
+    R <span style="color: #666666">=</span> u(t<span style="color: #666666">+</span>dt) <span style="color: #666666">-</span> u(t) <span style="color: #666666">-</span> dt<span style="color: #666666">*</span>V <span style="color: #666666">-</span> \
+        half<span style="color: #666666">*</span>dt<span style="color: #666666">**2*</span>f<span style="color: #666666">.</span>subs(t, <span style="color: #666666">0</span>) <span style="color: #666666">+</span> half<span style="color: #666666">*</span>dt<span style="color: #666666">**2*</span>w<span style="color: #666666">**2*</span>I
+    R <span style="color: #666666">=</span> R<span style="color: #666666">.</span>subs(t, <span style="color: #666666">0</span>)  <span style="color: #408080; font-style: italic"># t=0 in the rhs of the first step eq.</span>
+    <span style="color: #008000; font-weight: bold">return</span> sym<span style="color: #666666">.</span>simplify(R)
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">DtDt</span>(u, dt):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return 2nd-order finite difference for u_tt.</span>
+<span style="color: #BA2121; font-style: italic">    u is a symbolic Python function of t.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">return</span> (u(t<span style="color: #666666">+</span>dt) <span style="color: #666666">-</span> <span style="color: #666666">2*</span>u(t) <span style="color: #666666">+</span> u(t<span style="color: #666666">-</span>dt))<span style="color: #666666">/</span>dt<span style="color: #666666">**2</span>
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">main</span>(u):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Given some chosen solution u (as a function of t, implemented</span>
+<span style="color: #BA2121; font-style: italic">    as a Python function), use the method of manufactured solutions</span>
+<span style="color: #BA2121; font-style: italic">    to compute the source term f, and check if u also solves</span>
+<span style="color: #BA2121; font-style: italic">    the discrete equations.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;=== Testing exact solution: </span><span style="color: #BB6688; font-weight: bold">%s</span><span style="color: #BA2121"> ===&#39;</span> <span style="color: #666666">%</span> u(t)
+    <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&quot;Initial conditions u(0)=</span><span style="color: #BB6688; font-weight: bold">%s</span><span style="color: #BA2121">, u&#39;(0)=</span><span style="color: #BB6688; font-weight: bold">%s</span><span style="color: #BA2121">:&quot;</span> <span style="color: #666666">%</span> \
+          (u(t)<span style="color: #666666">.</span>subs(t, <span style="color: #666666">0</span>), sym<span style="color: #666666">.</span>diff(u(t), t)<span style="color: #666666">.</span>subs(t, <span style="color: #666666">0</span>))
+
+    <span style="color: #408080; font-style: italic"># Method of manufactured solution requires fitting f</span>
+    <span style="color: #008000; font-weight: bold">global</span> f  <span style="color: #408080; font-style: italic"># source term in the ODE</span>
+    f <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>simplify(ode_source_term(u))
+
+    <span style="color: #408080; font-style: italic"># Residual in discrete equations (should be 0)</span>
+    <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;residual step1:&#39;</span>, residual_discrete_eq_step1(u)
+    <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;residual:&#39;</span>, residual_discrete_eq(u)
+
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">linear</span>():
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">u_e</span>(t):
+        <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return chosen linear exact solution.&quot;&quot;&quot;</span>
+        <span style="color: #408080; font-style: italic"># General linear function u_e = c*t + d</span>
+        <span style="color: #408080; font-style: italic"># Initial conditions u(0)=I, u&#39;(0)=V require c=V, d=I</span>
+        <span style="color: #008000; font-weight: bold">return</span> V<span style="color: #666666">*</span>t <span style="color: #666666">+</span> I
+
+    main(u_e)
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">quadratic</span>():
+    <span style="color: #408080; font-style: italic"># Extend with quadratic functions</span>
+    b <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>Symbol(<span style="color: #BA2121">&#39;b&#39;</span>)  <span style="color: #408080; font-style: italic"># arbitrary constant in quadratic term</span>
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">u_e</span>(t):
+        <span style="color: #008000; font-weight: bold">return</span> b<span style="color: #666666">*</span>t<span style="color: #666666">**2</span> <span style="color: #666666">+</span> V<span style="color: #666666">*</span>t <span style="color: #666666">+</span> I
+
+    main(u_e)
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">cubic</span>():
+    a, b <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>symbols(<span style="color: #BA2121">&#39;a b&#39;</span>)
+
+    main(<span style="color: #008000; font-weight: bold">lambda</span> t: a<span style="color: #666666">*</span>t<span style="color: #666666">**3</span> <span style="color: #666666">+</span> b<span style="color: #666666">*</span>t<span style="color: #666666">**2</span> <span style="color: #666666">+</span> V<span style="color: #666666">*</span>t <span style="color: #666666">+</span> I)
+
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solver</span>(I, V, f, w, dt, T):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Solve u&#39;&#39; + w**2*u = f for t in (0,T], u(0)=I and u&#39;(0)=V,</span>
+<span style="color: #BA2121; font-style: italic">    by a central finite difference method with time step dt.</span>
+<span style="color: #BA2121; font-style: italic">    f(t) is a callable Python function.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    dt <span style="color: #666666">=</span> <span style="color: #008000">float</span>(dt)
+    Nt <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(T<span style="color: #666666">/</span>dt))
+    u <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nt<span style="color: #666666">+1</span>)
+    t <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, Nt<span style="color: #666666">*</span>dt, Nt<span style="color: #666666">+1</span>)
+
+    u[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> I
+    u[<span style="color: #666666">1</span>] <span style="color: #666666">=</span> u[<span style="color: #666666">0</span>] <span style="color: #666666">-</span> <span style="color: #666666">0.5*</span>dt<span style="color: #666666">**2*</span>w<span style="color: #666666">**2*</span>u[<span style="color: #666666">0</span>] <span style="color: #666666">+</span> <span style="color: #666666">0.5*</span>dt<span style="color: #666666">**2*</span>f(t[<span style="color: #666666">0</span>]) <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>V
+    <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>, Nt):
+        u[n<span style="color: #666666">+1</span>] <span style="color: #666666">=</span> <span style="color: #666666">2*</span>u[n] <span style="color: #666666">-</span> u[n<span style="color: #666666">-1</span>] <span style="color: #666666">-</span> dt<span style="color: #666666">**2*</span>w<span style="color: #666666">**2*</span>u[n] <span style="color: #666666">+</span> dt<span style="color: #666666">**2*</span>f(t[n])
+    <span style="color: #008000; font-weight: bold">return</span> u, t
+
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">nose.tools</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">nt</span>
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_quadratic_exact_solution</span>():
+    <span style="color: #408080; font-style: italic"># Transform global symbolic variables to functions and numbers</span>
+    <span style="color: #408080; font-style: italic"># for numerical computations</span>
+    <span style="color: #008000; font-weight: bold">global</span> b, V, I, w
+    b, V, I, w <span style="color: #666666">=</span> <span style="color: #666666">2.3</span>, <span style="color: #666666">0.9</span>, <span style="color: #666666">1.2</span>, <span style="color: #666666">1.5</span>
+    <span style="color: #008000; font-weight: bold">global</span> f, t
+    u_e <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> t: b<span style="color: #666666">*</span>t<span style="color: #666666">**2</span> <span style="color: #666666">+</span> V<span style="color: #666666">*</span>t <span style="color: #666666">+</span> I <span style="color: #408080; font-style: italic"># compute with b, V, I, w as numbers</span>
+    f <span style="color: #666666">=</span> ode_source_term(u_e)         <span style="color: #408080; font-style: italic"># fit source term</span>
+    f <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>lambdify(t, f)            <span style="color: #408080; font-style: italic"># turn to numerical Python function</span>
+
+    dt <span style="color: #666666">=</span> <span style="color: #666666">2./</span>w
+    u, t <span style="color: #666666">=</span> solver(I<span style="color: #666666">=</span>I, V<span style="color: #666666">=</span>V, f<span style="color: #666666">=</span>f, w<span style="color: #666666">=</span>w, dt<span style="color: #666666">=</span>dt, T<span style="color: #666666">=3</span>)
+    u_e <span style="color: #666666">=</span> u_e(t)
+    error <span style="color: #666666">=</span> np<span style="color: #666666">.</span>abs(u <span style="color: #666666">-</span> u_e)<span style="color: #666666">.</span>max()
+    nt<span style="color: #666666">.</span>assert_almost_equal(error, <span style="color: #666666">0</span>, delta<span style="color: #666666">=1E-12</span>)
+    <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Error in computing a quadratic solution:&#39;</span>, error
+
+<span style="color: #008000; font-weight: bold">if</span> __name__ <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;__main__&#39;</span>:
+    linear()
+    quadratic()
+    cubic()
+    test_quadratic_exact_solution()
+</pre></div>
+<p>
+</div></p>
+</div>
+</p>
+
+<p>
+<!-- --- end solution of exercise --- -->
 
 <p>
 Filename: <code>vib_undamped_verify_mms</code>.
@@ -1530,7 +1753,7 @@ Filename: <code>vib_amplitude_errors</code>.
 
 <p>
 The program <a href="http://tinyurl.com/nm5587k/vib/vib.py" target="_self"><tt>vib.py</tt></a>
-store the complete solution \( u^0,u^1,\ldots,u^{N_t} \) in memory, which is
+stores the complete solution \( u^0,u^1,\ldots,u^{N_t} \) in memory, which is
 convenient for later plotting.
 Make a memory minimizing version of this program where only the last three
 \( u^{n+1} \), \( u^n \), and \( u^{n-1} \) values are stored in memory.
