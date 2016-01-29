@@ -632,7 +632,7 @@ Fill in the various functions such that the calls in the `main`
 function works.
 
 !bsol
-See final code presented below
+See final code presented below.
 !esol
 !esubex
 
@@ -647,7 +647,7 @@ to `linear`.)
 #is correct.
 
 !bsol
-See final code presented below
+See final code presented below.
 !esol
 !esubex
 
@@ -655,7 +655,8 @@ See final code presented below
 Will a polynomial of degree three fulfill the discrete equations?
 
 !bsol
-No, see final code presented below
+No, when running the final code presented below, the printout shows that the
+step1 residual for the cubic function is not zero.
 !esol
 !esubex
 
@@ -664,7 +665,7 @@ Implement a `solver` function for computing the numerical
 solution of this problem.
 
 !bsol
-See final code presented below
+See final code presented below.
 !esol
 !esubex
 
@@ -688,10 +689,42 @@ file=vib_phase_error_growth
 
 Consider an exact solution $I\cos (\omega t)$ and an
 approximation $I\cos(\tilde\omega t)$.
-Define the phase error as time lag between the peak $I$
+Define the phase error as the time lag between the peak $I$
 in the exact solution and the corresponding peak in the approximation
 after $m$ periods of oscillations. Show that this phase error
 is linear in $m$.
+
+!bsol
+From (ref{vib:ode1:tildeomega:series}) we have that
+!bt
+\begin{equation}
+\tilde\omega = \omega\left( 1 + \frac{1}{24}\omega^2\Delta t^2\right)
++ \Oof{\Delta t^4}
+\tp
+\nonumber
+\end{equation}
+!et
+Dropping the $\Oof{\Delta t^4}$ term, and since $\omega=\frac{2\pi}{P}$ and $\tilde\omega=\frac{2\pi}{\tilde P}$, we have that
+!bt
+\begin{equation}
+\frac{2\pi}{\tilde P} \approx \frac{2\pi}{P}\left( 1 + \frac{1}{24}\omega^2\Delta t^2\right)
+\tp
+\nonumber
+\end{equation}
+!et
+Now, $2\pi$ cancels and the remaining equation may be rewritten as
+!bt
+\begin{equation}
+P - \tilde P \approx \frac{1}{24}\omega^2\Delta t^2
+\tp
+\nonumber
+\end{equation}
+!et
+This implies that the periods differ by a constant. Since the exact and the numerical
+solution start out identically, the phase error $P - \tilde P$ will become 
+$m\frac{1}{24}\omega^2\Delta t^2$ after $m$ periods, i.e. the phase error is linear in $m$.
+
+!esol
 
 
 ===== Exercise: Improve the accuracy by adjusting the frequency =====
@@ -707,6 +740,17 @@ algorithm improves the accuracy (use $\Delta t =0.1$ and simulate
 for 80 periods, with and without adjustment of $\omega$).
 
 # How does this go if
+
+!bsol
+The modified code (below) was run for 80 periods with, and without,
+the given adjustment of $\omega$. A substantial difference in accuracy 
+was observed between the two, 
+showing that the frequency adjustment improves the situation.
+
+@@@CODE exer-vib/vib_adjust_w.py
+
+!esol
+
 
 ===== Exercise: See if adaptive methods improve the phase error =====
 label{vib:exer:undamped:adaptive}
@@ -727,6 +771,17 @@ spaced) mesh points. The question is whether it pays off to use an
 adaptive solver or if equally many points with a simple method gives
 about the same accuracy.
 
+!bsol
+The code may appear as:
+
+@@@CODE exer-vib/vib_undamped_adaptive.py
+
+The program produces the plot seen in Figure ref{vib:exer:fig:undamped_adaptive}, 
+which shows how the adaptive solution clearly outperforms the simpler method.
+
+FIGURE: [fig-vib/vib_undamped_adaptive, width=600 frac=1.0] Result of solving the problem by two different approaches, one adaptive and one simpler difference method. label{vib:exer:fig:undamped_adaptive}
+
+!esol
 
 
 ===== Exercise: Use a Taylor polynomial to compute $u^1$ =====

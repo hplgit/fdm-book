@@ -1272,7 +1272,7 @@ function works.
 <p><div class="collapse" id="exer_1_3">
 
 <p>
-See final code presented below
+See final code presented below.
 
 <p>
 </div></p>
@@ -1305,7 +1305,7 @@ to <code>linear</code>.)
 <p><div class="collapse" id="exer_1_4">
 
 <p>
-See final code presented below
+See final code presented below.
 
 <p>
 </div></p>
@@ -1330,7 +1330,8 @@ Will a polynomial of degree three fulfill the discrete equations?
 <p><div class="collapse" id="exer_1_5">
 
 <p>
-No, see final code presented below
+No, when running the final code presented below, the printout shows that the
+step1 residual for the cubic function is not zero.
 
 <p>
 </div></p>
@@ -1356,7 +1357,7 @@ solution of this problem.
 <p><div class="collapse" id="exer_1_6">
 
 <p>
-See final code presented below
+See final code presented below.
 
 <p>
 </div></p>
@@ -1526,10 +1527,61 @@ Filename: <code>vib_undamped_verify_mms</code>.
 <p>
 Consider an exact solution \( I\cos (\omega t) \) and an
 approximation \( I\cos(\tilde\omega t) \).
-Define the phase error as time lag between the peak \( I \)
+Define the phase error as the time lag between the peak \( I \)
 in the exact solution and the corresponding peak in the approximation
 after \( m \) periods of oscillations. Show that this phase error
 is linear in \( m \).
+
+<p>
+<!-- --- begin solution of exercise --- -->
+
+<p>
+<a class="glyphicon glyphicon-hand-right showdetails" data-toggle="collapse"
+ data-target="#exer_2_1" style="font-size: 80%;"></a>
+<b>Solution.</b>
+<div class="collapse-group">
+<p><div class="collapse" id="exer_2_1">
+
+<p>
+From <a href="._vib-sol002.html#mjx-eqn-19">(19)</a> we have that
+$$
+\begin{equation*}
+\tilde\omega = \omega\left( 1 + \frac{1}{24}\omega^2\Delta t^2\right)
++ \Oof{\Delta t^4}
+\tp
+\nonumber
+\end{equation*}
+$$
+
+Dropping the \( \Oof{\Delta t^4} \) term, and since \( \omega=\frac{2\pi}{P} \) and \( \tilde\omega=\frac{2\pi}{\tilde P} \), we have that
+$$
+\begin{equation*}
+\frac{2\pi}{\tilde P} \approx \frac{2\pi}{P}\left( 1 + \frac{1}{24}\omega^2\Delta t^2\right)
+\tp
+\nonumber
+\end{equation*}
+$$
+
+Now, \( 2\pi \) cancels and the remaining equation may be rewritten as
+$$
+\begin{equation*}
+P - \tilde P \approx \frac{1}{24}\omega^2\Delta t^2
+\tp
+\nonumber
+\end{equation*}
+$$
+
+This implies that the periods differ by a constant. Since the exact and the numerical
+solution start out identically, the phase error \( P - \tilde P \) will become 
+\( m\frac{1}{24}\omega^2\Delta t^2 \) after \( m \) periods, i.e. the phase error is linear in \( m \).
+
+<p>
+</div></p>
+</div>
+</p>
+
+<p>
+<!-- --- end solution of exercise --- -->
 Filename: <code>vib_phase_error_growth</code>.
 
 <p>
@@ -1548,6 +1600,181 @@ in the <code>solver</code> function in <code>vib_undamped.py</code> by <code>w*(
 (1./24)*w**2*dt**2</code> and test how this adjustment in the numerical
 algorithm improves the accuracy (use \( \Delta t =0.1 \) and simulate
 for 80 periods, with and without adjustment of \( \omega \)).
+
+<p>
+<!-- --- begin solution of exercise --- -->
+
+<p>
+<a class="glyphicon glyphicon-hand-right showdetails" data-toggle="collapse"
+ data-target="#exer_3_1" style="font-size: 80%;"></a>
+<b>Solution.</b>
+<div class="collapse-group">
+<p><div class="collapse" id="exer_3_1">
+
+<p>
+The modified code (below) was run for 80 periods with, and without,
+the given adjustment of \( \omega \). A substantial difference in accuracy 
+was observed between the two, 
+showing that the frequency adjustment improves the situation.
+
+<p>
+
+<!-- code=python (!bc pypro) typeset with pygments style "default" -->
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">import</span> <span style="color: #666666">*</span>
+<span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">matplotlib.pyplot</span> <span style="color: #008000; font-weight: bold">import</span> <span style="color: #666666">*</span>
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solver</span>(I, w, dt, T, adjust_w<span style="color: #666666">=</span><span style="color: #008000">True</span>):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Solve u&#39;&#39; + w**2*u = 0 for t in (0,T], u(0)=I and u&#39;(0)=0,</span>
+<span style="color: #BA2121; font-style: italic">    by a central finite difference method with time step dt.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    dt <span style="color: #666666">=</span> <span style="color: #008000">float</span>(dt)
+    Nt <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(T<span style="color: #666666">/</span>dt))
+    u <span style="color: #666666">=</span> zeros(Nt<span style="color: #666666">+1</span>)
+    t <span style="color: #666666">=</span> linspace(<span style="color: #666666">0</span>, Nt<span style="color: #666666">*</span>dt, Nt<span style="color: #666666">+1</span>)
+    <span style="color: #008000; font-weight: bold">if</span> adjust_w:
+        w <span style="color: #666666">=</span> w<span style="color: #666666">*</span>(<span style="color: #666666">1</span> <span style="color: #666666">-</span> <span style="color: #666666">1./24*</span>w<span style="color: #666666">**2*</span>dt<span style="color: #666666">**2</span>)
+
+    u[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> I
+    u[<span style="color: #666666">1</span>] <span style="color: #666666">=</span> u[<span style="color: #666666">0</span>] <span style="color: #666666">-</span> <span style="color: #666666">0.5*</span>dt<span style="color: #666666">**2*</span>w<span style="color: #666666">**2*</span>u[<span style="color: #666666">0</span>]
+    <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>, Nt):
+        u[n<span style="color: #666666">+1</span>] <span style="color: #666666">=</span> <span style="color: #666666">2*</span>u[n] <span style="color: #666666">-</span> u[n<span style="color: #666666">-1</span>] <span style="color: #666666">-</span> dt<span style="color: #666666">**2*</span>w<span style="color: #666666">**2*</span>u[n]
+    <span style="color: #008000; font-weight: bold">return</span> u, t
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">exact_solution</span>(t, I, w):
+    <span style="color: #008000; font-weight: bold">return</span> I<span style="color: #666666">*</span>cos(w<span style="color: #666666">*</span>t)
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">visualize</span>(u, t, I, w):
+    plot(t, u, <span style="color: #BA2121">&#39;r--o&#39;</span>)
+    t_fine <span style="color: #666666">=</span> linspace(<span style="color: #666666">0</span>, t[<span style="color: #666666">-1</span>], <span style="color: #666666">1001</span>)  <span style="color: #408080; font-style: italic"># very fine mesh for u_e</span>
+    u_e <span style="color: #666666">=</span> exact_solution(t_fine, I, w)
+    hold(<span style="color: #BA2121">&#39;on&#39;</span>)
+    plot(t_fine, u_e, <span style="color: #BA2121">&#39;b-&#39;</span>)
+    legend([<span style="color: #BA2121">&#39;numerical&#39;</span>, <span style="color: #BA2121">&#39;exact&#39;</span>], loc<span style="color: #666666">=</span><span style="color: #BA2121">&#39;upper left&#39;</span>)
+    xlabel(<span style="color: #BA2121">&#39;t&#39;</span>)
+    ylabel(<span style="color: #BA2121">&#39;u&#39;</span>)
+    dt <span style="color: #666666">=</span> t[<span style="color: #666666">1</span>] <span style="color: #666666">-</span> t[<span style="color: #666666">0</span>]
+    title(<span style="color: #BA2121">&#39;dt=</span><span style="color: #BB6688; font-weight: bold">%g</span><span style="color: #BA2121">&#39;</span> <span style="color: #666666">%</span> dt)
+    umin <span style="color: #666666">=</span> <span style="color: #666666">-1.2*</span>I;  umax <span style="color: #666666">=</span> <span style="color: #666666">-</span>umin
+    axis([t[<span style="color: #666666">0</span>], t[<span style="color: #666666">-1</span>], umin, umax])
+    savefig(<span style="color: #BA2121">&#39;vib1.png&#39;</span>)
+    savefig(<span style="color: #BA2121">&#39;vib1.pdf&#39;</span>)
+    savefig(<span style="color: #BA2121">&#39;vib1.eps&#39;</span>)
+    show()
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">convergence_rates</span>(m, num_periods<span style="color: #666666">=8</span>, adjust_w<span style="color: #666666">=</span><span style="color: #008000">True</span>):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Return m-1 empirical estimates of the convergence rate</span>
+<span style="color: #BA2121; font-style: italic">    based on m simulations, where the time step is halved</span>
+<span style="color: #BA2121; font-style: italic">    for each simulation.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    w <span style="color: #666666">=</span> <span style="color: #666666">0.35</span>; I <span style="color: #666666">=</span> <span style="color: #666666">0.3</span>
+    dt <span style="color: #666666">=</span> <span style="color: #666666">2*</span>pi<span style="color: #666666">/</span>w<span style="color: #666666">/30</span>  <span style="color: #408080; font-style: italic"># 30 time step per period 2*pi/w</span>
+    T <span style="color: #666666">=</span> <span style="color: #666666">2*</span>pi<span style="color: #666666">/</span>w<span style="color: #666666">*</span>num_periods
+    dt_values <span style="color: #666666">=</span> []
+    E_values <span style="color: #666666">=</span> []
+    <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(m):
+        u, t <span style="color: #666666">=</span> solver(I, w, dt, T, adjust_w)
+        u_e <span style="color: #666666">=</span> exact_solution(t, I, w)
+        E <span style="color: #666666">=</span> sqrt(dt<span style="color: #666666">*</span><span style="color: #008000">sum</span>((u_e<span style="color: #666666">-</span>u)<span style="color: #666666">**2</span>))
+        dt_values<span style="color: #666666">.</span>append(dt)
+        E_values<span style="color: #666666">.</span>append(E)
+        dt <span style="color: #666666">=</span> dt<span style="color: #666666">/2</span>
+
+    r <span style="color: #666666">=</span> [log(E_values[i<span style="color: #666666">-1</span>]<span style="color: #666666">/</span>E_values[i])<span style="color: #666666">/</span>
+         log(dt_values[i<span style="color: #666666">-1</span>]<span style="color: #666666">/</span>dt_values[i])
+         <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>, m, <span style="color: #666666">1</span>)]
+    <span style="color: #008000; font-weight: bold">return</span> r
+
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">nose.tools</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">nt</span>
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_convergence_rates</span>():
+    r <span style="color: #666666">=</span> convergence_rates(m<span style="color: #666666">=5</span>, num_periods<span style="color: #666666">=8</span>)
+    <span style="color: #408080; font-style: italic"># Accept rate to 1 decimal place</span>
+    nt<span style="color: #666666">.</span>assert_almost_equal(r[<span style="color: #666666">-1</span>], <span style="color: #666666">4.0</span>, places<span style="color: #666666">=1</span>)
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">main</span>():
+    <span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">argparse</span>
+    parser <span style="color: #666666">=</span> argparse<span style="color: #666666">.</span>ArgumentParser()
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--adjust_w&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">str</span>, default<span style="color: #666666">=</span><span style="color: #BA2121">&#39;yes&#39;</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--I&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=1.0</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--w&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=2*</span>pi)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--dt&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=0.05</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--num_periods&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">int</span>, default<span style="color: #666666">=5</span>)
+    <span style="color: #408080; font-style: italic"># Hack to allow --SCITOOLS options (read when importing scitools.std)</span>
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--SCITOOLS_easyviz_backend&#39;</span>, default<span style="color: #666666">=</span><span style="color: #BA2121">&#39;matplotlib&#39;</span>)
+    a <span style="color: #666666">=</span> parser<span style="color: #666666">.</span>parse_args()
+    adjust_w, I, w, dt, num_periods <span style="color: #666666">=</span> a<span style="color: #666666">.</span>adjust_w, a<span style="color: #666666">.</span>I, a<span style="color: #666666">.</span>w, a<span style="color: #666666">.</span>dt, a<span style="color: #666666">.</span>num_periods
+    adjust_w <span style="color: #666666">=</span> <span style="color: #008000">True</span> <span style="color: #008000; font-weight: bold">if</span> adjust_w <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;yes&#39;</span> <span style="color: #008000; font-weight: bold">else</span> <span style="color: #008000">False</span>
+
+    P <span style="color: #666666">=</span> <span style="color: #666666">2*</span>pi<span style="color: #666666">/</span>w  <span style="color: #408080; font-style: italic"># one period</span>
+    T <span style="color: #666666">=</span> P<span style="color: #666666">*</span>num_periods
+    u, t <span style="color: #666666">=</span> solver(I, w, dt, T, adjust_w)
+    <span style="color: #008000; font-weight: bold">if</span> num_periods <span style="color: #666666">&lt;=</span> <span style="color: #666666">10</span>:
+        visualize(u, t, I, w)
+    <span style="color: #008000; font-weight: bold">else</span>:
+        visualize_front(u, t, I, w)
+        <span style="color: #408080; font-style: italic">#visualize_front_ascii(u, t, I, w)</span>
+
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">visualize_front</span>(u, t, I, w, savefig<span style="color: #666666">=</span><span style="color: #008000">False</span>):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Visualize u and the exact solution vs t, using a</span>
+<span style="color: #BA2121; font-style: italic">    moving plot window and continuous drawing of the</span>
+<span style="color: #BA2121; font-style: italic">    curves as they evolve in time.</span>
+<span style="color: #BA2121; font-style: italic">    Makes it easy to plot very long time series.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">scitools.std</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">st</span>
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">scitools.MovingPlotWindow</span> <span style="color: #008000; font-weight: bold">import</span> MovingPlotWindow
+
+    P <span style="color: #666666">=</span> <span style="color: #666666">2*</span>pi<span style="color: #666666">/</span>w  <span style="color: #408080; font-style: italic"># one period</span>
+    umin <span style="color: #666666">=</span> <span style="color: #666666">-1.2*</span>I;  umax <span style="color: #666666">=</span> <span style="color: #666666">-</span>umin
+    plot_manager <span style="color: #666666">=</span> MovingPlotWindow(
+        window_width<span style="color: #666666">=8*</span>P,
+        dt<span style="color: #666666">=</span>t[<span style="color: #666666">1</span>]<span style="color: #666666">-</span>t[<span style="color: #666666">0</span>],
+        yaxis<span style="color: #666666">=</span>[umin, umax],
+        mode<span style="color: #666666">=</span><span style="color: #BA2121">&#39;continuous drawing&#39;</span>)
+    <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>,<span style="color: #008000">len</span>(u)):
+        <span style="color: #008000; font-weight: bold">if</span> plot_manager<span style="color: #666666">.</span>plot(n):
+            s <span style="color: #666666">=</span> plot_manager<span style="color: #666666">.</span>first_index_in_plot
+            st<span style="color: #666666">.</span>plot(t[s:n<span style="color: #666666">+1</span>], u[s:n<span style="color: #666666">+1</span>], <span style="color: #BA2121">&#39;r-1&#39;</span>,
+                    t[s:n<span style="color: #666666">+1</span>], I<span style="color: #666666">*</span>cos(w<span style="color: #666666">*</span>t)[s:n<span style="color: #666666">+1</span>], <span style="color: #BA2121">&#39;b-1&#39;</span>,
+                    title<span style="color: #666666">=</span><span style="color: #BA2121">&#39;t=</span><span style="color: #BB6688; font-weight: bold">%6.3f</span><span style="color: #BA2121">&#39;</span> <span style="color: #666666">%</span> t[n],
+                    axis<span style="color: #666666">=</span>plot_manager<span style="color: #666666">.</span>axis(),
+                    show<span style="color: #666666">=</span><span style="color: #AA22FF; font-weight: bold">not</span> savefig) <span style="color: #408080; font-style: italic"># drop window if savefig</span>
+            <span style="color: #008000; font-weight: bold">if</span> savefig:
+                st<span style="color: #666666">.</span>savefig(<span style="color: #BA2121">&#39;tmp_vib</span><span style="color: #BB6688; font-weight: bold">%04d</span><span style="color: #BA2121">.png&#39;</span> <span style="color: #666666">%</span> n)
+        plot_manager<span style="color: #666666">.</span>update(n)
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">visualize_front_ascii</span>(u, t, I, w, fps<span style="color: #666666">=10</span>):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Plot u and the exact solution vs t line by line in a</span>
+<span style="color: #BA2121; font-style: italic">    terminal window (only using ascii characters).</span>
+<span style="color: #BA2121; font-style: italic">    Makes it easy to plot very long time series.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">scitools.avplotter</span> <span style="color: #008000; font-weight: bold">import</span> Plotter
+    <span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">time</span>
+    P <span style="color: #666666">=</span> <span style="color: #666666">2*</span>pi<span style="color: #666666">/</span>w
+    umin <span style="color: #666666">=</span> <span style="color: #666666">-1.2*</span>I;  umax <span style="color: #666666">=</span> <span style="color: #666666">-</span>umin
+
+    p <span style="color: #666666">=</span> Plotter(ymin<span style="color: #666666">=</span>umin, ymax<span style="color: #666666">=</span>umax, width<span style="color: #666666">=60</span>, symbols<span style="color: #666666">=</span><span style="color: #BA2121">&#39;+o&#39;</span>)
+    <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #008000">len</span>(u)):
+        <span style="color: #008000; font-weight: bold">print</span> p<span style="color: #666666">.</span>plot(t[n], u[n], I<span style="color: #666666">*</span>cos(w<span style="color: #666666">*</span>t[n])), \
+              <span style="color: #BA2121">&#39;</span><span style="color: #BB6688; font-weight: bold">%.1f</span><span style="color: #BA2121">&#39;</span> <span style="color: #666666">%</span> (t[n]<span style="color: #666666">/</span>P)
+        time<span style="color: #666666">.</span>sleep(<span style="color: #666666">1/</span><span style="color: #008000">float</span>(fps))
+
+<span style="color: #008000; font-weight: bold">if</span> __name__ <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;__main__&#39;</span>:
+    main()
+    <span style="color: #408080; font-style: italic">#r = convergence_rates(m=5, num_periods=8, adjust_w=True)</span>
+    <span style="color: #408080; font-style: italic">#print &#39;convergence rate: %.1f&#39; % r[-1]</span>
+</pre></div>
+<p>
+</div></p>
+</div>
+</p>
+
+<p>
+<!-- --- end solution of exercise --- -->
 Filename: <code>vib_adjust_w</code>.
 
 <p>
@@ -1573,6 +1800,91 @@ method from the section <a href="._vib-sol002.html#vib:ode1:fdm">A centered fini
 spaced) mesh points. The question is whether it pays off to use an
 adaptive solver or if equally many points with a simple method gives
 about the same accuracy.
+
+<p>
+<!-- --- begin solution of exercise --- -->
+
+<p>
+<a class="glyphicon glyphicon-hand-right showdetails" data-toggle="collapse"
+ data-target="#exer_4_1" style="font-size: 80%;"></a>
+<b>Solution.</b>
+<div class="collapse-group">
+<p><div class="collapse" id="exer_4_1">
+
+<p>
+The code may appear as:
+
+<p>
+
+<!-- code=python (!bc pypro) typeset with pygments style "default" -->
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">odespy</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">sys</span>
+<span style="color: #408080; font-style: italic">#import matplotlib.pyplot as plt</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">scitools.std</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">plt</span>
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">f</span>(s, t):
+    u, v <span style="color: #666666">=</span> s
+    <span style="color: #008000; font-weight: bold">return</span> np<span style="color: #666666">.</span>array([v, <span style="color: #666666">-</span>u])
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">u_exact</span>(t):
+    <span style="color: #008000; font-weight: bold">return</span> I<span style="color: #666666">*</span>np<span style="color: #666666">.</span>cos(w<span style="color: #666666">*</span>t)
+
+I <span style="color: #666666">=</span> <span style="color: #666666">1</span>; V <span style="color: #666666">=</span> <span style="color: #666666">0</span>; u0 <span style="color: #666666">=</span> np<span style="color: #666666">.</span>array([I, V])
+w  <span style="color: #666666">=</span> <span style="color: #666666">1</span>; T <span style="color: #666666">=</span> <span style="color: #666666">100</span>
+tol <span style="color: #666666">=</span> <span style="color: #008000">float</span>(sys<span style="color: #666666">.</span>argv[<span style="color: #666666">1</span>])
+solver <span style="color: #666666">=</span> odespy<span style="color: #666666">.</span>DormandPrince(f, atol<span style="color: #666666">=</span>tol, rtol<span style="color: #666666">=0.1*</span>tol)
+
+Nt <span style="color: #666666">=</span> <span style="color: #666666">1</span> <span style="color: #408080; font-style: italic"># just one step - let scheme find its intermediate points</span>
+t_mesh <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, T, Nt<span style="color: #666666">+1</span>)
+t_fine <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, T, <span style="color: #666666">10001</span>)
+
+solver<span style="color: #666666">.</span>set_initial_condition(u0)
+u, t <span style="color: #666666">=</span> solver<span style="color: #666666">.</span>solve(t_mesh)
+
+<span style="color: #408080; font-style: italic"># u and t will only consist of [I, u^Nt] and [0,T], i.e. 2 values each, while</span>
+<span style="color: #408080; font-style: italic"># solver.u_all and solver.t_all contain all computed points.</span>
+<span style="color: #408080; font-style: italic"># solver.u_all is a list with arrays, one array (with 2 values) for</span>
+<span style="color: #408080; font-style: italic"># each point in time.</span>
+u_adaptive <span style="color: #666666">=</span> np<span style="color: #666666">.</span>array(solver<span style="color: #666666">.</span>u_all)
+
+<span style="color: #408080; font-style: italic"># For comparison, we solve also with simple FDM method</span>
+Nt_simple <span style="color: #666666">=</span> <span style="color: #008000">len</span>(solver<span style="color: #666666">.</span>t_all)   <span style="color: #408080; font-style: italic"># get no of time steps from adaptive method</span>
+t_simple <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, T, Nt_simple<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># create equally spaced steps</span>
+dt <span style="color: #666666">=</span> t_simple[<span style="color: #666666">1</span>] <span style="color: #666666">-</span> t_simple[<span style="color: #666666">0</span>]          <span style="color: #408080; font-style: italic"># constant time step</span>
+u_simple <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nt_simple<span style="color: #666666">+1</span>)
+u_simple[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> I
+u_simple[<span style="color: #666666">1</span>] <span style="color: #666666">=</span> u_simple[<span style="color: #666666">0</span>] <span style="color: #666666">-</span> <span style="color: #666666">0.5*</span>dt<span style="color: #666666">**2*</span>w<span style="color: #666666">**2*</span>u_simple[<span style="color: #666666">0</span>]
+<span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>, Nt_simple):
+    u_simple[n<span style="color: #666666">+1</span>] <span style="color: #666666">=</span> <span style="color: #666666">2*</span>u_simple[n] <span style="color: #666666">-</span> u_simple[n<span style="color: #666666">-1</span>] <span style="color: #666666">-</span> dt<span style="color: #666666">**2*</span>w<span style="color: #666666">**2*</span>u_simple[n]
+
+plt<span style="color: #666666">.</span>plot(solver<span style="color: #666666">.</span>t_all, u_adaptive[:,<span style="color: #666666">0</span>], <span style="color: #BA2121">&#39;k-&#39;</span>)
+plt<span style="color: #666666">.</span>hold(<span style="color: #BA2121">&#39;on&#39;</span>)
+plt<span style="color: #666666">.</span>plot(t_simple, u_simple, <span style="color: #BA2121">&#39;r--&#39;</span>)
+plt<span style="color: #666666">.</span>plot(t_fine, u_exact(t_fine), <span style="color: #BA2121">&#39;b-&#39;</span>)
+plt<span style="color: #666666">.</span>legend([<span style="color: #BA2121">&#39;tol=</span><span style="color: #BB6688; font-weight: bold">%.0E</span><span style="color: #BA2121">&#39;</span> <span style="color: #666666">%</span> tol, <span style="color: #BA2121">&#39;u simple&#39;</span>, <span style="color: #BA2121">&#39;exact&#39;</span>])
+plt<span style="color: #666666">.</span>savefig(<span style="color: #BA2121">&#39;tmp_odespy_adaptive.png&#39;</span>)
+plt<span style="color: #666666">.</span>savefig(<span style="color: #BA2121">&#39;tmp_odespy_adaptive.pdf&#39;</span>)
+plt<span style="color: #666666">.</span>show()
+</pre></div>
+<p>
+The program produces the plot seen in Figure <a href="#vib:exer:fig:undamped_adaptive">13</a>, 
+which shows how the adaptive solution clearly outperforms the simpler method.
+
+<p>
+<center> <!-- figure -->
+<hr class="figure">
+<center><p class="caption">Figure 13:  Result of solving the problem by two different approaches, one adaptive and one simpler difference method. <div id="vib:exer:fig:undamped_adaptive"></div> </p></center>
+<p><img src="fig-vib/vib_undamped_adaptive.png" align="bottom" width=600></p>
+</center>
+
+<p>
+</div></p>
+</div>
+</p>
+
+<p>
+<!-- --- end solution of exercise --- -->
 Filename: <code>vib_undamped_adaptive</code>.
 
 <p>
@@ -1988,13 +2300,13 @@ and an elastic pendulum.
 <p>
 <center> <!-- figure -->
 <hr class="figure">
-<center><p class="caption">Figure 13:  Simple oscillating mass. <div id="vib:app:mass_spring:fig"></div> </p></center>
+<center><p class="caption">Figure 14:  Simple oscillating mass. <div id="vib:app:mass_spring:fig"></div> </p></center>
 <p><img src="fig-vib/oscillator_spring.png" align="bottom" width=500></p>
 </center>
 
 <p>
 The most fundamental mechanical vibration system is depicted in Figure
-<a href="#vib:app:mass_spring:fig">13</a>. A body with mass \( m \) is attached to a
+<a href="#vib:app:mass_spring:fig">14</a>. A body with mass \( m \) is attached to a
 spring and can move horizontally without friction (in the wheels). The
 position of the body is given by the vector \( \rpos(t) = u(t)\ii \), where
 \( \ii \) is a unit vector in \( x \) direction.
@@ -2071,7 +2383,7 @@ where \( \beta \) is a dimensionless number. Any motion that starts from rest
 <h3 id="___sec83">The physics </h3>
 
 <p>
-The typical physics of the system in Figure <a href="#vib:app:mass_spring:fig">13</a> can
+The typical physics of the system in Figure <a href="#vib:app:mass_spring:fig">14</a> can
 be described as follows.
 Initially, we displace the body to some position \( I \), say at rest
 (\( V=0 \)). After releasing the body, the spring, which is extended, will
@@ -2090,13 +2402,13 @@ forces to damp the motion, the oscillations will continue forever.
 <p>
 <center> <!-- figure -->
 <hr class="figure">
-<center><p class="caption">Figure 14:  General oscillating system. <div id="vib:app:mass_gen:fig"></div> </p></center>
+<center><p class="caption">Figure 15:  General oscillating system. <div id="vib:app:mass_gen:fig"></div> </p></center>
 <p><img src="fig-vib/oscillator_general.png" align="bottom" width=500></p>
 </center>
 
 <p>
-The mechanical system in Figure <a href="#vib:app:mass_spring:fig">13</a> can easily be
-extended to the more general system in Figure <a href="#vib:app:mass_gen:fig">14</a>,
+The mechanical system in Figure <a href="#vib:app:mass_spring:fig">14</a> can easily be
+extended to the more general system in Figure <a href="#vib:app:mass_gen:fig">15</a>,
 where the body is attached to a spring and a dashpot, and also subject
 to an environmental force \( F(t)\ii \). The system has still only one
 degree of freedom since the body can only move back and forth parallel to
@@ -2184,14 +2496,14 @@ $$ \bar u(0) = \frac{Ik}{A},\quad \frac{d\bar u}{d\bar t}=\frac{t_c}{u_c}V = \fr
 
 <p>
 Consider a variant of the oscillating body in the section <a href="#vib:app:mass_spring">Oscillating mass attached to a spring</a>
-and Figure <a href="#vib:app:mass_spring:fig">13</a>: the body rests on a flat
+and Figure <a href="#vib:app:mass_spring:fig">14</a>: the body rests on a flat
 surface, and there is sliding friction between the body and the surface.
-Figure <a href="#vib:app:mass_sliding:fig">15</a> depicts the problem.
+Figure <a href="#vib:app:mass_sliding:fig">16</a> depicts the problem.
 
 <p>
 <center> <!-- figure -->
 <hr class="figure">
-<center><p class="caption">Figure 15:  Sketch of a body sliding on a surface. <div id="vib:app:mass_sliding:fig"></div> </p></center>
+<center><p class="caption">Figure 16:  Sketch of a body sliding on a surface. <div id="vib:app:mass_sliding:fig"></div> </p></center>
 <p><img src="fig-vib/oscillator_sliding.png" align="bottom" width=500></p>
 </center>
 
@@ -2251,13 +2563,13 @@ A classical problem in mechanics is the motion of a pendulum. We first
 consider a <a href="https://en.wikipedia.org/wiki/Pendulum" target="_self">simple pendulum</a> (sometimes also called a
 mathematical pendulum): a small body of mass \( m \) is
 attached to a massless wire and can oscillate back and forth in the
-gravity field. Figure <a href="#vib:app:pendulum:fig_problem">16</a> shows a sketch
+gravity field. Figure <a href="#vib:app:pendulum:fig_problem">17</a> shows a sketch
 of the problem.
 
 <p>
 <center> <!-- figure -->
 <hr class="figure">
-<center><p class="caption">Figure 16:  Sketch of a simple pendulum. <div id="vib:app:pendulum:fig_problem"></div> </p></center>
+<center><p class="caption">Figure 17:  Sketch of a simple pendulum. <div id="vib:app:pendulum:fig_problem"></div> </p></center>
 <p><img src="fig-vib/pendulum_problem.png" align="bottom" width=300></p>
 </center>
 
@@ -2274,7 +2586,7 @@ the magnitude of the velocity.
 <p>
 We introduce a coordinate system with polar coordinates and unit
 vectors \( \ir \) and \( \ith \) as shown in Figure
-<a href="#vib:app:pendulum:fig_forces">17</a>.  The position of the center of mass
+<a href="#vib:app:pendulum:fig_forces">18</a>.  The position of the center of mass
 of the body is
 
 $$ \rpos(t) = x_0\ii + y_0\jj + L\ir,$$
@@ -2286,7 +2598,7 @@ that \( \ir = \cos\theta\ii +\sin\theta\jj \).
 <p>
 <center> <!-- figure -->
 <hr class="figure">
-<center><p class="caption">Figure 17:  Forces acting on a simple pendulum. <div id="vib:app:pendulum:fig_forces"></div> </p></center>
+<center><p class="caption">Figure 18:  Forces acting on a simple pendulum. <div id="vib:app:pendulum:fig_forces"></div> </p></center>
 <p><img src="fig-vib/pendulum_forces.png" align="bottom" width=500></p>
 </center>
 
@@ -2393,8 +2705,8 @@ visualize the solution of ODE models.  <a href="#vib:exer:pendulum_simple">Exerc
 pendulum in the previous section.  However, sometimes it is more
 instructive to look at other types of visualizations. For example, we
 have the pendulum and the body diagram in Figures
-<a href="#vib:app:pendulum:fig_problem">16</a> and
-<a href="#vib:app:pendulum:fig_forces">17</a>. We may think of these figures as
+<a href="#vib:app:pendulum:fig_problem">17</a> and
+<a href="#vib:app:pendulum:fig_forces">18</a>. We may think of these figures as
 animations in time instead. Especially the body diagram will show both the
 motion of the pendulum <em>and</em> the size of the forces during the motion.
 The present section exemplifies how to make such a dynamic body
@@ -2420,8 +2732,8 @@ Dynamic physical sketches, coupled to the numerical solution of
 differential equations, requires a program to produce a sketch for
 the situation at each time level.
 <a href="https://github.com/hplgit/pysketcher" target="_self">Pysketcher</a> is such a tool.
-In fact (and not surprising!) Figures <a href="#vib:app:pendulum:fig_problem">16</a> and
-<a href="#vib:app:pendulum:fig_forces">17</a> were drawn using Pysketcher.
+In fact (and not surprising!) Figures <a href="#vib:app:pendulum:fig_problem">17</a> and
+<a href="#vib:app:pendulum:fig_forces">18</a> were drawn using Pysketcher.
 The details of the drawings are explained in the
 <a href="http://hplgit.github.io/pysketcher/doc/web/index.html" target="_self">Pysketcher tutorial</a>.
 Here, we outline how this type of sketch can be used to create an animated
@@ -2507,7 +2819,7 @@ is listed below.
 
 <p>
 The <code>sketch</code> function below applies Pysketcher objects to build
-a diagram like that in Figure <a href="#vib:app:pendulum:fig_forces">17</a>,
+a diagram like that in Figure <a href="#vib:app:pendulum:fig_forces">18</a>,
 except that we have removed the rotation point \( (x_0,y_0) \) and
 the unit vectors in polar coordinates as these objects are not
 important for an animated body diagram.
@@ -2679,7 +2991,7 @@ listed below.
 <h2 id="vib:app:pendulum_elastic">Motion of an elastic pendulum</h2>
 
 <p>
-Consider a pendulum as in Figure <a href="#vib:app:pendulum:fig_problem">16</a>, but
+Consider a pendulum as in Figure <a href="#vib:app:pendulum:fig_problem">17</a>, but
 this time the wire is elastic. The length of the wire when it is not
 stretched is \( L_0 \), while \( L(t) \) is the stretched
 length at time \( t \) during the motion.
@@ -2689,7 +3001,7 @@ Stretching the elastic wire a distance \( \Delta L \) gives rise to a
 spring force \( k\Delta L \) in the opposite direction of the
 stretching. Let \( \normalvec \) be a unit normal vector along the wire
 from the point \( \rpos_0=(x_0,y_0) \) and in the direction of \( \ith \), see
-Figure <a href="#vib:app:pendulum:fig_forces">17</a> for definition of \( (x_0,y_0) \)
+Figure <a href="#vib:app:pendulum:fig_forces">18</a> for definition of \( (x_0,y_0) \)
 and \( \ith \). Obviously, we have \( \normalvec=\ith \), but in this modeling
 of an elastic pendulum we do not need polar coordinates.  Instead, it
 is more straightforward to develop the equation in Cartesian
@@ -2718,7 +3030,7 @@ The force in the wire is then \( -S\normalvec=-k\Delta L\normalvec \).
 
 <p>
 The other forces are the gravity and the air resistance, just
-as in Figure <a href="#vib:app:pendulum:fig_forces">17</a>. The main difference
+as in Figure <a href="#vib:app:pendulum:fig_forces">18</a>. The main difference
 is that we have a <em>model</em> for \( S \) in terms of the motion (as soon as
 we have expressed \( \Delta L \) by \( \rpos \)). For simplicity, we drop
 the air resistance term (but <a href="#vib:exer:pendulum_elastic_drag">Exercise 23: Simulate an elastic pendulum with air resistance</a>
@@ -2994,7 +3306,7 @@ close to 1.)
 <p>
 <center> <!-- figure -->
 <hr class="figure">
-<center><p class="caption">Figure 18:  Sketch of one-wheel vehicle on a bumpy road. <div id="vib:app:bumpy:fig:sketch"></div> </p></center>
+<center><p class="caption">Figure 19:  Sketch of one-wheel vehicle on a bumpy road. <div id="vib:app:bumpy:fig:sketch"></div> </p></center>
 <p><img src="fig-vib/bumpy_sketch.png" align="bottom" width=400></p>
 </center>
 
@@ -3002,7 +3314,7 @@ close to 1.)
 We consider a very simplistic vehicle, on one wheel, rolling along a
 bumpy road. The oscillatory nature of the road will induce an external
 forcing on the spring system in the vehicle and cause vibrations.
-Figure <a href="#vib:app:bumpy:fig:sketch">18</a> outlines the situation.
+Figure <a href="#vib:app:bumpy:fig:sketch">19</a> outlines the situation.
 
 <p>
 To derive the equation that governs the motion, we must first establish
@@ -3010,7 +3322,7 @@ the position vector of the black mass at the top of the spring.
 Suppose the spring has length \( L \) without any elongation or compression,
 suppose the radius of the wheel is \( R \), and suppose the height of the
 black mass at the top is \( H \). With the aid of the \( \rpos_0 \) vector
-in Figure <a href="#vib:app:bumpy:fig:sketch">18</a>, the position \( \rpos \) of
+in Figure <a href="#vib:app:bumpy:fig:sketch">19</a>, the position \( \rpos \) of
 the center point of the mass is
 
 $$
