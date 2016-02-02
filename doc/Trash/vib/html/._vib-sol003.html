@@ -1305,7 +1305,7 @@ to <code>linear</code>.)
 <p><div class="collapse" id="exer_1_4">
 
 <p>
-See final code presented below.
+Yes, a quadratic function will fulfill the discrete equations exactly. See output from final code presented below.
 
 <p>
 </div></p>
@@ -2155,6 +2155,8 @@ rate of this error. The expected rate is 2.
 <p><div class="collapse" id="exer_8_1">
 
 <p>
+The code:
+<p>
 
 <!-- code=python (!bc pypro) typeset with pygments style "default" -->
 <div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
@@ -2255,6 +2257,427 @@ Solve the various subproblems and see how the results and problem
 settings change with the generalized ODE in case of linear or
 quadratic damping. By modifying the code from <a href="#vib:exer:undamped:verify:linquad">Problem 1: Use linear/quadratic functions for verification</a>, <code>sympy</code> will do most
 of the work required to analyze the generalized problem.
+
+<p>
+<!-- --- begin solution of exercise --- -->
+
+<p>
+<a class="glyphicon glyphicon-hand-right showdetails" data-toggle="collapse"
+ data-target="#exer_9_1" style="font-size: 80%;"></a>
+<b>Solution.</b>
+<div class="collapse-group">
+<p><div class="collapse" id="exer_9_1">
+
+<p>
+With a linear spring force, i.e. \( s(u)=cu \), our model problem becomes
+$$
+\begin{equation*}
+mu^{\prime\prime} + f(u^{\prime}) + cu = F(t),\quad u(0)=I,\ u^{\prime}(0)=V,\ t\in (0,T]
+\tp
+\nonumber
+\end{equation*}
+$$
+
+First we consider linear damping, i.e., when \( f(u^{\prime}) = bu^{\prime} \), and follow the
+text in the chapter <a href="#vib:ode2:fdm:flin">A centered scheme for linear damping</a>. Discretizing the
+equation according to 
+$$
+\begin{equation*}
+[mD_tD_t u + f(D_{2t}u) + cu = F]^n,
+\nonumber
+\end{equation*}
+$$
+
+implies that
+$$
+\begin{equation*}
+m\frac{u^{n+1}-2u^n + u^{n-1}}{\Delta t^2}
++ b\frac{u^{n+1}-u^{n-1}}{2\Delta t} + cu^n = F^n.
+\nonumber
+\end{equation*}
+$$
+
+The explicit formula for \( u \) at each
+new time level then becomes
+
+$$
+\begin{equation*}
+u^{n+1} = (2mu^n + (\frac{b}{2}\Delta t - m)u^{n-1} +
+\Delta t^2(F^n - cu^n))(m + \frac{b}{2}\Delta t)^{-1}
+\nonumber
+\tp
+\end{equation*}
+$$
+
+For the first time step, we use \( n=0 \) and a centered difference approximation for the
+initial condition on the derivative. This gives
+
+$$
+\begin{equation*}
+u^1 = u^0 + \Delta t\, V
++ \frac{\Delta t^2}{2m}(-bV - cu^0 + F^0)
+\tp
+\nonumber
+\end{equation*}
+$$
+
+<p>
+Next, we consider quadratic damping, i.e., when
+\( f(u^{\prime})=bu^{\prime}|u^{\prime}| \), and follow the
+text in the chapter <a href="#vib:ode2:fdm:fquad">A centered scheme for quadratic damping</a>. Discretizing the
+equation according to
+$$
+\begin{equation*}
+[mD_tD_t u + bD_{2t}u|D_{2t}u| + cu = F]^n\tp
+\nonumber
+\end{equation*}
+$$
+
+gives us
+$$
+\begin{equation*}
+m\frac{u^{n+1}-2u^n + u^{n-1}}{\Delta t^2}
++ b\frac{u^{n+1}-u^n}{\Delta t}\frac{|u^n-u^{n-1}|}{\Delta t}
++ cu^n = F^n.
+\nonumber
+\end{equation*}
+$$
+
+We solve for \( u^{n+1} \) to get the explicit updating formula as 
+$$
+\begin{align}
+u^{n+1} &=  \left( m + b|u^n-u^{n-1}|\right)^{-1}\times \nonumber\\ 
+& \qquad \left(2m u^n - mu^{n-1} + bu^n|u^n-u^{n-1}| + \Delta t^2 (F^n - cu^n)
+\right)
+\tp
+\nonumber
+\end{align}
+$$
+
+and the equation for the first time step as
+$$
+\begin{equation*}
+u^1 = u^0 + \Delta t V + \frac{\Delta t^2}{2m}\left(-bV|V| - cu^0 + F^0\right)
+\tp
+\nonumber
+\end{equation*}
+$$
+
+<p>
+Turning to verification with MMS and \( u_e(t)=ct+d \), we get \( d=I \) and \( c=V \) independent
+of the damping term, so these parameter values stay as for the undamped case.
+
+<p>
+Proceeding with linear damping, we get from the chapter <a href="#vib:ode2:verify">Verification</a> that
+$$
+\begin{equation*}
+F(t) = bV + c(Vt + I)\tp
+\nonumber
+\end{equation*}
+$$
+
+(Note that there are two different c parameters here, one from \( u_e=ct+d \) and one from the spring force \( cu \). 
+The first one disappears, however, as it is switched with \( V \).)
+
+<p>
+To show that \( u_e \) is a perfect solution also to the discrete equations, we insert \( u_e \) and \( F \) into
+$$
+\begin{equation*}
+[mD_tD_t u + bD_{2t}u + cu = F]^n\tp
+\nonumber
+\end{equation*}
+$$
+
+This gives
+$$
+\begin{equation*}
+[mD_tD_t (Vt+I) + bD_{2t}(Vt+I) + c(Vt+I) = bV + c(Vt + I)]^n,
+\nonumber
+\end{equation*}
+$$
+
+which may be split up as
+$$
+\begin{equation*}
+m[D_tD_t (Vt+I)]^n + b[D_{2t}(Vt+I)]^n + c[(Vt+I)]^n = b[V]^n + c[(Vt + I)]^n.
+\nonumber
+\end{equation*}
+$$
+
+Simplifying, we note that the first term is zero and that \( c[(Vt+I)]^n \) appears with the
+same sign on each side of the equation. Thus, dropping these terms, and cancelling the common
+factor \( b \), we are left with
+$$
+\begin{equation*}
+[D_{2t}(Vt+I)]^n = [V]^n.
+\nonumber
+\end{equation*}
+$$
+
+It therefore remains to show that \( [D_{2t}(Vt+I)]^n \) is equal to \( [V]^n = V \). We write out
+the left hand side as
+$$
+\begin{align}
+[D_{2t}(Vt+I)]^n &= \frac{(Vt_{n+1}+I) - (Vt_{n-1}+I)}{2\Delta t} \nonumber\\ 
+                 &= \frac{V(t_{n+1}-t_{n-1})}{2\Delta t} \nonumber\\ 
+                 &= \frac{V((t_n + \Delta t) - (t_n - \Delta t))}{2\Delta t} \nonumber\\ 
+                 &= V, \nonumber
+\nonumber
+\end{align}
+$$
+
+which shows that the two sides of the equation are equal and that the discrete equations
+are fulfilled exactly for the given \( u_e \) function.
+
+<p>
+If the damping is rather quadratic, we find from the chapter <a href="#vib:ode2:verify">Verification</a> that
+$$
+\begin{equation*}
+F(t) = b|V|V + c(Vt + I)\tp
+\nonumber
+\end{equation*}
+$$
+
+As with linear damping, we show that \( u_e \) is a perfect solution also to the discrete equations 
+by inserting \( u_e \) and \( F \) into
+$$
+\begin{equation*}
+[mD_tD_t u + bD_{2t}u|D_{2t}u| + cu = F]^n\tp
+\nonumber
+\end{equation*}
+$$
+
+We then get
+$$
+\begin{equation*}
+[mD_tD_t (Vt+I) + bD_{2t}(Vt+I)|D_{2t}(Vt+I)| + c(Vt+I) = b|V|V + c(Vt+I)]^n,
+\nonumber
+\end{equation*}
+$$
+
+which simplifies to
+$$
+\begin{equation*}
+[bD_{2t}(Vt+I)|D_{2t}(Vt+I)| = b|V|V]^n
+\nonumber
+\end{equation*}
+$$
+
+and further to
+$$
+\begin{equation*}
+[D_{2t}(Vt+I)]^n [|D_{2t}(Vt+I)|]^n = |V|V
+\nonumber
+\end{equation*}
+$$
+
+which simply states that
+$$
+\begin{equation*}
+V|V| = |V|V\tp
+\nonumber
+\end{equation*}
+$$
+
+Thus, \( u_e \) fulfills the discrete equations exactly also when the damping term
+is quadratic.
+
+<p>
+When the exact solution is changed to become quadratic or cubic, the situation is more complicated.
+
+<p>
+For a quadratic solution \( u_e \) combined with (zero damping or) linear damping, the output from the program below shows that the discrete equations are fulfilled exactly. However, this is not the case with nonlinear damping, where only the first step gives zero residual.
+
+<p>
+For a cubic solution \( u_e \), we get a nonzero residual for (zero damping and) linear and nonlinear damping.
+
+<p>
+
+<!-- code=python (!bc pypro) typeset with pygments style "default" -->
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">sympy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">sym</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
+
+<span style="color: #408080; font-style: italic"># The code in vib_undamped_verify_mms.py is here generalized</span>
+<span style="color: #408080; font-style: italic"># to treat the model m*u&#39;&#39; + f(u&#39;) + c*u = F(t), where the </span>
+<span style="color: #408080; font-style: italic"># damping term f(u&#39;) = 0, b*u&#39; or b*V*abs(V). </span>
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">ode_source_term</span>(u, damping):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return the terms in the ODE that the source term</span>
+<span style="color: #BA2121; font-style: italic">    must balance, here m*u&#39;&#39; + f(u&#39;) + c*u.</span>
+<span style="color: #BA2121; font-style: italic">    u is a symbolic Python function of t.&quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">if</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;zero&#39;</span>:
+        <span style="color: #008000; font-weight: bold">return</span> m<span style="color: #666666">*</span>sym<span style="color: #666666">.</span>diff(u(t), t, t) <span style="color: #666666">+</span> c<span style="color: #666666">*</span>u(t)  
+    <span style="color: #008000; font-weight: bold">elif</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;linear&#39;</span>:
+        <span style="color: #008000; font-weight: bold">return</span> m<span style="color: #666666">*</span>sym<span style="color: #666666">.</span>diff(u(t), t, t) <span style="color: #666666">+</span> \
+               b<span style="color: #666666">*</span>sym<span style="color: #666666">.</span>diff(u(t), t) <span style="color: #666666">+</span> c<span style="color: #666666">*</span>u(t)    
+    <span style="color: #008000; font-weight: bold">else</span>:  <span style="color: #408080; font-style: italic"># damping is nonlinear</span>
+        <span style="color: #008000; font-weight: bold">return</span> m<span style="color: #666666">*</span>sym<span style="color: #666666">.</span>diff(u(t), t, t) <span style="color: #666666">+</span> \
+               b<span style="color: #666666">*</span>sym<span style="color: #666666">.</span>diff(u(t), t)<span style="color: #666666">*</span><span style="color: #008000">abs</span>(sym<span style="color: #666666">.</span>diff(u(t), t)) <span style="color: #666666">+</span> c<span style="color: #666666">*</span>u(t) 
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">residual_discrete_eq</span>(u, damping):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return the residual of the discrete eq. with u inserted.&quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">if</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;zero&#39;</span>:
+        R <span style="color: #666666">=</span> m<span style="color: #666666">*</span>DtDt(u, dt) <span style="color: #666666">+</span> c<span style="color: #666666">*</span>u(t) <span style="color: #666666">-</span> F
+    <span style="color: #008000; font-weight: bold">elif</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;linear&#39;</span>:
+        R <span style="color: #666666">=</span> m<span style="color: #666666">*</span>DtDt(u, dt) <span style="color: #666666">+</span> b<span style="color: #666666">*</span>D2t(u, dt) <span style="color: #666666">+</span> c<span style="color: #666666">*</span>u(t) <span style="color: #666666">-</span> F
+    <span style="color: #008000; font-weight: bold">else</span>:   <span style="color: #408080; font-style: italic"># damping is nonlinear</span>
+        R <span style="color: #666666">=</span> m<span style="color: #666666">*</span>DtDt(u, dt) <span style="color: #666666">+</span> b<span style="color: #666666">*</span>Dt_p_half(u, dt)<span style="color: #666666">*</span>\
+            <span style="color: #008000">abs</span>(Dt_m_half(u, dt)) <span style="color: #666666">+</span> c<span style="color: #666666">*</span>u(t) <span style="color: #666666">-</span> F
+    <span style="color: #008000; font-weight: bold">return</span> sym<span style="color: #666666">.</span>simplify(R)
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">residual_discrete_eq_step1</span>(u, damping):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return the residual of the discrete eq. at the first</span>
+<span style="color: #BA2121; font-style: italic">    step with u inserted.&quot;&quot;&quot;</span>
+    half <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>Rational(<span style="color: #666666">1</span>,<span style="color: #666666">2</span>)
+    <span style="color: #008000; font-weight: bold">if</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;zero&#39;</span>:
+        R <span style="color: #666666">=</span> u(t<span style="color: #666666">+</span>dt) <span style="color: #666666">-</span> u(t) <span style="color: #666666">-</span> dt<span style="color: #666666">*</span>V <span style="color: #666666">-</span> \
+            half<span style="color: #666666">*</span>dt<span style="color: #666666">**2*</span>(F<span style="color: #666666">.</span>subs(t, <span style="color: #666666">0</span>)<span style="color: #666666">/</span>m) <span style="color: #666666">+</span> half<span style="color: #666666">*</span>dt<span style="color: #666666">**2*</span>(c<span style="color: #666666">/</span>m)<span style="color: #666666">*</span>I
+    <span style="color: #008000; font-weight: bold">elif</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;linear&#39;</span>:
+        R <span style="color: #666666">=</span> u(t<span style="color: #666666">+</span>dt) <span style="color: #666666">-</span> (I <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>V <span style="color: #666666">+</span> \
+            half<span style="color: #666666">*</span>(dt<span style="color: #666666">**2/</span>m)<span style="color: #666666">*</span>(<span style="color: #666666">-</span>b<span style="color: #666666">*</span>V <span style="color: #666666">-</span> c<span style="color: #666666">*</span>I <span style="color: #666666">+</span> F<span style="color: #666666">.</span>subs(t, <span style="color: #666666">0</span>)))
+    <span style="color: #008000; font-weight: bold">else</span>:   <span style="color: #408080; font-style: italic"># damping is nonlinear</span>
+        R <span style="color: #666666">=</span> u(t<span style="color: #666666">+</span>dt) <span style="color: #666666">-</span> (I <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>V <span style="color: #666666">+</span> \
+            half<span style="color: #666666">*</span>(dt<span style="color: #666666">**2/</span>m)<span style="color: #666666">*</span>(<span style="color: #666666">-</span>b<span style="color: #666666">*</span>V<span style="color: #666666">*</span><span style="color: #008000">abs</span>(V) <span style="color: #666666">-</span> c<span style="color: #666666">*</span>I <span style="color: #666666">+</span> F<span style="color: #666666">.</span>subs(t, <span style="color: #666666">0</span>)))
+    R <span style="color: #666666">=</span> R<span style="color: #666666">.</span>subs(t, <span style="color: #666666">0</span>)  <span style="color: #408080; font-style: italic"># t=0 in the rhs of the first step eq.</span>
+    <span style="color: #008000; font-weight: bold">return</span> sym<span style="color: #666666">.</span>simplify(R)
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">DtDt</span>(u, dt):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return 2nd-order finite difference for u_tt.</span>
+<span style="color: #BA2121; font-style: italic">    u is a symbolic Python function of t.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">return</span> (u(t<span style="color: #666666">+</span>dt) <span style="color: #666666">-</span> <span style="color: #666666">2*</span>u(t) <span style="color: #666666">+</span> u(t<span style="color: #666666">-</span>dt))<span style="color: #666666">/</span>dt<span style="color: #666666">**2</span>
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">D2t</span>(u, dt):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return 2nd-order finite difference for u_t.</span>
+<span style="color: #BA2121; font-style: italic">    u is a symbolic Python function of t.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">return</span> (u(t<span style="color: #666666">+</span>dt) <span style="color: #666666">-</span> u(t<span style="color: #666666">-</span>dt))<span style="color: #666666">/</span>(<span style="color: #666666">2.0*</span>dt)
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">Dt_p_half</span>(u, dt):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return 2nd-order finite difference for u_t, sampled at n+1/2,</span>
+<span style="color: #BA2121; font-style: italic">    i.e, pluss one half... u is a symbolic Python function of t.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">return</span> (u(t<span style="color: #666666">+</span>dt) <span style="color: #666666">-</span> u(t))<span style="color: #666666">/</span>dt
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">Dt_m_half</span>(u, dt):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return 2nd-order finite difference for u_t, sampled at n-1/2,</span>
+<span style="color: #BA2121; font-style: italic">    i.e, minus one half.... u is a symbolic Python function of t.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">return</span> (u(t) <span style="color: #666666">-</span> u(t<span style="color: #666666">-</span>dt))<span style="color: #666666">/</span>dt
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">main</span>(u, damping):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Given some chosen solution u (as a function of t, implemented</span>
+<span style="color: #BA2121; font-style: italic">    as a Python function), use the method of manufactured solutions</span>
+<span style="color: #BA2121; font-style: italic">    to compute the source term f, and check if u also solves</span>
+<span style="color: #BA2121; font-style: italic">    the discrete equations.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;=== Testing exact solution: </span><span style="color: #BB6688; font-weight: bold">%s</span><span style="color: #BA2121"> ===&#39;</span> <span style="color: #666666">%</span> u(t)
+    <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&quot;Initial conditions u(0)=</span><span style="color: #BB6688; font-weight: bold">%s</span><span style="color: #BA2121">, u&#39;(0)=</span><span style="color: #BB6688; font-weight: bold">%s</span><span style="color: #BA2121">:&quot;</span> <span style="color: #666666">%</span> \
+          (u(t)<span style="color: #666666">.</span>subs(t, <span style="color: #666666">0</span>), sym<span style="color: #666666">.</span>diff(u(t), t)<span style="color: #666666">.</span>subs(t, <span style="color: #666666">0</span>))
+
+    <span style="color: #408080; font-style: italic"># Method of manufactured solution requires fitting F</span>
+    <span style="color: #008000; font-weight: bold">global</span> F  <span style="color: #408080; font-style: italic"># source term in the ODE</span>
+    F <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>simplify(ode_source_term(u, damping))
+
+    <span style="color: #408080; font-style: italic"># Residual in discrete equations (should be 0)</span>
+    <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;residual step1:&#39;</span>, residual_discrete_eq_step1(u, damping)
+    <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;residual:&#39;</span>, residual_discrete_eq(u, damping)
+
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">linear</span>(damping):
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">u_e</span>(t):
+        <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return chosen linear exact solution.&quot;&quot;&quot;</span>
+        <span style="color: #408080; font-style: italic"># General linear function u_e = c*t + d</span>
+        <span style="color: #408080; font-style: italic"># Initial conditions u(0)=I, u&#39;(0)=V require c=V, d=I</span>
+        <span style="color: #008000; font-weight: bold">return</span> V<span style="color: #666666">*</span>t <span style="color: #666666">+</span> I
+
+    main(u_e, damping)
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">quadratic</span>(damping):
+    <span style="color: #408080; font-style: italic"># Extend with quadratic functions</span>
+    q <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>Symbol(<span style="color: #BA2121">&#39;q&#39;</span>)  <span style="color: #408080; font-style: italic"># arbitrary constant in quadratic term</span>
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">u_e</span>(t):
+        <span style="color: #008000; font-weight: bold">return</span> q<span style="color: #666666">*</span>t<span style="color: #666666">**2</span> <span style="color: #666666">+</span> V<span style="color: #666666">*</span>t <span style="color: #666666">+</span> I
+
+    main(u_e, damping)
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">cubic</span>(damping):
+    r, q <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>symbols(<span style="color: #BA2121">&#39;r q&#39;</span>)
+
+    main(<span style="color: #008000; font-weight: bold">lambda</span> t: r<span style="color: #666666">*</span>t<span style="color: #666666">**3</span> <span style="color: #666666">+</span> q<span style="color: #666666">*</span>t<span style="color: #666666">**2</span> <span style="color: #666666">+</span> V<span style="color: #666666">*</span>t <span style="color: #666666">+</span> I, damping)
+
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solver</span>(I, V, F, c, m, dt, T, damping):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Solve m*u&#39;&#39; + f(u&#39;) + c*u = F for t in (0,T], u(0)=I and u&#39;(0)=V,</span>
+<span style="color: #BA2121; font-style: italic">    by a central finite difference method with time step dt.</span>
+<span style="color: #BA2121; font-style: italic">    F(t) is a callable Python function.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    dt <span style="color: #666666">=</span> <span style="color: #008000">float</span>(dt)
+    Nt <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(T<span style="color: #666666">/</span>dt))
+    u <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nt<span style="color: #666666">+1</span>)
+    t <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, Nt<span style="color: #666666">*</span>dt, Nt<span style="color: #666666">+1</span>)
+
+    <span style="color: #008000; font-weight: bold">if</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;zero&#39;</span>:
+        u[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> I
+        u[<span style="color: #666666">1</span>] <span style="color: #666666">=</span> u[<span style="color: #666666">0</span>] <span style="color: #666666">-</span> <span style="color: #666666">0.5*</span>dt<span style="color: #666666">**2*</span>(c<span style="color: #666666">/</span>m)<span style="color: #666666">*</span>u[<span style="color: #666666">0</span>] <span style="color: #666666">+</span> <span style="color: #666666">0.5*</span>dt<span style="color: #666666">**2*</span>F(t[<span style="color: #666666">0</span>]) <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>V
+        <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>, Nt):
+            u[n<span style="color: #666666">+1</span>] <span style="color: #666666">=</span> <span style="color: #666666">2*</span>u[n] <span style="color: #666666">-</span> u[n<span style="color: #666666">-1</span>] <span style="color: #666666">-</span> dt<span style="color: #666666">**2*</span>(c<span style="color: #666666">/</span>m)<span style="color: #666666">*</span>u[n] <span style="color: #666666">+</span> dt<span style="color: #666666">**2*</span>F(t[n])
+    <span style="color: #008000; font-weight: bold">elif</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;linear&#39;</span>:
+        u[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> I
+        u[<span style="color: #666666">1</span>] <span style="color: #666666">=</span> u[<span style="color: #666666">0</span>] <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>V <span style="color: #666666">+</span> <span style="color: #666666">0.5*</span>(dt<span style="color: #666666">**2/</span>m)<span style="color: #666666">*</span>(<span style="color: #666666">-</span>b<span style="color: #666666">*</span>V <span style="color: #666666">-</span> c<span style="color: #666666">*</span>u[<span style="color: #666666">0</span>] <span style="color: #666666">+</span> F(t[<span style="color: #666666">0</span>]))
+        <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>, Nt):
+            u[n<span style="color: #666666">+1</span>] <span style="color: #666666">=</span> (<span style="color: #666666">2*</span>m<span style="color: #666666">*</span>u[n] <span style="color: #666666">+</span> (b<span style="color: #666666">*</span>dt<span style="color: #666666">/2.-</span>m)<span style="color: #666666">*</span>u[n<span style="color: #666666">-1</span>] <span style="color: #666666">+</span> \
+                     dt<span style="color: #666666">**2*</span>(F(t[n])<span style="color: #666666">-</span>c<span style="color: #666666">*</span>u[n]))<span style="color: #666666">/</span>(m<span style="color: #666666">+</span>b<span style="color: #666666">*</span>dt<span style="color: #666666">/2.</span>)
+    <span style="color: #008000; font-weight: bold">else</span>:    <span style="color: #408080; font-style: italic"># damping is nonlinear</span>
+        u[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> I
+        u[<span style="color: #666666">1</span>] <span style="color: #666666">=</span> u[<span style="color: #666666">0</span>] <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>V <span style="color: #666666">+</span> <span style="color: #666666">0.5*</span>(dt<span style="color: #666666">**2/</span>m)<span style="color: #666666">*</span>(<span style="color: #666666">-</span>b<span style="color: #666666">*</span>V<span style="color: #666666">*</span><span style="color: #008000">abs</span>(V) <span style="color: #666666">-</span> c<span style="color: #666666">*</span>u[<span style="color: #666666">0</span>] <span style="color: #666666">+</span> F(t[<span style="color: #666666">0</span>]))
+        <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>, Nt):
+            u[n<span style="color: #666666">+1</span>] <span style="color: #666666">=</span> <span style="color: #666666">1./</span>(m<span style="color: #666666">+</span>b<span style="color: #666666">*</span><span style="color: #008000">abs</span>(u[n]<span style="color: #666666">-</span>u[n<span style="color: #666666">-1</span>])) <span style="color: #666666">*</span> \
+                     (<span style="color: #666666">2*</span>m<span style="color: #666666">*</span>u[n] <span style="color: #666666">-</span> m<span style="color: #666666">*</span>u[n<span style="color: #666666">-1</span>] <span style="color: #666666">+</span> b<span style="color: #666666">*</span>u[n]<span style="color: #666666">*</span>\
+                     <span style="color: #008000">abs</span>(u[n]<span style="color: #666666">-</span>u[n<span style="color: #666666">-1</span>])<span style="color: #666666">+</span>dt<span style="color: #666666">**2*</span>(F(t[n])<span style="color: #666666">-</span>c<span style="color: #666666">*</span>u[n]))
+    <span style="color: #008000; font-weight: bold">return</span> u, t
+
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">nose.tools</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">nt</span>
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_quadratic_exact_solution</span>(damping):
+    <span style="color: #408080; font-style: italic"># Transform global symbolic variables to functions and numbers</span>
+    <span style="color: #408080; font-style: italic"># for numerical computations</span>
+
+    <span style="color: #008000; font-weight: bold">global</span> p, V, I, b, c, m
+    p, V, I, b, c, m <span style="color: #666666">=</span> <span style="color: #666666">2.3</span>, <span style="color: #666666">0.9</span>, <span style="color: #666666">1.2</span>, <span style="color: #666666">2.0</span>, <span style="color: #666666">1.5</span>, <span style="color: #666666">1.0</span>
+    <span style="color: #008000; font-weight: bold">global</span> F, t
+    u_e <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> t: p<span style="color: #666666">*</span>t<span style="color: #666666">**2</span> <span style="color: #666666">+</span> V<span style="color: #666666">*</span>t <span style="color: #666666">+</span> I 	<span style="color: #408080; font-style: italic"># compute with p, V, I, b, c, m as numbers</span>
+    F <span style="color: #666666">=</span> ode_source_term(u_e, damping)   <span style="color: #408080; font-style: italic"># fit source term</span>
+    F <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>lambdify(t, F)            	<span style="color: #408080; font-style: italic"># turn to numerical Python function</span>
+
+    dt <span style="color: #666666">=</span> <span style="color: #666666">2.*</span>m<span style="color: #666666">/</span>c
+    u, t <span style="color: #666666">=</span> solver(I<span style="color: #666666">=</span>I, V<span style="color: #666666">=</span>V, F<span style="color: #666666">=</span>F, c<span style="color: #666666">=</span>c, m<span style="color: #666666">=</span>m, dt<span style="color: #666666">=</span>dt, T<span style="color: #666666">=3</span>, damping<span style="color: #666666">=</span>damping)
+    u_e <span style="color: #666666">=</span> u_e(t)
+    error <span style="color: #666666">=</span> np<span style="color: #666666">.</span>abs(u <span style="color: #666666">-</span> u_e)<span style="color: #666666">.</span>max()
+    nt<span style="color: #666666">.</span>assert_almost_equal(error, <span style="color: #666666">0</span>, delta<span style="color: #666666">=1E-12</span>)
+    <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Error in computing a quadratic solution:&#39;</span>, error
+
+<span style="color: #008000; font-weight: bold">if</span> __name__ <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;__main__&#39;</span>:
+    damping <span style="color: #666666">=</span> [<span style="color: #BA2121">&#39;zero&#39;</span>, <span style="color: #BA2121">&#39;linear&#39;</span>, <span style="color: #BA2121">&#39;nonlinear&#39;</span>]
+    <span style="color: #008000; font-weight: bold">for</span> e <span style="color: #AA22FF; font-weight: bold">in</span> damping:
+        V, t, I, dt, m, b, c <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>symbols(<span style="color: #BA2121">&#39;V t I dt m b c&#39;</span>)  <span style="color: #408080; font-style: italic"># global symbols</span>
+        F <span style="color: #666666">=</span> <span style="color: #008000">None</span>  <span style="color: #408080; font-style: italic"># global variable for the source term in the ODE</span>
+        <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;---------------------------------------Damping:&#39;</span>, e
+        linear(e)  	<span style="color: #408080; font-style: italic"># linear solution used for MMS</span>
+        quadratic(e)   	<span style="color: #408080; font-style: italic"># quadratic solution for MMS</span>
+        cubic(e)       	<span style="color: #408080; font-style: italic"># ... and cubic</span>
+        test_quadratic_exact_solution(e)
+</pre></div>
+<p>
+</div></p>
+</div>
+</p>
+
+<p>
+<!-- --- end solution of exercise --- -->
 Filename: <code>vib_verify_mms</code>.
 
 <p>

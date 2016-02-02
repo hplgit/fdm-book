@@ -647,7 +647,7 @@ to `linear`.)
 #is correct.
 
 !bsol
-See final code presented below.
+Yes, a quadratic function will fulfill the discrete equations exactly. See output from final code presented below.
 !esol
 !esubex
 
@@ -946,7 +946,7 @@ incorporate computations of the error in energy and the convergence
 rate of this error. The expected rate is 2.
 
 !bsol
-
+The code:
 @@@CODE exer-vib/test_error_conv.py
 
 !esol
@@ -963,6 +963,207 @@ settings change with the generalized ODE in case of linear or
 quadratic damping. By modifying the code from Problem
 ref{vib:exer:undamped:verify:linquad}, `sympy` will do most
 of the work required to analyze the generalized problem.
+
+!bsol
+With a linear spring force, i.e. $s(u)=cu$, our model problem becomes
+!bt
+\begin{equation}
+mu^{\prime\prime} + f(u^{\prime}) + cu = F(t),\quad u(0)=I,\ u^{\prime}(0)=V,\ t\in (0,T]
+\tp
+\nonumber
+\end{equation}
+!et
+First we consider linear damping, i.e., when $f(u^{\prime}) = bu^{\prime}$, and follow the
+text in Chapter ref{vib:ode2:fdm:flin}. Discretizing the
+equation according to 
+!bt
+\begin{equation}
+[mD_tD_t u + f(D_{2t}u) + cu = F]^n,
+\nonumber
+\end{equation}
+!et
+implies that
+!bt
+\begin{equation}
+m\frac{u^{n+1}-2u^n + u^{n-1}}{\Delta t^2}
++ b\frac{u^{n+1}-u^{n-1}}{2\Delta t} + cu^n = F^n.
+\nonumber
+\end{equation}
+!et
+The explicit formula for $u$ at each
+new time level then becomes
+
+!bt
+\begin{equation}
+u^{n+1} = (2mu^n + (\frac{b}{2}\Delta t - m)u^{n-1} +
+\Delta t^2(F^n - cu^n))(m + \frac{b}{2}\Delta t)^{-1}
+\nonumber
+\tp
+\end{equation}
+!et
+For the first time step, we use $n=0$ and a centered difference approximation for the
+initial condition on the derivative. This gives
+
+!bt
+\begin{equation}
+u^1 = u^0 + \Delta t\, V
++ \frac{\Delta t^2}{2m}(-bV - cu^0 + F^0)
+\tp
+\nonumber
+\end{equation}
+!et
+
+Next, we consider quadratic damping, i.e., when
+$f(u^{\prime})=bu^{\prime}|u^{\prime}|$, and follow the
+text in Chapter ref{vib:ode2:fdm:fquad}. Discretizing the
+equation according to
+!bt
+\begin{equation}
+[mD_tD_t u + bD_{2t}u|D_{2t}u| + cu = F]^n\tp
+\nonumber
+\end{equation}
+!et
+gives us
+!bt
+\begin{equation}
+m\frac{u^{n+1}-2u^n + u^{n-1}}{\Delta t^2}
++ b\frac{u^{n+1}-u^n}{\Delta t}\frac{|u^n-u^{n-1}|}{\Delta t}
++ cu^n = F^n.
+\nonumber
+\end{equation}
+!et
+We solve for $u^{n+1}$ to get the explicit updating formula as 
+!bt
+\begin{align}
+u^{n+1} &=  \left( m + b|u^n-u^{n-1}|\right)^{-1}\times \nonumber\\
+& \qquad \left(2m u^n - mu^{n-1} + bu^n|u^n-u^{n-1}| + \Delta t^2 (F^n - cu^n)
+\right)
+\tp
+\nonumber
+\end{align}
+!et
+and the equation for the first time step as
+!bt
+\begin{equation}
+u^1 = u^0 + \Delta t V + \frac{\Delta t^2}{2m}\left(-bV|V| - cu^0 + F^0\right)
+\tp
+\nonumber
+\end{equation}
+!et
+
+Turning to verification with MMS and $u_e(t)=ct+d$, we get $d=I$ and $c=V$ independent
+of the damping term, so these parameter values stay as for the undamped case.
+
+Proceeding with linear damping, we get from chapter ref{vib:ode2:verify} that
+!bt
+\begin{equation}
+F(t) = bV + c(Vt + I)\tp
+\nonumber
+\end{equation}
+!et
+(Note that there are two different c parameters here, one from $u_e=ct+d$ and one from the spring force $cu$. 
+The first one disappears, however, as it is switched with $V$.)
+
+To show that $u_e$ is a perfect solution also to the discrete equations, we insert $u_e$ and $F$ into
+!bt
+\begin{equation}
+[mD_tD_t u + bD_{2t}u + cu = F]^n\tp
+\nonumber
+\end{equation}
+!et
+This gives
+!bt
+\begin{equation}
+[mD_tD_t (Vt+I) + bD_{2t}(Vt+I) + c(Vt+I) = bV + c(Vt + I)]^n,
+\nonumber
+\end{equation}
+!et
+which may be split up as
+!bt
+\begin{equation}
+m[D_tD_t (Vt+I)]^n + b[D_{2t}(Vt+I)]^n + c[(Vt+I)]^n = b[V]^n + c[(Vt + I)]^n.
+\nonumber
+\end{equation}
+!et
+Simplifying, we note that the first term is zero and that $c[(Vt+I)]^n$ appears with the
+same sign on each side of the equation. Thus, dropping these terms, and cancelling the common
+factor $b$, we are left with
+!bt
+\begin{equation}
+[D_{2t}(Vt+I)]^n = [V]^n.
+\nonumber
+\end{equation}
+!et
+It therefore remains to show that $[D_{2t}(Vt+I)]^n$ is equal to $[V]^n = V$. We write out
+the left hand side as
+!bt
+\begin{align}
+[D_{2t}(Vt+I)]^n &= \frac{(Vt_{n+1}+I) - (Vt_{n-1}+I)}{2\Delta t} \nonumber\\
+                 &= \frac{V(t_{n+1}-t_{n-1})}{2\Delta t} \nonumber\\
+                 &= \frac{V((t_n + \Delta t) - (t_n - \Delta t))}{2\Delta t} \nonumber\\
+                 &= V, \nonumber
+\nonumber
+\end{align}
+!et
+which shows that the two sides of the equation are equal and that the discrete equations
+are fulfilled exactly for the given $u_e$ function.
+
+If the damping is rather quadratic, we find from chapter ref{vib:ode2:verify} that
+!bt
+\begin{equation}
+F(t) = b|V|V + c(Vt + I)\tp
+\nonumber
+\end{equation}
+!et
+As with linear damping, we show that $u_e$ is a perfect solution also to the discrete equations 
+by inserting $u_e$ and $F$ into
+!bt
+\begin{equation}
+[mD_tD_t u + bD_{2t}u|D_{2t}u| + cu = F]^n\tp
+\nonumber
+\end{equation}
+!et
+We then get
+!bt
+\begin{equation}
+[mD_tD_t (Vt+I) + bD_{2t}(Vt+I)|D_{2t}(Vt+I)| + c(Vt+I) = b|V|V + c(Vt+I)]^n,
+\nonumber
+\end{equation}
+!et
+which simplifies to
+!bt
+\begin{equation}
+[bD_{2t}(Vt+I)|D_{2t}(Vt+I)| = b|V|V]^n
+\nonumber
+\end{equation}
+!et
+and further to
+!bt
+\begin{equation}
+[D_{2t}(Vt+I)]^n [|D_{2t}(Vt+I)|]^n = |V|V
+\nonumber
+\end{equation}
+!et
+which simply states that
+!bt
+\begin{equation}
+V|V| = |V|V\tp
+\nonumber
+\end{equation}
+!et
+Thus, $u_e$ fulfills the discrete equations exactly also when the damping term
+is quadratic.
+
+When the exact solution is changed to become quadratic or cubic, the situation is more complicated. 
+
+For a quadratic solution $u_e$ combined with (zero damping or) linear damping, the output from the program below shows that the discrete equations are fulfilled exactly. However, this is not the case with nonlinear damping, where only the first step gives zero residual. 
+
+For a cubic solution $u_e$, we get a nonzero residual for (zero damping and) linear and nonlinear damping.
+
+@@@CODE exer-vib/vib_verify_mms.py
+
+!esol
+
 
 ===== Exercise: Use an exact discrete solution for verification =====
 label{vib:exer:discrete:omega}
