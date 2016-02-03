@@ -126,18 +126,22 @@ def solver(I, V, F, c, m, dt, T, damping):
 
     if damping == 'zero':
         u[0] = I
-        u[1] = u[0] - 0.5*dt**2*(c/m)*u[0] + 0.5*dt**2*F(t[0]) + dt*V
+        u[1] = u[0] - 0.5*dt**2*(c/m)*u[0] + \
+               0.5*dt**2*F(t[0])/m + dt*V
         for n in range(1, Nt):
-            u[n+1] = 2*u[n] - u[n-1] - dt**2*(c/m)*u[n] + dt**2*F(t[n])
+            u[n+1] = 2*u[n] - u[n-1] - \
+                     dt**2*(c/m)*u[n] + dt**2*F(t[n])/m
     elif damping == 'linear':
         u[0] = I
-        u[1] = u[0] + dt*V + 0.5*(dt**2/m)*(-b*V - c*u[0] + F(t[0]))
+        u[1] = u[0] + dt*V + \
+               0.5*(dt**2/m)*(-b*V - c*u[0] + F(t[0]))
         for n in range(1, Nt):
             u[n+1] = (2*m*u[n] + (b*dt/2.-m)*u[n-1] + \
                      dt**2*(F(t[n])-c*u[n]))/(m+b*dt/2.)
-    else:    # damping is nonlinear
+    else:    # damping is quadratic
         u[0] = I
-        u[1] = u[0] + dt*V + 0.5*(dt**2/m)*(-b*V*abs(V) - c*u[0] + F(t[0]))
+        u[1] = u[0] + dt*V + \
+               0.5*(dt**2/m)*(-b*V*abs(V) - c*u[0] + F(t[0]))
         for n in range(1, Nt):
             u[n+1] = 1./(m+b*abs(u[n]-u[n-1])) * \
                      (2*m*u[n] - m*u[n-1] + b*u[n]*\
@@ -151,26 +155,29 @@ def test_quadratic_exact_solution(damping):
     # for numerical computations
 
     global p, V, I, b, c, m
-    p, V, I, b, c, m = 2.3, 0.9, 1.2, 2.0, 1.5, 1.0
+    p, V, I, b, c, m = 2.3, 0.9, 1.2, 2.1, 1.6, 1.3 # i.e., as numbers
     global F, t
-    u_e = lambda t: p*t**2 + V*t + I 	# compute with p, V, I, b, c, m as numbers
-    F = ode_source_term(u_e, damping)   # fit source term
-    F = sym.lambdify(t, F)            	# turn to numerical Python function
+    u_e = lambda t: p*t**2 + V*t + I  
+    F = ode_source_term(u_e, damping) # fit source term
+    F = sym.lambdify(t, F)            # ...numerical Python function
 
-    dt = 2.*m/c
-    u, t = solver(I=I, V=V, F=F, c=c, m=m, dt=dt, T=3, damping=damping)
+    from math import pi, sqrt
+    dt = 2*pi/sqrt(c/m)/10   # 10 steps per period 2*pi/w, w=sqrt(c/m)
+    u, t = solver(I=I, V=V, F=F, c=c, m=m, dt=dt, 
+                  T=(2*pi/sqrt(c/m))*2, damping=damping)
     u_e = u_e(t)
     error = np.abs(u - u_e).max()
     nt.assert_almost_equal(error, 0, delta=1E-12)
     print 'Error in computing a quadratic solution:', error
 
 if __name__ == '__main__':
-    damping = ['zero', 'linear', 'nonlinear']
+    damping = ['zero', 'linear', 'quadratic']
     for e in damping:
-        V, t, I, dt, m, b, c = sym.symbols('V t I dt m b c')  # global symbols
+        V, t, I, dt, m, b, c = sym.symbols('V t I dt m b c')  # global
         F = None  # global variable for the source term in the ODE
         print '---------------------------------------Damping:', e
         linear(e)  	# linear solution used for MMS
         quadratic(e)   	# quadratic solution for MMS
         cubic(e)       	# ... and cubic
         test_quadratic_exact_solution(e)
+
