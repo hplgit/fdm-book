@@ -2555,13 +2555,13 @@ For a cubic solution \( u_e \), we get a nonzero residual for (zero damping and)
 
 <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">Dt_p_half</span>(u, dt):
     <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return 2nd-order finite difference for u_t, sampled at n+1/2,</span>
-<span style="color: #BA2121; font-style: italic">    i.e, pluss one half... u is a symbolic Python function of t.</span>
+<span style="color: #BA2121; font-style: italic">    i.e, n pluss one half... u is a symbolic Python function of t.</span>
 <span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
     <span style="color: #008000; font-weight: bold">return</span> (u(t<span style="color: #666666">+</span>dt) <span style="color: #666666">-</span> u(t))<span style="color: #666666">/</span>dt
 
 <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">Dt_m_half</span>(u, dt):
     <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return 2nd-order finite difference for u_t, sampled at n-1/2,</span>
-<span style="color: #BA2121; font-style: italic">    i.e, minus one half.... u is a symbolic Python function of t.</span>
+<span style="color: #BA2121; font-style: italic">    i.e, n minus one half.... u is a symbolic Python function of t.</span>
 <span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
     <span style="color: #008000; font-weight: bold">return</span> (u(t) <span style="color: #666666">-</span> u(t<span style="color: #666666">-</span>dt))<span style="color: #666666">/</span>dt
 
@@ -2609,7 +2609,7 @@ For a cubic solution \( u_e \), we get a nonzero residual for (zero damping and)
     main(<span style="color: #008000; font-weight: bold">lambda</span> t: r<span style="color: #666666">*</span>t<span style="color: #666666">**3</span> <span style="color: #666666">+</span> q<span style="color: #666666">*</span>t<span style="color: #666666">**2</span> <span style="color: #666666">+</span> V<span style="color: #666666">*</span>t <span style="color: #666666">+</span> I, damping)
 
 
-<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solver</span>(I, V, F, c, m, dt, T, damping):
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solver</span>(I, V, F, b, c, m, dt, T, damping):
     <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
 <span style="color: #BA2121; font-style: italic">    Solve m*u&#39;&#39; + f(u&#39;) + c*u = F for t in (0,T], u(0)=I and u&#39;(0)=V,</span>
 <span style="color: #BA2121; font-style: italic">    by a central finite difference method with time step dt.</span>
@@ -2659,7 +2659,7 @@ For a cubic solution \( u_e \), we get a nonzero residual for (zero damping and)
 
     <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">math</span> <span style="color: #008000; font-weight: bold">import</span> pi, sqrt
     dt <span style="color: #666666">=</span> <span style="color: #666666">2*</span>pi<span style="color: #666666">/</span>sqrt(c<span style="color: #666666">/</span>m)<span style="color: #666666">/10</span>   <span style="color: #408080; font-style: italic"># 10 steps per period 2*pi/w, w=sqrt(c/m)</span>
-    u, t <span style="color: #666666">=</span> solver(I<span style="color: #666666">=</span>I, V<span style="color: #666666">=</span>V, F<span style="color: #666666">=</span>F, c<span style="color: #666666">=</span>c, m<span style="color: #666666">=</span>m, dt<span style="color: #666666">=</span>dt, 
+    u, t <span style="color: #666666">=</span> solver(I<span style="color: #666666">=</span>I, V<span style="color: #666666">=</span>V, F<span style="color: #666666">=</span>F, b<span style="color: #666666">=</span>b, c<span style="color: #666666">=</span>c, m<span style="color: #666666">=</span>m, dt<span style="color: #666666">=</span>dt, 
                   T<span style="color: #666666">=</span>(<span style="color: #666666">2*</span>pi<span style="color: #666666">/</span>sqrt(c<span style="color: #666666">/</span>m))<span style="color: #666666">*2</span>, damping<span style="color: #666666">=</span>damping)
     u_e <span style="color: #666666">=</span> u_e(t)
     error <span style="color: #666666">=</span> np<span style="color: #666666">.</span>abs(u <span style="color: #666666">-</span> u_e)<span style="color: #666666">.</span>max()
@@ -2773,6 +2773,97 @@ the various elements you need to write down the exact solution).
 Modify the <code>convergence_rate</code> function from the <code>vib_undamped.py</code>
 program to perform experiments with the extended model.  Verify that
 the error is of order \( \Delta t^2 \).
+
+<p>
+<!-- --- begin solution of exercise --- -->
+
+<p>
+<a class="glyphicon glyphicon-hand-right showdetails" data-toggle="collapse"
+ data-target="#exer_11_1" style="font-size: 80%;"></a>
+<b>Solution.</b>
+<div class="collapse-group">
+<p><div class="collapse" id="exer_11_1">
+
+<p>
+The code:
+<p>
+
+<!-- code=python (!bc pypro) typeset with pygments style "default" -->
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">matplotlib.pyplot</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">plt</span>
+<span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">vib_verify_mms</span> <span style="color: #008000; font-weight: bold">import</span> solver
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">u_exact</span>(t, I, V, A, f, c, m):
+    <span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;Found by solving mu&#39;&#39; + cu = F in Wolfram alpha&#39;&#39;&#39;</span>
+    k_1 <span style="color: #666666">=</span> I
+    k_2 <span style="color: #666666">=</span> (V <span style="color: #666666">-</span> A<span style="color: #666666">*2*</span>np<span style="color: #666666">.</span>pi<span style="color: #666666">*</span>f<span style="color: #666666">/</span>(c <span style="color: #666666">-</span> <span style="color: #666666">4*</span>np<span style="color: #666666">.</span>pi<span style="color: #666666">**2*</span>f<span style="color: #666666">**2*</span>m))<span style="color: #666666">*</span>np<span style="color: #666666">.</span>sqrt(m<span style="color: #666666">/</span><span style="color: #008000">float</span>(c))
+    <span style="color: #008000; font-weight: bold">return</span> A<span style="color: #666666">*</span>np<span style="color: #666666">.</span>sin(<span style="color: #666666">2*</span>np<span style="color: #666666">.</span>pi<span style="color: #666666">*</span>f<span style="color: #666666">*</span>t)<span style="color: #666666">/</span>(c <span style="color: #666666">-</span> <span style="color: #666666">4*</span>np<span style="color: #666666">.</span>pi<span style="color: #666666">**2*</span>f<span style="color: #666666">**2*</span>m) <span style="color: #666666">+</span> \
+           k_2<span style="color: #666666">*</span>np<span style="color: #666666">.</span>sin(np<span style="color: #666666">.</span>sqrt(c<span style="color: #666666">/</span><span style="color: #008000">float</span>(m))<span style="color: #666666">*</span>t) <span style="color: #666666">+</span> \
+           k_1<span style="color: #666666">*</span>np<span style="color: #666666">.</span>cos(np<span style="color: #666666">.</span>sqrt(c<span style="color: #666666">/</span><span style="color: #008000">float</span>(m))<span style="color: #666666">*</span>t)
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">convergence_rates</span>(N_est, solver_function, num_periods<span style="color: #666666">=8</span>):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Returns N_est-1 empirical estimates of the convergence rate</span>
+<span style="color: #BA2121; font-style: italic">    based on N_est simulations, where the time step is halved</span>
+<span style="color: #BA2121; font-style: italic">    for each simulation.</span>
+<span style="color: #BA2121; font-style: italic">    solver_function(I, V, F, c, m, dt, T, damping) solves </span>
+<span style="color: #BA2121; font-style: italic">    each problem, where T is based on simulation for </span>
+<span style="color: #BA2121; font-style: italic">    num_periods periods.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">F</span>(t):
+        <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;External driving force&quot;&quot;&quot;</span>
+        <span style="color: #008000; font-weight: bold">return</span> A<span style="color: #666666">*</span>np<span style="color: #666666">.</span>sin(<span style="color: #666666">2*</span>np<span style="color: #666666">.</span>pi<span style="color: #666666">*</span>f<span style="color: #666666">*</span>t)
+
+    b, c, m <span style="color: #666666">=</span> <span style="color: #666666">0</span>, <span style="color: #666666">1.6</span>, <span style="color: #666666">1.3</span> <span style="color: #408080; font-style: italic"># just some chosen values</span>
+    I <span style="color: #666666">=</span> <span style="color: #666666">0</span>                  <span style="color: #408080; font-style: italic"># init. cond. u(0)</span>
+    V <span style="color: #666666">=</span> <span style="color: #666666">0</span>                  <span style="color: #408080; font-style: italic"># init. cond. u&#39;(0)</span>
+    A <span style="color: #666666">=</span> <span style="color: #666666">1.0</span>                <span style="color: #408080; font-style: italic"># amplitude of driving force</span>
+    f <span style="color: #666666">=</span> <span style="color: #666666">1.0</span>		   <span style="color: #408080; font-style: italic"># chosen frequency of driving force</span>
+    damping <span style="color: #666666">=</span> <span style="color: #BA2121">&#39;zero&#39;</span>       
+
+    P <span style="color: #666666">=</span> <span style="color: #666666">1/</span>f
+    dt <span style="color: #666666">=</span> P<span style="color: #666666">/30</span>              <span style="color: #408080; font-style: italic"># 30 time step per period 2*pi/w</span>
+    T <span style="color: #666666">=</span> P<span style="color: #666666">*</span>num_periods
+
+    dt_values <span style="color: #666666">=</span> []
+    E_values <span style="color: #666666">=</span> []
+    <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(N_est):
+        u, t <span style="color: #666666">=</span> solver_function(I, V, F, b, c, m, dt, T, damping)
+        u_e <span style="color: #666666">=</span> u_exact(t, I, V, A, f, c, m)
+        E <span style="color: #666666">=</span> np<span style="color: #666666">.</span>sqrt(dt<span style="color: #666666">*</span>np<span style="color: #666666">.</span>sum((u_e<span style="color: #666666">-</span>u)<span style="color: #666666">**2</span>))
+        dt_values<span style="color: #666666">.</span>append(dt)
+        E_values<span style="color: #666666">.</span>append(E)
+        dt <span style="color: #666666">=</span> dt<span style="color: #666666">/2</span>
+
+    <span style="color: #408080; font-style: italic">#plt.plot(t, u, &#39;b--&#39;, t, u_e, &#39;r-&#39;); plt.grid(); plt.show()</span>
+
+    r <span style="color: #666666">=</span> [np<span style="color: #666666">.</span>log(E_values[i<span style="color: #666666">-1</span>]<span style="color: #666666">/</span>E_values[i])<span style="color: #666666">/</span>
+         np<span style="color: #666666">.</span>log(dt_values[i<span style="color: #666666">-1</span>]<span style="color: #666666">/</span>dt_values[i])
+         <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>, N_est, <span style="color: #666666">1</span>)]
+    <span style="color: #008000; font-weight: bold">print</span> r
+    <span style="color: #008000; font-weight: bold">return</span> r
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_convergence_rates</span>():
+
+    r <span style="color: #666666">=</span> convergence_rates(N_est<span style="color: #666666">=5</span>, solver_function<span style="color: #666666">=</span>solver, num_periods<span style="color: #666666">=8</span>)
+    <span style="color: #408080; font-style: italic"># Accept rate to 1 decimal place</span>
+    tol <span style="color: #666666">=</span> <span style="color: #666666">0.1</span>
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">abs</span>(r[<span style="color: #666666">-1</span>] <span style="color: #666666">-</span> <span style="color: #666666">2.0</span>) <span style="color: #666666">&lt;</span> tol
+
+<span style="color: #008000; font-weight: bold">if</span> __name__ <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;__main__&#39;</span>:
+    test_convergence_rates()
+</pre></div>
+<p>
+The output from the program shows that \( r \) approaches 2.
+
+<p>
+</div></p>
+</div>
+</p>
+
+<p>
+<!-- --- end solution of exercise --- -->
 Filename: <code>vib_conv_rate</code>.
 
 <p>

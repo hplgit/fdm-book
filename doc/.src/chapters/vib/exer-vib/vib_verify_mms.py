@@ -59,13 +59,13 @@ def D2t(u, dt):
 
 def Dt_p_half(u, dt):
     """Return 2nd-order finite difference for u_t, sampled at n+1/2,
-    i.e, pluss one half... u is a symbolic Python function of t.
+    i.e, n pluss one half... u is a symbolic Python function of t.
     """
     return (u(t+dt) - u(t))/dt
 
 def Dt_m_half(u, dt):
     """Return 2nd-order finite difference for u_t, sampled at n-1/2,
-    i.e, minus one half.... u is a symbolic Python function of t.
+    i.e, n minus one half.... u is a symbolic Python function of t.
     """
     return (u(t) - u(t-dt))/dt
 
@@ -113,7 +113,7 @@ def cubic(damping):
     main(lambda t: r*t**3 + q*t**2 + V*t + I, damping)
 
 
-def solver(I, V, F, c, m, dt, T, damping):
+def solver(I, V, F, b, c, m, dt, T, damping):
     """
     Solve m*u'' + f(u') + c*u = F for t in (0,T], u(0)=I and u'(0)=V,
     by a central finite difference method with time step dt.
@@ -163,7 +163,7 @@ def test_quadratic_exact_solution(damping):
 
     from math import pi, sqrt
     dt = 2*pi/sqrt(c/m)/10   # 10 steps per period 2*pi/w, w=sqrt(c/m)
-    u, t = solver(I=I, V=V, F=F, c=c, m=m, dt=dt, 
+    u, t = solver(I=I, V=V, F=F, b=b, c=c, m=m, dt=dt, 
                   T=(2*pi/sqrt(c/m))*2, damping=damping)
     u_e = u_e(t)
     error = np.abs(u - u_e).max()
