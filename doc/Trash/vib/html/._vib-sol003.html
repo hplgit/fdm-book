@@ -2884,6 +2884,126 @@ the 2nd- and 3rd-order Adams-Bashforth methods (<code>AdamsBashforth2</code>,
 <code>AdamsBashforth3</code>), and a 2nd-order Backwards scheme
 (<code>Backward2Step</code>).  The relevant governing equations are listed in
 the beginning of the section <a href="._vib-sol002.html#vib:model2x2">Alternative schemes based on 1st-order equations</a>.
+
+<p>
+<!-- --- begin solution of exercise --- -->
+
+<p>
+<a class="glyphicon glyphicon-hand-right showdetails" data-toggle="collapse"
+ data-target="#exer_12_1" style="font-size: 80%;"></a>
+<b>Solution.</b>
+<div class="collapse-group">
+<p><div class="collapse" id="exer_12_1">
+
+<p>
+The code:
+<p>
+
+<!-- code=python (!bc pypro) typeset with pygments style "default" -->
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">scitools.std</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">plt</span>
+<span style="color: #408080; font-style: italic">#import matplotlib.pyplot as plt</span>
+<span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">vib_empirical_analysis</span> <span style="color: #008000; font-weight: bold">import</span> minmax, amplitudes
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">sys</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">odespy</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">f</span>(u, t, w<span style="color: #666666">=1</span>):
+    <span style="color: #408080; font-style: italic"># v, u numbering for EulerCromer to work well</span>
+    v, u <span style="color: #666666">=</span> u  <span style="color: #408080; font-style: italic"># u is array of length 2 holding our [v, u]</span>
+    <span style="color: #008000; font-weight: bold">return</span> [<span style="color: #666666">-</span>w<span style="color: #666666">**2*</span>u, v]
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">run_solvers_and_check_amplitudes</span>(solvers, timesteps_per_period<span style="color: #666666">=20</span>,
+                                     num_periods<span style="color: #666666">=1</span>, I<span style="color: #666666">=1</span>, w<span style="color: #666666">=2*</span>np<span style="color: #666666">.</span>pi):
+    P <span style="color: #666666">=</span> <span style="color: #666666">2*</span>np<span style="color: #666666">.</span>pi<span style="color: #666666">/</span>w  <span style="color: #408080; font-style: italic"># duration of one period</span>
+    dt <span style="color: #666666">=</span> P<span style="color: #666666">/</span>timesteps_per_period
+    Nt <span style="color: #666666">=</span> num_periods<span style="color: #666666">*</span>timesteps_per_period
+    T <span style="color: #666666">=</span> Nt<span style="color: #666666">*</span>dt
+    t_mesh <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, T, Nt<span style="color: #666666">+1</span>)
+
+    file_name <span style="color: #666666">=</span> <span style="color: #BA2121">&#39;Amplitudes&#39;</span>   <span style="color: #408080; font-style: italic"># initialize filename for plot</span>
+    <span style="color: #008000; font-weight: bold">for</span> solver <span style="color: #AA22FF; font-weight: bold">in</span> solvers:
+        solver<span style="color: #666666">.</span>set(f_kwargs<span style="color: #666666">=</span>{<span style="color: #BA2121">&#39;w&#39;</span>: w})
+        solver<span style="color: #666666">.</span>set_initial_condition([<span style="color: #666666">0</span>, I])
+        u, t <span style="color: #666666">=</span> solver<span style="color: #666666">.</span>solve(t_mesh)
+
+        solver_name <span style="color: #666666">=</span> \
+               <span style="color: #BA2121">&#39;CrankNicolson&#39;</span> <span style="color: #008000; font-weight: bold">if</span> solver<span style="color: #666666">.</span>__class__<span style="color: #666666">.</span>__name__ <span style="color: #666666">==</span> \
+               <span style="color: #BA2121">&#39;MidpointImplicit&#39;</span> <span style="color: #008000; font-weight: bold">else</span> solver<span style="color: #666666">.</span>__class__<span style="color: #666666">.</span>__name__
+        file_name <span style="color: #666666">=</span> file_name <span style="color: #666666">+</span> <span style="color: #BA2121">&#39;_&#39;</span> <span style="color: #666666">+</span> solver_name
+
+        minima, maxima <span style="color: #666666">=</span> minmax(t, u[:,<span style="color: #666666">0</span>])
+        a <span style="color: #666666">=</span> amplitudes(minima, maxima)
+        plt<span style="color: #666666">.</span>plot(<span style="color: #008000">range</span>(<span style="color: #008000">len</span>(a)), a, <span style="color: #BA2121">&#39;-&#39;</span>, label<span style="color: #666666">=</span>solver_name)
+        plt<span style="color: #666666">.</span>hold(<span style="color: #BA2121">&#39;on&#39;</span>)
+
+    plt<span style="color: #666666">.</span>xlabel(<span style="color: #BA2121">&#39;Number of periods&#39;</span>)
+    plt<span style="color: #666666">.</span>ylabel(<span style="color: #BA2121">&#39;Amplitude (absolute value)&#39;</span>)
+    plt<span style="color: #666666">.</span>legend(loc<span style="color: #666666">=</span><span style="color: #BA2121">&#39;upper left&#39;</span>)
+    plt<span style="color: #666666">.</span>savefig(file_name <span style="color: #666666">+</span> <span style="color: #BA2121">&#39;.png&#39;</span>)
+    plt<span style="color: #666666">.</span>savefig(file_name <span style="color: #666666">+</span> <span style="color: #BA2121">&#39;.pdf&#39;</span>)
+    plt<span style="color: #666666">.</span>show()
+
+
+<span style="color: #408080; font-style: italic"># Define different sets of experiments</span>
+solvers_CNB2 <span style="color: #666666">=</span> [odespy<span style="color: #666666">.</span>CrankNicolson(f, nonlinear_solver<span style="color: #666666">=</span><span style="color: #BA2121">&#39;Newton&#39;</span>),
+                odespy<span style="color: #666666">.</span>Backward2Step(f)]
+solvers_RK34 <span style="color: #666666">=</span> [odespy<span style="color: #666666">.</span>RK3(f), 
+                odespy<span style="color: #666666">.</span>RK4(f)]
+solvers_AB <span style="color: #666666">=</span> [odespy<span style="color: #666666">.</span>AdamsBashforth2(f), 
+              odespy<span style="color: #666666">.</span>AdamsBashforth3(f)]
+
+<span style="color: #008000; font-weight: bold">if</span> __name__ <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;__main__&#39;</span>:
+    <span style="color: #408080; font-style: italic"># Default values</span>
+    timesteps_per_period <span style="color: #666666">=</span> <span style="color: #666666">30</span>
+    solver_collection <span style="color: #666666">=</span> <span style="color: #BA2121">&#39;CNB2&#39;</span>
+    num_periods <span style="color: #666666">=</span> <span style="color: #666666">100</span>
+    <span style="color: #408080; font-style: italic"># Override from command line</span>
+    <span style="color: #008000; font-weight: bold">try</span>:
+        <span style="color: #408080; font-style: italic"># Example: python vib_undamped_odespy.py 30 RK34 50</span>
+        timesteps_per_period <span style="color: #666666">=</span> <span style="color: #008000">int</span>(sys<span style="color: #666666">.</span>argv[<span style="color: #666666">1</span>])
+        solver_collection <span style="color: #666666">=</span> sys<span style="color: #666666">.</span>argv[<span style="color: #666666">2</span>]
+        num_periods <span style="color: #666666">=</span> <span style="color: #008000">int</span>(sys<span style="color: #666666">.</span>argv[<span style="color: #666666">3</span>])
+    <span style="color: #008000; font-weight: bold">except</span> <span style="color: #D2413A; font-weight: bold">IndexError</span>:
+        <span style="color: #008000; font-weight: bold">pass</span> <span style="color: #408080; font-style: italic"># default values are ok</span>
+    solvers <span style="color: #666666">=</span> <span style="color: #008000">eval</span>(<span style="color: #BA2121">&#39;solvers_&#39;</span> <span style="color: #666666">+</span> solver_collection)  <span style="color: #408080; font-style: italic"># list of solvers</span>
+    run_solvers_and_check_amplitudes(solvers,
+                                     timesteps_per_period,
+                                     num_periods)
+</pre></div>
+<p>
+Running the code, we get the plots seen in Figure <a href="#vib:exer:fig:ampl_RK34">15</a>,
+Figure <a href="#vib:exer:fig:ampl_CNB2">16</a> and Figure <a href="#vib:exer:fig:ampl_AB">17</a>. They
+show that <code>RK4</code> is superior to the others, but that also
+<code>CrankNicolson</code> performs well.
+
+<p>
+<center> <!-- figure -->
+<hr class="figure">
+<center><p class="caption">Figure 15:  The amplitude as it changes of the periods for RK3 and RK4. <div id="vib:exer:fig:ampl_RK34"></div> </p></center>
+<p><img src="fig-vib/Amplitudes_RK3_RK4.png" align="bottom" width=600></p>
+</center>
+
+<p>
+<center> <!-- figure -->
+<hr class="figure">
+<center><p class="caption">Figure 16:  The amplitude as it changes of the periods for Crank-Nicolson and Backward 2 step. <div id="vib:exer:fig:ampl_CNB2"></div> </p></center>
+<p><img src="fig-vib/Amplitudes_CrankNicolson_Backward2Step.png" align="bottom" width=600></p>
+</center>
+
+<p>
+<center> <!-- figure -->
+<hr class="figure">
+<center><p class="caption">Figure 17:  The amplitude as it changes of the periods for Adams-Bashforth 2 and 3. <div id="vib:exer:fig:ampl_AB"></div> </p></center>
+<p><img src="fig-vib/Amplitudes_AdamsBashforth2_AdamsBashforth3.png" align="bottom" width=600></p>
+</center>
+
+<p>
+</div></p>
+</div>
+</p>
+
+<p>
+<!-- --- end solution of exercise --- -->
 Filename: <code>vib_amplitude_errors</code>.
 
 <p>
@@ -3131,13 +3251,13 @@ and an elastic pendulum.
 <p>
 <center> <!-- figure -->
 <hr class="figure">
-<center><p class="caption">Figure 15:  Simple oscillating mass. <div id="vib:app:mass_spring:fig"></div> </p></center>
+<center><p class="caption">Figure 18:  Simple oscillating mass. <div id="vib:app:mass_spring:fig"></div> </p></center>
 <p><img src="fig-vib/oscillator_spring.png" align="bottom" width=500></p>
 </center>
 
 <p>
 The most fundamental mechanical vibration system is depicted in Figure
-<a href="#vib:app:mass_spring:fig">15</a>. A body with mass \( m \) is attached to a
+<a href="#vib:app:mass_spring:fig">18</a>. A body with mass \( m \) is attached to a
 spring and can move horizontally without friction (in the wheels). The
 position of the body is given by the vector \( \rpos(t) = u(t)\ii \), where
 \( \ii \) is a unit vector in \( x \) direction.
@@ -3214,7 +3334,7 @@ where \( \beta \) is a dimensionless number. Any motion that starts from rest
 <h3 id="___sec83">The physics </h3>
 
 <p>
-The typical physics of the system in Figure <a href="#vib:app:mass_spring:fig">15</a> can
+The typical physics of the system in Figure <a href="#vib:app:mass_spring:fig">18</a> can
 be described as follows.
 Initially, we displace the body to some position \( I \), say at rest
 (\( V=0 \)). After releasing the body, the spring, which is extended, will
@@ -3233,13 +3353,13 @@ forces to damp the motion, the oscillations will continue forever.
 <p>
 <center> <!-- figure -->
 <hr class="figure">
-<center><p class="caption">Figure 16:  General oscillating system. <div id="vib:app:mass_gen:fig"></div> </p></center>
+<center><p class="caption">Figure 19:  General oscillating system. <div id="vib:app:mass_gen:fig"></div> </p></center>
 <p><img src="fig-vib/oscillator_general.png" align="bottom" width=500></p>
 </center>
 
 <p>
-The mechanical system in Figure <a href="#vib:app:mass_spring:fig">15</a> can easily be
-extended to the more general system in Figure <a href="#vib:app:mass_gen:fig">16</a>,
+The mechanical system in Figure <a href="#vib:app:mass_spring:fig">18</a> can easily be
+extended to the more general system in Figure <a href="#vib:app:mass_gen:fig">19</a>,
 where the body is attached to a spring and a dashpot, and also subject
 to an environmental force \( F(t)\ii \). The system has still only one
 degree of freedom since the body can only move back and forth parallel to
@@ -3327,14 +3447,14 @@ $$ \bar u(0) = \frac{Ik}{A},\quad \frac{d\bar u}{d\bar t}=\frac{t_c}{u_c}V = \fr
 
 <p>
 Consider a variant of the oscillating body in the section <a href="#vib:app:mass_spring">Oscillating mass attached to a spring</a>
-and Figure <a href="#vib:app:mass_spring:fig">15</a>: the body rests on a flat
+and Figure <a href="#vib:app:mass_spring:fig">18</a>: the body rests on a flat
 surface, and there is sliding friction between the body and the surface.
-Figure <a href="#vib:app:mass_sliding:fig">17</a> depicts the problem.
+Figure <a href="#vib:app:mass_sliding:fig">20</a> depicts the problem.
 
 <p>
 <center> <!-- figure -->
 <hr class="figure">
-<center><p class="caption">Figure 17:  Sketch of a body sliding on a surface. <div id="vib:app:mass_sliding:fig"></div> </p></center>
+<center><p class="caption">Figure 20:  Sketch of a body sliding on a surface. <div id="vib:app:mass_sliding:fig"></div> </p></center>
 <p><img src="fig-vib/oscillator_sliding.png" align="bottom" width=500></p>
 </center>
 
@@ -3394,13 +3514,13 @@ A classical problem in mechanics is the motion of a pendulum. We first
 consider a <a href="https://en.wikipedia.org/wiki/Pendulum" target="_self">simple pendulum</a> (sometimes also called a
 mathematical pendulum): a small body of mass \( m \) is
 attached to a massless wire and can oscillate back and forth in the
-gravity field. Figure <a href="#vib:app:pendulum:fig_problem">18</a> shows a sketch
+gravity field. Figure <a href="#vib:app:pendulum:fig_problem">21</a> shows a sketch
 of the problem.
 
 <p>
 <center> <!-- figure -->
 <hr class="figure">
-<center><p class="caption">Figure 18:  Sketch of a simple pendulum. <div id="vib:app:pendulum:fig_problem"></div> </p></center>
+<center><p class="caption">Figure 21:  Sketch of a simple pendulum. <div id="vib:app:pendulum:fig_problem"></div> </p></center>
 <p><img src="fig-vib/pendulum_problem.png" align="bottom" width=300></p>
 </center>
 
@@ -3417,7 +3537,7 @@ the magnitude of the velocity.
 <p>
 We introduce a coordinate system with polar coordinates and unit
 vectors \( \ir \) and \( \ith \) as shown in Figure
-<a href="#vib:app:pendulum:fig_forces">19</a>.  The position of the center of mass
+<a href="#vib:app:pendulum:fig_forces">22</a>.  The position of the center of mass
 of the body is
 
 $$ \rpos(t) = x_0\ii + y_0\jj + L\ir,$$
@@ -3429,7 +3549,7 @@ that \( \ir = \cos\theta\ii +\sin\theta\jj \).
 <p>
 <center> <!-- figure -->
 <hr class="figure">
-<center><p class="caption">Figure 19:  Forces acting on a simple pendulum. <div id="vib:app:pendulum:fig_forces"></div> </p></center>
+<center><p class="caption">Figure 22:  Forces acting on a simple pendulum. <div id="vib:app:pendulum:fig_forces"></div> </p></center>
 <p><img src="fig-vib/pendulum_forces.png" align="bottom" width=500></p>
 </center>
 
@@ -3536,8 +3656,8 @@ visualize the solution of ODE models.  <a href="#vib:exer:pendulum_simple">Exerc
 pendulum in the previous section.  However, sometimes it is more
 instructive to look at other types of visualizations. For example, we
 have the pendulum and the body diagram in Figures
-<a href="#vib:app:pendulum:fig_problem">18</a> and
-<a href="#vib:app:pendulum:fig_forces">19</a>. We may think of these figures as
+<a href="#vib:app:pendulum:fig_problem">21</a> and
+<a href="#vib:app:pendulum:fig_forces">22</a>. We may think of these figures as
 animations in time instead. Especially the body diagram will show both the
 motion of the pendulum <em>and</em> the size of the forces during the motion.
 The present section exemplifies how to make such a dynamic body
@@ -3563,8 +3683,8 @@ Dynamic physical sketches, coupled to the numerical solution of
 differential equations, requires a program to produce a sketch for
 the situation at each time level.
 <a href="https://github.com/hplgit/pysketcher" target="_self">Pysketcher</a> is such a tool.
-In fact (and not surprising!) Figures <a href="#vib:app:pendulum:fig_problem">18</a> and
-<a href="#vib:app:pendulum:fig_forces">19</a> were drawn using Pysketcher.
+In fact (and not surprising!) Figures <a href="#vib:app:pendulum:fig_problem">21</a> and
+<a href="#vib:app:pendulum:fig_forces">22</a> were drawn using Pysketcher.
 The details of the drawings are explained in the
 <a href="http://hplgit.github.io/pysketcher/doc/web/index.html" target="_self">Pysketcher tutorial</a>.
 Here, we outline how this type of sketch can be used to create an animated
@@ -3650,7 +3770,7 @@ is listed below.
 
 <p>
 The <code>sketch</code> function below applies Pysketcher objects to build
-a diagram like that in Figure <a href="#vib:app:pendulum:fig_forces">19</a>,
+a diagram like that in Figure <a href="#vib:app:pendulum:fig_forces">22</a>,
 except that we have removed the rotation point \( (x_0,y_0) \) and
 the unit vectors in polar coordinates as these objects are not
 important for an animated body diagram.
@@ -3822,7 +3942,7 @@ listed below.
 <h2 id="vib:app:pendulum_elastic">Motion of an elastic pendulum</h2>
 
 <p>
-Consider a pendulum as in Figure <a href="#vib:app:pendulum:fig_problem">18</a>, but
+Consider a pendulum as in Figure <a href="#vib:app:pendulum:fig_problem">21</a>, but
 this time the wire is elastic. The length of the wire when it is not
 stretched is \( L_0 \), while \( L(t) \) is the stretched
 length at time \( t \) during the motion.
@@ -3832,7 +3952,7 @@ Stretching the elastic wire a distance \( \Delta L \) gives rise to a
 spring force \( k\Delta L \) in the opposite direction of the
 stretching. Let \( \normalvec \) be a unit normal vector along the wire
 from the point \( \rpos_0=(x_0,y_0) \) and in the direction of \( \ith \), see
-Figure <a href="#vib:app:pendulum:fig_forces">19</a> for definition of \( (x_0,y_0) \)
+Figure <a href="#vib:app:pendulum:fig_forces">22</a> for definition of \( (x_0,y_0) \)
 and \( \ith \). Obviously, we have \( \normalvec=\ith \), but in this modeling
 of an elastic pendulum we do not need polar coordinates.  Instead, it
 is more straightforward to develop the equation in Cartesian
@@ -3861,7 +3981,7 @@ The force in the wire is then \( -S\normalvec=-k\Delta L\normalvec \).
 
 <p>
 The other forces are the gravity and the air resistance, just
-as in Figure <a href="#vib:app:pendulum:fig_forces">19</a>. The main difference
+as in Figure <a href="#vib:app:pendulum:fig_forces">22</a>. The main difference
 is that we have a <em>model</em> for \( S \) in terms of the motion (as soon as
 we have expressed \( \Delta L \) by \( \rpos \)). For simplicity, we drop
 the air resistance term (but <a href="#vib:exer:pendulum_elastic_drag">Exercise 23: Simulate an elastic pendulum with air resistance</a>
@@ -4137,7 +4257,7 @@ close to 1.)
 <p>
 <center> <!-- figure -->
 <hr class="figure">
-<center><p class="caption">Figure 20:  Sketch of one-wheel vehicle on a bumpy road. <div id="vib:app:bumpy:fig:sketch"></div> </p></center>
+<center><p class="caption">Figure 23:  Sketch of one-wheel vehicle on a bumpy road. <div id="vib:app:bumpy:fig:sketch"></div> </p></center>
 <p><img src="fig-vib/bumpy_sketch.png" align="bottom" width=400></p>
 </center>
 
@@ -4145,7 +4265,7 @@ close to 1.)
 We consider a very simplistic vehicle, on one wheel, rolling along a
 bumpy road. The oscillatory nature of the road will induce an external
 forcing on the spring system in the vehicle and cause vibrations.
-Figure <a href="#vib:app:bumpy:fig:sketch">20</a> outlines the situation.
+Figure <a href="#vib:app:bumpy:fig:sketch">23</a> outlines the situation.
 
 <p>
 To derive the equation that governs the motion, we must first establish
@@ -4153,7 +4273,7 @@ the position vector of the black mass at the top of the spring.
 Suppose the spring has length \( L \) without any elongation or compression,
 suppose the radius of the wheel is \( R \), and suppose the height of the
 black mass at the top is \( H \). With the aid of the \( \rpos_0 \) vector
-in Figure <a href="#vib:app:bumpy:fig:sketch">20</a>, the position \( \rpos \) of
+in Figure <a href="#vib:app:bumpy:fig:sketch">23</a>, the position \( \rpos \) of
 the center point of the mass is
 
 $$
