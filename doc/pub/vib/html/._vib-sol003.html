@@ -2973,27 +2973,26 @@ solvers_AB <span style="color: #666666">=</span> [odespy<span style="color: #666
 <p>
 Running the code, we get the plots seen in Figure <a href="#vib:exer:fig:ampl_RK34">15</a>,
 Figure <a href="#vib:exer:fig:ampl_CNB2">16</a> and Figure <a href="#vib:exer:fig:ampl_AB">17</a>. They
-show that <code>RK4</code> is superior to the others, but that also
-<code>CrankNicolson</code> performs well.
+show that <code>RK4</code> is superior to the others, but that also <code>CrankNicolson</code> performs well. In fact, with <code>RK4</code> the amplitude changes by less than \( 0.1 \) per cent over the interval.
 
 <p>
 <center> <!-- figure -->
 <hr class="figure">
-<center><p class="caption">Figure 15:  The amplitude as it changes of the periods for RK3 and RK4. <div id="vib:exer:fig:ampl_RK34"></div> </p></center>
+<center><p class="caption">Figure 15:  The amplitude as it changes over 100 periods for RK3 and RK4. <div id="vib:exer:fig:ampl_RK34"></div> </p></center>
 <p><img src="fig-vib/Amplitudes_RK3_RK4.png" align="bottom" width=600></p>
 </center>
 
 <p>
 <center> <!-- figure -->
 <hr class="figure">
-<center><p class="caption">Figure 16:  The amplitude as it changes of the periods for Crank-Nicolson and Backward 2 step. <div id="vib:exer:fig:ampl_CNB2"></div> </p></center>
+<center><p class="caption">Figure 16:  The amplitude as it changes over 100 periods for Crank-Nicolson and Backward 2 step. <div id="vib:exer:fig:ampl_CNB2"></div> </p></center>
 <p><img src="fig-vib/Amplitudes_CrankNicolson_Backward2Step.png" align="bottom" width=600></p>
 </center>
 
 <p>
 <center> <!-- figure -->
 <hr class="figure">
-<center><p class="caption">Figure 17:  The amplitude as it changes of the periods for Adams-Bashforth 2 and 3. <div id="vib:exer:fig:ampl_AB"></div> </p></center>
+<center><p class="caption">Figure 17:  The amplitude as it changes over 100 periods for Adams-Bashforth 2 and 3. <div id="vib:exer:fig:ampl_AB"></div> </p></center>
 <p><img src="fig-vib/Amplitudes_AdamsBashforth2_AdamsBashforth3.png" align="bottom" width=600></p>
 </center>
 
@@ -3026,6 +3025,141 @@ read one line at a time and
 plot the \( u \) value using the line-by-line plotter in the
 <code>visualize_front_ascii</code> function - this technique makes it trivial
 to visualize very long time simulations).
+
+<p>
+<!-- --- begin solution of exercise --- -->
+
+<p>
+<a class="glyphicon glyphicon-hand-right showdetails" data-toggle="collapse"
+ data-target="#exer_13_1" style="font-size: 80%;"></a>
+<b>Solution.</b>
+<div class="collapse-group">
+<p><div class="collapse" id="exer_13_1">
+
+<p>
+The code:
+<p>
+
+<!-- code=python (!bc pypro) typeset with pygments style "default" -->
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">scitools.std</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">plt</span>
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solve_and_store</span>(filename, I, V, m, b, s, F, dt, T, damping<span style="color: #666666">=</span><span style="color: #BA2121">&#39;linear&#39;</span>):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Solve m*u&#39;&#39; + f(u&#39;) + s(u) = F(t) for t in (0,T], u(0)=I and u&#39;(0)=V,</span>
+<span style="color: #BA2121; font-style: italic">    by a central finite difference method with time step dt.</span>
+<span style="color: #BA2121; font-style: italic">    If damping is &#39;linear&#39;, f(u&#39;)=b*u, while if damping is</span>
+<span style="color: #BA2121; font-style: italic">    &#39;quadratic&#39;, f(u&#39;)=b*u&#39;*abs(u&#39;). F(t) and s(u) are Python functions.</span>
+<span style="color: #BA2121; font-style: italic">    The solution is written to file (filename).</span>
+<span style="color: #BA2121; font-style: italic">    Naming convention: we use the name u for the new solution to be </span>
+<span style="color: #BA2121; font-style: italic">    computed, u_1 for the solution one time step prior to that and u_2</span>
+<span style="color: #BA2121; font-style: italic">    for the solution two time steps prior to that.</span>
+<span style="color: #BA2121; font-style: italic">    Returns min and max u values needed for subsequent plotting.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    dt <span style="color: #666666">=</span> <span style="color: #008000">float</span>(dt); b <span style="color: #666666">=</span> <span style="color: #008000">float</span>(b); m <span style="color: #666666">=</span> <span style="color: #008000">float</span>(m) <span style="color: #408080; font-style: italic"># avoid integer div.</span>
+    Nt <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(T<span style="color: #666666">/</span>dt))
+    outfile <span style="color: #666666">=</span> <span style="color: #008000">open</span>(filename, <span style="color: #BA2121">&#39;w&#39;</span>)
+    outfile<span style="color: #666666">.</span>write(<span style="color: #BA2121">&#39;Time          Position</span><span style="color: #BB6622; font-weight: bold">\n</span><span style="color: #BA2121">&#39;</span>)
+
+    u_2 <span style="color: #666666">=</span> I
+    u_min <span style="color: #666666">=</span> u_max <span style="color: #666666">=</span> u_2
+    outfile<span style="color: #666666">.</span>write(<span style="color: #BA2121">&#39;</span><span style="color: #BB6688; font-weight: bold">%6.3f</span><span style="color: #BA2121">         </span><span style="color: #BB6688; font-weight: bold">%7.5f</span><span style="color: #BB6622; font-weight: bold">\n</span><span style="color: #BA2121">&#39;</span> <span style="color: #666666">%</span> (<span style="color: #666666">0*</span>dt, u_2))
+    <span style="color: #008000; font-weight: bold">if</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;linear&#39;</span>:
+        u_1 <span style="color: #666666">=</span> u_2 <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>V <span style="color: #666666">+</span> dt<span style="color: #666666">**2/</span>(<span style="color: #666666">2*</span>m)<span style="color: #666666">*</span>(<span style="color: #666666">-</span>b<span style="color: #666666">*</span>V <span style="color: #666666">-</span> s(u_2) <span style="color: #666666">+</span> F(<span style="color: #666666">0*</span>dt))
+    <span style="color: #008000; font-weight: bold">elif</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;quadratic&#39;</span>:
+        u_1 <span style="color: #666666">=</span> u_2 <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>V <span style="color: #666666">+</span> \
+               dt<span style="color: #666666">**2/</span>(<span style="color: #666666">2*</span>m)<span style="color: #666666">*</span>(<span style="color: #666666">-</span>b<span style="color: #666666">*</span>V<span style="color: #666666">*</span><span style="color: #008000">abs</span>(V) <span style="color: #666666">-</span> s(u_2) <span style="color: #666666">+</span> F(<span style="color: #666666">0*</span>dt))
+    <span style="color: #008000; font-weight: bold">if</span> u_1 <span style="color: #666666">&lt;</span> u_2:
+        u_min <span style="color: #666666">=</span> u_1
+    <span style="color: #008000; font-weight: bold">else</span>:  <span style="color: #408080; font-style: italic"># either equal or u_1 &gt; u_2</span>
+        u_max <span style="color: #666666">=</span> u_1
+    outfile<span style="color: #666666">.</span>write(<span style="color: #BA2121">&#39;</span><span style="color: #BB6688; font-weight: bold">%6.3f</span><span style="color: #BA2121">         </span><span style="color: #BB6688; font-weight: bold">%7.5f</span><span style="color: #BB6622; font-weight: bold">\n</span><span style="color: #BA2121">&#39;</span> <span style="color: #666666">%</span> (<span style="color: #666666">1*</span>dt, u_1))
+ 
+    <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>, Nt):
+        <span style="color: #408080; font-style: italic"># compute  solution at next time step</span>
+        <span style="color: #008000; font-weight: bold">if</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;linear&#39;</span>:
+            u <span style="color: #666666">=</span> (<span style="color: #666666">2*</span>m<span style="color: #666666">*</span>u_1 <span style="color: #666666">+</span> (b<span style="color: #666666">*</span>dt<span style="color: #666666">/2</span> <span style="color: #666666">-</span> m)<span style="color: #666666">*</span>u_2 <span style="color: #666666">+</span>
+                dt<span style="color: #666666">**2*</span>(F(n<span style="color: #666666">*</span>dt) <span style="color: #666666">-</span> s(u_1)))<span style="color: #666666">/</span>(m <span style="color: #666666">+</span> b<span style="color: #666666">*</span>dt<span style="color: #666666">/2</span>)
+        <span style="color: #008000; font-weight: bold">elif</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;quadratic&#39;</span>:
+            u <span style="color: #666666">=</span> (<span style="color: #666666">2*</span>m<span style="color: #666666">*</span>u_1 <span style="color: #666666">-</span> m<span style="color: #666666">*</span>u_2 <span style="color: #666666">+</span> b<span style="color: #666666">*</span>u_1<span style="color: #666666">*</span><span style="color: #008000">abs</span>(u_1 <span style="color: #666666">-</span> u_2)
+                <span style="color: #666666">+</span> dt<span style="color: #666666">**2*</span>(F(n<span style="color: #666666">*</span>dt) <span style="color: #666666">-</span> s(u_1)))<span style="color: #666666">/</span>\
+                (m <span style="color: #666666">+</span> b<span style="color: #666666">*</span><span style="color: #008000">abs</span>(u_1 <span style="color: #666666">-</span> u_2))
+        <span style="color: #008000; font-weight: bold">if</span> u <span style="color: #666666">&lt;</span> u_min:
+            u_min <span style="color: #666666">=</span> u
+        <span style="color: #008000; font-weight: bold">elif</span> u <span style="color: #666666">&gt;</span> u_max:
+            u_max <span style="color: #666666">=</span> u
+
+        <span style="color: #408080; font-style: italic"># write solution to file</span>
+        outfile<span style="color: #666666">.</span>write(<span style="color: #BA2121">&#39;</span><span style="color: #BB6688; font-weight: bold">%6.3f</span><span style="color: #BA2121">         </span><span style="color: #BB6688; font-weight: bold">%7.5f</span><span style="color: #BB6622; font-weight: bold">\n</span><span style="color: #BA2121">&#39;</span> <span style="color: #666666">%</span> ((n<span style="color: #666666">+1</span>)<span style="color: #666666">*</span>dt, u))
+        <span style="color: #408080; font-style: italic"># switch references before next step</span>
+        u_2, u_1, u <span style="color: #666666">=</span> u_1, u, u_2
+
+    outfile<span style="color: #666666">.</span>close()
+    <span style="color: #008000; font-weight: bold">return</span> u_min, u_max
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">main</span>():
+    <span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">argparse</span>
+    parser <span style="color: #666666">=</span> argparse<span style="color: #666666">.</span>ArgumentParser()
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--I&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=1.0</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--V&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=0.0</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--m&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=1.0</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--b&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=0.0</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--s&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">str</span>, default<span style="color: #666666">=</span><span style="color: #BA2121">&#39;u&#39;</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--F&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">str</span>, default<span style="color: #666666">=</span><span style="color: #BA2121">&#39;0&#39;</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--dt&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=0.05</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--T&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=10</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--window_width&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=30.</span>,
+                        help<span style="color: #666666">=</span><span style="color: #BA2121">&#39;Number of periods in a window&#39;</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--damping&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">str</span>, default<span style="color: #666666">=</span><span style="color: #BA2121">&#39;linear&#39;</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--savefig&#39;</span>, action<span style="color: #666666">=</span><span style="color: #BA2121">&#39;store_true&#39;</span>)
+    <span style="color: #408080; font-style: italic"># Hack to allow --SCITOOLS options (scitools.std reads this argument</span>
+    <span style="color: #408080; font-style: italic"># at import)</span>
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--SCITOOLS_easyviz_backend&#39;</span>, default<span style="color: #666666">=</span><span style="color: #BA2121">&#39;matplotlib&#39;</span>)
+    a <span style="color: #666666">=</span> parser<span style="color: #666666">.</span>parse_args()
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">scitools.std</span> <span style="color: #008000; font-weight: bold">import</span> StringFunction
+    s <span style="color: #666666">=</span> StringFunction(a<span style="color: #666666">.</span>s, independent_variable<span style="color: #666666">=</span><span style="color: #BA2121">&#39;u&#39;</span>)
+    F <span style="color: #666666">=</span> StringFunction(a<span style="color: #666666">.</span>F, independent_variable<span style="color: #666666">=</span><span style="color: #BA2121">&#39;t&#39;</span>)
+    I, V, m, b, dt, T, window_width, savefig, damping <span style="color: #666666">=</span> \
+       a<span style="color: #666666">.</span>I, a<span style="color: #666666">.</span>V, a<span style="color: #666666">.</span>m, a<span style="color: #666666">.</span>b, a<span style="color: #666666">.</span>dt, a<span style="color: #666666">.</span>T, a<span style="color: #666666">.</span>window_width, a<span style="color: #666666">.</span>savefig, \
+       a<span style="color: #666666">.</span>damping
+
+    filename <span style="color: #666666">=</span> <span style="color: #BA2121">&#39;vibration_sim.dat&#39;</span>
+    u_min, u_max <span style="color: #666666">=</span> solve_and_store(filename, I, V, m, b, s, F, dt, T, damping)
+
+    read_and_plot(filename, u_min, u_max)
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">read_and_plot</span>(filename, u_min, u_max):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Read file and plot u vs t line by line in a</span>
+<span style="color: #BA2121; font-style: italic">    terminal window (only using ascii characters).</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">scitools.avplotter</span> <span style="color: #008000; font-weight: bold">import</span> Plotter
+    <span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">time</span>
+    umin <span style="color: #666666">=</span> <span style="color: #666666">1.2*</span>u_min;  umax <span style="color: #666666">=</span> <span style="color: #666666">1.2*</span>u_max
+    p <span style="color: #666666">=</span> Plotter(ymin<span style="color: #666666">=</span>umin, ymax<span style="color: #666666">=</span>umax, width<span style="color: #666666">=60</span>, symbols<span style="color: #666666">=</span><span style="color: #BA2121">&#39;+o&#39;</span>)
+    fps <span style="color: #666666">=</span> <span style="color: #666666">10</span>
+    infile <span style="color: #666666">=</span> <span style="color: #008000">open</span>(filename, <span style="color: #BA2121">&#39;r&#39;</span>)
+
+    <span style="color: #408080; font-style: italic"># read and treat one line at a time</span>
+    infile<span style="color: #666666">.</span>readline()   <span style="color: #408080; font-style: italic"># skip header line</span>
+    <span style="color: #008000; font-weight: bold">for</span> line <span style="color: #AA22FF; font-weight: bold">in</span> infile:
+        time_and_pos <span style="color: #666666">=</span> line<span style="color: #666666">.</span>split()  <span style="color: #408080; font-style: italic"># gives list with 2 elements</span>
+        t <span style="color: #666666">=</span> <span style="color: #008000">float</span>(time_and_pos[<span style="color: #666666">0</span>])
+        u <span style="color: #666666">=</span> <span style="color: #008000">float</span>(time_and_pos[<span style="color: #666666">1</span>])
+        <span style="color: #408080; font-style: italic">#print &#39;time: %g   position: %g&#39; % (time, pos)</span>
+        <span style="color: #008000; font-weight: bold">print</span> p<span style="color: #666666">.</span>plot(t, u), <span style="color: #BA2121">&#39;</span><span style="color: #BB6688; font-weight: bold">%.2f</span><span style="color: #BA2121">&#39;</span> <span style="color: #666666">%</span> (t)
+        time<span style="color: #666666">.</span>sleep(<span style="color: #666666">1/</span><span style="color: #008000">float</span>(fps))
+
+<span style="color: #008000; font-weight: bold">if</span> __name__ <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;__main__&#39;</span>:
+    main()
+</pre></div>
+<p>
+</div></p>
+</div>
+</p>
+
+<p>
+<!-- --- end solution of exercise --- -->
 Filename: <code>vib_memsave</code>.
 
 <p>
