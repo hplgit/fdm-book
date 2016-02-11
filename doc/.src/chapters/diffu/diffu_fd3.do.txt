@@ -1027,14 +1027,18 @@ def quadratic(theta, Nx, Ny):
 
 idx{Jacobi method}
 
-So far we have created a linear system $Ac=b$ by creating the matrix and
-right-hand side and solved the system by calling an exact algorithm
+So far we have created a matrix and
+right-hand side of a linear system $Ac=b$
+and solved the system for $c$ by calling an exact algorithm
 based on Gaussian elimination. A much simpler implementation, which
 requires no memory for the coefficient matrix $A$, arises if we solve
-the system by *iterative* methods. These are only approximate, and
-the core algorithm is repeated many times until the solution converges.
+the system by *iterative* methods. These methods are only approximate, and
+the core algorithm is repeated many times until the solution is
+considered to be converged.
 
-To illustrate the idea, we simply the numerical scheme to the
+=== Numerical scheme and linear system ===
+
+To illustrate the idea of the Jacobi method, we simply the numerical scheme to the
 Backward Euler case, $\theta=1$, so there are fewer terms to write:
 
 !bt
@@ -1042,17 +1046,21 @@ Backward Euler case, $\theta=1$, so there are fewer terms to write:
 & u^{n+1}_{i,j} -
 \left(
 F_x
-(u^{n+1}_{i-1,j} - 2^{n+1}_{i,j} + u^{n+1}_{i,j}) +
+(u^{n+1}_{i-1,j} - 2u^{n+1}_{i,j} + u^{n+1}_{i,j}) +
 F_y
-(u^{n+1}_{i,j-1} - 2^{n+1}_{i,j} + u^{n+1}_{i,j+1})\right)
-= + \nonumber\\ &\qquad u^n_{i,j} + \Delta t f^{n+1}_{i,j}
+(u^{n+1}_{i,j-1} - 2u^{n+1}_{i,j} + u^{n+1}_{i,j+1})\right)
+= \nonumber\\ &\qquad u^n_{i,j} + \Delta t f^{n+1}_{i,j}
 label{diffu:2D:BE_scheme}
 \end{align}
 !et
 The idea of the *Jacobi* iterative method is to introduce an iteration,
 here with index $r$, where we in each iteration treat $u^{n+1}_{i,j}$
 as unknown, but use values from the previous iteration for
-the other unknowns $u^{n+1}_{i\pm 1,j\pm 1}$. Let $u^{n+1,r}_{i,j}$
+the other unknowns $u^{n+1}_{i\pm 1,j\pm 1}$.
+
+=== Iterations ===
+
+Let $u^{n+1,r}_{i,j}$
 be the approximation to $u^{n+1}_{i,j}$ in iteration $r$, for all
 relevant $i$ and $j$ indices. We first solve with respect to
 $u^{n+1}_{i,j}$ to get the equation to solve:
@@ -1071,7 +1079,7 @@ label{diffu:2D:Jacobi0}
 \end{align}
 !et
 The iteration is introduced by using iteration index $r$, for computed values,
-on the right-hand side and $r$ (unknown in this iteration) on the left-hand
+on the right-hand side and $r+1$ (unknown in this iteration) on the left-hand
 side:
 
 !bt
@@ -1086,7 +1094,10 @@ u^n_{i,j} + \Delta t f^{n+1}_{i,j})
 label{diffu:2D:Jacobi}
 \end{align}
 !et
-We start the iteration with the value at the previous time level:
+
+=== Initial guess ===
+
+We start the iteration with the computed values at the previous time level:
 
 !bt
 \begin{equation}
@@ -1094,6 +1105,8 @@ u^{n+1,0}_{i,j} = u^{n}_{i,j},\quad i=0,\ldots,N_x,\ j=0,\ldots,N_y\tp
 label{diffu:2D:iter:startvector}
 \end{equation}
 !et
+
+=== Relaxation ===
 
 A common technique in iterative methods is to introduce a *relaxation*,
 which means that the new approximation is a weighted mean of the
@@ -1109,6 +1122,8 @@ label{diffu:2D:iter:relaxation}
 !et
 Under-relaxation means $\omega < 1$, while over-relaxation has
 $\omega > 1$.
+
+=== Stopping criteria ===
 
 The iteration can be stopped when the change from one iteration to the
 next is sufficiently small ($\epsilon$), using either an infinity norm,
@@ -1128,7 +1143,32 @@ or an $L^2$ norm,
 \end{equation}
 !et
 
-[hpl: Residual criterion?]
+Another widely used criterion measures how well the equations are solved
+by looking at the residual (essentially $b-Ac^{r+1}$ if $c^{r+1}$ is
+the approximation to the solution in iteration $r+1$).
+The residual, defined in terms of the finite difference stencil, is
+
+!bt
+\begin{align}
+R_{i,j} &= u^{n+1,r+1}_{i,j} -
+(F_x(u^{n+1,r+1}_{i-1,j} - 2u^{n+1,r+1}_{i,j} + u^{n+1,r+1}_{i,j}) +\nonumber\\
+&\quad\quad F_y(u^{n+1,r+1}_{i,j-1} - 2u^{n+1,r+1}_{i,j} + u^{n+1,r+1}_{i,j+1}))
+- \nonumber\\
+&\qquad u^n_{i,j} -  \Delta t f^{n+1}_{i,j}
+label{diffu:2D:residual}
+\end{align}
+!et
+One can then iterate until the norm of the mesh function $R_{i,j}$
+is less than some tolerance:
+
+!bt
+\begin{equation}
+\left(\Delta x\Delta y\sum_{i,j} R_{i,j}^2
+\right)^{\half} \leq \epsilon\tp
+\end{equation}
+!et
+
+=== Code-friendly notation ===
 
 To make the mathematics as close as possible to what we will write in a
 computer, we may introduce some new notation: $u_{i,j}$ is a short notation
@@ -1152,6 +1192,9 @@ u^{(1)}_{i,j} + \Delta t f^{n+1}_{i,j})
 label{diffu:2D:Jacobi2}
 \end{align}
 !et
+
+=== Generalization of the scheme ===
+
 We can also quite easily introduce the $\theta$ rule for discretization in
 time and write up the Jacobi iteration in that case as well:
 
@@ -1256,7 +1299,8 @@ from in the function `quadratic` from
 Section ref{diffu:2D:verify}. This problem is known to have no
 approximation error, but any iterative method will produce an
 approximate solution with unknown error. For a tolerance $10^{-k}$
-in the iterative method, we can, e.g., use a tolerance $10^{k-1}$
+in the iterative method, we can, e.g., use a slightly larger
+tolerance $10^{-(k-1)}$
 for the difference between the exact and the computed solution.
 
 !bc pycod
@@ -1299,7 +1343,7 @@ label{diffu:2D:Jacobi:impl:hill:uex}
 \end{equation}
 !et
 is a solution of the 2D homogeneous diffusion equation
-$u_t = \dfc(u_{xx}+u_{yy})$ (with $f=0$) in
+$u_t = \dfc(u_{xx}+u_{yy})$ in
 a rectangle $[0,L_x]\times [0,L_y]$, for any value of the amplitude $A$.
 This solution vanishes at the boundaries,
 and the initial condition is the product of two sines.
@@ -1311,7 +1355,7 @@ $E_\Delta$, and one from the iterative Jacobi method, $E_i$. The total
 error in the computed $u$ can be represented as
 
 !bt
-\[ E_u = E_\Delta + E_I\tp\]
+\[ E_u = E_\Delta + E_i\tp\]
 !et
 One error measure is to look at the maximum value, which is obtained for
 the midpoint $x=L_x/2$ and $y=L_x/2$. This midpoint is represented in
@@ -1320,24 +1364,23 @@ compute $E_u$ as $E_u = |\max \uex - \max u|$, when we know an exact
 solution $\uex$ of the problem.
 
 What about $E_\Delta$? If we use the maximum value as measure of the
-error, we have analytical insight into the approximation error in this
-problem. According to Section ref{diffu:2D:analysis}, the exact
+error, we have in fact analytical insight into the approximation error in this
+particular problem. According to Section ref{diffu:2D:analysis}, the exact
 solution (ref{diffu:2D:Jacobi:impl:hill:uex}) of the PDE problem is
 also an exact solution of the discrete equations, except that the
 damping factor in time is different. More precisely,
 (ref{diffu:2D:analysis:BN:numexact}) and
-(ref{diffu:2D:analysis:BN:numexact}) are solutions of the discrete
+(ref{diffu:2D:analysis:CN:numexact}) are solutions of the discrete
 problem for $\theta=1$ (Backward Euler) and $\theta=\half$
 (Crank-Nicolson), respectively.  The factors raised to the power $n$
-is the amplitude error and measures the effect of the discretization,
-i.e.,
+is the numerical amplitude, and the errors in these factors become
 
 !bt
 \begin{align*}
-E_\Delta &= \left(
+E_\Delta &= e^{-\dfc k^2t} - \left(
 \frac{1 - 2(F_x\sin^2 p_x + F_x\sin^2p_y)}{1 + 2(F_x\sin^2 p_x + F_x\sin^2p_y)}
 \right)^n,\quad \theta=\half,\\
-E_\Delta &=
+E_\Delta &= e^{-\dfc k^2t} -
 (1 + 4F_x\sin^2 p_x + 4F_y\sin^2 p_y)^{-n},\quad\theta=1\tp
 \end{align*}
 !et
@@ -1345,7 +1388,7 @@ We are now in a position to compute $E_i$ numerically. That is, we can
 compute the error due to iterative solution of the linear system and
 see if it corresponds to the convergence tolerance used in the method.
 Note that the convergence is based on measuring the difference in
-two consecutive approximations, which is not exactly the error in
+two consecutive approximations, which is not exactly the error
 due to the iteration, but it is a kind of measure, and it should
 have about the same size as $E_i$.
 
@@ -1354,27 +1397,92 @@ The function `demo_classic_iterative` in "`diffu2D_u0.py`":
 methods in Section ref{diffu:2D:SOR}). The value of $E_i$ is in
 particular printed at each time level. By changing the tolerance in
 the convergence criterion in the Jacobi method, we can see that $E_i$
-is of the same order of magnitude as the prescribed tolerance.  For
-example, $E_\Delta\sim 10^{-2}$ with $N_x=N_y=10$ and $\theta=\half$,
-and as long as $\max u$ has some significant size ($\max u >
+is of the same order of magnitude as the prescribed tolerance in the
+Jacobi method.  For
+example: $E_\Delta\sim 10^{-2}$ with $N_x=N_y=10$ and $\theta=\half$,
+as long as $\max u$ has some significant size ($\max u >
 0.02$). An appropriate value of the tolerance is then $10^{-3}$,
-giving $E_i$ around $5\cdot 10^{-3}$, which is an order of magnitude
-smaller than $E_\Delta$.  The corresponding number of Jacobi
-iterations (with $\omega=1$) varies from 31 to 12 (for $\max u >
+such that the error in the Jacobi method does not become bigger than
+the discretization error. In that case,
+$E_i$ is around $5\cdot 10^{-3}$.
+The corresponding number of Jacobi
+iterations (with $\omega=1$) varies from 31 to 12 during the
+time simulation (for $\max u >
 0.02$). Changing the tolerance to $10^{-5}$ requires much more
 iterations (61 to 42) without giving any contribution to the overall
-accuracy since the error is dominated by $E_\Delta$.
+accuracy since the total error is dominated by $E_\Delta$.
 
 Also, with a $N_x=N_y=20$, the spatial accuracy increases and many more
 iterations are needed (143 to 45), but the dominating error is from
-the time discretization. However, with a finer spatial mesh, a higher
+the time discretization. However, with such a finer spatial mesh, a higher
 tolerance in the convergence criterion $10^{-4}$ is needed to keep
 $E_i\sim 10^{-3}$.  More experiments show the disadvantage of the very
 simple Jacobi iteration method: the number of iterations increases
 with the number of unknowns, keeping the tolerance fixed, but the
 tolerance should also be lowered to avoid the iteration error to
 dominate the total error. A small adjustment of the Jacobi method, as
-described in the next section, provides a better method.
+described in Section ref{diffu:2D:SOR}, provides a better method.
+
+===== The relaxed Jacobi method and its relation to the Forward Euler method =====
+label{diffu:2D:Jacobi_vs_FE}
+
+We shall now show that solving the Poisson equation $-\dfc\nabla^2 u = f$ by
+the Jacobi iterative method is in fact equivalent to using a
+Forward Euler scheme on $u_t = \dfc\nabla^2 u + f$ and letting
+$t\rightarrow\infty$.
+
+A Forward Euler discretization of the 2D diffusion equation,
+
+!bt
+\[ \lbrack D_t^+ u = \dfc (D_xD_x u + D_yD_y u) + f\rbrack^n_{i,j},\]
+!et
+can be written out as
+
+!bt
+\[ u^{n+1} = u^n + \frac{\Delta t}{\dfc h^2}
+\left( u_{i-1,j}^n + u_{i+1,j}^n + u_{i,j-1}^n + u_{i,j+1}^n - 4u_{i,j}^n
++ h^2f_{i,j}\right),\]
+!et
+where $h=\Delta x = \Delta y$ has been introduced for simplicity. The
+scheme can be reordered as
+
+!bt
+\[ u^{n+1} = \left(1 - \omega\right) u_{i,j}^n
++ \frac{1}{4}\omega
+\left( u_{i-1,j}^n + u_{i+1,j}^n + u_{i,j-1}^n + u_{i,j+1}^n - 4u_{i,j}^n
++ h^2f_{i,j}\right),\]
+!et
+with
+
+!bt
+\[ \omega = 4\frac{\Delta t}{\dfc h^2},\]
+!et
+but this latter form is nothing but the relaxed Jacobi method applied to
+
+
+!bt
+\[ [D_xD_x u + D_yD_y u = -f]^n_{i,j}\tp\]
+!et
+
+From the equivalence above we know a couple of things about the Jacobi
+method for solving $-\nabla^2 u = f$:
+
+ o The method is unstable if $\omega > 1$ (since the Forward Euler method
+   is then unstable).
+ o The convergence is really slow as the iteration index increases (coming from the fact that
+   the Forward Euler scheme requires many small time steps to reach the stationary solution).
+
+These observations are quite disappointing: if we already have a
+time-dependent diffusion problem and want to take larger time steps by
+an implicit time discretization method, we will with the Jacobi method
+end up with something close to a slow Forward Euler simulation of the
+original problem at each time level.  Nevertheless, the Jacobi method
+remains a fundamental building block for solving linear systems
+arising from PDEs of two reasons: 1) a couple of iterations removes
+large parts of the error and this is effectively used in the very
+efficient class of multigrid methods; and 2) the idea of the Jacobi
+method can be developed into more efficient methods, especially the
+SOR method, which is treated next.
 
 ===== The Gauss-Seidel and SOR methods =====
 label{diffu:2D:SOR}
@@ -1388,7 +1496,8 @@ $i=1,\ldots,N_x-1$ and $j=1,\ldots,Ny-1$, we realize that
 when $u^{n+1,r+1}_{i,j}$ is computed, $u^{n+1,r+1}_{i-1,j}$
 and $u^{n+1,r+1}_{i,j-1}$ are already computed, so these new
 values can be used rather than
-$u^{n+1,r}_{i-1,j}$ and $u^{n+1,r}_{i,j-1}$ (respectively).
+$u^{n+1,r}_{i-1,j}$ and $u^{n+1,r}_{i,j-1}$ (respectively)
+in the formula for $u^{n+1,r+1}_{i,j}$.
 This idea gives rise to the *Gauss-Seidel* iteration method,
 which mathematically is just a small adjustment of
 (ref{diffu:2D:Jacobi0}):
@@ -1400,7 +1509,7 @@ F_x
 (u^{n+1,r+1}_{i-1,j} + u^{n+1,r}_{i,j}) +
 F_y
 (u^{n+1,r+1}_{i,j-1} + u^{n+1,r}_{i,j+1})) +
-u^n_{i,j} + \Delta t f^{n+1}_{i,j})
+u^n_{i,j} + \Delta t f^{n+1}_{i,j})\tp
 label{diffu:2D:SOR:eq}
 \end{align}
 !et
@@ -1408,7 +1517,8 @@ Observe that the way we access the mesh points in the formula
 (ref{diffu:2D:SOR:eq}) is important: points with $i-1$ must be computed
 before points with $i$, and points with $j-1$ must be computed
 before points with $j$. Any sequence of mesh points can be used
-in the Gauss-Seidel method, but the formula must distinguish between
+in the Gauss-Seidel method, but the particular math
+formula must distinguish between
 already visited points in the current iteration and the points not
 yet visited.
 
@@ -1490,19 +1600,20 @@ for n in It[0:-1]:
     u_1, u = u, u_1  # Get ready for next iteration
 !ec
 The idea here is to introduce `u__` to be used for already computed
-values in the Gauss-Seidel/SOR version of the implementation, or
-just values from the previous iteration in case of the Jacobi method.
+values (`u`) in the Gauss-Seidel/SOR version of the implementation, or
+just values from the previous iteration (`u_`) in case of the Jacobi method.
 
 ===== Vectorized implementation of the SOR method =====
 label{diffu:2D:SOR:impl:vectorized}
 
 Vectorizing the Gauss-Seidel iteration step turns out to be non-trivial.
-The problem is that vectorized operations typically implies
+The problem is that vectorized operations typically imply
 operations on arrays where the sequence we visit the elements in does
-not matter. In particular, vectorized code is (usually) trivial to
+not matter. In particular, this principle makes vectorized code trivial to
 parallelize. However, in the Gauss-Seidel algorithm the sequence we
 visit the elements in the arrays does matter, and it is well known that
 the basic method as explained above cannot be parallelized.
+Therefore, also vectorization will require new thinking.
 
 idx{red-black numbering}
 
@@ -1510,9 +1621,10 @@ The strategy for vectorizing (and parallelizing) the Gauss-Seidel
 method is to use a special numbering of the mesh points called
 red-black numbering: every other point is red or black as in a
 checkerboard pattern. This numbering requires $N_x$ and $N_y$ to
-be even numbers. Here is an example on a $4\times 3$ mesh:
+be even numbers. Here is an example on a $4\times 4$ mesh:
 
 !bc
+r b r b r
 b r b r b
 r b r b r
 b r b r b
@@ -1536,7 +1648,7 @@ recently computed red points are involved.
 
 The scalar implementation of the red-black numbered Gauss-Seidel
 method is really compact, since we can update values directly in
-the `u` (that guarantees that we use the most recently computed
+`u` (that guarantees that we use the most recently computed
 values). Here is the relevant code for the Backward Euler
 scheme in time and without a source term:
 
@@ -1734,4 +1846,301 @@ contains a unified implementation of the relaxed Jacobi and SOR
 methods in scalar and vectorized versions using the techniques
 explained above.
 
-# Experiments with SOR, benefits. Rerun the Jacobi experiments
+[hpl: Experiments with SOR, benefits. Rerun the Jacobi experiments.
+Just mention the most important conclusions. We can have more comprehensive
+experiments with comparison of all methods in a later section, after CG with
+preconditioning.]
+
+
+===== Direct versus iterative methods =====
+label{diffu:2D:direct_vs_iter}
+
+=== Direct methods ===
+
+There are two classes of methods for solving linear systems: direct methods
+and iterative methods. Direct methods are based on variants of the
+Gaussian elimination procedure and will produce an exact solution (in
+exact arithmetics) in an a priori known number of steps.
+Iterative methods, on the other hand, produce an approximate solution,
+and the amount of work for reaching a given accuracy is usually not
+known.
+
+idx{LU factorization}
+idx{Cholesky factorization}
+
+The most common direct method today is to use the *LU factorization*
+procedure to factor the coefficient matrix $A$ as the product of a
+lower-triangular matrix $L$ (with unit diagonal terms)
+and an upper-triangular matrix $U$:
+$A=LU$. As soon as we have $L$ and $U$, a system of equations $LUc=b$
+is easy to solve because of the triangular nature of $L$ and $U$. We
+first solve $Ly=b$ for $y$ (forward substitution), and
+thereafter we find $c$ from solving $Uc=y$ (backward
+substitution).  When $A$ is a dense $N\times N$ matrix, the LU
+factorization costs $\frac{1}{3}N^3$ arithmetic operations, while the
+forward and backward substitution steps each require of
+the order $N^2$ arithmetic operations.
+That is, factorization dominates the costs and the substitution steps are
+cheap.
+
+Symmetric, positive definite coefficient matrices often arise when
+discretizing PDEs. In this case, the LU factorization becomes $A=LL^T$,
+and the associated algorithm is known as *Cholesky factorization*.
+Most linear algebra software offers highly optimized implementations of
+LU and Cholesky factorization as well as forward and backward
+substitution (`scipy.linalg` is the relevant Python package).
+
+Finite difference discretizations lead to sparse coefficient matrices.
+An extreme case arose in Section ref{diffu:pde1:BE} where $A$ is
+tridiagonal. The amount of arithmetic operations in the
+LU and Cholesky factorization algorithms is for a tridiagonal matrix just
+of the order $N$, not $N^3$. Tridiagonal matrices are special cases of *banded
+matrices*, where the matrices contain just a set of diagonal bands.
+Finite difference methods on regularly numbered
+rectangular and box-shaped meshes
+give rise to such banded matrices, with 5 bands in 2D and 7 in
+3D for diffusion problems.
+Gaussian elimination only needs to work within the bands, leading to
+much more efficient algorithms. For example,
+factorization of more general, sparse matrices can
+often take advantage of the sparsity through modified Gaussian elimination
+algorithms. The relevant Python package is `scipy.sparse.linalg`.
+
+Although a direct method is an exact algorithm, rounding errors
+may in practice accumulate and pollute the solution. The effect
+grows with the size of the linear system, so both for accuracy and
+efficiency, iterative methods are better suited than direct methods
+for solving really large linear systems.
+
+
+=== Iterative methods ===
+
+The Jacobi and SOR iterative methods belong to a class of iterative methods
+where the idea is to solve $Au=b$ by splitting A into two parts, $A=M-N$,
+such that solving systems $Mu=c$ is easy and efficient. With the splitting,
+we get a system
+
+!bt
+\[ Mu = Nu + b,\]
+!et
+which suggests an iterative method
+
+!bt
+\[ Mu^{r+1} = Nu^{r} + b,\quad r=0,1,2,\ldots,\]
+!et
+where $u^{r+1}$ is a new approximation to $u$ in the $r+1$-th iteration. To
+initiate the iteration, we need a start vector $u^0$.
+
+The Jacobi and SOR methods are based on splitting $A$ into a lower
+tridiagonal part $L$, the diagonal $D$, and an upper tridiagonal part $U$,
+such that $A=L+D+U$. The Jacobi method corresponds to $M=D$ and $N=-L-U$.
+The Gauss-Seidel method employs $M=L+D$ and $N=-U$, while the SOR
+method corresponds to
+
+!bt
+\[ M= \frac{1}{\omega}D + L,\quad N = \frac{1-\omega}{\omega}D - U\tp\]
+!et
+The relaxed Jacobi method has similar expressions:
+
+!bt
+\[ M = \frac{1}{\omega}D,\quad N = \frac{1-\omega}{\omega}D - L - U\tp\]
+!et
+
+With the matrix forms of the Jacobi and SOR methods as written above,
+we could in an implementation alternatively fill the matrix $A$ with
+entries and call general implementations of the Jacobi or SOR methods
+that work on a system $Au=b$. However, this is almost never done since
+forming the matrix $A$ requires quite some code and storing $A$ in the
+computer's memory is unnecessary. It is much easier to just apply the
+Jacobi and SOR ideas to the finite difference stencils directly in an
+implementation, as we have shown in detail.
+
+Nevertheless, the matrix formulation of the Jacobi and SOR methods have
+been important for analyzing their convergence behavior. One can show that
+the error $u^r-u$ fulfills $u^r-u = G^r(u^0-u)$, where $G=M^{-1}N$
+and $G^k$ is a matrix exponential. For the method to converge,
+$\lim_{r\rightarrow\infty}||G^r||=0$ is a necessary and sufficient condition.
+This implies that the *spectral radius* of $G$ must be less than one.
+Since $G$ is directly related to the finite difference scheme for the
+underlying PDE problem, one can in principle compute the spectral radius,
+but in practice for a given PDE problem,
+this is not feasible and does not lead to
+useful formulas. Analysis of model problems, usually
+related to the Poisson equation,
+reveals some trends of interest: the convergence rate of the Jacobi
+method goes like $h^2$, while that of SOR with an optimal $\omega$ goes
+like $h$, where $h$ is the spatial spacing: $h=\Delta x=\Delta y$.
+That is, the efficiency of the Jacobi method quickly deteriorates with
+the mesh resolution, and SOR is much to be preferred, but the optimal
+$\omega$ remains an open question. We refer to
+Chapter 4 of cite{Saad_2003} for more information on the convergence theory.
+One important result is that if $A$ is symmetric and positive definite,
+then SOR will converge for any $0<\omega <2$.
+
+The optimal $\omega$ parameter can be theoretically established for
+a Poisson problem as
+
+!bt
+\begin{equation}
+\omega_{o} = \frac{2}{1 + \sqrt{1-\varrho^2}},\quad \varrho = \frac{\cos(\pi/N_x) + (\Delta x/\Delta y)^2\cos(\pi/N_y)}{1 + (\Delta x/\Delta y)^2}\tp
+\end{equation}
+!et
+This formula can be used as a guide also in other problems.
+
+The Jacobi and the SOR methods have their great advantage of being
+trivial to implement, so they are obviously popular of this reason.
+However, the slow convergence of these methods limits the popularity to fairly
+small linear systems (i.e., coarse meshes). As soon as the matrix size
+grows, one is better off with more sophisticated iterative methods
+like the preconditioned Conjugate gradient method, which we now turn to.
+
+Finally, we mention that there is a variant of the SOR method, called
+Symmetric Successive Overrelaxation method, known as SSOR, where
+one runs a standard SOR sweep through the mesh points and then a
+new sweep but visiting the points in reverse order.
+
+[hpl: Line Jacobi/SOR?]
+
+===== The Conjugate gradient method =====
+label{diffu:2D:CG}
+
+There is no simple intuitive derivation of the Conjugate gradient
+method, so we refer to the many excellent expositions in the
+literature for the idea of the method and how the algorithm is
+derived. In particular, we recommend the books
+cite{Templates_LA,Saad_2003,Greif_Ascher_2011}.  A brief overview is
+provided in the "Wikipedia article":
+"https://en.wikipedia.org/wiki/Conjugate_gradient_method". Here, we
+just state the pros and cons of the method from a user's perspective
+and how we utilize it in code.
+
+The original Conjugate gradient method is limited to linear systems $Au=b$,
+where $A$ is a symmetric and positive definite matrix. There are, however,
+extensions of the method to non-symmetric matrices.
+#, so when we use the
+#term *Conjugate gradient method* hereafter, we usually mean the family of
+#related methods that can be applied
+#to most matrix systems arising from discretizing
+#PDEs. When we need to distinuish between methods for
+#the symmetric and non-symmetric
+#cases, we use the terms *original Conjugate gradient method* and
+#*conjugate gradient-like methods*, respectively.
+
+idx{preconditioning}
+
+A major advantage of all conjugate gradient methods is that the matrix
+$A$ is only used in matrix-vector products, so we do not need form and
+store $A$ if we can provide code for computing a matrix-vector product
+$Au$.  Another important feature is that the algorithm is very easy to
+vectorize and parallelize.  The primary downside of the method is that
+it convergences slowly unless one has an effective *preconditioner*
+for the system. That is, instead of solving $Au=b$, we try to solve
+$M^{-1}Au=M^{-1}b$ in the hope that the method works better for this
+*preconditioned* system. The matrix $M$ is the *preconditioner* or
+preconditioning matrix.  Now we need to perform matrix-vector products
+$M^{-1}Au$, which implies computing $y=Au$ and solving a system
+$My=b$. Therefore, $M$ must be cheap to compute and systems $My=b$
+must be cheap to solve.
+
+A perfect preconditioner is $M=A$, but in each
+iteration in the Conjugate gradient method one then has so solve a
+system with $A$ as coefficient matrix. A key idea is to let $M$ be
+some approximation to $A$.
+The simplest preconditioner is to set $M=D$, where
+$D$ is the diagonal of $A$. This choice means running one Jacobi iteration
+as preconditioner. Exercise ref{diffu:exer:splitting_prec} shows that
+the Jacobi and SOR methods can also be viewed as preconditioners.
+
+Constructing good preconditioners is a scientific field on its own. Here
+we shall treat the topic just very briefly. For a user having access to
+the `scipy.sparse.linalg` library, there are Conjugate gradient
+methods and preconditioners readily available:
+
+ * For positive definite, symmetric systems: `cg` (the Conjugate gradient method)
+ * For symmetric systems: `minres` (Minimum residual method)
+ * For non-symmetric systems:
+  * `gmres` (GMRES: Generalized minimum residual method)
+  * `bicg` (BiConjugate gradient method)
+  * `bicgstab` (Stabilized BiConjugate gradient method)
+  * `cgs` (Conjugate gradient squared method)
+  * `qmr` (Quasi-minimal residual iteration)
+ * Preconditioner: `spilu` (Sparse, incomplete LU factorization)
+
+The ILU preconditioner is an attractive all-round type of
+preconditioner that is suitable for most problems on serial
+computers. A more efficient preconditioner is the multigrid method,
+and algebraic multigrid is also an all-round choice as
+preconditioner. The Python package "PyAMG":
+"https://github.com/pyamg/pyamg" offers efficient implementations of
+the algebraic multigrid method, to be used both as a preconditioner
+and as a stand-alone iterative method.
+
+The matrix arising from implicit time discretization methods of the
+diffusion equation is symmetric and positive definite so we can use
+the Conjugate gradient method (`cg`), typically in combination with an
+ILU preconditioner.  The code is very similar to the one we created
+when solving the linear system by sparse Gaussian elimination, the
+main difference is that we now allow for calling up the Conjugate
+gradient function as an alternative solver.
+
+!bc pycod
+def solver_sparse(
+    I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5,
+    U_0x=0, U_0y=0, U_Lx=0, U_Ly=0, user_action=None,
+    method='direct', CG_prec='ILU', CG_tol=1E-5):
+    """
+    Full solver for the model problem using the theta-rule
+    difference approximation in time. Sparse matrix with
+    dedicated Gaussian elimination algorithm (method='direct')
+    or ILU preconditioned Conjugate Gradients (method='CG' with
+    tolerance CG_tol and preconditioner CG_prec ('ILU' or None)).
+    """
+    # Set up data structures as shown before
+
+    # Precompute sparse matrix
+    ...
+
+    A = scipy.sparse.diags(
+        diagonals=[main, lower, upper, lower2, upper2],
+        offsets=[0, -lower_offset, lower_offset,
+                 -lower2_offset, lower2_offset],
+        shape=(N, N), format='csc')
+
+    if method == 'CG':
+        if CG_prec == 'ILU':
+            # Find ILU preconditioner (constant in time)
+            A_ilu = scipy.sparse.linalg.spilu(A)  # SuperLU defaults
+            M = scipy.sparse.linalg.LinearOperator(
+                shape=(N, N), matvec=A_ilu.solve)
+        else:
+            M = None
+        CG_iter = []  # No of CG iterations at time level n
+
+    # Time loop
+    for n in It[0:-1]:
+        # Compute b, vectorized version
+
+        # Solve matrix system A*c = b
+        if method == 'direct':
+            c = scipy.sparse.linalg.spsolve(A, b)
+        elif method == 'CG':
+            x0 = u_1.T.reshape(N)  # Start vector is u_1
+            CG_iter.append(0)
+
+            def CG_callback(c_k):
+                """Trick to count the no of iterations in CG."""
+                CG_iter[-1] += 1
+
+            c, info = scipy.sparse.linalg.cg(
+                A, b, x0=x0, tol=CG_tol, maxiter=N, M=M,
+                callback=CG_callback)
+
+        # Fill u with vector c
+        # Update u_1 before next step
+        u_1, u = u, u_1
+!ec
+The number of iterations in the Conjugate gradient method is of interest,
+but unfortunately not available from the `cg` function, so
+we perform a trick: in each iteration a user function `CG_callback`
+is called where we accumulate the number of iteration in a list
+`CG_iter`.

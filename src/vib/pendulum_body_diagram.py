@@ -127,7 +127,7 @@ def animate():
     import time
     for time_level, t_ in enumerate(t):
         sketch(theta, S, mg, drag, t_, time_level)
-        time.sleep(0.2)
+        time.sleep(0.2)  # Pause between each frame on the screen
 
     # Make videos
     prog = 'ffmpeg'

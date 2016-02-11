@@ -2,34 +2,363 @@
 ======= Applications =======
 label{diffu:app}
 
-===== Development of flow between two plates =====
+[hpl: Remaining: comment on boundary conditions for diffusion of substance
+and heat conduction (include Robin/cooling).]
 
-Think of thin films, locally this is plane Couette flow.
+===== Diffusion of a substance =====
+label{diffu:app:substance}
 
-Solution, $y=0$ moves with $U_0$, $y=H$ is fixed:
+The first process to be considered is a substance that gets transported
+through a fluid at rest by pure diffusion. We consider an arbitrary
+volume $V$ of this fluid, containing the substance with concentration
+function $c(\x,t)$. Physically, we can think of a
+very small volume with centroid $\x$ at time $t$ and assign the ratio
+of the volume of the substance and the total volume to $c(\x, t)$.
+This means that the mass of the substance in a
+small volume $\Delta V$ is approximately
+$\varrho c\Delta V$, where $\varrho$ is the density
+of the substance. Consequently, the total mass of the substance inside the volume
+$V$ is the sum of all $\varrho c\Delta V$, which becomes the
+volume integral $\int_V\varrho cdV$.
+
+Let us reason how the mass of the substance changes and thereby derive
+a PDE governing the concentration $c$.
+Suppose the substance flows out of $V$ with a flux $\q$.
+If $\Delta S$ is a small part of the boundary $\partial V$ of $V$,
+the volume of the substance flowing out through $dS$ in a small
+time interval $\Delta t$ is $\varrho \q\cdot\normalvec \Delta t \Delta S$,
+where $\normalvec$ is an outward unit
+normal to the boundary $\partial V$, see Figure ref{diffu:app:substance:fig1}.
+We realize that only normal component of $\q$ is able to transport mass
+in and out of $V$.
+The total outflow of the mass of the substance in a small time interval
+$\Delta t$ becomes the surface integral
+
+!bt
+\[ \int\limits_{\partial V} \varrho\q\cdot\normalvec \Delta t  dS\tp\]
+!et
+Assuming conservation of mass, this outflow of mass must be balanced by
+a loss of mass inside the volume. The increase of mass inside the volume,
+during a small time interval $\Delta t$, is
+
+!bt
+\[ \int\limits_V \varrho (c(\x,t+\Delta t) - c(\x,t)) dV,\]
+!et
+assuming $\varrho$ is constant, which is reasonable.
+
+Setting the two contributions equal to each other ensures balance of
+mass inside $V$. Dividing by $\Delta t$ gives
+
+!bt
+\[ \int\limits_V \varrho \frac{c(\x,t+\Delta t) - c(\x,t)}{\Delta t} dV =
+- \int\limits_{\partial V} \varrho\q\cdot\normalvec dS\tp\]
+!et
+Note the minus sign on the right-hand side: the left-hand side expresses
+loss of mass, while the integral on the right-hand side is the gain of
+mass.
+
+Now, letting $\Delta t\rightarrow 0$, we have
+
+!bt
+\[ \frac{c(\x,t+\Delta t) - c(\x,t)}{\Delta t} \rightarrow
+\frac{\partial c}{\partial t},\]
+!et
+so
 
 !bt
 \begin{equation}
-u = U_0\left( 1 - \frac{y}{H} - \frac{2}{pi}\sum_{i=1}^\infty
-\frac{1}{i}\exp{\left(-i\pi\nu t/H^2\right)}\sin{\left(\frac{i\pi y}{H}\right)}
-\right)
+\int\limits_V \varrho \frac{\partial c}{\partial t}dV +
+\int\limits_{\partial V} \varrho\q\cdot\normalvec dS = 0\tp
+label{diffu:app:substance:integral}
 \end{equation}
 !et
-Change variable $y\rightarrow H-y$, so that $y=H$ moves, should
-be something like
+To arrive at a PDE,
+we express the surface integral as a volume integral using Gauss'
+divergence theorem:
 
 !bt
 \[
-u = U_0\left( \frac{y}{H} + \frac{2}{pi}\sum_{i=1}^\infty
-\frac{1}{i}\exp{\left(-i\pi\nu t/H^2\right)}\sin{\left(\frac{i\pi y}{H}\right)}
-\right)
+\int\limits_V (\varrho \frac{\partial c}{\partial t} +
+\nabla\cdot(\varrho q))dV = 0\tp
 \]
 !et
-Can just program it and check - or use sin of a sum formula.
+Since $\varrho$ is constant, we can divide by this quantity.
+If the integral is to vanish for an arbitrary volume $V$,
+the integrand must vanish too,
+and we get the mass conservation PDE for the substance:
 
-===== Oscillating surface temperature =====
+!bt
+\begin{equation}
+\frac{\partial c}{\partial t} +
+\nabla\cdot q = 0\tp
+label{diffu:app:substance:massconv}
+\end{equation}
+!et
 
-===== Oscillating and pulsating flow in tubes =====
+FIGURE: [fig-diffu/continuum, width=200 frac=0.4] An arbitrary volume of a fluid. label{diffu:app:substance:fig1}
+
+A fundamental problem is that this is a scalar PDE for four unknowns:
+$c$ and the three components of $\q$. We therefore need additional
+equations. Here, Fick's law comes at rescue: it models how the flux $\q$
+of the substance is related to the concentration $c$. Diffusion is
+recognized by mass flowing from regions with high concentration to regions
+of low concentration. This principle suggests that $\q$ is proportional
+to the negative gradient of $c$:
+
+!bt
+\begin{equation}
+\q = -\dfc\nabla c,
+label{diffu:app:substance:Fick}
+\end{equation}
+!et
+where $\dfc$ is an empirically determined constant.
+The relation (ref{diffu:app:substance:Fick}) is known as Fick's law.
+Inserting (ref{diffu:app:substance:Fick}) in
+(ref{diffu:app:substance:massconv}) gives a scalar PDE for the
+concentration $c$:
+
+!bt
+\begin{equation}
+\frac{\partial c}{\partial t} = \dfc\nabla^2 c\tp
+label{diffu:app:substance:PDE}
+\end{equation}
+!et
+
+===== Heat conduction =====
+label{diffu:app:heat}
+
+Heat conduction is a well-known diffusion process. The governing PDE
+is in this case based on the first law of thermodynamics: the increase
+in energy of a system is equal to the work done on the system, plus the
+supplied heat. Here, we shall media at rest and neglect the work done
+on the system. The principle then reduces to a balance between
+increase in internal energy and the supplied heat flow by conduction.
+
+Let $e(x,t)$ be the *internal energy* per unit mass. The increase of
+the internal energy in a small volume $\Delta V$ in a small time
+interval $\Delta t$ is then
+
+!bt
+\[ \varrho (e(\x,t+\Delta t) - e(\x,t))\Delta V,\]
+!et
+where $\varrho$ is the density of the material subject to heat conduction.
+In an arbitrary volume $V$, as depicted in
+Figure ref{diffu:app:substance:fig1}, the corresponding increase in internal
+energy becomes the volume integral
+
+!bt
+\[ \int\limits_V \varrho (e(\x,t+\Delta t) - e(\x,t))dV\tp\]
+!et
+This increase in internal energy is balanced by heat supplied by
+conduction. Let $\q$ be the heat flow per time unit. Through the
+surface $\partial V$ of $V$ the following amount of heat flows out
+of $V$ during a time interval $\Delta t$:
+
+!bt
+\[
+\int\limits_{\partial V} \q\cdot\normalvec\Delta t dS\tp\]
+!et
+The simplified version of the first law of thermodynamics then states that
+
+!bt
+\[
+\int\limits_V \varrho (e(\x,t+\Delta t) - e(\x,t))dV = -
+\int\limits_{\partial V} \q\cdot\normalvec\Delta t dS\tp
+\]
+!et
+The minus sign on the right-hand side ensures that the integral there
+models net *inflow* of heat (since $\normalvec$ is an outward unit normal,
+$\q\cdot\normalvec$ models *outflow*).
+Dividing by $\Delta t$ and notifying that
+
+!bt
+\[ \lim_{\Delta t\rightarrow 0}
+\frac{e(\x,t+\Delta t) - e(\x,t)}{\Delta t} =
+\frac{\partial e}{\partial t},\]
+!et
+we get (in the limit $\Delta t\rightarrow 0$)
+
+!bt
+\[
+\int\limits_V \varrho \frac{\partial e}{\partial t} dV +
+\int\limits_{\partial V} \q\cdot\normalvec\Delta t dS = 0\tp
+\]
+!et
+This is the integral equation for heat conduction, but we aim at a PDE.
+The next step is therefore to transform the surface integral to a
+volume integral via Gauss' divergence theorem. The result is
+
+!bt
+\[
+\int\limits_V\left( \varrho \frac{\partial e}{\partial t}
++ \nabla\cdot\q\right) dV = 0\tp
+\]
+!et
+If this equality is to hold for all volumes $V$, the integrand must vanish,
+and we have the PDE
+
+!bt
+\begin{equation}
+\varrho \frac{\partial e}{\partial t} = -\nabla\cdot\q\tp
+label{diffu:app:heat:PDE1}
+\end{equation}
+!et
+
+Sometimes the supplied heat can come from the medium itself. This is
+the case, for instance, when radioactive rock generates heat.
+Let us add this effect. If $f(\x,t)$ is the supplied heat
+per unit volume per unit time, the heat supplied in a small volume
+is $f\Delta t\Delta V$, and inside an arbitrary volume $V$ the
+supplied generated heat becomes
+
+!bt
+\[ \int\limits_V f\Delta t dV\tp\]
+!et
+Adding this to the integral statement reflecting the first law of
+thermodynamics and continuing the derivation leads to the PDE
+
+!bt
+\begin{equation}
+\varrho \frac{\partial e}{\partial t} = -\nabla\cdot\q + f\tp
+label{diffu:app:heat:PDE2}
+\end{equation}
+!et
+
+There are four unknown scalar fields: $e$ and $\q$. Moreover, the
+temperature $T$, which is our primary quantity to compute, does not
+enter the model yet. We need an additional equation, called the
+*equation of state*, relating $e$, $V=1/\varrho=$, and $T$:
+$e=e(V,T)$. By the chain rule we have
+
+!bt
+\[ \frac{\partial e}{\partial t} =
+\left.\frac{\partial e}{\partial T}\right\vert_{V}
+\frac{\partial T}{\partial t} +
+\left.\frac{\partial e}{\partial V}\right\vert_{T}
+\frac{\partial V}{\partial t}\tp\]
+!et
+The first coefficient $\partial e/\partial T$ is called *specific heat
+capacity at constant volume*, denoted by $c_v$:
+
+!bt
+\[ c_v = \left.\frac{\partial e}{\partial T}\right\vert_{V}\tp\]
+!et
+The specific heat capacity will in general vary with $T$, but taking it as a
+constant is a good approximation in many applications.
+
+The term $\partial e/\partial V$ models effects due to compressibility
+and volume expansion. These effects are often small and can be neglected.
+We shall do so here. Using $\partial e/\partial t = c_v\partial T/\partial t$
+in the PDE gives
+
+!bt
+\[ \varrho c_v\frac{\partial T}{\partial t} = -\nabla\cdot\q + f\tp\]
+!et
+We still have four unknown scalar fields ($T$ and $\q$). To close the
+system, we need a relation between the heat flux $\q$ and the temperature $T$
+called Fourier's law:
+
+!bt
+\[ \q = -\dfc\nabla T,\]
+!et
+which simply states that heat flows from cold to hot areas, along the
+path of greatest variation. In a solid medium, $\alpha$ depends on the
+material of the medium, and in multi-material media one must regard
+$\dfc$ as spatially dependent. In a fluid, it is common to assume that
+$\dfc$ is a constant. The value of $\dfc$ reflects how easy heat is
+conducted through the medium, and $\dfc$ is named the *coefficient of
+heat conduction*.
+
+We have now one scalar PDE for the unknown temperature field $T(\x,t)$:
+
+!bt
+\begin{equation}
+\varrho  c_v\frac{\partial T}{\partial t} = \nabla\cdot(\dfc\nabla T) + f\tp
+label{diffu:app:heat:PDE}
+\end{equation}
+!et
+
+
+===== Development of flow between two flat plates =====
+
+Diffusion equations may also arise as simplified versions of other
+mathematical models, especially in fluid flow. Consider a fluid flowing
+between two flat, parallel plates. The velocity is uni-directional, say
+along the $z$ axis, and depends
+only on the distance $x$ from the plates; $\u = u(x,t)\kk$.
+The flow is governed by the Navier-Stokes equations,
+
+!bt
+\begin{align*}
+\varrho\frac{\partial\u}{\partial t} + \varrho\u\cdot\nabla\u &= -\nabla p
++ \mu\nabla^2\u + \varrho\f,\\
+\nabla\cdot\u &= 0,
+\end{align*}
+!et
+where $p$ is the pressure field, unknown along with the velocity $\u$,
+$\varrho$ is the fluid density, $\mu$ the dynamic viscosity, and $\f$
+is some external body force. The geometric restrictions of flow between
+two flat plates puts restrictions on the velocity, $\u = u(x,t)\ii$,
+and the $z$ component of the Navier-Stokes equations collapses to
+a diffusion equation:
+
+!bt
+\[
+\varrho\frac{\partial u}{\partial t} = - \frac{\partial p}{\partial z}
+\mu\frac{\partial^2 u}{\partial z^2}
++ \varrho f_z,
+\]
+!et
+if $f_z$ is the component of $\f$ in the $z$ direction.
+
+The boundary conditions are derived from the fact that the fluid sticks to
+the plates, which means $\u=0$ at the plates. Say the location of the
+plates are $z=0$ and $z=L$, we have
+
+!bt
+\[ u(0,t)=u(L,t)=0\tp\]
+!et
+
+One can easily show that $\partial p/\partial z$ must be a constant or
+just a function of time $t$. We set $\partial p/\partial z = -\beta$.
+The body force could be a component of gravity, if desired, set as
+$f_z = \gamma g$. Switching from $z$ to $x$ as independent variable gives
+a very standard one-dimensional diffusion equation:
+
+!bt
+\[
+\varrho\frac{\partial u}{\partial t} =
+\mu\frac{\partial^2 u}{\partial z^2} + beta + \varrho\gamma g,\quad
+x\in [0,L],\ t\in (0,T]\tp
+\]
+!et
+The boundary conditions are
+
+!bt
+\[ u(0,t)=u(L,t)=0,\]
+!et
+while some initial condition
+
+!bt
+\[ u(x,0) = I(x)\]
+!et
+must also be prescribed.
+
+The flow is driven by either the pressure gradient $\beta$ or gravity, or
+a combination of both. One may also consider one moving plate that
+drives the fluid. If the plate at $x=L$ moves with velocity $U_L(t)$, we have
+the adjusted boundary condition
+
+!bt
+\[ u(L,t) = U_L(t)\tp\]
+!et
+
+[hpl: Exercises based on this diffusion model.]
+
+===== Tribology: thin film fluid flow =====
+
+Thin fluid films are extremely important in many industries.
+
 
 ===== Propagation of electrical signals in the brain =====
 
@@ -46,7 +375,7 @@ governed by the "Cable equation": "http://en.wikipedia.org/wiki/Cable_equation":
 !bt
 \begin{equation}
 c_m \frac{\partial V}{\partial t} =
-\frac{1}{r_l}\frac{\partial^2 V}{\partial x^2} - \frac{1}{r_m}Vm
+\frac{1}{r_l}\frac{\partial^2 V}{\partial x^2} - \frac{1}{r_m}V
 label{}
 \end{equation}
 !et
@@ -56,14 +385,3 @@ $r_l$ and $r_m$ are measures of the resistance.
 The boundary conditions of often taken as $V=0$ at a short circuit or open end,
 $\partial V/\partial x=0$ at a sealed end, or $\partial V/\partial x \propto
 V$ where there is an injection of current.
-
-===== Radial heat conduction out of offshore pipelines =====
-
-# Easy to make something out of the ideas/5620/apps/offshore... mekit
-# paper where one has a multi-walled radial heat conduction equation.
-# Can, as in the paper, use one cell per material. Coupling to soil
-# outside with many parameters given. The discussion of the Fourier
-# number is interesting - I guess time changes here relates to
-# BCs on the inner wall because the gas suddenly has a different
-# temperature? Could be a good project perhaps; anyway, the theory
-# can be written up.

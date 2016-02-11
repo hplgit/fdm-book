@@ -73,7 +73,7 @@ preprocess -DFORMAT=pdflatex ../newcommands_keep.p.tex > newcommands_keep.tex
 
 # PDF with solutions (start with this and let .aux be the most
 # relevant version for xr references
-system doconce format pdflatex ${mainname} $preprocessor_opt $comments --latex_table_format=center --device=screen "--latex_code_style=default:vrb-blue1@sys:vrb[frame=lines,label=\\fbox{{\tiny Terminal}},framesep=2.5mm,framerule=0.7pt,fontsize=\fontsize{9pt}{9pt}]"
+system doconce format pdflatex ${mainname} $preprocessor_opt $comments --latex_table_format=center --device=screen "--latex_code_style=default:vrb-blue1@sys:vrb[frame=lines,label=\\fbox{{\tiny Terminal}},framesep=2.5mm,framerule=0.7pt,fontsize=\fontsize{9pt}{9pt}]" --allow_refs_to_external_docs
 doconce latex_exercise_toc ${mainname}
 doconce subst 'frametitlebackgroundcolor=.*?,' 'frametitlebackgroundcolor=blue!5,' ${mainname}.tex
 system pdflatex ${mainname}
@@ -87,7 +87,7 @@ rm -f ${mainname}.pdf
 # See http://www2.warwick.ac.uk/fac/sci/statistics/staff/academic-research/firth/software/pdfjam for examples on pdfnup and pdfjam
 
 # PDF for printing, standard paper size
-system doconce format pdflatex ${mainname} $preprocessor_opt $solutions $comments --latex_table_format=center --device=paper "--latex_code_style=default:vrb-blue1@sys:vrb[frame=lines,label=\\fbox{{\tiny Terminal}},framesep=2.5mm,framerule=0.7pt,fontsize=\fontsize{9pt}{9pt}]"
+system doconce format pdflatex ${mainname} $preprocessor_opt $solutions $comments --latex_table_format=center --device=paper "--latex_code_style=default:vrb-blue1@sys:vrb[frame=lines,label=\\fbox{{\tiny Terminal}},framesep=2.5mm,framerule=0.7pt,fontsize=\fontsize{9pt}{9pt}]" --allow_refs_to_external_docs
 doconce subst 'frametitlebackgroundcolor=.*?,' 'frametitlebackgroundcolor=blue!5,' ${mainname}.tex
 pdflatex ${mainname}
 makeindex ${mainname}
@@ -100,7 +100,7 @@ cp ${mainname}.pdf ${nickname}-4print.pdf
 #pdfnup --frame true --outfile ${nickname}-4print-2up.pdf ${nickname}-4print.pdf
 
 # PDF for electronic viewing
-system doconce format pdflatex ${mainname} $preprocessor_opt $no_solutions $comments --latex_table_format=center --device=screen "--latex_code_style=default:vrb-blue1@sys:vrb[frame=lines,label=\\fbox{{\tiny Terminal}},framesep=2.5mm,framerule=0.7pt,fontsize=\fontsize{9pt}{9pt}]"
+system doconce format pdflatex ${mainname} $preprocessor_opt $no_solutions $comments --latex_table_format=center --device=screen "--latex_code_style=default:vrb-blue1@sys:vrb[frame=lines,label=\\fbox{{\tiny Terminal}},framesep=2.5mm,framerule=0.7pt,fontsize=\fontsize{9pt}{9pt}]" --allow_refs_to_external_docs
 doconce latex_exercise_toc ${mainname}
 doconce subst 'frametitlebackgroundcolor=.*?,' 'frametitlebackgroundcolor=blue!5,' ${mainname}.tex
 system pdflatex ${mainname}
@@ -116,22 +116,22 @@ system preprocess -DFORMAT=html ../newcommands_keep.p.tex > newcommands_keep.tex
 
 style=solarized
 # Note that we use perldoc and not native solarized3 code
-system doconce format html ${mainname} $preprocessor_opt $no_solutions --html_style=solarized3 --html_output=${nickname}-$style --pygments_html_style=perldoc $comments
+system doconce format html ${mainname} $preprocessor_opt $no_solutions --html_style=solarized3 --html_output=${nickname}-$style --pygments_html_style=perldoc $comments --allow_refs_to_external_docs
 doconce replace 'P$d$' 'Pd' ${nickname}-${style}.html
 system doconce split_html ${nickname}-${style}.html --nav_button=text
 
 # default nickname.html is bootswatch journal style
-system doconce format html ${mainname} $preprocessor_opt $no_solutions $comments --html_style=bootswatch_journal --html_code_style=inherit --html_output=${nickname}
+system doconce format html ${mainname} $preprocessor_opt $no_solutions $comments --html_style=bootswatch_journal --html_code_style=inherit --html_output=${nickname} --allow_refs_to_external_docs
 doconce replace 'P$d$' 'Pd' ${nickname}.html
 system doconce split_html ${nickname}.html
 
 # nickname-sol.html is bootswatch journal with solutions
-system doconce format html ${mainname} $preprocessor_opt $comments --html_style=bootswatch_journal --html_code_style=inherit --html_output=${nickname}-sol
+system doconce format html ${mainname} $preprocessor_opt $comments --html_style=bootswatch_journal --html_code_style=inherit --html_output=${nickname}-sol --allow_refs_to_external_docs
 doconce replace 'P$d$' 'Pd' ${nickname}-sol.html
 system doconce split_html ${nickname}-sol.html
 
 if [ $sphinx -eq 1 ]; then
-system doconce format sphinx ${mainname} $preprocessor_opt $no_solutions $comments --sphinx_keep_splits
+system doconce format sphinx ${mainname} $preprocessor_opt $no_solutions $comments --sphinx_keep_splits --allow_refs_to_external_docs
 doconce replace 'P$d$' 'Pd' ${mainname}.rst
 system doconce split_rst ${mainname}
 system doconce sphinx_dir theme=cbc copyright="H. P. Langtangen" ${mainname}
