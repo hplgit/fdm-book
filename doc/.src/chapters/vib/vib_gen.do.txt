@@ -501,24 +501,75 @@ With $n = 0$, this expression gives
 !bt
 \[ u^1 = \left(2 - (\Delta t\omega)^2\right)u^0 - u^{-1} + \Delta t^2 f^n\tp\]
 !et
-Here, however, we get a problem with $u^{-1}$ which appears on the right hand side.
+
+Here, however, we get a problem with $u^{-1}$, which appears on the right hand side.
 To get around that problem, we realize that the initial condition $u^{\prime} = V$ might
 be approximated by use of a centered difference approximation as
-
-
+!bt
+\[ \frac{u^1 - u^{-1}}{2\Delta t} = V,\]
+!et
+which means that
+!bt
+\[ u^{-1} = u^1 - 2\Delta t V\tp\]
+!et
+Inserting this expression for $u^{-1}$ into the expression for $u^1$, we get
+!bt
+\[ u^1 = \left(2 - (\Delta t\omega)^2\right)u^0 - (u^1 - 2\Delta t V) + \Delta t^2 f^n\tp\]
+!et
+Finally, after isolating $u^1$ on the left hand side, we arrive at
+\[ u^1 = \left(1 - \frac{1}{2}(\Delta t\omega)^2\right)u^0 + \Delta t V + \frac{1}{2}\Delta t^2 f^n\tp\]
 !esol
 !esubex
 
 !bsubex
-For verification purposes,
-we use the method of manufactured solutions (MMS) with the
-choice of $\uex(x,t)= ct+d$.
-Find restrictions on $c$ and $d$ from
-the initial conditions. Compute the corresponding source term $f$ by term.
+For verification purposes, we use the method of manufactured solutions (MMS) with the
+choice of $\uex(t)= ct+d$. Find restrictions on $c$ and $d$ from
+the initial conditions. Compute the corresponding source term $f$.
 Show that $[D_tD_t t]^n=0$ and use the fact
 that the $D_tD_t$ operator is linear,
 $[D_tD_t (ct+d)]^n = c[D_tD_t t]^n + [D_tD_t d]^n = 0$, to show that
 $\uex$ is also a perfect solution of the discrete equations.
+
+!bsol
+The initial conditions $u(0)=I$ and $u^{\prime}(0)=V$ give demands
+$\uex(0)=I$ and $\uex^{\prime}(0)=V$, which imply that
+$d = I$ and {c = V}.
+
+To compute the source term $f$, we insert the chosen solution $\uex$ into
+the ODE. This gives
+!bt
+\[ 0 + \omega^2(ct+d)=f(t),\]
+!et
+which implies that
+!bt
+\[ f(t)=\omega^2(Vt+I)\tp\]
+!et
+To show that $[D_tD_t t]^n=0$, we proceed as
+!bt
+\begin{align}
+[D_tD_t t]^n &= \frac{t^{n+1} - 2t^n + t^{n-1}}{\Delta t^2}, \nonumber \\
+             &= \frac{(n+1)\Delta t - 2n\Delta t + (n-1)\Delta t}{\Delta t^2}, \nonumber \\
+             &= \frac{n\Delta t + \Delta t - 2n\Delta t + n\Delta t - \Delta t}{\Delta t^2}, \nonumber \\
+             &= 0\tp \nonumber
+\end{align}
+!et
+Finally, we show that the chosen $\uex$ is also a perfect solution of the discrete equations.
+If we start by inserting $\uex$ into
+!bt
+\[[D_tD_t u + \omega^2u = f]^n,\]
+!et
+as well as the expression found for $f$.
+We get
+!bt
+\[[D_tD_t (Vt+I) + \omega^2(Vt+I) = \omega^2(Vt+I)]^n,\]
+!et
+which can be rewritten as
+!bt
+\[[D_tD_t (Vt+I)]^n + [\omega^2(Vt+I)]^n = [\omega^2(Vt+I)]^n\tp\]
+!et
+Now, since the first term here is zero, we see that the discrete equation is
+fulfilled exactly for the chosen $\uex$ function.
+!esol
 !esubex
 
 !bsubex
@@ -580,6 +631,10 @@ if __name__ == '__main__':
 !ec
 Fill in the various functions such that the calls in the `main`
 function works.
+
+!bsol
+See final code presented below.
+!esol
 !esubex
 
 !bsubex
@@ -592,23 +647,40 @@ to `linear`.)
 #Check with hand calculations that the `sympy` implementation
 #is correct.
 
+!bsol
+Yes, a quadratic function will fulfill the discrete equations exactly. See output from final code presented below.
+!esol
 !esubex
 
 !bsubex
 Will a polynomial of degree three fulfill the discrete equations?
+
+!bsol
+No, when running the final code presented below, the printout shows that the
+step1 residual for the cubic function is not zero.
+!esol
 !esubex
 
 !bsubex
 Implement a `solver` function for computing the numerical
 solution of this problem.
+
+!bsol
+See final code presented below.
+!esol
 !esubex
 
 
 !bsubex
 Write a test function for checking that the quadratic solution
-is computed correctly (too machine precision, but the
+is computed correctly (to machine precision, but the
 round-off errors accumulate and increase with $T$) by the `solver`
 function.
+
+!bsol
+@@@CODE exer-vib/vib_undamped_verify_mms.py
+
+!esol
 !esubex
 
 
@@ -618,10 +690,42 @@ file=vib_phase_error_growth
 
 Consider an exact solution $I\cos (\omega t)$ and an
 approximation $I\cos(\tilde\omega t)$.
-Define the phase error as time lag between the peak $I$
+Define the phase error as the time lag between the peak $I$
 in the exact solution and the corresponding peak in the approximation
 after $m$ periods of oscillations. Show that this phase error
 is linear in $m$.
+
+!bsol
+From (ref{vib:ode1:tildeomega:series}) we have that
+!bt
+\begin{equation}
+\tilde\omega = \omega\left( 1 + \frac{1}{24}\omega^2\Delta t^2\right)
++ \Oof{\Delta t^4}
+\tp
+\nonumber
+\end{equation}
+!et
+Dropping the $\Oof{\Delta t^4}$ term, and since $\omega=\frac{2\pi}{P}$ and $\tilde\omega=\frac{2\pi}{\tilde P}$, we have that
+!bt
+\begin{equation}
+\frac{2\pi}{\tilde P} \approx \frac{2\pi}{P}\left( 1 + \frac{1}{24}\omega^2\Delta t^2\right)
+\tp
+\nonumber
+\end{equation}
+!et
+Now, $2\pi$ cancels and the remaining equation may be rewritten as
+!bt
+\begin{equation}
+P - \tilde P \approx \frac{1}{24}\omega^2\Delta t^2
+\tp
+\nonumber
+\end{equation}
+!et
+This implies that the periods differ by a constant. Since the exact and the numerical
+solution start out identically, the phase error $P - \tilde P$ will become
+$m\frac{1}{24}\omega^2\Delta t^2$ after $m$ periods, i.e. the phase error is linear in $m$.
+
+!esol
 
 
 ===== Exercise: Improve the accuracy by adjusting the frequency =====
@@ -637,6 +741,17 @@ algorithm improves the accuracy (use $\Delta t =0.1$ and simulate
 for 80 periods, with and without adjustment of $\omega$).
 
 # How does this go if
+
+!bsol
+The modified code (below) was run for 80 periods with, and without,
+the given adjustment of $\omega$. A substantial difference in accuracy
+was observed between the two,
+showing that the frequency adjustment improves the situation.
+
+@@@CODE exer-vib/vib_adjust_w.py
+
+!esol
+
 
 ===== Exercise: See if adaptive methods improve the phase error =====
 label{vib:exer:undamped:adaptive}
@@ -657,15 +772,24 @@ spaced) mesh points. The question is whether it pays off to use an
 adaptive solver or if equally many points with a simple method gives
 about the same accuracy.
 
+!bsol
+The code:
+@@@CODE exer-vib/vib_undamped_adaptive.py
+
+The program produces the plot seen in Figure ref{vib:exer:fig:undamped_adaptive},
+which shows how the adaptive solution clearly outperforms the simpler method.
+
+FIGURE: [fig-vib/vib_undamped_adaptive, width=600 frac=1.0] Result of solving the problem by two different approaches, one adaptive and one simpler difference method. label{vib:exer:fig:undamped_adaptive}
+
+!esol
 
 
 ===== Exercise: Use a Taylor polynomial to compute $u^1$ =====
 label{vib:exer:step4b:alt}
 file=vib_first_step
 
-As an alternative to the derivation of (ref{vib:ode1:step4b}) for
-computing $u^1$, one can use a Taylor polynomial with three terms
-for $u^1$:
+As an alternative to computing $u^1$ by (ref{vib:ode1:step4b}),
+one can use a Taylor polynomial with three terms:
 
 !bt
 \[ u(t_1) \approx u(0) + u^{\prime}(0)\Delta t + {\half}u^{\prime\prime}(0)\Delta t^2\]
@@ -673,6 +797,51 @@ for $u^1$:
 With $u^{\prime\prime}=-\omega^2 u$ and $u^{\prime}(0)=0$, show that this method also leads to
 (ref{vib:ode1:step4b}). Generalize the condition on $u^{\prime}(0)$ to
 be $u^{\prime}(0)=V$ and compute $u^1$ in this case with both methods.
+
+!bsol
+With $u^{\prime\prime}(0)=-\omega^2 u(0)$ and $u^{\prime}(0)=0$, the given Taylor series
+becomes
+!bt
+\[ u(t_1) \approx u(0) + {\half}(-\omega^2 u(0))\Delta t^2\]
+!et
+which may be written as
+!bt
+\[ u^1 \approx u^0 - {\half}\Delta t^2\omega^2 u^0\]
+!et
+but this is nothing but (ref{vib:ode1:step4b}).
+
+Now, consider $u^{\prime}(0)=V$.
+With a centered difference approximation, this initial condition becomes
+!bt
+\[ \frac{u^1 - u^{-1}}{2\Delta t} \approx V\]
+!et
+which implies that
+!bt
+\[ u^{-1} \approx u^1 - 2\Delta t V\]
+!et
+When $n=0$, (ref{vib:ode1:step4}) reads
+!bt
+\[ u^1 = 2u^0 - u^{-1} - \Delta t^2\omega^2 u^0\]
+!et
+Inserting the expression for $u^{-1}$, we get
+!bt
+\[ u^1 = 2u^0 - (u^1 - 2\Delta t V) - \Delta t^2\omega^2 u^0\]
+!et
+which implies that
+!bt
+\[ u^1 = u^0 + \Delta t V - \frac{1}{2}\Delta t^2\omega^2 u^0\]
+!et
+With the Taylor series approach, we now get
+!bt
+\[ u(t_1) \approx u(0) + V\Delta t + {\half}(-\omega^2 u(0))\Delta t^2\]
+!et
+which also gives
+!bt
+\[ u^1 = u^0 + \Delta t V - \frac{1}{2}\Delta t^2\omega^2 u^0\]
+!et
+
+!esol
+
 
 ===== Exercise: Find the minimal resolution of an oscillatory function =====
 # Short: Find the largest relevant value of $\omega\Delta t$
@@ -686,6 +855,13 @@ maxima and minima at every two grid points.  Find an expression for
 the frequency of this function, and use the result to find the largest
 relevant value of $\omega\Delta t$ when $\omega$ is the frequency
 of an oscillating function and $\Delta t$ is the mesh spacing.
+
+!bsol
+The smallest period must be $2\Delta t$, which means that
+$\omega = \frac{2\pi}{2\Delta t} = \frac{\pi}{\Delta t}$.
+This means that the largest value for $\omega\Delta t$ is $\pi$.
+
+!esol
 
 
 ===== Exercise: Visualize the accuracy of finite differences for a cosine function =====
@@ -716,6 +892,43 @@ The deviation of the curve from unity visualizes the error in the
 approximation. Also expand $E$ as a Taylor polynomial in $p$ up to
 fourth degree (use, e.g., `sympy`).
 
+!bsol
+!bt
+\begin{align}
+E &= \frac{[D_tD_t u]^n}{u^{\prime\prime}(t_n)}, \nonumber \\
+  &= \frac{u^{n+1} - 2u^n + u^{n-1}}{u^{\prime\prime}(t_n)\Delta t^2}, \nonumber
+\end{align}
+!et
+Since $u(t)=\exp{(i\omega t)}$, we have that $u^{\prime}(t)=i\omega\exp{(i\omega t)}$
+and $u^{\prime\prime}(t)=(i\omega)^2\exp{(i\omega t)}=-\omega^2\exp{(i\omega t)}$, so we may proceed with $E$ as
+!bt
+\begin{align}
+E &= \frac{e^{i\omega(t_n+\Delta t)} - 2e^{i\omega t_n} + e^{i\omega(t_n-\Delta t)}}{-\omega^2e^{i\omega t_n}\Delta t^2}, \nonumber \\
+  &=\frac{e^{i\omega t_n}e^{i\omega \Delta t} -2e^{i\omega t_n} + e^{i\omega t_n}e^{-i\omega\Delta t}}{-\omega^2e^{i\omega t_n}\Delta t^2}, \nonumber \\
+  &= \frac{e^{i\omega\Delta t} - 2 + e^{-i\omega\Delta t}}{-\omega^2 \Delta t^2}, \nonumber \\
+  &= \frac{1}{-\omega^2 \Delta t^2}\frac{4}{4}\left(e^{i\omega\Delta t} - 2 + e^{-i\omega\Delta t}\right), \nonumber \\
+  &= \left(\frac{2}{\omega\Delta t}\right)^2 \left(-\frac{e^{i\omega\Delta t} - 2 + e^{-i\omega\Delta t}}{4}\right), \nonumber \\
+  &= \left(\frac{2}{\omega\Delta t}\right)^2 \left(-\frac{1}{2}\left(\frac{1}{2}e^{i\omega\Delta t} + e^{-i\omega\Delta t} - 1\right)\right), \nonumber \\
+  &= \left(\frac{2}{\omega\Delta t}\right)^2 \left(-\frac{1}{2}\left( cos(\omega\Delta t) - 1\right)\right). \nonumber
+\end{align}
+!et
+Now, since $cos(\omega\Delta t)=1-2sin^2\left(\frac{\omega\Delta t}{2}\right)$, we finally get
+!bt
+\begin{align}
+E &= \left(\frac{2}{\omega\Delta t}\right)^2 \left(-\frac{1}{2}\left( \left(1-2sin^2\left(\frac{\omega\Delta t}{2}\right)\right) - 1\right)\right), \nonumber \\
+  &= \left(\frac{2}{\omega\Delta t}\right)^2 sin^2\left(\frac{\omega\Delta t}{2}\right). \nonumber
+\end{align}
+!et
+
+@@@CODE exer-vib/vib_plot_fd_exp_error.py
+
+From the plot seen in Figure ref{vib:exer:fig:error_fraction}, we see how the error fraction $E$ deviates from unity as $p$ grows.
+
+FIGURE: [fig-vib/error_fraction, width=600 frac=1.0] The error fraction as a function of $p$. label{vib:exer:fig:error_fraction}
+
+!esol
+
+
 ===== Exercise: Verify convergence rates of the error in energy =====
 label{vib:exer:energy:convrate}
 file=test_error_conv
@@ -733,6 +946,12 @@ Make a test function in a file `test_error_conv.py`, where code from
 incorporate computations of the error in energy and the convergence
 rate of this error. The expected rate is 2.
 
+!bsol
+The code:
+@@@CODE exer-vib/test_error_conv.py
+
+!esol
+
 ===== Exercise: Use linear/quadratic functions for verification  =====
 label{vib:exer:verify:gen:linear}
 file=vib_verify_mms
@@ -746,6 +965,207 @@ quadratic damping. By modifying the code from Problem
 ref{vib:exer:undamped:verify:linquad}, `sympy` will do most
 of the work required to analyze the generalized problem.
 
+!bsol
+With a linear spring force, i.e. $s(u)=cu$, our model problem becomes
+!bt
+\begin{equation}
+mu^{\prime\prime} + f(u^{\prime}) + cu = F(t),\quad u(0)=I,\ u^{\prime}(0)=V,\ t\in (0,T]
+\tp
+\nonumber
+\end{equation}
+!et
+First we consider linear damping, i.e., when $f(u^{\prime}) = bu^{\prime}$, and follow the
+text in Chapter ref{vib:ode2:fdm:flin}. Discretizing the
+equation according to
+!bt
+\begin{equation}
+[mD_tD_t u + f(D_{2t}u) + cu = F]^n,
+\nonumber
+\end{equation}
+!et
+implies that
+!bt
+\begin{equation}
+m\frac{u^{n+1}-2u^n + u^{n-1}}{\Delta t^2}
++ b\frac{u^{n+1}-u^{n-1}}{2\Delta t} + cu^n = F^n.
+\nonumber
+\end{equation}
+!et
+The explicit formula for $u$ at each
+new time level then becomes
+
+!bt
+\begin{equation}
+u^{n+1} = (2mu^n + (\frac{b}{2}\Delta t - m)u^{n-1} +
+\Delta t^2(F^n - cu^n))(m + \frac{b}{2}\Delta t)^{-1}
+\nonumber
+\tp
+\end{equation}
+!et
+For the first time step, we use $n=0$ and a centered difference approximation for the
+initial condition on the derivative. This gives
+
+!bt
+\begin{equation}
+u^1 = u^0 + \Delta t\, V
++ \frac{\Delta t^2}{2m}(-bV - cu^0 + F^0)
+\tp
+\nonumber
+\end{equation}
+!et
+
+Next, we consider quadratic damping, i.e., when
+$f(u^{\prime})=bu^{\prime}|u^{\prime}|$, and follow the
+text in Chapter ref{vib:ode2:fdm:fquad}. Discretizing the
+equation according to
+!bt
+\begin{equation}
+[mD_tD_t u + bD_{2t}u|D_{2t}u| + cu = F]^n\tp
+\nonumber
+\end{equation}
+!et
+gives us
+!bt
+\begin{equation}
+m\frac{u^{n+1}-2u^n + u^{n-1}}{\Delta t^2}
++ b\frac{u^{n+1}-u^n}{\Delta t}\frac{|u^n-u^{n-1}|}{\Delta t}
++ cu^n = F^n.
+\nonumber
+\end{equation}
+!et
+We solve for $u^{n+1}$ to get the explicit updating formula as
+!bt
+\begin{align}
+u^{n+1} &=  \left( m + b|u^n-u^{n-1}|\right)^{-1}\times \nonumber\\
+& \qquad \left(2m u^n - mu^{n-1} + bu^n|u^n-u^{n-1}| + \Delta t^2 (F^n - cu^n)
+\right)
+\tp
+\nonumber
+\end{align}
+!et
+and the equation for the first time step as
+!bt
+\begin{equation}
+u^1 = u^0 + \Delta t V + \frac{\Delta t^2}{2m}\left(-bV|V| - cu^0 + F^0\right)
+\tp
+\nonumber
+\end{equation}
+!et
+
+Turning to verification with MMS and $u_e(t)=ct+d$, we get $d=I$ and $c=V$ independent
+of the damping term, so these parameter values stay as for the undamped case.
+
+Proceeding with linear damping, we get from chapter ref{vib:ode2:verify} that
+!bt
+\begin{equation}
+F(t) = bV + c(Vt + I)\tp
+\nonumber
+\end{equation}
+!et
+(Note that there are two different c parameters here, one from $u_e=ct+d$ and one from the spring force $cu$.
+The first one disappears, however, as it is switched with $V$.)
+
+To show that $u_e$ is a perfect solution also to the discrete equations, we insert $u_e$ and $F$ into
+!bt
+\begin{equation}
+[mD_tD_t u + bD_{2t}u + cu = F]^n\tp
+\nonumber
+\end{equation}
+!et
+This gives
+!bt
+\begin{equation}
+[mD_tD_t (Vt+I) + bD_{2t}(Vt+I) + c(Vt+I) = bV + c(Vt + I)]^n,
+\nonumber
+\end{equation}
+!et
+which may be split up as
+!bt
+\begin{equation}
+m[D_tD_t (Vt+I)]^n + b[D_{2t}(Vt+I)]^n + c[(Vt+I)]^n = b[V]^n + c[(Vt + I)]^n.
+\nonumber
+\end{equation}
+!et
+Simplifying, we note that the first term is zero and that $c[(Vt+I)]^n$ appears with the
+same sign on each side of the equation. Thus, dropping these terms, and cancelling the common
+factor $b$, we are left with
+!bt
+\begin{equation}
+[D_{2t}(Vt+I)]^n = [V]^n.
+\nonumber
+\end{equation}
+!et
+It therefore remains to show that $[D_{2t}(Vt+I)]^n$ is equal to $[V]^n = V$. We write out
+the left hand side as
+!bt
+\begin{align}
+[D_{2t}(Vt+I)]^n &= \frac{(Vt_{n+1}+I) - (Vt_{n-1}+I)}{2\Delta t} \nonumber\\
+                 &= \frac{V(t_{n+1}-t_{n-1})}{2\Delta t} \nonumber\\
+                 &= \frac{V((t_n + \Delta t) - (t_n - \Delta t))}{2\Delta t} \nonumber\\
+                 &= V, \nonumber
+\nonumber
+\end{align}
+!et
+which shows that the two sides of the equation are equal and that the discrete equations
+are fulfilled exactly for the given $u_e$ function.
+
+If the damping is rather quadratic, we find from chapter ref{vib:ode2:verify} that
+!bt
+\begin{equation}
+F(t) = b|V|V + c(Vt + I)\tp
+\nonumber
+\end{equation}
+!et
+As with linear damping, we show that $u_e$ is a perfect solution also to the discrete equations
+by inserting $u_e$ and $F$ into
+!bt
+\begin{equation}
+[mD_tD_t u + bD_{2t}u|D_{2t}u| + cu = F]^n\tp
+\nonumber
+\end{equation}
+!et
+We then get
+!bt
+\begin{equation}
+[mD_tD_t (Vt+I) + bD_{2t}(Vt+I)|D_{2t}(Vt+I)| + c(Vt+I) = b|V|V + c(Vt+I)]^n,
+\nonumber
+\end{equation}
+!et
+which simplifies to
+!bt
+\begin{equation}
+[bD_{2t}(Vt+I)|D_{2t}(Vt+I)| = b|V|V]^n
+\nonumber
+\end{equation}
+!et
+and further to
+!bt
+\begin{equation}
+[D_{2t}(Vt+I)]^n [|D_{2t}(Vt+I)|]^n = |V|V
+\nonumber
+\end{equation}
+!et
+which simply states that
+!bt
+\begin{equation}
+V|V| = |V|V\tp
+\nonumber
+\end{equation}
+!et
+Thus, $u_e$ fulfills the discrete equations exactly also when the damping term
+is quadratic.
+
+When the exact solution is changed to become quadratic or cubic, the situation is more complicated.
+
+For a quadratic solution $u_e$ combined with (zero damping or) linear damping, the output from the program below shows that the discrete equations are fulfilled exactly. However, this is not the case with nonlinear damping, where only the first step gives zero residual.
+
+For a cubic solution $u_e$, we get a nonzero residual for (zero damping and) linear and nonlinear damping.
+
+@@@CODE exer-vib/vib_verify_mms.py
+
+!esol
+
+
 ===== Exercise: Use an exact discrete solution for verification =====
 label{vib:exer:discrete:omega}
 file=test_vib_undamped_exact_discrete_sol
@@ -755,6 +1175,11 @@ that employs the exact discrete solution
 (ref{vib:ode1:un:exact}) to verify the implementation of the
 `solver` function in the file `vib_undamped.py`.
 
+!bsol
+The code:
+@@@CODE exer-vib/test_vib_undamped_exact_discrete_sol.py
+
+!esol
 
 ===== Exercise: Use analytical solution for convergence rate tests =====
 label{vib:exer:conv:rate}
@@ -768,6 +1193,13 @@ the various elements you need to write down the exact solution).
 Modify the `convergence_rate` function from the `vib_undamped.py`
 program to perform experiments with the extended model.  Verify that
 the error is of order $\Delta t^2$.
+
+!bsol
+The code:
+@@@CODE exer-vib/vib_conv_rate.py
+
+The output from the program shows that $r$ approaches 2.
+!esol
 
 ===== Exercise: Investigate the amplitude errors of many solvers =====
 label{vib:exer:undamped:odespy}
@@ -785,12 +1217,29 @@ the 2nd- and 3rd-order Adams-Bashforth methods (`AdamsBashforth2`,
 (`Backward2Step`).  The relevant governing equations are listed in
 the beginning of Section ref{vib:model2x2}.
 
+!bsol
+The code:
+@@@CODE exer-vib/vib_amplitude_errors.py
+
+Running the code, we get the plots seen in Figure ref{vib:exer:fig:ampl_RK34},
+Figure ref{vib:exer:fig:ampl_CNB2} and Figure ref{vib:exer:fig:ampl_AB}. They
+show that `RK4` is superior to the others, but that also `CrankNicolson` performs well. In fact, with `RK4` the amplitude changes by less than $0.1$ per cent over the interval.
+
+FIGURE: [fig-vib/Amplitudes_RK3_RK4, width=600 frac=1.0] The amplitude as it changes over 100 periods for RK3 and RK4. label{vib:exer:fig:ampl_RK34}
+
+FIGURE: [fig-vib/Amplitudes_CrankNicolson_Backward2Step, width=600 frac=1.0] The amplitude as it changes over 100 periods for Crank-Nicolson and Backward 2 step. label{vib:exer:fig:ampl_CNB2}
+
+FIGURE: [fig-vib/Amplitudes_AdamsBashforth2_AdamsBashforth3, width=600 frac=1.0] The amplitude as it changes over 100 periods for Adams-Bashforth 2 and 3. label{vib:exer:fig:ampl_AB}
+
+!esol
+
+
 ===== Exercise: Minimize memory usage of a vibration solver =====
 label{vib:exer:memsave}
 file=vib_memsave
 
 The program "`vib.py`": "${src_vib}/vib.py"
-store the complete solution $u^0,u^1,\ldots,u^{N_t}$ in memory, which is
+stores the complete solution $u^0,u^1,\ldots,u^{N_t}$ in memory, which is
 convenient for later plotting.
 Make a memory minimizing version of this program where only the last three
 $u^{n+1}$, $u^n$, and $u^{n-1}$ values are stored in memory.
@@ -801,6 +1250,11 @@ plot the $u$ value using the line-by-line plotter in the
 `visualize_front_ascii` function - this technique makes it trivial
 to visualize very long time simulations).
 
+!bsol
+The code:
+@@@CODE exer-vib/vib_memsave.py
+
+!esol
 
 ===== Exercise: Implement the solver via classes =====
 label{vib:exer:gen:class}
