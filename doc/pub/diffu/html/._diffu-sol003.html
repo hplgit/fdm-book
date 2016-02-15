@@ -1,0 +1,560 @@
+<!--
+Automatically generated HTML file from DocOnce source
+(https://github.com/hplgit/doconce/)
+-->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="DocOnce: https://github.com/hplgit/doconce/" />
+<meta name="description" content="Finite difference methods for diffusion processes">
+<meta name="keywords" content="diffusion equation, 1D,heat equation, 1D,stationary solution,explicit discretization methods,Forward Euler scheme,implicit discretization methods,amplification factor,energy estimates (diffusion),Richardson iteration,preconditioning,sparse matrix,Jacobi method,Gauss-Seidel method,SOR method,red-black numbering,LU factorization,Cholesky factorization,preconditioning,random walk,vectorization,seed (random numbers),verification,diffusion limit of random walk,interrupt a program by Ctrl+c,stochastic difference equation,stochastic ODE,Fokker-Planck equation,Wiener process">
+
+<title>Finite difference methods for diffusion processes</title>
+
+<!-- Bootstrap style: bootswatch_journal -->
+<link href="http://netdna.bootstrapcdn.com/bootswatch/3.1.1/journal/bootstrap.min.css" rel="stylesheet">
+<!-- not necessary
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+-->
+
+<style type="text/css">
+/* Let inline verbatim have the same color as the surroundings */
+code { color: inherit; background-color: transparent; }
+
+/* Add scrollbar to dropdown menus in bootstrap navigation bar */
+.dropdown-menu {
+   height: auto;
+   max-height: 400px;
+   overflow-x: hidden;
+}
+</style>
+
+
+</head>
+
+<!-- tocinfo
+{'highest level': 1,
+ 'sections': [('An explicit method for the 1D diffusion equation',
+               1,
+               'diffu:pde1:FEsec',
+               'diffu:pde1:FEsec'),
+              ('The initial-boundary value problem for 1D diffusion',
+               2,
+               None,
+               '___sec1'),
+              ('Forward Euler scheme', 2, 'diffu:pde1:FE', 'diffu:pde1:FE'),
+              ('Implementation',
+               2,
+               'diffu:pde1:FE:code',
+               'diffu:pde1:FE:code'),
+              ('Verification',
+               2,
+               'diffu:pde1:FE:verify',
+               'diffu:pde1:FE:verify'),
+              ('Numerical experiments',
+               2,
+               'diffu:pde1:FE:experiments',
+               'diffu:pde1:FE:experiments'),
+              ('Implicit methods for the 1D diffusion equation',
+               1,
+               'diffu:pde1:implicit',
+               'diffu:pde1:implicit'),
+              ('Backward Euler scheme', 2, 'diffu:pde1:BE', 'diffu:pde1:BE'),
+              ('Sparse matrix implementation',
+               2,
+               'diffu:pde1:impl:sparse',
+               'diffu:pde1:impl:sparse'),
+              ('Crank-Nicolson scheme', 2, 'diffu:pde1:CN', 'diffu:pde1:CN'),
+              ('The $\\theta$ rule',
+               2,
+               'diffu:pde1:theta',
+               'diffu:pde1:theta'),
+              ('Experiments',
+               2,
+               'diffu:pde1:theta:experiments',
+               'diffu:pde1:theta:experiments'),
+              ('The Laplace and Poisson equation', 2, None, '___sec12'),
+              ('Analysis of schemes for the diffusion equation',
+               1,
+               'diffu:pde1:analysis',
+               'diffu:pde1:analysis'),
+              ('Properties of the solution',
+               2,
+               'diffu:pde1:analysis:uex',
+               'diffu:pde1:analysis:uex'),
+              ('Similarity solution', 3, None, '___sec15'),
+              ('Solution for a Gaussian pulse', 3, None, '___sec16'),
+              ('Solution for a sine component', 3, None, '___sec17'),
+              ('Example: Diffusion of a discontinues profile',
+               2,
+               None,
+               '___sec18'),
+              ('Analysis of discrete equations', 2, None, '___sec19'),
+              ('Analysis of the finite difference schemes',
+               2,
+               'diffu:pde1:analysis:details',
+               'diffu:pde1:analysis:details'),
+              ('Stability', 3, None, '___sec21'),
+              ('Accuracy', 3, None, '___sec22'),
+              ('Analysis of the Forward Euler scheme',
+               2,
+               'diffu:pde1:analysis:FE',
+               'diffu:pde1:analysis:FE'),
+              ('Stability', 3, None, '___sec24'),
+              ('Accuracy', 3, None, '___sec25'),
+              ('Analysis of the Backward Euler scheme',
+               2,
+               'diffu:pde1:analysis:BE',
+               'diffu:pde1:analysis:BE'),
+              ('Stability', 3, None, '___sec27'),
+              ('Analysis of the Crank-Nicolson scheme',
+               2,
+               'diffu:pde1:analysis:CN',
+               'diffu:pde1:analysis:CN'),
+              ('Stability', 3, None, '___sec29'),
+              ('Summary of accuracy of amplification factors',
+               2,
+               None,
+               '___sec30'),
+              ('Extending the analysis to 2D and 3D',
+               1,
+               'diffu:highdim:analysis',
+               'diffu:highdim:analysis'),
+              ('Analysis of the 2D diffusion equation',
+               2,
+               'diffu:2D:analysis',
+               'diffu:2D:analysis'),
+              ('The Forward Euler scheme', 3, None, '___sec33'),
+              ('The Backward Euler scheme', 3, None, '___sec34'),
+              ('The Crank-Nicolson scheme', 3, None, '___sec35'),
+              ('Exercise 1: Explore symmetry in a 1D problem',
+               2,
+               'diffu:exer:1D:gaussian:symmetric',
+               'diffu:exer:1D:gaussian:symmetric'),
+              ('Exercise 2: Investigate approximation errors from a $u_x=0$ boundary condition',
+               2,
+               'diffu:exer:1D:ux:onesided',
+               'diffu:exer:1D:ux:onesided'),
+              ('Exercise 3: Experiment with open boundary conditions in 1D',
+               2,
+               'diffu:exer:1D:openBC',
+               'diffu:exer:1D:openBC'),
+              ('Exercise 4: Simulate a diffused Gaussian peak in 2D/3D',
+               2,
+               None,
+               '___sec39'),
+              ('Exercise 5: Examine stability of a diffusion model with a source term',
+               2,
+               'diffu:exer:uterm',
+               'diffu:exer:uterm'),
+              ('Diffusion in heterogeneous media',
+               1,
+               'diffu:varcoeff',
+               'diffu:varcoeff'),
+              ('Discretization',
+               2,
+               'diffu:varcoeff:discr',
+               'diffu:varcoeff:discr'),
+              ('Stationary solution',
+               2,
+               'diffu:varcoeff:stationary',
+               'diffu:varcoeff:stationary'),
+              ('Piecewise constant medium',
+               2,
+               'diffu:varcoeff:piecewise',
+               'diffu:varcoeff:piecewise'),
+              ('Implementation',
+               2,
+               'diffu:varcoeff:impl',
+               'diffu:varcoeff:impl'),
+              ('Diffusion equation in axi-symmetric geometries',
+               2,
+               'diffu:fd2:radial',
+               'diffu:fd2:radial'),
+              ('Diffusion equation in spherically-symmetric geometries',
+               2,
+               'diffu:fd2:spherical',
+               'diffu:fd2:spherical'),
+              ('Discretization in spherical coordinates',
+               3,
+               None,
+               '___sec48'),
+              ('Discretization in Cartesian coordinates',
+               3,
+               None,
+               '___sec49'),
+              ('Exercises', 1, None, '___sec50'),
+              ('Exercise 6: Stabilizing the Crank-Nicolson method by Rannacher time stepping',
+               2,
+               'diffu:exer:CN:Rannacher',
+               'diffu:exer:CN:Rannacher'),
+              ('Project 7: Energy estimates for diffusion problems',
+               2,
+               'diffu:exer:energy:estimates',
+               'diffu:exer:energy:estimates'),
+              ('Exercise 8: Splitting methods and preconditioning',
+               2,
+               'diffu:exer:splitting_prec',
+               'diffu:exer:splitting_prec'),
+              ('Diffusion in 2D', 1, 'diffu:2D', 'diffu:2D'),
+              ('Discretization', 2, 'diffu:2D:discr', 'diffu:2D:discr'),
+              ('Numbering of mesh points versus equations and unknowns',
+               2,
+               'diffu:2D:numbering',
+               'diffu:2D:numbering'),
+              ('Algorithm for setting up the coefficient matrix',
+               2,
+               'diffu:2D:alg',
+               'diffu:2D:alg'),
+              ('Implementation with a dense coefficient matrix',
+               2,
+               'diffu:2D:impl:dense',
+               'diffu:2D:impl:dense'),
+              ('Verification: exact numerical solution',
+               2,
+               'diffu:2D:verify',
+               'diffu:2D:verify'),
+              ('Verification: convergence rates',
+               2,
+               'diffu:2D:convrate',
+               'diffu:2D:convrate'),
+              ('Implementation with a sparse coefficient matrix',
+               2,
+               'diffu:2D:impl:sparse',
+               'diffu:2D:impl:sparse'),
+              ('Understanding the diagonals', 3, None, '___sec62'),
+              ('Filling the diagonals', 3, None, '___sec63'),
+              ('Filling the right-hand side; scalar version',
+               3,
+               None,
+               '___sec64'),
+              ('Filling the right-hand side; vectorized version',
+               3,
+               None,
+               '___sec65'),
+              ('Verification', 3, None, '___sec66'),
+              ('The Jacobi iterative method', 2, None, '___sec67'),
+              ('Implementation of the Jacobi method',
+               2,
+               'diffu:2D:Jacobi:impl',
+               'diffu:2D:Jacobi:impl'),
+              ('Test problem: diffusion of a sine hill',
+               2,
+               'diffu:2D:Jacobi:impl:hill',
+               'diffu:2D:Jacobi:impl:hill'),
+              ('The relaxed Jacobi method and its relation to the Forward Euler method',
+               2,
+               'diffu:2D:Jacobi_vs_FE',
+               'diffu:2D:Jacobi_vs_FE'),
+              ('The Gauss-Seidel and SOR methods',
+               2,
+               'diffu:2D:SOR',
+               'diffu:2D:SOR'),
+              ('Scalar implementation of the SOR method',
+               2,
+               'diffu:2D:SOR:impl:scalar',
+               'diffu:2D:SOR:impl:scalar'),
+              ('Vectorized implementation of the SOR method',
+               2,
+               'diffu:2D:SOR:impl:vectorized',
+               'diffu:2D:SOR:impl:vectorized'),
+              ('Direct versus iterative methods',
+               2,
+               'diffu:2D:direct_vs_iter',
+               'diffu:2D:direct_vs_iter'),
+              ('Direct methods', 3, None, '___sec75'),
+              ('Iterative methods', 3, None, '___sec76'),
+              ('The Conjugate gradient method',
+               2,
+               'diffu:2D:CG',
+               'diffu:2D:CG'),
+              ('Random walk', 1, 'diffu:randomwalk', 'diffu:randomwalk'),
+              ('Random walk in 1D',
+               2,
+               'diffu:randomwalk:1D',
+               'diffu:randomwalk:1D'),
+              ('Statistical considerations',
+               2,
+               'diffu:randomwalk:1D:EVar',
+               'diffu:randomwalk:1D:EVar'),
+              ('Playing around with some code',
+               2,
+               'diffu:randomwalk:1D:code1',
+               'diffu:randomwalk:1D:code1'),
+              ('Scalar code', 3, None, '___sec82'),
+              ('Vectorized code', 3, None, '___sec83'),
+              ('Fixing the random sequence', 3, None, '___sec84'),
+              ('Verification', 3, None, '___sec85'),
+              ('Equivalence with diffusion',
+               2,
+               'diffu:randomwalk:1D:pde',
+               'diffu:randomwalk:1D:pde'),
+              ('Implementation of multiple walks', 2, None, '___sec87'),
+              ('Scalar version', 3, None, '___sec88'),
+              ('Vectorized version', 3, None, '___sec89'),
+              ('Improved vectorized version', 3, None, '___sec90'),
+              ('Remark on vectorized code and parallelization',
+               3,
+               None,
+               '___sec91'),
+              ('Test function', 3, None, '___sec92'),
+              ('Demonstration of multiple walks', 2, None, '___sec93'),
+              ('Ascii visualization of 1D random walk',
+               2,
+               'diffu:randomwalk:1D:avplotter',
+               'diffu:randomwalk:1D:avplotter'),
+              ('Random walk as a stochastic equation',
+               2,
+               'diffu:randomwalk:1D:ode',
+               'diffu:randomwalk:1D:ode'),
+              ('Random walk in multiple space dimensions',
+               1,
+               'diffu:randomwalk:2D',
+               'diffu:randomwalk:2D'),
+              ('Random walk in 2D', 2, None, '___sec97'),
+              ('Random walk in any number of space dimensions',
+               2,
+               None,
+               '___sec98'),
+              ('Multiple random walks in any number of space dimensions',
+               2,
+               None,
+               '___sec99'),
+              ('Scalar code', 3, None, '___sec100'),
+              ('Vectorized code', 3, None, '___sec101'),
+              ('Bibliography', 1, None, '___sec102')]}
+end of tocinfo -->
+
+<body>
+
+
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: {
+     equationNumbers: {  autoNumber: "none"  },
+     extensions: ["AMSmath.js", "AMSsymbols.js", "autobold.js", "color.js"]
+  }
+});
+</script>
+<script type="text/javascript"
+ src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+<!-- newcommands_keep.tex -->
+$$
+\newcommand{\half}{\frac{1}{2}}
+\newcommand{\tp}{\thinspace .}
+\newcommand{\uex}{{u_{\small\mbox{e}}}}
+\newcommand{\Aex}{{A_{\small\mbox{e}}}}
+\newcommand{\E}[1]{\hbox{E}\lbrack #1 \rbrack}
+\newcommand{\Var}[1]{\hbox{Var}\lbrack #1 \rbrack}
+\newcommand{\Oof}[1]{\mathcal{O}(#1)}
+\newcommand{\dfc}{\alpha}  % diffusion coefficient
+\newcommand{\dx}{\, \mathrm{d}x}
+\newcommand{\ds}{\, \mathrm{d}s}
+$$
+
+
+
+
+    
+<!-- Bootstrap navigation bar -->
+<div class="navbar navbar-default navbar-fixed-top">
+  <div class="navbar-header">
+    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+    </button>
+    <a class="navbar-brand" href="diffu-sol.html">Finite difference methods for diffusion processes</a>
+  </div>
+
+  <div class="navbar-collapse collapse navbar-responsive-collapse">
+    <ul class="nav navbar-nav navbar-right">
+      <li class="dropdown">
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown">Contents <b class="caret"></b></a>
+        <ul class="dropdown-menu">
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:pde1:FEsec" style="font-size: 80%;"><b>An explicit method for the 1D diffusion equation</b></a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec1" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;The initial-boundary value problem for 1D diffusion</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:pde1:FE" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Forward Euler scheme</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:pde1:FE:code" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Implementation</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:pde1:FE:verify" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Verification</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:pde1:FE:experiments" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Numerical experiments</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:pde1:implicit" style="font-size: 80%;"><b>Implicit methods for the 1D diffusion equation</b></a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:pde1:BE" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Backward Euler scheme</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:pde1:impl:sparse" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Sparse matrix implementation</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:pde1:CN" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Crank-Nicolson scheme</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:pde1:theta" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;The \( \theta \) rule</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:pde1:theta:experiments" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Experiments</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec12" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;The Laplace and Poisson equation</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:pde1:analysis" style="font-size: 80%;"><b>Analysis of schemes for the diffusion equation</b></a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:pde1:analysis:uex" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Properties of the solution</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec15" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Similarity solution</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec16" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Solution for a Gaussian pulse</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec17" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Solution for a sine component</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec18" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Example: Diffusion of a discontinues profile</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec19" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Analysis of discrete equations</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:pde1:analysis:details" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Analysis of the finite difference schemes</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec21" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Stability</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec22" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Accuracy</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:pde1:analysis:FE" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Analysis of the Forward Euler scheme</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec24" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Stability</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec25" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Accuracy</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:pde1:analysis:BE" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Analysis of the Backward Euler scheme</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec27" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Stability</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:pde1:analysis:CN" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Analysis of the Crank-Nicolson scheme</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec29" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Stability</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec30" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Summary of accuracy of amplification factors</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:highdim:analysis" style="font-size: 80%;"><b>Extending the analysis to 2D and 3D</b></a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:2D:analysis" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Analysis of the 2D diffusion equation</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec33" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The Forward Euler scheme</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec34" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The Backward Euler scheme</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec35" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;The Crank-Nicolson scheme</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:exer:1D:gaussian:symmetric" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Exercise 1: Explore symmetry in a 1D problem</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:exer:1D:ux:onesided" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Exercise 2: Investigate approximation errors from a \( u_x=0 \) boundary condition</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:exer:1D:openBC" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Exercise 3: Experiment with open boundary conditions in 1D</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec39" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Exercise 4: Simulate a diffused Gaussian peak in 2D/3D</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:exer:uterm" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Exercise 5: Examine stability of a diffusion model with a source term</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:varcoeff" style="font-size: 80%;"><b>Diffusion in heterogeneous media</b></a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:varcoeff:discr" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Discretization</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:varcoeff:stationary" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Stationary solution</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:varcoeff:piecewise" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Piecewise constant medium</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:varcoeff:impl" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Implementation</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:fd2:radial" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Diffusion equation in axi-symmetric geometries</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:fd2:spherical" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Diffusion equation in spherically-symmetric geometries</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec48" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Discretization in spherical coordinates</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec49" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Discretization in Cartesian coordinates</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec50" style="font-size: 80%;"><b>Exercises</b></a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:exer:CN:Rannacher" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Exercise 6: Stabilizing the Crank-Nicolson method by Rannacher time stepping</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:exer:energy:estimates" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Project 7: Energy estimates for diffusion problems</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:exer:splitting_prec" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Exercise 8: Splitting methods and preconditioning</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:2D" style="font-size: 80%;"><b>Diffusion in 2D</b></a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:2D:discr" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Discretization</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:2D:numbering" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Numbering of mesh points versus equations and unknowns</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:2D:alg" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Algorithm for setting up the coefficient matrix</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:2D:impl:dense" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Implementation with a dense coefficient matrix</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:2D:verify" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Verification: exact numerical solution</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:2D:convrate" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Verification: convergence rates</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:2D:impl:sparse" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Implementation with a sparse coefficient matrix</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec62" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Understanding the diagonals</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec63" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Filling the diagonals</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec64" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Filling the right-hand side; scalar version</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec65" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Filling the right-hand side; vectorized version</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec66" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Verification</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec67" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;The Jacobi iterative method</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:2D:Jacobi:impl" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Implementation of the Jacobi method</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:2D:Jacobi:impl:hill" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Test problem: diffusion of a sine hill</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:2D:Jacobi_vs_FE" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;The relaxed Jacobi method and its relation to the Forward Euler method</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:2D:SOR" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;The Gauss-Seidel and SOR methods</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:2D:SOR:impl:scalar" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Scalar implementation of the SOR method</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:2D:SOR:impl:vectorized" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Vectorized implementation of the SOR method</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:2D:direct_vs_iter" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Direct versus iterative methods</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec75" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Direct methods</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec76" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Iterative methods</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:2D:CG" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;The Conjugate gradient method</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:randomwalk" style="font-size: 80%;"><b>Random walk</b></a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:randomwalk:1D" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Random walk in 1D</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:randomwalk:1D:EVar" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Statistical considerations</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:randomwalk:1D:code1" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Playing around with some code</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec82" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Scalar code</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec83" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Vectorized code</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec84" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Fixing the random sequence</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec85" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Verification</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:randomwalk:1D:pde" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Equivalence with diffusion</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec87" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Implementation of multiple walks</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec88" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Scalar version</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec89" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Vectorized version</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec90" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Improved vectorized version</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec91" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Remark on vectorized code and parallelization</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec92" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Test function</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#___sec93" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Demonstration of multiple walks</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:randomwalk:1D:avplotter" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Ascii visualization of 1D random walk</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol001.html#diffu:randomwalk:1D:ode" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Random walk as a stochastic equation</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol002.html#diffu:randomwalk:2D" style="font-size: 80%;"><b>Random walk in multiple space dimensions</b></a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol002.html#___sec97" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Random walk in 2D</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol002.html#___sec98" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Random walk in any number of space dimensions</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol002.html#___sec99" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Multiple random walks in any number of space dimensions</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol002.html#___sec100" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Scalar code</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu-sol002.html#___sec101" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Vectorized code</a></li>
+     <!-- navigation toc: --> <li><a href="#___sec102" style="font-size: 80%;"><b>Bibliography</b></a></li>
+
+        </ul>
+      </li>
+    </ul>
+  </div>
+</div>
+</div> <!-- end of navigation bar -->
+
+<div class="container">
+
+<p>&nbsp;</p><p>&nbsp;</p><p>&nbsp;</p> <!-- add vertical space -->
+
+<a name="part0003"></a>
+<!-- !split -->
+
+<h1 id="___sec102">Bibliography </h1>
+
+<p>
+<!-- begin bibliography -->
+
+<ol>
+ <li> <div id="Langtangen_scaling"></div> <b>H. P. Langtangen and G. K. Pedersen</b>. 
+    <em>Scaling of Differential Equations</em>,
+    2015,
+    \urlhttp://tinyurl.com/qfjgxmf/web,
+    <a href="http://tinyurl.com/qfjgxmf/web" target="_self"><tt>http://tinyurl.com/qfjgxmf/web</tt></a>.</li>
+ <li> <div id="Rannacher_1984"></div> <b>R. Rannacher</b>. 
+    Finite element solution of diffusion problems with irregular data,
+    <em>Numerische Mathematik</em>,
+    43,
+    pp. 309-327,
+    1984.</li>
+ <li> <div id="Saad_2003"></div> <b>Y. Saad</b>. 
+    <em>Iterative Methods for Sparse Linear Systems</em>,
+    second edition,
+    SIAM,
+    2003,
+    \urlhttp://www-users.cs.umn.edu/~saad/IterMethBook_2ndEd.pdf,
+    <a href="http://www-users.cs.umn.edu/~saad/IterMethBook_2ndEd.pdf" target="_self"><tt>http://www-users.cs.umn.edu/~saad/IterMethBook_2ndEd.pdf</tt></a>.</li>
+ <li> <div id="Templates_LA"></div> <b>R. Barrett, M. Berry, T. F. Chan, J. Demmel, J. Donato, J. Dongarra, V. Eijkhout, R. Pozo, C. Romine and H. V. d. Vorst</b>. 
+    <em>Templates for the Solution of Linear Systems: Building Blocks for Iterative Methods</em>,
+    second edition,
+    SIAM,
+    1994,
+    \urlhttp://www.netlib.org/linalg/html_templates/Templates.html,
+    <a href="http://www.netlib.org/linalg/html_templates/Templates.html" target="_self"><tt>http://www.netlib.org/linalg/html_templates/Templates.html</tt></a>.</li>
+ <li> <div id="Greif_Ascher_2011"></div> <b>C. Greif and U. M. Ascher</b>. 
+    <em>A First Course in Numerical Methods</em>,
+    <em>Computational Science and Engineering</em>,
+    SIAM,
+    2011.</li>
+</ol>
+
+<!-- end bibliography -->
+
+<p>
+<!-- navigation buttons at the bottom of the page -->
+<ul class="pager">
+  <li class="previous">
+    <a href="._diffu-sol002.html">&larr; Prev</a>
+  </li>
+</ul>
+<!-- ------------------- end of main content --------------- -->
+
+</div>  <!-- end container -->
+<!-- include javascript, jQuery *first* -->
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script src="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+
+<!-- Bootstrap footer
+<footer>
+<a href="http://..."><img width="250" align=right src="http://..."></a>
+</footer>
+-->
+
+
+</body>
+</html>
+    
+
