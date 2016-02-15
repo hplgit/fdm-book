@@ -52,7 +52,7 @@ comments=""
 doc=document
 appendix=document
 
-preprocessor_opt="DOCUMENT=$doc APPENDIX=$appendix BOOK=standalone"
+preprocessor_opt="DOCUMENT=$doc APPENDIX=$appendix BOOK=standalone FEM_BOOK=True"
 no_solutions='--without_solutions --without_answers'
 sphinx=0
 publish=0

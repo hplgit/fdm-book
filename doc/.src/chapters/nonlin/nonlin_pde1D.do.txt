@@ -1,0 +1,1176 @@
+!split
+======= Linearization at the differential equation level =======
+label{nonlin:pdelevel}
+
+The attention is now turned
+to nonlinear partial differential equations (PDEs)
+and application of the techniques explained above for ODEs.
+The model problem is a nonlinear diffusion equation for
+$u(\x,t)$:
+
+!bt
+\begin{align}
+\frac{\partial u}{\partial t} &= \nabla\cdot (\dfc(u)\nabla u) + f(u),\quad
+&\x\in\Omega,\ t\in (0,T],
+label{nonlin:pdelevel:model:pde}
+\\
+-\dfc(u)\frac{\partial u}{\partial n} &= g,\quad &\x\in\partial\Omega_N,\
+t\in (0,T],
+label{nonlin:pdelevel:model:Neumann}
+\\
+u &= u_0,\quad &\x\in\partial\Omega_D,\ t\in (0,T]\tp
+label{nonlin:pdelevel:model:Dirichlet}
+\end{align}
+!et
+
+In the present section, our aim is to discretize this problem in time
+and then present techniques for linearizing the time-discrete PDE
+problem ``at the PDE level'' such that we transform the nonlinear
+stationary PDE problem at each time level into a sequence of linear
+PDE problems, which can be solved using any method for linear
+PDEs. This strategy avoids the solution of systems of nonlinear
+algebraic equations.  In Section ref{nonlin:alglevel:1D} we shall take
+the opposite (and more common) approach: discretize the nonlinear
+problem in time and space first, and then solve the resulting
+nonlinear algebraic equations at each time level by the methods of
+Section ref{nonlin:systems:alg}.  Very often, the two approaches are
+mathematically identical, so there is no preference from a
+computational efficiency point of view.  The details of the ideas
+sketched above will hopefully become clear through the forthcoming
+examples.
+
+
+===== Explicit time integration =====
+label{nonlin:pdelevel:explicit}
+
+The nonlinearities in the PDE are trivial to deal with if we choose an
+explicit time integration method for (ref{nonlin:pdelevel:model:pde}),
+such as the Forward Euler method:
+
+!bt
+\[ [D_t^+ u = \nabla\cdot (\dfc(u)\nabla u) + f(u)]^n,\]
+!et
+or written out,
+
+!bt
+\[ \frac{u^{n+1} - u^n}{\Delta t} = \nabla\cdot (\dfc(u^n)\nabla u^n)
++ f(u^n),\]
+!et
+which is a linear equation in the unknown $u^{n+1}$ with solution
+
+!bt
+\[ u^{n+1} = u^n + \Delta t\nabla\cdot (\dfc(u^n)\nabla u^n) +
+\Delta t f(u^n)\tp \]
+!et
+
+The disadvantage with this discretization is
+the strict stability criterion $\Delta t \leq h^2/(6\max\alpha)$
+for the case $f=0$ and a standard 2nd-order finite difference discretization
+in 3D space with mesh cell sizes $h=\Delta x=\Delta y=\Delta z$.
+
+# BC
+
+===== Backward Euler scheme and Picard iteration =====
+label{nonlin:pdelevel:Picard}
+
+A Backward Euler scheme for (ref{nonlin:pdelevel:model:pde})
+reads
+
+!bt
+\[ [D_t^- u = \nabla\cdot (\dfc(u)\nabla u) + f(u)]^n\tp\]
+!et
+Written out,
+
+!bt
+\begin{equation}
+\frac{u^{n} - u^{n-1}}{\Delta t} = \nabla\cdot (\dfc(u^n)\nabla u^n)
++ f(u^n)\tp
+label{nonlin:pdelevel:pde:BE}
+\end{equation}
+!et
+This is a nonlinear PDE for the unknown function $u^n(\x)$. Such a
+PDE can be viewed as a time-independent PDE where
+$u^{n-1}(\x)$ is a known function.
+
+We introduce a Picard iteration with $k$ as iteration counter.
+A typical linearization of the $\nabla\cdot(\dfc(u^n)\nabla u^n)$ term
+in iteration $k+1$ is to use the previously computed $u^{n,k}$
+approximation in the diffusion coefficient: $\dfc(u^{n,k})$.
+The nonlinear source term is treated similarly: $f(u^{n,k})$.
+The unknown function $u^{n,k+1}$ then fulfills the linear PDE
+
+!bt
+\begin{equation}
+\frac{u^{n,k+1} - u^{n-1}}{\Delta t} = \nabla\cdot (\dfc(u^{n,k})
+\nabla u^{n,k+1})
++ f(u^{n,k})\tp
+label{nonlin:pdelevel:pde:BE:Picard:k}
+\end{equation}
+!et
+The initial guess for the Picard iteration at this time level can be
+taken as the solution at the previous time level: $u^{n,0}=u^{n-1}$.
+
+We can alternatively apply the implementation-friendly
+notation where $u$ corresponds to
+the unknown we want to solve for, i.e., $u^{n,k+1}$ above, and $u^{-}$
+is the most recently computed value, $u^{n,k}$ above. Moreover,
+$u^{(1)}$ denotes the unknown function at the previous time level, $u^{n-1}$
+above. The PDE to be solved in a Picard iteration then looks like
+
+!bt
+\begin{equation}
+\frac{u - u^{(1)}}{\Delta t} = \nabla\cdot (\dfc(u^{-})
+\nabla u)
++ f(u^{-})\tp
+label{nonlin:pdelevel:pde:BE:Picard}
+\end{equation}
+!et
+At the beginning of the iteration we start with the value from the
+previous time level: $u^{-}=u^{(1)}$, and after each
+iteration, $u^{-}$ is updated to $u$.
+
+!bnotice Remark on notation
+The previous derivations of the numerical scheme for time discretizations
+of PDEs have, strictly
+speaking, a somewhat sloppy notation, but it is much used and convenient
+to read. A more precise notation must
+distinguish clearly between the exact solution of the PDE problem,
+here denoted $\uex(\x,t)$, and the exact solution of the spatial
+problem, arising after time discretization at each time level,
+where (ref{nonlin:pdelevel:pde:BE}) is an example. The latter
+is here represented as $u^n(\x)$ and is an approximation to
+$\uex(\x,t_n)$. Then we have another approximation $u^{n,k}(\x)$
+to $u^n(\x)$ when solving the nonlinear PDE problem for
+$u^n$ by iteration methods, as in (ref{nonlin:pdelevel:pde:BE:Picard:k}).
+
+In our notation, $u$ is a synonym for $u^{n,k+1}$ and $u^{(1)}$ is
+a synonym for $u^{n-1}$, inspired by what are natural variable names
+in a code.
+We will usually state the PDE problem in terms of $u$ and
+quickly redefine the symbol $u$ to mean the numerical approximation,
+while $\uex$ is not explicitly introduced unless we need to talk about
+the exact solution and the approximate solution at the same time.
+!enotice
+
+===== Backward Euler scheme and Newton's method =====
+label{nonlin:pdelevel:Newton}
+
+
+At time level $n$, we have to solve the stationary PDE
+(ref{nonlin:pdelevel:pde:BE}). In the previous section, we
+saw how this can be done with Picard iterations.
+Another alternative is to apply the idea of Newton's method
+in a clever way.
+Normally, Newton's method is defined for systems of *algebraic equations*,
+but the idea of the method can be applied at the PDE level too.
+
+=== Linearization via Taylor expansions ===
+
+Let $u^{n,k}$ be an approximation to the unknown $u^n$. We seek a
+better approximation on
+the form
+
+!bt
+\begin{equation}
+u^{n} = u^{n,k} + \delta u\tp
+label{nonlin:pdelevel:Newton:ansatz}
+\end{equation}
+!et
+The idea is to insert (ref{nonlin:pdelevel:Newton:ansatz}) in
+(ref{nonlin:pdelevel:pde:BE}), Taylor expand the nonlinearities
+and keep only the terms that are
+linear in $\delta u$ (which makes (ref{nonlin:pdelevel:Newton:ansatz})
+an approximation for $u^{n}$). Then we can solve a linear PDE for
+the correction $\delta u$ and use (ref{nonlin:pdelevel:Newton:ansatz})
+to find a new approximation
+
+!bt
+\[ u^{n,k+1}=u^{n,k}+\delta u\]
+!et
+to $u^{n}$.
+Repeating this procedure gives a sequence $u^{n,k+1}$, $k=0,1,\ldots$
+that hopefully converges to the goal $u^n$.
+
+Let us carry out all the mathematical details for the nonlinear diffusion
+PDE discretized by the Backward Euler method.
+Inserting (ref{nonlin:pdelevel:Newton:ansatz}) in
+(ref{nonlin:pdelevel:pde:BE}) gives
+
+!bt
+\begin{equation}
+\frac{u^{n,k} +\delta u - u^{n-1}}{\Delta t} =
+\nabla\cdot (\dfc(u^{n,k} + \delta u)\nabla (u^{n,k}+\delta u))
++ f(u^{n,k}+\delta u)\tp
+label{nonlin:pdelevel:pde:BE:Newton1}
+\end{equation}
+!et
+We can Taylor expand $\dfc(u^{n,k} + \delta u)$ and
+$f(u^{n,k}+\delta u)$:
+
+!bt
+\begin{align*}
+\dfc(u^{n,k} + \delta u) & = \dfc(u^{n,k}) + \frac{d\dfc}{du}(u^{n,k})
+\delta u + \Oof{\delta u^2}\approx \dfc(u^{n,k}) + \dfc^{\prime}(u^{n,k})\delta u,\\
+f(u^{n,k}+\delta u) &=  f(u^{n,k}) + \frac{df}{du}(u^{n,k})\delta u
++ \Oof{\delta u^2}\approx f(u^{n,k}) + f^{\prime}(u^{n,k})\delta u\tp
+\end{align*}
+!et
+Inserting the linear approximations of $\dfc$ and $f$ in
+(ref{nonlin:pdelevel:pde:BE:Newton1}) results in
+
+!bt
+\begin{align}
+\frac{u^{n,k} +\delta u - u^{n-1}}{\Delta t} &=
+\nabla\cdot (\dfc(u^{n,k})\nabla u^{n,k}) + f(u^{n,k}) + \nonumber\\
+&\qquad \nabla\cdot (\dfc(u^{n,k})\nabla \delta u)
++ \nabla\cdot (\dfc^{\prime}(u^{n,k})\delta u\nabla u^{n,k}) + \nonumber\\
+&\qquad \nabla\cdot (\dfc^{\prime}(u^{n,k})\delta u\nabla \delta u)
++ f^{\prime}(u^{n,k})\delta u\tp
+label{nonlin:pdelevel:pde:BE:Newton2}
+\end{align}
+!et
+The term $\dfc^{\prime}(u^{n,k})\delta u\nabla \delta u$ is of
+order $\delta u^2$
+and therefore omitted since we expect the correction $\delta u$
+to be small ($\delta u \gg \delta u^2$).
+Reorganizing the equation gives a PDE
+for $\delta u$ that we can write in short form as
+
+!bt
+\[ \delta F(\delta u; u^{n,k}) = -F(u^{n,k}),\]
+!et
+where
+
+!bt
+\begin{align}
+F(u^{n,k}) &= \frac{u^{n,k} - u^{n-1}}{\Delta t} -
+\nabla\cdot (\dfc(u^{n,k})\nabla u^{n,k}) + f(u^{n,k}),
+label{nonlin:pdelevel:pde:BE:Newton2:F}\\
+\delta F(\delta u; u^{n,k}) &=
+- \frac{1}{\Delta t}\delta u +
+\nabla\cdot (\dfc(u^{n,k})\nabla \delta u) + \nonumber\\
+&\quad \nabla\cdot (\dfc^{\prime}(u^{n,k})\delta u\nabla u^{n,k})
++ f^{\prime}(u^{n,k})\delta u\tp
+\end{align}
+!et
+Note that $\delta F$ is a linear function of $\delta u$, and
+$F$ contains only terms that are known, such that
+the PDE for $\delta u$ is indeed linear.
+
+!bnotice Observations
+The notational form $\delta F = -F$ resembles the Newton system $J\delta u =-F$
+for systems of algebraic equations, with $\delta F$ as $J\delta u$.
+The unknown vector in a linear system of algebraic equations enters
+the system as a linear operator in terms of a
+matrix-vector product ($J\delta u$), while at
+the PDE level we have a linear differential operator instead
+($\delta F$).
+!enotice
+
+=== Similarity with Picard iteration ===
+
+We can rewrite the PDE for $\delta u$ in a slightly different way too
+if we define $u^{n,k} + \delta u$ as $u^{n,k+1}$.
+
+!bt
+\begin{align}
+& \frac{u^{n,k+1} - u^{n-1}}{\Delta t} =
+\nabla\cdot (\dfc(u^{n,k})\nabla u^{n,k+1}) + f(u^{n,k})\nonumber\\
+&\qquad  + \nabla\cdot (\dfc^{\prime}(u^{n,k})\delta u\nabla u^{n,k})
++ f^{\prime}(u^{n,k})\delta u\tp
+\end{align}
+!et
+Note that the first line is the same PDE as arise in the Picard
+iteration, while the remaining terms arise from the differentiations
+that are an inherent ingredient in Newton's method.
+
+=== Implementation ===
+
+For coding we want to introduce $u$ for $u^n$, $u^{-}$ for $u^{n,k}$ and
+$u^{(1)}$ for $u^{n-1}$. The formulas for $F$ and $\delta F$
+are then more clearly written as
+
+!bt
+\begin{align}
+F(u^{-}) &= \frac{u^{-} - u^{(1)}}{\Delta t} -
+\nabla\cdot (\dfc(u^{-})\nabla u^{-}) + f(u^{-}),
+label{nonlin:pdelevel:pde:BE:Newton2:F2}\\
+\delta F(\delta u; u^{-}) &=
+- \frac{1}{\Delta t}\delta u +
+\nabla\cdot (\dfc(u^{-})\nabla \delta u) + \nonumber\\
+&\quad \nabla\cdot (\dfc^{\prime}(u^{-})\delta u\nabla u^{-})
++ f^{\prime}(u^{-})\delta u\tp
+\end{align}
+!et
+The form that orders the PDE as the Picard iteration terms plus
+the Newton method's derivative terms becomes
+
+!bt
+\begin{align}
+& \frac{u - u^{(1)}}{\Delta t} =
+\nabla\cdot (\dfc(u^{-})\nabla u) + f(u^{-}) + \nonumber\\
+&\qquad  \gamma(\nabla\cdot (\dfc^{\prime}(u^{-})(u - u^{-})\nabla u^{-})
++ f^{\prime}(u^{-})(u - u^{-}))\tp
+\end{align}
+!et
+The Picard and full Newton versions correspond to
+$\gamma=0$ and $\gamma=1$, respectively.
+
+=== Derivation with alternative notation ===
+
+Some may prefer to derive the linearized PDE for $\delta u$ using
+the more compact notation. We start with inserting $u^n=u^{-}+\delta u$
+to get
+
+!bt
+\[
+\frac{u^{-} +\delta u - u^{n-1}}{\Delta t} =
+\nabla\cdot (\dfc(u^{-} + \delta u)\nabla (u^{-}+\delta u))
++ f(u^{-}+\delta u)\tp
+\]
+!et
+Taylor expanding,
+
+!bt
+\begin{align*}
+\dfc(u^{-} + \delta u) & \approx \dfc(u^{-}) + \dfc^{\prime}(u^{-})\delta u,\\
+f(u^{-}+\delta u) & \approx f(u^{-}) + f^{\prime}(u^{-})\delta u,
+\end{align*}
+!et
+and inserting these expressions gives a less cluttered PDE for $\delta u$:
+
+!bt
+\begin{align*}
+\frac{u^{-} +\delta u - u^{n-1}}{\Delta t} &=
+\nabla\cdot (\dfc(u^{-})\nabla u^{-}) + f(u^{-}) + \\
+&\qquad \nabla\cdot (\dfc(u^{-})\nabla \delta u)
++ \nabla\cdot (\dfc^{\prime}(u^{-})\delta u\nabla u^{-}) + \\
+&\qquad \nabla\cdot (\dfc^{\prime}(u^{-})\delta u\nabla \delta u)
++ f^{\prime}(u^{-})\delta u\tp
+\end{align*}
+!et
+
+===== Crank-Nicolson discretization =====
+label{nonlin:pdelevel:Picard:CN}
+
+A Crank-Nicolson discretization of
+(ref{nonlin:pdelevel:model:pde}) applies a centered difference
+at $t_{n+\frac{1}{2}}$:
+
+!bt
+\[ [D_t u = \nabla\cdot (\dfc(u)\nabla u) + f(u)]^{n+\frac{1}{2}}\tp\]
+!et
+The standard technique is to apply an arithmetic average for
+quantities defined between two mesh points, e.g.,
+
+!bt
+\[ u^{n+\frac{1}{2}}\approx \frac{1}{2}(u^n + u^{n+1})\tp\]
+!et
+However, with nonlinear terms we have many choices of formulating
+an arithmetic mean:
+
+!bt
+\begin{align}
+[f(u)]^{n+\frac{1}{2}} &\approx f(\frac{1}{2}(u^n + u^{n+1}))
+= [f(\overline{u}^t)]^{n+\frac{1}{2}},\\
+[f(u)]^{n+\frac{1}{2}} &\approx \frac{1}{2}(f(u^n) + f(u^{n+1}))
+=[\overline{f(u)}^t]^{n+\frac{1}{2}},\\
+[\dfc(u)\nabla u]^{n+\frac{1}{2}} &\approx
+\dfc(\frac{1}{2}(u^n + u^{n+1}))\nabla (\frac{1}{2}(u^n + u^{n+1}))
+= [\dfc(\overline{u}^t)\nabla \overline{u}^t]^{n+\frac{1}{2}},\\
+[\dfc(u)\nabla u]^{n+\frac{1}{2}} &\approx
+\frac{1}{2}(\dfc(u^n) + \dfc(u^{n+1}))\nabla (\frac{1}{2}(u^n + u^{n+1}))
+= [\overline{\dfc(u)}^t\nabla\overline{u}^t]^{n+\frac{1}{2}},\\
+[\dfc(u)\nabla u]^{n+\frac{1}{2}} &\approx
+\frac{1}{2}(\dfc(u^n)\nabla u^n + \dfc(u^{n+1})\nabla u^{n+1})
+= [\overline{\dfc(u)\nabla u}^t]^{n+\frac{1}{2}}\tp
+\end{align}
+!et
+
+A big question is whether there are significant differences in accuracy
+between taking the products of arithmetic means or taking the arithmetic
+mean of products. Exercise ref{nonlin:exer:products:arith:mean} investigates
+this question, and the answer is that the approximation is
+$\Oof{\Delta t^2}$ in both cases.
+
+
+!split
+======= Discretization of 1D stationary nonlinear differential equations =======
+label{nonlin:alglevel:1D}
+
+Section ref{nonlin:pdelevel} presented methods for linearizing
+time-discrete PDEs directly prior to discretization in space.  We can
+alternatively carry out the discretization in space of the
+time-discrete nonlinear PDE problem and get a system of nonlinear
+algebraic equations, which can be solved by Picard iteration or
+Newton's method as presented in Section ref{nonlin:systems:alg}.
+This latter approach will now be described in detail.
+
+We shall work with the 1D problem
+
+!bt
+\begin{equation}
+-(\dfc(u)u^{\prime})^{\prime} + au = f(u),\quad x\in (0,L),
+\quad \dfc(u(0))u^{\prime}(0) = C,\ u(L)=D
+\tp
+label{nonlin:alglevel:1D:pde}
+\end{equation}
+!et
+
+The problem (ref{nonlin:alglevel:1D:pde}) arises from the stationary
+limit of a diffusion equation,
+
+!bt
+\begin{equation}
+\frac{\partial u}{\partial t} = \frac{\partial}{\partial x}\left(
+\alpha(u)\frac{\partial u}{\partial x}\right) - au + f(u),
+label{nonlin:alglevel:1D:pde:tver}
+\end{equation}
+!et
+as $t\rightarrow\infty$ and $\partial u/\partial t\rightarrow 0$.
+Alternatively, the problem (ref{nonlin:alglevel:1D:pde}) arises
+at each time level from implicit time discretization of
+(ref{nonlin:alglevel:1D:pde:tver}). For example, a Backward Euler
+scheme for (ref{nonlin:alglevel:1D:pde:tver}) leads to
+
+!bt
+\begin{equation}
+\frac{u^{n}-u^{n-1}}{\Delta t} =
+\frac{d}{dx}\left(
+\alpha(u^n)\frac{du^n}{dx}\right) - au^n + f(u^n)\tp
+label{nonlin:alglevel:1D:pde:tver:BE}
+\end{equation}
+!et
+Introducing $u(x)$ for $u^n(x)$, $u^{(1)}$ for $u^{n-1}$, and defining $f(u)$
+in (ref{nonlin:alglevel:1D:pde}) to be $f(u)$ in
+(ref{nonlin:alglevel:1D:pde:tver:BE}) plus $u^{n-1}/\Delta t$, gives
+(ref{nonlin:alglevel:1D:pde}) with $a=1/\Delta t$.
+
+
+===== Finite difference discretization =====
+label{nonlin:alglevel:1D:fd}
+
+% if FEM_BOOK:
+Since the technical steps in finite difference discretization in space
+are so much simpler than the steps in the finite element method, we
+start with finite difference to illustrate the concept of handling this
+nonlinear problem and minimize the spatial discretization details.
+% endif
+
+The nonlinearity in the differential equation
+(ref{nonlin:alglevel:1D:pde}) poses no more difficulty than a variable
+coefficient, as in the term $(\dfc(x)u^{\prime})^{\prime}$.  We can
+therefore use a standard finite difference approach to discretizing
+the Laplace term with a variable coefficient:
+
+!bt
+\[ [-D_x\dfc D_x u +au = f]_i\tp\]
+!et
+Writing this out for a uniform mesh with points $x_i=i\Delta x$,
+$i=0,\ldots,N_x$, leads to
+
+!bt
+\begin{align}
+-\frac{1}{\Delta x^2}
+\left(\dfc_{i+\half}(u_{i+1}-u_i) -
+\dfc_{i-\half}(u_{i}-u_{i-1})\right)
++ au_i &= f(u_i)\tp
+label{nonlin:alglevel:1D:fd:deq0}
+\end{align}
+!et
+This equation is valid at all the mesh points $i=0,1,\ldots,N_x-1$.
+At $i=N_x$ we have the Dirichlet condition $u_i=0$.
+The only difference from the case with $(\dfc(x)u^{\prime})^{\prime}$ and $f(x)$ is that
+now $\dfc$ and $f$ are functions of $u$ and not only on $x$:
+$(\dfc(u(x))u^{\prime})^{\prime}$ and $f(u(x))$.
+
+The quantity $\dfc_{i+\half}$, evaluated between two mesh points,
+needs a comment. Since $\dfc$ depends on $u$ and $u$ is only known
+at the mesh points, we need to express $\dfc_{i+\half}$ in
+terms of $u_i$ and $u_{i+1}$. For this purpose we use an arithmetic
+mean, although a harmonic mean is also common in this context if
+$\dfc$ features large jumps.
+There are two choices of arithmetic means:
+
+!bt
+\begin{align}
+\dfc_{i+\half} &\approx
+\dfc(\half(u_i + u_{i+1}) =
+[\dfc(\overline{u}^x)]^{i+\half},
+label{nonlin:alglevel:1D:fd:dfc:mean:u}
+\\
+\dfc_{i+\half} &\approx
+\half(\dfc(u_i) + \dfc(u_{i+1})) = [\overline{\dfc(u)}^x]^{i+\half}
+label{nonlin:alglevel:1D:fd:dfc:mean:dfc}
+\end{align}
+!et
+Equation (ref{nonlin:alglevel:1D:fd:deq0}) with
+the latter approximation then looks like
+
+!bt
+\begin{align}
+&-\frac{1}{2\Delta x^2}
+\left((\dfc(u_i)+\dfc(u_{i+1}))(u_{i+1}-u_i) -
+(\dfc(u_{i-1})+\dfc(u_{i}))(u_{i}-u_{i-1})\right)\nonumber\\
+&\qquad\qquad + au_i = f(u_i),
+label{nonlin:alglevel:1D:fd:deq}
+\end{align}
+!et
+or written more compactly,
+
+!bt
+\[ [-D_x\overline{\dfc}^x D_x u +au = f]_i\tp\]
+!et
+
+At mesh point $i=0$ we have the boundary condition $\dfc(u)u^{\prime}=C$,
+which is discretized by
+
+!bt
+\[ [\dfc(u)D_{2x}u = C]_0,\]
+!et
+meaning
+
+!bt
+\begin{equation}
+\dfc(u_0)\frac{u_{1} - u_{-1}}{2\Delta x} = C\tp
+label{nonlin:alglevel:1D:fd:Neumann:x0}
+\end{equation}
+!et
+The fictitious value $u_{-1}$ can be eliminated with the aid
+of (ref{nonlin:alglevel:1D:fd:deq}) for $i=0$.
+Formally, (ref{nonlin:alglevel:1D:fd:deq}) should be solved with
+respect to $u_{i-1}$ and that value (for $i=0$) should be inserted in
+(ref{nonlin:alglevel:1D:fd:Neumann:x0}), but it is algebraically
+much easier to do it the other way around. Alternatively, one can
+use a ghost cell $[-\Delta x,0]$ and update the $u_{-1}$ value
+in the ghost cell according to (ref{nonlin:alglevel:1D:fd:Neumann:x0})
+after every Picard or Newton iteration. Such an approach means that
+we use a known $u_{-1}$ value in (ref{nonlin:alglevel:1D:fd:deq})
+from the previous iteration.
+
+===== Solution of algebraic equations =====
+
+=== The structure of the equation system ===
+
+The nonlinear algebraic equations (ref{nonlin:alglevel:1D:fd:deq}) are
+of the form $A(u)u = b(u)$ with
+
+!bt
+\begin{align*}
+A_{i,i} &= \frac{1}{2\Delta x^2}(\dfc(u_{i-1}) + 2\dfc(u_{i})
+\dfc(u_{i+1})) + a,\\
+A_{i,i-1} &= -\frac{1}{2\Delta x^2}(\dfc(u_{i-1}) + \dfc(u_{i})),\\
+A_{i,i+1} &= -\frac{1}{2\Delta x^2}(\dfc(u_{i}) + \dfc(u_{i+1})),\\
+b_i &= f(u_i)\tp
+\end{align*}
+!et
+The matrix $A(u)$ is tridiagonal: $A_{i,j}=0$ for $j > i+1$ and $j < i-1$.
+
+The above expressions are valid for internal mesh points $1\leq i\leq N_x-1$.
+For $i=0$ we need to express $u_{i-1}=u_{-1}$ in terms of $u_1$ using
+(ref{nonlin:alglevel:1D:fd:Neumann:x0}):
+
+!bt
+\begin{equation}
+u_{-1} = u_1 -\frac{2\Delta x}{\dfc(u_0)}C\tp
+label{nonlin:alglevel:1D:fd:Neumann:x0:um1}
+\end{equation}
+!et
+This value must be inserted in $A_{0,0}$. The expression for $A_{i,i+1}$
+applies for $i=0$, and $A_{i,i-1}$ does not enter the system when $i=0$.
+
+Regarding the last equation, its form depends on whether we include
+the Dirichlet condition $u(L)=D$, meaning $u_{N_x}=D$, in the
+nonlinear algebraic equation system or not. Suppose we choose
+$(u_0,u_1,\ldots,u_{N_x-1})$ as unknowns, later referred to as
+*systems without Dirichlet conditions*. The last equation
+corresponds to $i=N_x-1$. It involves the boundary value $u_{N_x}$,
+which is substituted by $D$. If the unknown vector includes the
+boundary value, $(u_0,u_1,\ldots,u_{N_x})$, later referred to as
+*system including Dirichlet conditions*, the equation for $i=N_x-1$
+just involves the unknown $u_{N_x}$, and the final equation becomes
+$u_{N_x}=D$, corresponding to $A_{i,i}=1$ and $b_i=D$ for $i=N_x$.
+
+=== Picard iteration ===
+
+The obvious Picard iteration scheme is to use previously computed
+values of $u_i$ in $A(u)$ and $b(u)$, as described more in detail in
+Section ref{nonlin:systems:alg}. With the notation $u^{-}$ for the
+most recently computed value of $u$, we have the system $F(u)\approx
+\hat F(u) = A(u^{-})u - b(u^{-})$, with $F=(F_0,F_1,\ldots,F_m)$,
+$u=(u_0,u_1,\ldots,u_m)$.  The index $m$ is $N_x$ if the system
+includes the Dirichlet condition as a separate equation and $N_x-1$
+otherwise.  The matrix $A(u^{-})$ is tridiagonal, so the solution
+procedure is to fill a tridiagonal matrix data structure and the
+right-hand side vector with the right numbers and call a Gaussian
+elimination routine for tridiagonal linear systems.
+
+=== Mesh with two cells ===
+
+It helps on the understanding of the details to write out all the
+mathematics in a specific
+case with a small mesh, say just two cells ($N_x=2$). We use $u^{-}_i$
+for the $i$-th component in $u^{-}$.
+
+The starting point is the basic expressions for the
+nonlinear equations at mesh point $i=0$ and $i=1$ are
+
+!bt
+\begin{align}
+A_{0,-1}u_{-1} + A_{0,0}u_0 + A_{0,1}u_1 &= b_0,
+label{nonlin:alglevel:1D:fd:2x2:x0}\\
+A_{1,0}u_{0} + A_{1,1}u_1 + A_{1,2}u_2 &= b_1\tp
+label{nonlin:alglevel:1D:fd:2x2:x1}
+\end{align}
+!et
+Equation (ref{nonlin:alglevel:1D:fd:2x2:x0}) written out reads
+
+!bt
+\begin{align*}
+\frac{1}{2\Delta x^2}(& -(\dfc(u_{-1}) + \dfc(u_{0}))u_{-1}\, +\\
+& (\dfc(u_{-1}) + 2\dfc(u_{0}) + \dfc(u_{1}))u_0\, -\\
+& (\dfc(u_{0}) + \dfc(u_{1})))u_1 + au_0
+=f(u_0)\tp
+\end{align*}
+!et
+We must then replace $u_{-1}$ by
+(ref{nonlin:alglevel:1D:fd:Neumann:x0:um1}).
+With Picard iteration we get
+# u_{-1} = u_1 -\frac{2\Delta x}{\dfc(u_0)}C
+
+!bt
+\begin{align*}
+\frac{1}{2\Delta x^2}(& -(\dfc(u^-_{-1}) + 2\dfc(u^-_{0}
++ \dfc(u^-_{1}))u_1\, +\\
+&(\dfc(u^-_{-1}) + 2\dfc(u^-_{0}) + \dfc(u^-_{1}))u_0
+ + au_0\\
+&=f(u^-_0) -
+\frac{1}{\dfc(u^-_0)\Delta x}(\dfc(u^-_{-1}) + \dfc(u^-_{0}))C,
+\end{align*}
+!et
+where
+
+!bt
+\[ u^-_{-1} = u_1^- -\frac{2\Delta x}{\dfc(u^-_0)}C\tp\]
+!et
+
+Equation (ref{nonlin:alglevel:1D:fd:2x2:x1}) contains the unknown $u_2$
+for which we have a Dirichlet condition. In case we omit the
+condition as a separate equation, (ref{nonlin:alglevel:1D:fd:2x2:x1})
+with Picard iteration becomes
+
+!bt
+\begin{align*}
+\frac{1}{2\Delta x^2}(&-(\dfc(u^-_{0}) + \dfc(u^-_{1}))u_{0}\, + \\
+&(\dfc(u^-_{0}) + 2\dfc(u^-_{1}) + \dfc(u^-_{2}))u_1\, -\\
+&(\dfc(u^-_{1}) + \dfc(u^-_{2})))u_2 + au_1
+=f(u^-_1)\tp
+\end{align*}
+!et
+We must now move the $u_2$ term to the right-hand side and replace all
+occurrences of $u_2$ by $D$:
+
+!bt
+\begin{align*}
+\frac{1}{2\Delta x^2}(&-(\dfc(u^-_{0}) + \dfc(u^-_{1}))u_{0}\, +\\
+& (\dfc(u^-_{0}) + 2\dfc(u^-_{1}) + \dfc(D))u_1 + au_1\\
+&=f(u^-_1) + \frac{1}{2\Delta x^2}(\dfc(u^-_{1}) + \dfc(D))D\tp
+\end{align*}
+!et
+
+The two equations can be written as a $2\times 2$ system:
+
+!bt
+\[
+\left(\begin{array}{cc}
+B_{0,0}& B_{0,1}\\
+B_{1,0} & B_{1,1}
+\end{array}\right)
+\left(\begin{array}{c}
+u_0\\
+u_1
+\end{array}\right)
+=
+\left(\begin{array}{c}
+d_0\\
+d_1
+\end{array}\right),
+\]
+!et
+where
+
+!bt
+\begin{align}
+B_{0,0} &=\frac{1}{2\Delta x^2}(\dfc(u^-_{-1}) + 2\dfc(u^-_{0}) + \dfc(u^-_{1}))
++ a\\
+B_{0,1} &=
+-\frac{1}{2\Delta x^2}(\dfc(u^-_{-1}) + 2\dfc(u^-_{0})
++ \dfc(u^-_{1})),\\
+B_{1,0} &=
+-\frac{1}{2\Delta x^2}(\dfc(u^-_{0}) + \dfc(u^-_{1})),\\
+B_{1,1} &=
+\frac{1}{2\Delta x^2}(\dfc(u^-_{0}) + 2\dfc(u^-_{1}) + \dfc(D)) + a,\\
+d_0 &=
+f(u^-_0) -
+\frac{1}{\dfc(u^-_0)\Delta x}(\dfc(u^-_{-1}) + \dfc(u^-_{0}))C,\\
+d_1 &= f(u^-_1) + \frac{1}{2\Delta x^2}(\dfc(u^-_{1}) + \dfc(D))D\tp
+\end{align}
+!et
+
+The system with the Dirichlet condition becomes
+
+!bt
+\[
+\left(\begin{array}{ccc}
+B_{0,0}& B_{0,1} & 0\\
+B_{1,0} & B_{1,1} & B_{1,2}\\
+0  & 0 & 1
+\end{array}\right)
+\left(\begin{array}{c}
+u_0\\
+u_1\\
+u_2
+\end{array}\right)
+=
+\left(\begin{array}{c}
+d_0\\
+d_1\\
+D
+\end{array}\right),
+\]
+!et
+with
+
+!bt
+\begin{align}
+B_{1,1} &=
+\frac{1}{2\Delta x^2}(\dfc(u^-_{0}) + 2\dfc(u^-_{1}) + \dfc(u_2)) + a,\\
+B_{1,2} &= -
+\frac{1}{2\Delta x^2}(\dfc(u^-_{1}) + \dfc(u_2))),\\
+d_1 &= f(u^-_1)\tp
+\end{align}
+!et
+Other entries are as in the $2\times 2$ system.
+
+
+=== Newton's method ===
+
+The Jacobian must be derived in order to use Newton's method. Here it means
+that we need to differentiate $F(u)=A(u)u - b(u)$ with respect to
+the unknown parameters
+$u_0,u_1,\ldots,u_m$ ($m=N_x$ or $m=N_x-1$, depending on whether the
+Dirichlet condition is included in the nonlinear system $F(u)=0$ or not).
+Nonlinear equation number $i$ has the structure
+
+!bt
+\[ F_i = A_{i,i-1}(u_{i-1},u_i)u_{i-1} +
+A_{i,i}(u_{i-1},u_i,u_{i+1})u_i +
+A_{i,i+1}(u_i, u_{i+1})u_{i+1} - b_i(u_i)\tp\]
+!et
+Computing the Jacobian requires careful differentiation. For example,
+
+!bt
+\begin{align*}
+\frac{\partial}{\partial u_i}(A_{i,i}(u_{i-1},u_i,u_{i+1})u_i) &=
+\frac{\partial A_{i,i}}{\partial u_i}u_i + A_{i,i}
+\frac{\partial u_i}{\partial u_i}\\
+&=
+\frac{\partial}{\partial u_i}(
+\frac{1}{2\Delta x^2}(\dfc(u_{i-1}) + 2\dfc(u_{i})
++\dfc(u_{i+1})) + a)u_i +\\
+&\quad\frac{1}{2\Delta x^2}(\dfc(u_{i-1}) + 2\dfc(u_{i})
++\dfc(u_{i+1})) + a\\
+&= \frac{1}{2\Delta x^2}(2\dfc^\prime (u_i)u_i
++\dfc(u_{i-1}) + 2\dfc(u_{i})
++\dfc(u_{i+1})) + a\tp
+\end{align*}
+!et
+The complete Jacobian becomes
+
+!bt
+\begin{align*}
+J_{i,i} &= \frac{\partial F_i}{\partial u_i}
+= \frac{\partial A_{i,i-1}}{\partial u_i}u_{i-1}
++ \frac{\partial A_{i,i}}{\partial u_i}u_i
++ A_{i,i}
++ \frac{\partial A_{i,i+1}}{\partial u_i}u_{i+1}
+- \frac{\partial b_i}{\partial u_{i}}\\
+&=
+\frac{1}{2\Delta x^2}(
+-\dfc^{\prime}(u_i)u_{i-1}
++2\dfc^{\prime}(u_i)u_{i}
++\dfc(u_{i-1}) + 2\dfc(u_i) + \dfc(u_{i+1})) +\\
+&\quad a
+-\frac{1}{2\Delta x^2}\dfc^{\prime}(u_{i})u_{i+1}
+- b^{\prime}(u_i),\\
+J_{i,i-1} &= \frac{\partial F_i}{\partial u_{i-1}}
+= \frac{\partial A_{i,i-1}}{\partial u_{i-1}}u_{i-1}
++ A_{i-1,i}
++ \frac{\partial A_{i,i}}{\partial u_{i-1}}u_i
+- \frac{\partial b_i}{\partial u_{i-1}}\\
+&=
+\frac{1}{2\Delta x^2}(
+-\dfc^{\prime}(u_{i-1})u_{i-1} - (\dfc(u_{i-1}) + \dfc(u_i))
++ \dfc^{\prime}(u_{i-1})u_i),\\
+J_{i,i+1} &= \frac{\partial A_{i,i+1}}{\partial u_{i-1}}u_{i+1}
++ A_{i+1,i} +
+\frac{\partial A_{i,i}}{\partial u_{i+1}}u_i
+- \frac{\partial b_i}{\partial u_{i+1}}\\
+&=\frac{1}{2\Delta x^2}(
+-\dfc^{\prime}(u_{i+1})u_{i+1} - (\dfc(u_{i}) + \dfc(u_{i+1}))
++ \dfc^{\prime}(u_{i+1})u_i)
+\tp
+\end{align*}
+!et
+The explicit expression for nonlinear equation number $i$,
+$F_i(u_0,u_1,\ldots)$, arises from moving the $f(u_i)$ term in
+(ref{nonlin:alglevel:1D:fd:deq}) to the left-hand side:
+
+!bt
+\begin{align}
+F_i &= -\frac{1}{2\Delta x^2}
+\left((\dfc(u_i)+\dfc(u_{i+1}))(u_{i+1}-u_i) -
+(\dfc(u_{i-1})+\dfc(u_{i}))(u_{i}-u_{i-1})\right)\nonumber\\
+&\qquad\qquad + au_i - f(u_i) = 0\tp
+label{nonlin:alglevel:1D:fd:deq2}
+\end{align}
+!et
+
+At the boundary point $i=0$, $u_{-1}$ must be replaced using
+the formula (ref{nonlin:alglevel:1D:fd:Neumann:x0:um1}).
+When the Dirichlet condition at $i=N_x$ is not a part of the
+equation system, the last equation $F_m=0$ for $m=N_x-1$
+involves the quantity $u_{N_x-1}$ which must be replaced by $D$.
+If $u_{N_x}$ is treated as an unknown in the system, the
+last equation $F_m=0$ has $m=N_x$ and reads
+
+!bt
+\[ F_{N_x}(u_0,\ldots,u_{N_x}) = u_{N_x} - D = 0\tp\]
+!et
+Similar replacement of $u_{-1}$ and $u_{N_x}$ must be done in
+the Jacobian for the first and last row. When $u_{N_x}$
+is included as an unknown, the last row in the Jacobian
+must help implement the condition $\delta u_{N_x}=0$, since
+we assume that $u$ contains the right Dirichlet value
+at the beginning of the iteration ($u_{N_x}=D$), and then
+the Newton update should be zero for $i=0$, i.e., $\delta u_{N_x}=0$.
+This also forces the right-hand side to be $b_i=0$, $i=N_x$.
+
+We have seen, and can see from the present example, that the
+linear system in Newton's method contains all the terms present
+in the system that arises in the Picard iteration method.
+The extra terms in Newton's method can be multiplied by a factor
+such that it is easy to program one linear system and set this
+factor to 0 or 1 to generate the Picard or Newton system.
+
+# Remark: Neumann cond at x=L and Dirichlet at x=0 leads to different
+# numbering of unknowns and u at mesh points. Must address this
+# in a remark and treat it properly in diffu.
+
+## Must make a program that solves this problem with Picard and Newton
+
+## 2D finite difference example, take from TCSE1
+
+% if FEM_BOOK:
+
+===== Galerkin-type discretization =====
+label{nonlin:alglevel:1D:fe}
+
+For a Galerkin-type discretization, which may be developed into
+a finite element method, we first need to derive the
+variational problem. Let $V$ be an appropriate function space
+with basis functions $\sequencei{\baspsi}$. Because of the
+Dirichlet condition at $x=L$ we require $\baspsi_i(L)=0$, $i\in\If$.
+The approximate solution is written as $u = D + \sum_{j\in\If}c_j\baspsi_j$,
+where the term $D$ can be viewed as a boundary function needed to
+implement the Dirichlet condition $u(L)=D$.
+
+Using Galerkin's method,
+we multiply the differential equation by any $v\in V$ and integrate
+terms with second-order derivatives by parts:
+
+!bt
+\[
+\int_0^L \dfc(u)u^{\prime}v^{\prime}\dx + \int_0^L auv\dx =
+\int_0^L f(u)v\dx + [\dfc(u)u^{\prime}v]_0^L,\quad \forall v\in V\tp
+\]
+!et
+The Neumann condition at the boundary $x=0$ is inserted in the
+boundary term:
+
+!bt
+\[ [\dfc(u)u^{\prime}v]_0^L = \dfc(u(L))u^{\prime}(L)v(L) - \dfc(u(0))u^{\prime}(0)v(0)
+= 0 - Cv(0)=-Cv(0)\tp
+\]
+!et
+(Recall that since $\baspsi_i(L)=0$, any linear combination $v$
+of the basis functions also vanishes at $x=L$: $v(L)=0$.)
+The variational problem is then:
+find $u\in V$ such that
+
+!bt
+\begin{equation}
+\int_0^L \dfc(u)u^{\prime}v^{\prime}\dx + \int_0^L auv\dx =
+\int_0^L f(u)v\dx - Cv(0),\quad \forall v\in V\tp
+label{nonlin:alglevel:1D:pde:varform}
+\end{equation}
+!et
+
+To derive the algebraic equations, we note that $\forall v\in V$ is
+equivalent with $v=\baspsi_i$ for $i\in\If$. Setting $u=D+\sum_jc_j\baspsi_j$
+and sorting terms results in the linear system
+
+!bt
+\begin{align}
+&\sum_{j\in\If}\left(
+\int_0^L \left(\dfc(D+\sum_{k\in\If}c_k\baspsi_k)
+\baspsi_j^{\prime}\baspsi_i^{\prime} + a\baspsi_i\baspsi_j\right)\dx\right)c_j
+\nonumber\\
+\qquad &= \int_0^L f(D+\sum_{k\in\If}c_k\baspsi_k)\baspsi_i\dx -
+C\baspsi_i(0),\quad i\in\If\tp
+\end{align}
+!et
+
+=== Fundamental integration problem ===
+
+Methods that use the Galerkin or weighted residual method face a
+fundamental difficulty in nonlinear problems: how can we integrate a
+terms like $\int_0^L
+\dfc(\sum_{k}c_k\baspsi_k)\baspsi_i^{\prime}\baspsi_j^{\prime}\dx$ and
+$\int_0^L f(\sum_{k}c_k\baspsi_k)\baspsi_i\dx$ when we do not know the
+$c_k$ coefficients in the argument of the $\dfc$ function?  We can
+resort to numerical integration, provided an approximate
+$\sum_kc_k\baspsi_k$ can be used for the argument $u$ in $f$ and
+$\dfc$.  This is the approach used in computer programs.
+
+However, if we want to look more mathematically into the structure of
+the algebraic equations generated by the finite element method in
+nonlinear problems, and compare such equations with those arising in
+the finite difference method, we need techniques that enable
+integration of expressions like $\int_0^L
+f(\sum_{k}c_k\baspsi_k)\baspsi_i\dx$ *by hand*. Two such techniques
+will be shown: the group finite element and numerical integration
+based on the nodes only. Both techniques are approximate, but they
+allow us to see the difference equations in the finite element method.
+The details are worked out in Appendix ref{nonlin:app:fem_vs_fdm}.
+Some readers will prefer to dive into these symbolic calculations
+to gain more understanding of nonlinear finite element equations,
+while others will prefer to continue with computational algorithms
+(in the next two sections) rather than analysis.
+
+===== Picard iteration defined from the variational form =====
+label{nonlin:alglevel:1D:fe:Picard}
+
+Consider the problem (ref{nonlin:alglevel:1D:pde}) with the
+corresponding variational form (ref{nonlin:alglevel:1D:pde:varform}).
+Our aim is to define a Picard iteration based on this variational form
+without any attempt to compute integrals symbolically as in the
+previous three sections.  The idea in Picard iteration is to use a
+previously computed $u$ value in the nonlinear functions $\dfc(u)$ and
+$f(u)$. Let $u^{-}$ be the available approximation to $u$ from the
+previous iteration.  The linearized variational form for Picard
+iteration is then
+
+!bt
+\begin{equation}
+\int_0^L (\dfc(u^{-})u^{\prime}v^{\prime} + auv)\dx = \int_0^L f(u^{-})v\dx -
+Cv(0),\quad \forall v\in V\tp
+label{nonlin:alglevel:1D:pde:varform:Picard}
+\end{equation}
+!et
+This is a linear problem $a(u,v)=L(v)$ with bilinear and linear forms
+
+!bt
+\[ a(u,v) = \int_0^L (\dfc(u^{-})u^{\prime}v^{\prime} + auv)\dx,\quad
+L(v) = \int_0^L f(u^{-})v\dx - Cv(0)\tp\]
+!et
+Make sure to distinguish the coefficient $a$ in $auv$ from the
+differential equation from the $a$ in
+the abstract bilinear form notation $a(\cdot,\cdot)$.
+
+The linear system associated with
+(ref{nonlin:alglevel:1D:pde:varform:Picard}) is computed the standard way.
+Technically, we are back to solving $-(\dfc(x)u^{\prime})^{\prime} + au=f(x)$.
+The unknown $u$ is sought on the form
+$u = B(x) + \sum_{j\in\If}c_j\baspsi_j$, with $B(x)=D$
+and $\baspsi_i = \basphi_{\nu(i)}$, $\nu(i)=i+1$, and
+$\If = \{0,1,\ldots,N=N_n-2\}$.
+
+===== Newton's method defined from the variational form =====
+label{nonlin:alglevel:1D:fe:Newton}
+
+Application of Newton's method to the nonlinear variational
+form (ref{nonlin:alglevel:1D:pde:varform}) arising from
+the problem (ref{nonlin:alglevel:1D:pde}) requires identification
+of the nonlinear algebraic equations $F_i=0$.
+Although we originally denoted the unknowns in nonlinear
+algebraic equations by $u_0,\ldots,u_N$, it is in the present
+context most natural to have the unknowns as $c_0,\ldots,c_N$
+and write
+
+!bt
+\[ F_i(c_0,\ldots,c_N)=0, \quad i\in\If,\]
+!et
+and define the Jacobian as $J_{i,j}=\partial F_i/\partial c_j$ for
+$i,j\in\If$.
+
+The specific form of the equations $F_i=0$ follows from the variational form
+
+!bt
+\[
+\int_0^L (\dfc(u)u^{\prime}v^{\prime} + auv)\dx =
+\int_0^L f(u)v\dx - Cv(0),\quad \forall v\in V,
+\]
+!et
+by choosing $v=\baspsi_i$, $i\in\If$, and setting
+$u=\sum_{j\in\If}c_j\baspsi_j$, maybe with a boundary function
+to incorporate Dirichlet conditions.
+#provided we sum over all degrees
+#of freedom and incorporate Dirichlet boundary condition in the
+#final linear systems. Alternatively, we can eliminate the
+#Dirichlet conditions from the algebraic systems and
+#use a boundary function in combination with a sum over
+#the truly unknown degrees of freedom of $u$ ($\sum_jc_j\basphi_{\nu(j)}$).
+#We choose the former approach here since the indices look nicer in
+#the coming derivations.
+
+With $v=\baspsi_i$ we get
+
+!bt
+\begin{equation}
+F_i =
+\int_0^L (\dfc(u)u^{\prime}\baspsi_i^{\prime} + au\baspsi_i -
+f(u)\baspsi_i)\dx + C\baspsi_i(0)=0,\quad i\in\If\tp
+label{nonlin:alglevel:1D:fe:Newton:Fi}
+\end{equation}
+!et
+In the differentiations leading to the Jacobian we will frequently use
+the results
+
+!bt
+\[ \frac{\partial u}{\partial c_j} = \frac{\partial}{\partial c_j}
+\sum_kc_k\baspsi_k = \baspsi_j,\quad
+\frac{\partial u^{\prime}}{\partial c_j} = \frac{\partial}{\partial c_j}
+\sum_kc_k\baspsi_k^{\prime} = \baspsi_j^{\prime}\tp\]
+!et
+The derivation of the Jacobian of (ref{nonlin:alglevel:1D:fe:Newton:Fi}) goes as
+
+!bt
+\begin{align}
+J_{i,j} = \frac{\partial F_i}{\partial c_j}
+& = \int_0^L \frac{\partial}{\partial c_j}
+(\dfc(u)u^{\prime}\baspsi_i^{\prime} + au\baspsi_i -
+f(u)\baspsi_i)\dx\nonumber\\
+&=
+\int_0^L
+((\dfc^{\prime}(u)\frac{\partial u}{\partial c_j}u^{\prime} +
+\dfc(u)\frac{\partial u^{\prime}}{\partial c_j})\baspsi_i^{\prime}
++ a\frac{\partial u}{\partial c_j}\baspsi_i -
+f^{\prime}(u)\frac{\partial u}{\partial c_j}\baspsi_i)\dx\nonumber\\
+&=
+\int_0^L
+((\dfc^{\prime}(u)\baspsi_ju^{\prime} +
+\dfc(u)\baspsi_j^{\prime})\baspsi_i^{\prime}
++ a\baspsi_j\baspsi_i -
+f^{\prime}(u)\baspsi_j\baspsi_i)\dx\nonumber\\
+&=
+\int_0^L
+(\dfc^{\prime}(u)u^{\prime}\baspsi_i^{\prime}\baspsi_j +
+\dfc(u)\baspsi_i^{\prime}\baspsi_j^{\prime}
++ (a - f(u))\baspsi_i\baspsi_j)\dx
+label{nonlin:alglevel:1D:fe:Newton:Jij}
+\end{align}
+!et
+
+!bnotice One must be careful about the prime symbol as differentiation!
+In $\dfc^{\prime}$ the derivative is with respect to the independent
+variable in the $\dfc$ function, and that is $u$, so
+
+!bt
+\[ \alpha^{\prime} = \frac{d\alpha}{du},\]
+!et
+while in $u^{\prime}$ the differentiation is with
+respect to $x$, so
+
+!bt
+\[ u^{\prime}=\frac{du}{dx}\tp\]
+!et
+Similarly, $f$ is a function
+of $u$, so $f^{\prime}$ means $df/du$.
+!enotice
+
+When calculating the right-hand side vector $F_i$ and the coefficient
+matrix $J_{i,j}$ in the linear system to be solved in each Newton
+iteration, one must use
+a previously computed $u$, denoted by $u^{-}$, for
+the symbol $u$ in (ref{nonlin:alglevel:1D:fe:Newton:Fi}) and
+(ref{nonlin:alglevel:1D:fe:Newton:Jij}).
+With this notation we have
+
+!bt
+\begin{align}
+F_i &=
+\int_0^L\left(
+\dfc(u^{-})u^{-\prime}\baspsi_i^{\prime} +
+(a-f(u^{-}))\baspsi_i\right)\dx -
+C\baspsi_i(0),\quad i\in\If,
+label{nonlin:alglevel:1D:fe:Newton:Fi2}\\
+J_{i,j} &=
+\int_0^L
+(\dfc^{\prime}(u^{-})u^{-\prime}\baspsi_i^{\prime}\baspsi_j +
+\dfc(u^{-})\baspsi_i^{\prime}\baspsi_j^{\prime}
++ (a - f(u^{-}))\baspsi_i\baspsi_j)\dx,
+\quad i,j\in\If\tp
+label{nonlin:alglevel:1D:fe:Newton:Jij2}
+\end{align}
+!et
+These expressions can be used for any basis $\sequencei{\baspsi}$.
+Choosing finite element functions for $\baspsi_i$, one will
+normally want to compute the integral contribution cell by cell,
+working in a reference cell. To this end, we restrict the
+integration to one cell and transform the cell to $[-1,1]$.
+The most recently computed approximation $u^{-}$ to $u$ becomes
+$\tilde u^{-}=\sum_t\tilde u^{-1}_t\refphi_t(X)$ over the reference
+element, where $\tilde u^{-1}_t$ is the value of $u^{-}$
+at global node (or degree of freedom)
+$q(e,t)$ corresponding to the local node $t$ (or degree of freedom).
+The formulas (ref{nonlin:alglevel:1D:fe:Newton:Fi2}) and
+(ref{nonlin:alglevel:1D:fe:Newton:Jij2}) then change to
+
+!bt
+\begin{align}
+\tilde F_r^{(e)} &=
+\int_{-1}^1\left(
+\dfc(\tilde u^{-})\tilde u^{-\prime}\refphi_r^{\prime} +
+(a-f(\tilde u^{-}))\refphi_r\right)\det J\dX -
+C\refphi_r(0),
+label{nonlin:alglevel:1D:fe:Newton:Fi2:e}\\
+\tilde J_{r,s}^{(e)} &=
+\int_{-1}^1
+(\dfc^{\prime}(\tilde u^{-})\tilde u^{-\prime}\refphi_r^{\prime}\refphi_s +
+\dfc(\tilde u^{-})\refphi_r^{\prime}\refphi_s^{\prime}
++ (a - f(\tilde u^{-}))\refphi_r\refphi_s)\det J\dX,
+label{nonlin:alglevel:1D:fe:Newton:Jij2:e}
+\end{align}
+!et
+with $r,s\in\Ifd$ runs over the local degrees of freedom.
+
+Many finite element programs require the user to provide $F_i$ and
+$J_{i,j}$. Some programs, like "FEniCS": "http://fenicsproject.org",
+are capable of automatically deriving $J_{i,j}$ if $F_i$
+is specified.
+
+=== Dirichlet conditions ===
+
+Incorporation of the Dirichlet values by assembling contributions from
+all degrees of freedom and then modifying the linear system can
+obviously be applied to Picard iteration as that method involves
+a standard linear system. In the Newton system, however, the unknown
+is a correction $\delta u$ to the solution. Dirichlet conditions
+are implemented by inserting them in the initial guess $u^{-}$
+for the Newton iteration and implementing $\delta u_i =0$ for
+all known degrees of freedom. The manipulation of the linear system
+follows exactly the algorithm in the linear problems, the only
+difference being that the known values are zero.
+
+% endif

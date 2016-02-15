@@ -1,0 +1,901 @@
+!split
+======= Exercises =======
+label{nonlin:exer}
+
+===== Problem: Determine if equations are nonlinear or not =====
+label{nonlin:exer:lin:vs:nonlin}
+file=nonlinear_vs_linear
+
+Classify each term in the following equations as linear or nonlinear.
+Assume that $u$, $\u$, and $p$ are unknown functions and that
+all other symbols are known quantities.
+
+ o $mu^{\prime\prime} + \beta |u^{\prime}|u^{\prime} + cu = F(t)$
+ o $u_t = \dfc u_{xx}$
+ o $u_{tt} = c^2\nabla^2 u$
+ o $u_t = \nabla\cdot(\dfc(u)\nabla u) + f(x,y)$
+ o $u_t + f(u)_x = 0$
+ o $\u_t + \u\cdot\nabla \u = -\nabla p + r\nabla^2\u$, $\nabla\cdot\u = 0$
+   ($\u$ is a vector field)
+ o $u^{\prime} = f(u,t)$
+ o $\nabla^2 u = \lambda e^u$
+
+!bsol
+ o $mu^{\prime\prime}$ is linear; $\beta |u^{\prime}|u^{\prime}$ is
+   nonlinear; $cu$ is linear; $F(t)$ does not contain the unknown $u$
+   and is hence constant in $u$, so the term is linear.
+ o $u_t$ is linear; $\dfc u_{xx}$ is linear.
+ o $u_{tt}$ is linear; $c^2\nabla^2 u$ is linear.
+ o $u_t$ is linear; $\nabla\cdot(\dfc(u)\nabla u)$ is nonlinear;
+   $f(x,y)$ is constant in $u$ and hence linear.
+ o $u_t$ is linear;  $f(u)_x$ is nonlinear if $f$ is nonlinear in $u$.
+ o $\u_t$ is linear; $\u\cdot\nabla \u$ is nonlinear;
+   $-\nabla p$ is linear (in $p$);  $r\nabla^2\u$ is linear;
+   $\nabla\cdot\u$ is linear.
+ o $u^{\prime}$ is linear;  $f(u,t)$ is nonlinear if $f$ is nonlinear in $u$.
+ o $\nabla^2 u$ is linear; $\lambda e^u$ is nonlinear.
+!esol
+
+# #ifdef EXTRA
+===== Exercise: Derive a relaxation formula =====
+label{nonlin:exer:relax:formula}
+file=relaxed_Newton
+
+Derive (ref{nonlin:timediscrete:logistic:relaxation:Newton:formula})
+in Section ref{nonlin:timediscrete:logistic:relaxation}.
+
+# #endif
+
+===== Exercise: Derive and investigate a generalized logistic model  =====
+label{nonlin:exer:logistic:gen}
+file=logistic_p
+
+The logistic model for population growth is derived by assuming
+a nonlinear growth rate,
+
+!bt
+\begin{equation}
+u^{\prime} = a(u)u,\quad u(0)=I,
+label{nonlin:exer:logistic:gen:eq}
+\end{equation}
+!et
+and the logistic model arises from the simplest possible choice of
+$a(u)$: $r(u)=\varrho(1 - u/M)$, where $M$ is the maximum value of $u$ that
+the environment can sustain, and $\varrho$ is the growth under
+unlimited access to resources (as in the beginning when $u$ is small).
+The idea is that $a(u)\sim\varrho$ when $u$ is small and that
+$a(t)\rightarrow 0$ as $u\rightarrow M$.
+
+An $a(u)$ that generalizes the linear choice is the polynomial form
+
+!bt
+\begin{equation}
+a(u) = \varrho(1-u/M)^p,
+label{nonlin:exer:logistic:gen:r1}
+\end{equation}
+!et
+where $p>0$ is some real number.
+
+!bsubex
+Formulate a Forward Euler, Backward Euler, and a Crank-Nicolson
+scheme for (ref{nonlin:exer:logistic:gen:eq}).
+
+!bhint
+Use a geometric mean approximation in the Crank-Nicolson scheme:
+$[a(u)u]^{n+1/2}\approx a(u^n)u^{n+1}$.
+!ehint
+
+!bsol
+The Forward Euler scheme reads
+
+!bt
+\[ [D^+_t u = a(u)u]^n, \]
+!et
+or written out,
+
+!bt
+\[ \frac{u^{n+1}-u^n}{\Delta t} = a(u^n)u^n\tp\]
+!et
+The scheme is linear in the unknown $u^{n+1}$:
+
+!bt
+\[ u^{n+1} = u^n + {\Delta t}a(u^n)u^n\tp\]
+!et
+
+
+The Backward Euler scheme,
+
+!bt
+\[ [D^-_t u = a(u)u]^n, \]
+!et
+becomes
+
+!bt
+\[ \frac{u^{n}-u^{n-1}}{\Delta t} = a(u^n)u^n,\]
+!et
+which is a nonlinear equation in the unknown $u$, here expressed as
+$u^{n+1}$:
+
+!bt
+\[ u^{n+1} - \Delta t a(u^{n+1})u^{n+1} = u^n\tp\]
+!et
+
+The standard Crank-Nicolson scheme,
+
+!bt
+\[ D_t u = \overline{a(u)u}^t]^{n+\half},\]
+!et
+takes the form
+
+!bt
+\[ \frac{u^{n+1}-u^n}{\Delta t} = \half a(u^n)u^n + \half a(u^{n+1})u^{n+1}\tp\]
+!et
+This is a nonlinear equation in the unknown $u^{n+1}$,
+
+!bt
+\[ u^{n+1} - \half {\Delta t} a(u^{n+1})u^{n+1}
+= u^n + \half {\Delta t} a(u^n)u^n\tp\]
+!et
+However, with the suggested geometric mean, the $a(u)u$ term is
+linearized:
+
+!bt
+\[ \frac{u^{n+1}-u^n}{\Delta t} = a(u^n)u^{n+1},\]
+!et
+leading to a linear equation in $u^{n+1}$:
+
+!bt
+\[ (1 - \Delta t a(u^n))u^{n+1} = u^n\tp\]
+!et
+!esol
+!esubex
+
+!bsubex
+Formulate Picard and Newton iteration for the Backward Euler scheme in a).
+
+!bsol
+A Picard iteration for
+
+!bt
+\[ u^{n+1} - \Delta t a(u^{n+1})u^{n+1} = u^n\tp\]
+!et
+applies old values in for $u^{n+1}$ in $a(u^{n+1})$. If $u^-$ is the
+most recently computed approximation to $u^{n+1}$, we can write the Picard
+linearization as
+
+!bt
+\[ (1 - \Delta t a(u^-))u^{n+1} = u^n\tp\]
+!et
+Alternatively, with an iteration index $k$,
+
+!bt
+\[ (1 - \Delta t a(u^{n+1,k}))u^{n+1,k+1} = u^n\tp\]
+!et
+
+Newton's method starts with identifying the nonlinear equation as
+$F(u)=0$, and here
+
+!bt
+\[ F(u) = u - \Delta t a(u)u - u^n\tp\]
+!et
+The Jacobian is
+
+!bt
+\[ J(u) = \frac{F(u)}{du} = 1 - \Delta t(a'(u)u + a(u))\tp\]
+!et
+The key equation in Newton's method is then
+[hpl: Check notation here with previously used notation!]
+
+!bt
+\[ J(u^-)\delta u = - F(u^-),\quad u\leftarrow u - \delta u\tp\]
+!et
+!esol
+!esubex
+
+!bsubex
+Implement the numerical solution methods from a) and b).
+Use "`logistic.py`": "${src_nonlin}/logistic.py" to compare the case
+$p=1$ and the choice (ref{nonlin:exer:logistic:gen:r1}).
+
+!bsol
+We specialize the code for $a(u)$ to (ref{nonlin:exer:logistic:gen:r1})
+since the code was developed from `logistic.py`. It is convenient to
+work with a dimensionless form of the problem.
+Choosing a time scale $t_c = 1\varrho$ and a scale for $u$,
+$u_c=M$, leads to
+
+!bt
+\[ u^{\prime} = \varrho (1-u)^p u,\quad u(0)=\alpha,\]
+!et
+where $\alpha$ is a dimensionless number
+
+!bt
+\[ \alpha = \frac{I}{M}\tp\]
+!et
+
+The three schemes can be implemented as follows.
+
+@@@CODE exer-nonlin/logistic_p.py fromto: import numpy@def test_asympt
+
+A first verification is to choose $p=1$ and compare the results with
+those from `logistic.py`. The number of iterations and the final
+numerical answers should be identical.
+!esol
+!esubex
+
+!bsubex
+Implement unit tests that check the asymptotic limit of the solutions:
+$u\rightarrow M$ as $t\rightarrow\infty$.
+
+!bhint
+You need to experiment to find what ``infinite time'' is
+(increases substantially with $p$) and what the
+appropriate tolerance is for testing the asymptotic limit.
+!ehint
+
+!bsol
+The test function may look like
+
+@@@CODE exer-nonlin/logistic_p.py fromto: def test_asympt@from scitools.std
+It is important with a sufficiently small `eps_r` tolerance for the
+asymptotic value to be accurate (using `eps_r=1E-3` leads to a value
+0.92 at $t=T$ instead of 0.994 when `eps_r=1E-5`).
+!esol
+!esubex
+
+!bsubex
+Perform experiments with Newton and Picard iteration for
+the model (ref{nonlin:exer:logistic:gen:r1}).
+See how sensitive
+the number of iterations is to $\Delta t$ and $p$.
+
+!bsol
+Appropriate code is
+
+@@@CODE exer-nonlin/logistic_p.py fromto: from scitools.std@raw_input
+
+[hpl: Not finished!]
+!esol
+!esubex
+
+#===== Exercise: Derive a relaxation formula =====
+#file=relaxed_Newton
+
+===== Problem: Experience the behavior of Newton's method =====
+label{nonlin:exer:Newton:problems1}
+
+The program "`Newton_demo.py`": "${src_nonlin}/Newton_demo.py" illustrates
+graphically each step in Newton's method and is run like
+
+!bc sys
+Terminal> python Newton_demo.py f dfdx x0 xmin xmax
+!ec
+Use this program to investigate potential
+problems with Newton's method when solving $e^{-0.5x^2}\cos (\pi x)=0$.
+Try a starting point $x_0=0.8$ and $x_0=0.85$ and watch the different
+behavior. Just run
+
+!bc sys
+Terminal>  python Newton_demo.py '0.2 + exp(-0.5*x**2)*cos(pi*x)' \
+           '-x*exp(-x**2)*cos(pi*x) - pi*exp(-x**2)*sin(pi*x)' \
+           0.85 -3 3
+!ec
+and repeat with 0.85 replaced by 0.8.
+
+===== Problem: Compute the Jacobian of a $2\times 2$ system =====
+label{nonlin:exer:vib:Jacobian}
+
+Write up the system (ref{nonlin:ode:generic:sys:pendulum:u0})-(ref{nonlin:ode:generic:sys:pendulum:u1}) in the form $F(u)=0$, $F=(F_0,F_1)$, $u=(u_0,u_1)$,
+and compute the Jacobian $J_{i,j}=\partial F_i/\partial u_j$.
+
+===== Problem: Solve nonlinear equations arising from a vibration ODE =====
+label{nonlin:exer:vib:geometric:mean}
+file=nonlin_vib
+
+Consider a nonlinear vibration problem
+
+!bt
+\begin{equation}
+mu^{\prime\prime} + bu^{\prime}|u^{\prime}| + s(u) = F(t),
+\end{equation}
+!et
+where $m>0$ is a constant, $b\geq 0$ is a constant, $s(u)$ a possibly
+nonlinear function of $u$, and $F(t)$ is a prescribed function. Such
+models arise from Newton's second law of motion in mechanical
+vibration problems where $s(u)$ is a spring or restoring force,
+$mu^{\prime\prime}$ is mass times acceleration, and
+$bu^{\prime}|u^{\prime}|$ models water or air drag.
+
+!bsubex
+Rewrite the equation for $u$ as a system of two first-order ODEs, and
+discretize this system by a Crank-Nicolson (centered difference)
+method. With $v=u^\prime$, we get a nonlinear term
+$v^{n+\frac{1}{2}}|v^{n+\frac{1}{2}}|$. Use a geometric
+average for $v^{n+\frac{1}{2}}$.
+!esubex
+
+!bsubex
+Formulate a Picard iteration method to solve the system of nonlinear
+algebraic equations.
+!esubex
+
+!bsubex
+Explain how to apply Newton's method to solve the nonlinear equations
+at each time level. Derive expressions for the Jacobian and the
+right-hand side in each Newton iteration.
+!esubex
+
+# 2DO: b) Newmark scheme
+# derive it logically and connect it to the centered diff scheme
+# ma + bv|v| + s(u) = F(t), v'=a, u'=v (staggered is natural,
+# v at n+1/2 and a and u at n). Should be in vib first
+
+===== Exercise: Find the truncation error of arithmetic mean of products =====
+label{nonlin:exer:products:arith:mean}
+file=product_arith_mean
+
+In Section ref{nonlin:pdelevel:Picard:CN} we introduce alternative
+arithmetic means of a product. Say the product is $P(t)Q(t)$ evaluated
+at $t=t_{n+\frac{1}{2}}$. The exact value is
+
+!bt
+\[ [PQ]^{n+\frac{1}{2}} = P^{n+\frac{1}{2}}Q^{n+\frac{1}{2}} \]
+!et
+There are two obvious candidates for evaluating $[PQ]^{n+\frac{1}{2}}$
+as a mean of values of $P$ and $Q$ at $t_n$ and $t_{n+1}$. Either
+we can take the arithmetic mean of each factor $P$ and $Q$,
+
+!bt
+\begin{equation}
+[PQ]^{n+\frac{1}{2}} \approx \frac{1}{2}(P^n + P^{n+1})\frac{1}{2}(Q^n + Q^{n+1}),
+label{nonlin:exer:products:arith:mean:f}
+\end{equation}
+!et
+or we can take the arithmetic mean of the product $PQ$:
+
+!bt
+\begin{equation}
+[PQ]^{n+\frac{1}{2}} \approx \frac{1}{2}(P^nQ^n + P^{n+1}Q^{n+1})\tp
+label{nonlin:exer:products:arith:mean:p}
+\end{equation}
+!et
+
+The arithmetic average
+of $P(t_{n+\frac{1}{2}})$ is $\Oof{\Delta t^2}$:
+
+!bt
+\[ P(t_{n+\frac{1}{2}}) = \frac{1}{2}(P^n + P^{n+1}) +\Oof{\Delta t^2}\tp\]
+!et
+A fundamental question is whether (ref{nonlin:exer:products:arith:mean:f})
+and (ref{nonlin:exer:products:arith:mean:p}) have different
+orders of accuracy in $\Delta t = t_{n+1}-t_n$. To investigate
+this question, expand quantities at $t_{n+1}$ and $t_n$ in
+Taylor series around $t_{n+\frac{1}{2}}$, and subtract the true
+value $[PQ]^{n+\frac{1}{2}}$ from the approximations
+(ref{nonlin:exer:products:arith:mean:f}) and
+(ref{nonlin:exer:products:arith:mean:p}) to see what the
+order of the error terms are.
+
+!bhint
+You may explore `sympy` for carrying out the tedious calculations.
+A general Taylor series expansion of $P(t+\frac{1}{2}\Delta t)$ around $t$
+involving just a general function $P(t)$ can be
+created as follows:
+
+!bc pyshell
+>>> from sympy import *
+>>> t, dt = symbols('t dt')
+>>> P = symbols('P', cls=Function)
+>>> P(t).series(t, 0, 4)
+P(0) + t*Subs(Derivative(P(_x), _x), (_x,), (0,)) +
+t**2*Subs(Derivative(P(_x), _x, _x), (_x,), (0,))/2 +
+t**3*Subs(Derivative(P(_x), _x, _x, _x), (_x,), (0,))/6 + O(t**4)
+>>> P_p = P(t).series(t, 0, 4).subs(t, dt/2)
+>>> P_p
+P(0) + dt*Subs(Derivative(P(_x), _x), (_x,), (0,))/2 +
+dt**2*Subs(Derivative(P(_x), _x, _x), (_x,), (0,))/8 +
+dt**3*Subs(Derivative(P(_x), _x, _x, _x), (_x,), (0,))/48 + O(dt**4)
+!ec
+The error of the arithmetic mean, $\frac{1}{2}(P(-\frac{1}{2}\Delta t)
++ P(-\frac{1}{2}\Delta t))$ for $t=0$ is then
+
+!bc pyshell
+>>> P_m = P(t).series(t, 0, 4).subs(t, -dt/2)
+>>> mean = Rational(1,2)*(P_m + P_p)
+>>> error = simplify(expand(mean) - P(0))
+>>> error
+dt**2*Subs(Derivative(P(_x), _x, _x), (_x,), (0,))/8 + O(dt**4)
+!ec
+Use these examples to investigate the error of
+(ref{nonlin:exer:products:arith:mean:f}) and
+(ref{nonlin:exer:products:arith:mean:p}) for $n=0$. (Choosing $n=0$
+is necessary for not making the expressions too complicated for `sympy`,
+but there is of course no lack of generality by using $n=0$ rather
+than an arbitrary $n$ - the main point is the product and addition
+of Taylor series.)
+!ehint
+
+
+
+===== Problem: Newton's method for linear problems =====
+label{nonlin:exer:Newton:linear}
+file=Newton_linear
+
+Suppose we have a linear system $F(u) = Au- b=0$. Apply Newton's method
+to this system, and show that the method converges in one iteration.
+
+===== Exercise: Discretize a 1D problem with a nonlinear coefficient =====
+label{nonlin:exer:1D:1pu2:fem}
+file=nonlin_1D_coeff_discretize
+
+We consider the problem
+
+!bt
+\begin{equation}
+((1 + u^2)u^{\prime})^{\prime} = 1,\quad x\in (0,1),\quad u(0)=u(1)=0\tp
+label{nonlin:exer:1D:1pu2:fem:pde}
+\end{equation}
+!et
+
+% if FEM_BOOK:
+!bsubex
+Discretize (ref{nonlin:exer:1D:1pu2:fem:pde}) by a centered
+finite difference method on a uniform mesh.
+!esubex
+
+!bsubex
+Discretize (ref{nonlin:exer:1D:1pu2:fem:pde}) by a finite
+element method with P1 elements of equal length.
+Use the Trapezoidal method to compute all integrals.
+Set up the resulting matrix system in symbolic form such that the
+equations can be compared with those in a).
+!esubex
+% else:
+Discretize (ref{nonlin:exer:1D:1pu2:fem:pde}) by a centered
+finite difference method on a uniform mesh.
+% endif
+
+===== Exercise: Linearize a 1D problem with a nonlinear coefficient =====
+label{nonlin:exer:1D:1pu2:PicardNewton}
+file=nonlin_1D_coeff_linearize
+
+We have a two-point boundary value problem
+
+!bt
+\begin{equation}
+((1 + u^2)u^{\prime})^{\prime} = 1,\quad x\in (0,1),\quad u(0)=u(1)=0\tp
+label{nonlin:exer:1D:1pu2:PicardNewton:pde}
+\end{equation}
+!et
+
+!bsubex
+Construct a Picard iteration method for (ref{nonlin:exer:1D:1pu2:PicardNewton:pde})
+without discretizing in space.
+!esubex
+
+!bsubex
+Apply Newton's method to (ref{nonlin:exer:1D:1pu2:PicardNewton:pde})
+without discretizing in space.
+!esubex
+
+!bsubex
+Discretize (ref{nonlin:exer:1D:1pu2:PicardNewton:pde}) by a centered finite
+difference scheme. Construct a Picard method for the resulting
+system of nonlinear algebraic equations.
+!esubex
+
+!bsubex
+Discretize (ref{nonlin:exer:1D:1pu2:PicardNewton:pde}) by a centered finite
+difference scheme. Define the system of nonlinear algebraic equations,
+calculate the Jacobian, and set up Newton's method for solving the system.
+!esubex
+
+
+===== Problem: Finite differences for the 1D Bratu problem =====
+label{nonlin:exer:1D:fu:discretize:fd}
+file=nonlin_1D_Bratu_fd
+
+## Good: http://faculty.oxy.edu/ron/research/bratu/bratu.pdf
+## It has a collocation method too
+
+We address the so-called Bratu problem
+
+!bt
+\begin{equation}
+u^{\prime\prime} + \lambda e^u=0,\quad x\in (0,1),\quad u(0)=u(1)=0,
+label{nonlin:exer:1D:fu:discretize:fd:pde}
+\end{equation}
+!et
+where $\lambda$ is a given parameter and $u$ is a function of $x$.
+This is a widely used model problem for studying numerical
+methods for nonlinear differential equations.
+The problem (ref{nonlin:exer:1D:fu:discretize:fd:pde}) has an
+exact solution
+
+!bt
+\[ \uex(x) = -2\ln\left(\frac{\cosh((x-\half)\theta/2)}{\cosh(\theta/4)}\right),\]
+!et
+where $\theta$ solves
+
+!bt
+\[ \theta = \sqrt{2\lambda}\cosh(\theta/4)\tp\]
+!et
+There are two solutions of (ref{nonlin:exer:1D:fu:discretize:fd:pde}) for
+$0<\lambda <\lambda_c$ and no solution for $\lambda >\lambda_c$.
+For $\lambda = \lambda_c$ there is one unique solution. The critical
+value $\lambda_c$ solves
+
+!bt
+\[ 1 = \sqrt{2\lambda_c}\frac{1}{4}\sinh(\theta(\lambda_c)/4)\tp\]
+!et
+A numerical value is $\lambda_c = 3.513830719$.
+
+!bsubex
+Discretize (ref{nonlin:exer:1D:fu:discretize:fd:pde}) by a
+centered finite difference method.
+!esubex
+
+!bsubex
+Set up the nonlinear equations $F_i(u_0,u_1,\ldots,u_{N_x})=0$
+from a). Calculate the associated Jacobian.
+!esubex
+
+!bsubex
+Implement a solver that can compute $u(x)$ using Newton's method.
+Plot the error as a function of $x$ in each iteration.
+!esubex
+
+!bsubex
+Investigate whether Newton's method gives second-order convergence
+by computing
+$|| \uex - u||/||\uex - u^{-}||^2$
+in each iteration, where $u$ is solution in the current iteration and
+$u^{-}$ is the solution in the previous iteration.
+!esubex
+
+% if FEM_BOOK:
+===== Problem: Integrate functions of finite element expansions =====
+label{nonlin:exer:fu:fem:int}
+file=fu_fem_int
+
+idx{`latex.codecogs.com` web site}
+idx{online rendering of LaTeX formulas}
+
+We shall investigate integrals on the form
+
+!bt
+\begin{equation}
+\int_0^L f(\sum_ku_k\basphi_k(x))\basphi_i(x)\dx,
+label{nonlin:exer:fu:fem:int:global}
+\end{equation}
+!et
+where $\basphi_i(x)$ are P1 finite element basis functions and $u_k$
+are unknown coefficients, more precisely the values of the unknown
+function $u$ at nodes $\xno{k}$. We introduce a node numbering that
+goes from left to right and also that all cells have
+the same length $h$. Given $i$, the integral
+only gets contributions from $[\xno{i-1},\xno{i+1}]$. On this
+interval $\basphi_k(x)=0$ for $k<i-1$ and $k>i+1$, so only three
+basis functions will contribute:
+
+!bt
+\[
+\sum_k u_k\basphi_k(x) = u_{i-1}\basphi_{i-1}(x) +
+u_{i}\basphi_{i}(x) + u_{i+1}\basphi_{i+1}(x)\tp
+\]
+!et
+The integral (ref{nonlin:exer:fu:fem:int:global}) now takes the
+simplified form
+
+!bt
+\[
+\int_{\xno{i-1}}^{\xno{i+1}}
+f(u_{i-1}\basphi_{i-1}(x) +
+u_{i}\basphi_{i}(x) + u_{i+1}\basphi_{i+1}(x))\basphi_i(x)\dx\tp
+\]
+!et
+Split this integral in two integrals over cell L (left),
+$[\xno{i-1},\xno{i}]$, and cell R (right), $[\xno{i},\xno{i+1}]$. Over
+cell L, $u$ simplifies to $u_{i-1}\basphi_{i-1} + u_{i}\basphi_{i}$
+(since $\basphi_{i+1}=0$ on this cell), and over cell R, $u$
+simplifies to $u_{i}\basphi_{i} + u_{i+1}\basphi_{i+1}$.  Make a
+`sympy` program that can compute the integral and write it out as a
+difference equation. Give the $f(u)$ formula on the command line.
+Try out $f(u)=u^2, \sin u, \exp u$.
+
+!bhint
+Introduce symbols `u_i`, `u_im1`, and `u_ip1` for $u_i$, $u_{i-1}$,
+and $u_{i+1}$, respectively, and similar symbols for $x_i$, $x_{i-1}$,
+and $x_{i+1}$. Find formulas for the basis functions on each of the
+two cells, make expressions for $u$ on the two cells, integrate over
+each cell, expand the answer and simplify. You can ask `sympy` for
+LaTeX code and render it either by creating a LaTeX document and
+compiling it to a PDF document or by using
+URL: "http://latex.codecogs.com" to display LaTeX formulas in a web
+page. Here are some appropriate Python statements
+for the latter purpose:
+
+!bc pycod
+from sympy import *
+...
+# expr_i holdes the integral as a sympy expression
+latex_code = latex(expr_i, mode='plain')
+# Replace u_im1 sympy symbol name by latex symbol u_{i-1}
+latex_code = latex_code.replace('im1', '{i-1}')
+# Replace u_ip1 sympy symbol name by latex symbol u_{i+1}
+latex_code = latex_code.replace('ip1', '{i+1}')
+# Escape (quote) latex_code so it can be sent as HTML text
+import cgi
+html_code = cgi.escape(latex_code)
+# Make a file with HTML code for displaying the LaTeX formula
+f = open('tmp.html', 'w')
+# Include an image that can be clicked on to yield a new
+# page with an interactive editor and display area where the
+# formula can be further edited
+text = """
+<a href="http://www.codecogs.com/eqnedit.php?latex=%(html_code)s"
+ target="_blank">
+<img src="http://latex.codecogs.com/gif.latex?%(html_code)s"
+ title="%(latex_code)s"/>
+</a>
+ """ % vars()
+f.write(text)
+f.close()
+!ec
+The formula is displayed by loading `tmp.html` into a web browser.
+!ehint
+
+===== Problem: Finite elements for the 1D Bratu problem =====
+label{nonlin:exer:1D:fu:discretize:fe}
+file=nonlin_1D_Bratu_fe
+
+We address the same 1D Bratu problem as described in
+Problem ref{nonlin:exer:1D:fu:discretize:fd}.
+
+!bsubex
+Discretize (ref{nonlin:exer:1D:fu:discretize:fe}) by a finite element
+method using a uniform mesh with P1 elements. Use a group
+finite element method for the $e^u$ term.
+!esubex
+
+!bsubex
+Set up the nonlinear equations $F_i(u_0,u_1,\ldots,u_{N_x})=0$
+from a). Calculate the associated Jacobian.
+!esubex
+% endif
+
+# #ifdef NOTREADY
+===== Problem: Trapezoidal integration of a nonlinear term with P2 elements =====
+label{nonlin:exer:1D:fu:discretize:fe}
+file=nonlin_1D_Bratu_fe
+# #endif
+
+===== Exercise: Discretize a nonlinear 1D heat conduction PDE by finite differences =====
+label{nonlin:exer:1D:heat:nonlinear:fdm}
+file=nonlin_1D_heat_FD
+
+We address the 1D heat conduction PDE
+
+!bt
+\[ \varrho c(T) T_t = (k(T)T_x)_x,\]
+!et
+for $x\in [0,L]$,
+where $\varrho$ is the density of the solid material, $c(T)$ is
+the heat capacity, $T$ is the temperature, and $k(T)$ is the
+heat conduction coefficient. $T(x,0)=I(x)$, and ends are
+subject to a cooling law:
+
+!bt
+\[ k(T)T_x|_{x=0} = h(T)(T-T_s),\quad -k(T)T_x|_{x=L}=h(T)(T-T_s),\]
+!et
+where $h(T)$ is a heat transfer coefficient and $T_s$ is the
+given surrounding temperature.
+
+
+!bsubex
+Discretize this PDE in time using either a
+Backward Euler or Crank-Nicolson scheme.
+!esubex
+
+!bsubex
+Formulate a Picard iteration method for the time-discrete problem
+(i.e., an iteration method before discretizing in space).
+!esubex
+
+!bsubex
+Formulate a Newton method for the time-discrete problem in b).
+!esubex
+
+!bsubex
+Discretize the PDE by a finite difference method in space.
+Derive the matrix and right-hand side of a Picard iteration method applied
+to the space-time discretized PDE.
+!esubex
+
+!bsubex
+Derive the matrix and right-hand side of a Newton method applied
+to the discretized PDE in d).
+!esubex
+
+% if FEM_BOOK:
+===== Exercise: Use different symbols for different approximations of the solution =====
+label{nonlin:exer:dD:nonlinear:usymbols}
+file=nonlin_heat_FE_usymbols
+
+The symbol $u$ has several meanings, depending on the context, as
+briefly mentioned in Section ref{nonlin:alglevel:dD:fe}.
+Go through the derivation of the Picard iteration method in
+that section and use different symbols for all the different
+approximations of $u$:
+
+ * $\uex(\x,t)$ for the exact solution of the PDE problem
+ * $\uex(\x)^n$ for the exact solution after time discretization
+ * $u^n(\x)$ for the spatially discrete solution $\sum_jc_j\baspsi_j$
+ * $u^{n,k}$ for approximation in Picard/Newton iteration no $k$
+   to $u^n(\x)$
+
+===== Exercise: Derive Picard and Newton systems from a variational form =====
+label{nonlin:exer:dD:heat:nonlinear:c:a}
+file=nonlin_heat_FE
+
+We study the multi-dimensional heat conduction PDE
+
+!bt
+\[ \varrho c(T) T_t = \nabla\cdot (k(T)\nabla T)\]
+!et
+in a spatial domain $\Omega$, with a nonlinear Robin boundary condition
+
+!bt
+\[ -k(T)\frac{\partial T}{\partial n} = h(T)(T-T_s(t)),\]
+!et
+at the boundary $\partial\Omega$.
+The primary unknown is the temperature $T$, $\varrho$ is the density
+of the solid material, $c(T)$ is the heat capacity, $k(T)$ is
+the heat conduction, $h(T)$ is a heat transfer coefficient, and
+$T_s(T)$ is a possibly time-dependent temperature of the surroundings.
+
+!bsubex
+Use a Backward Euler or Crank-Nicolson time discretization and
+derive the variational form for the spatial problem to be solved
+at each time level.
+!esubex
+
+!bsubex
+Define a Picard iteration method from the variational form at
+a time level.
+!esubex
+
+!bsubex
+Derive expressions for the matrix and the right-hand side of the
+equation system that arises from applying Newton's method to
+the variational form at a time level.
+!esubex
+
+!bsubex
+Apply the Backward Euler or Crank-Nicolson scheme in time first.
+Derive a Newton method at the PDE level. Make a variational
+form of the resulting PDE at a time level.
+!esubex
+
+===== Exercise: Derive algebraic equations for nonlinear 1D heat conduction =====
+label{nonlin:exer:1D:heat:nonlinear:c:a}
+file=nonlin_1D_heat_FE
+
+We consider the same problem as in Exercise ref{nonlin:exer:dD:heat:nonlinear:c:a}, but restricted to one space dimension: $\Omega = [0,L]$.
+Simplify the boundary condition to $T_x=0$ (i.e., $h(T)=0$).
+Use a uniform finite element mesh of P1 elements, the group
+finite element method, and the Trapezoidal
+rule for integration at the nodes to derive symbolic expressions for
+the algebraic equations arising from this diffusion problem.
+% endif
+
+===== Exercise: Differentiate a highly nonlinear term =====
+label{nonlin:exer:grad:pow:term}
+file=nonlin_differentiate
+
+The operator $\nabla\cdot(\dfc(u)\nabla u)$ with
+$\dfc(u) = |\nabla u|^q$ appears in several physical problems,
+especially flow of Non-Newtonian fluids. The expression $|\nabla u|$
+is defined as the Euclidean norm of a vector:
+$|\nabla u|^2 = \nabla u \cdot \nabla u$.
+In a Newton method one
+has to carry out the differentiation $\partial\dfc(u)/\partial c_j$,
+for $u=\sum_kc_k\baspsi_k$. Show that
+
+!bt
+\[ {\partial\over\partial u_j} |\nabla u|^q =
+q|\nabla  u|^{q-2}\nabla u\cdot
+\nabla\baspsi_j\tp \]
+!et
+
+!bsol
+!bt
+\begin{align*}
+\frac{\partial }{\partial c_j}|\nabla u |^q &=
+\frac{\partial }{\partial c_j}(\nabla u\cdot \nabla u )^{\tfrac{q}{2}}
+= \frac{q}{2} (\nabla u\cdot \nabla u )^{\tfrac{q}{2}-1}
+\frac{\partial }{\partial c_j}(\nabla u\cdot \nabla u )\\
+&=\frac{q}{2} |\nabla u |^{q-2}(\frac{\partial }{\partial c_j}(\nabla u)
+\cdot \nabla u + \nabla u \cdot\frac{\partial }{\partial c_j}(\nabla u))\\
+&=q|\nabla u |^{q-2}(\nabla u \cdot \nabla \frac{\partial u}{\partial c_j})
+=q|\nabla u |^{q-2}(\nabla u \cdot \nabla\psi_j)
+\end{align*}
+!et
+!esol
+
+===== Exercise: Crank-Nicolson for a nonlinear 3D diffusion equation =====
+label{nonlin:exer:2D:heat:nonlinear:fd}
+file=nonlin_heat_FD_CN_2D
+
+Redo Section ref{nonlin:alglevel:dD:fd} when a Crank-Nicolson scheme
+is used to discretize the equations in time and the problem is
+formulated for three spatial dimensions.
+
+!bhint
+Express the Jacobian as $J_{i,j,k,r,s,t} = \partial F_{i,j,k}/\partial u_{r,s,t}$ and observe, as in the 2D case, that $J_{i,j,k,r,s,t}$ is very sparse:
+$J_{i,j,k,r,s,t}\neq 0$ only for $r=i\pm i$, $s=j\pm 1$, and $t=k\pm 1$
+as well as $r=i$, $s=j$, and $t=k$.
+!ehint
+
+===== Exercise: Find the sparsity of the Jacobian =====
+label{nonlin:exer:sparsity:Jacobian}
+file=nonlin_sparsity_Jacobian
+
+Consider a typical nonlinear Laplace term like
+$\nabla\cdot\dfc(u)\nabla u$ discretized by centered finite differences.
+Explain why the Jacobian corresponding to this term has the same
+sparsity pattern as the matrix associated with the corresponding linear
+term $\dfc\nabla^2 u$.
+
+!bhint
+Set up the unknowns that enter the difference equation at a
+point $(i,j)$ in 2D or $(i,j,k)$ in 3D, and identify the
+nonzero entries of the Jacobian that can arise from such a type
+of difference equation.
+!ehint
+
+===== Problem: Investigate a 1D problem with a continuation method =====
+label{nonlin:exer:continuation:1DnNflow}
+
+idx{continuation method}
+
+Flow of a pseudo-plastic power-law fluid between two flat plates can be
+modeled by
+
+!bt
+\[ \frac{d}{dx}\left(\mu_0\left\vert\frac{du}{dx}\right\vert^{n-1}
+\frac{du}{dx}\right) = -\beta,\quad u^{\prime}(0)=0,\ u(H) = 0,\]
+!et
+where $\beta>0$ and $\mu_0>0$ are constants.
+A target value of $n$ may be $n=0.2$.
+
+!bsubex
+Formulate a Picard iteration method directly for the differential
+equation problem.
+!esubex
+
+!bsubex
+Perform a finite difference discretization of the problem in
+each Picard iteration. Implement a solver that can compute $u$
+on a mesh. Verify that the solver gives an exact solution for $n=1$
+on a uniform mesh regardless of the cell size.
+!esubex
+
+!bsubex
+Given a sequence of decreasing $n$ values, solve the problem for each
+$n$ using the solution for the previous $n$ as initial guess for
+the Picard iteration. This is called a continuation method.
+Experiment with $n=(1,0.6,0.2)$ and $n=(1,0.9,0.8,\ldots,0.2)$
+and make a table of the number of Picard iterations versus $n$.
+!esubex
+
+!bsubex
+Derive a Newton method at the differential equation level and
+discretize the resulting linear equations in each Newton iteration
+with the finite difference method.
+!esubex
+
+!bsubex
+Investigate if Newton's method has better convergence properties than
+Picard iteration, both in combination with a continuation method.
+!esubex

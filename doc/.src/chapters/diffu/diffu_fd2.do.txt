@@ -25,14 +25,14 @@ $u_t = (\alpha u_x)_x$.
 ===== Discretization =====
 label{diffu:varcoeff:discr}
 
-We can discretize (ref{diffu:pde2}) by a $theta$-rule in time
+We can discretize (ref{diffu:pde2}) by a $\theta$-rule in time
 and centered differences in space:
 
 !bt
 \[ \lbrack D_t u\rbrack^{n+\half} = \theta\lbrack D_x\overline{\dfc}^x
-D_x u + f\rbrack]^{n+1} +
+D_x u + f\rbrack^{n+1} +
 (1-\theta)\lbrack D_x\overline{\dfc}^x
-D_x u + f\rbrack]^{n}\tp\]
+D_x u + f\rbrack^{n}\tp\]
 !et
 Written out, this becomes
 
@@ -44,8 +44,8 @@ Written out, this becomes
 - \dfc_{i-\half}(u^{n+1}_i - u^{n+1}_{i+1})) +\\
 &\quad (1-\theta)\frac{1}{\Delta x^2}
 (\dfc_{i+\half}(u^{n}_{i+1} - u^{n}_{i})
-- \dfc_{i-\half}(u^{n}_i - u^{n}_{i+1})) +
-\theta f_i^{n+1} + (1-\theta)f_i^{n},
+- \dfc_{i-\half}(u^{n}_i - u^{n}_{i+1})) +\\
+&\quad \theta f_i^{n+1} + (1-\theta)f_i^{n},
 \end{align*}
 !et
 where, e.g., an arithmetic mean can to be used for $\dfc_{i+\half}$:
@@ -54,10 +54,83 @@ where, e.g., an arithmetic mean can to be used for $\dfc_{i+\half}$:
 \[ \dfc_{i+\half} = \half(\dfc_i + \dfc_{i+1})\tp\]
 !et
 
+===== Implementation =====
+label{diffu:varcoeff:impl}
+
+Suitable code for solving the discrete equations is very similar to
+what we created for a constant $\dfc$.
+Since the Fourier number has no meaning for varying
+$\dfc$, we introduce a related parameter $D=\Delta t /\Delta x^2$.
+
+!bc pycod
+def solver_theta(I, a, L, Nx, D, T, theta=0.5, u_L=1, u_R=0,
+                 user_action=None):
+    x = linspace(0, L, Nx+1)   # mesh points in space
+    dx = x[1] - x[0]
+    dt = D*dx**2
+    Nt = int(round(T/float(dt)))
+    t = linspace(0, T, Nt+1)   # mesh points in time
+
+    u   = zeros(Nx+1)   # solution array at t[n+1]
+    u_1 = zeros(Nx+1)   # solution at t[n]
+
+    Dl = 0.5*D*theta
+    Dr = 0.5*D*(1-theta)
+
+    # Representation of sparse matrix and right-hand side
+    diagonal = zeros(Nx+1)
+    lower    = zeros(Nx)
+    upper    = zeros(Nx)
+    b        = zeros(Nx+1)
+
+    # Precompute sparse matrix (scipy format)
+    diagonal[1:-1] = 1 + Dl*(a[2:] + 2*a[1:-1] + a[:-2])
+    lower[:-1] = -Dl*(a[1:-1] + a[:-2])
+    upper[1:]  = -Dl*(a[2:] + a[1:-1])
+    # Insert boundary conditions
+    diagonal[0] = 1
+    upper[0] = 0
+    diagonal[Nx] = 1
+    lower[-1] = 0
+
+    A = scipy.sparse.diags(
+        diagonals=[diagonal, lower, upper],
+        offsets=[0, -1, 1],
+        shape=(Nx+1, Nx+1),
+        format='csr')
+
+    # Set initial condition
+    for i in range(0,Nx+1):
+        u_1[i] = I(x[i])
+
+    if user_action is not None:
+        user_action(u_1, x, t, 0)
+
+    # Time loop
+    for n in range(0, Nt):
+        b[1:-1] = u_1[1:-1] + Dr*(
+            (a[2:] + a[1:-1])*(u_1[2:] - u_1[1:-1]) -
+            (a[1:-1] + a[0:-2])*(u_1[1:-1] - u_1[:-2]))
+        # Boundary conditions
+        b[0]  = u_L(t[n+1])
+        b[-1] = u_R(t[n+1])
+        # Solve
+        u[:] = scipy.sparse.linalg.spsolve(A, b)
+
+        if user_action is not None:
+            user_action(u, x, t, n+1)
+
+        # Switch variables before next step
+        u_1, u = u, u_1
+!ec
+The code is found in the file "`diffu1D_vc.py`": "${src_diffu}/diffu1D_vc.py".
+
 ===== Stationary solution =====
 label{diffu:varcoeff:stationary}
 
-As $t\rightarrow\infty$, the solution of the above problem will approach
+As $t\rightarrow\infty$, the solution of the
+problem (ref{diffu:pde2})-(ref{diffu:pde2:bc:L})
+will approach
 a stationary limit where $\partial u/\partial t=0$. The governing
 equation is then
 
@@ -125,7 +198,7 @@ equation where one is to differentiate, but a discontinuous $\alpha$
 is compensated by a discontinuous $u_x$ such that $\alpha u_x$ is
 continuous and therefore can be differentiated as $(\alpha u_x)_x$.
 
-===== Implementation =====
+===== Implementation of diffusion in a piecewise constant medium =====
 label{diffu:varcoeff:impl}
 
 Programming with piecewise function definition quickly becomes

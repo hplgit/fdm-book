@@ -34,7 +34,7 @@ store solutions, etc.
 
 import scipy.sparse
 import scipy.sparse.linalg
-from numpy import linspace, zeros, random
+from numpy import linspace, zeros, random, array
 import time, sys
 
 
@@ -66,6 +66,13 @@ def solver_theta(I, a, L, Nx, D, T, theta=0.5, u_L=1, u_R=0,
     Nt = int(round(T/float(dt)))
     t = linspace(0, T, Nt+1)   # mesh points in time
 
+    if isinstance(u_L, (float,int)):
+        u_L_ = float(u_L)  # must take copy of u_L number
+        u_L = lambda t: u_L_
+    if isinstance(u_R, (float,int)):
+        u_R_ = float(u_R)  # must take copy of u_R number
+        u_R = lambda t: u_R_
+
     u   = zeros(Nx+1)   # solution array at t[n+1]
     u_1 = zeros(Nx+1)   # solution at t[n]
 
@@ -88,21 +95,22 @@ def solver_theta(I, a, L, Nx, D, T, theta=0.5, u_L=1, u_R=0,
     lower    = zeros(Nx)
     upper    = zeros(Nx)
     b        = zeros(Nx+1)
-    # "Active" values: diagonal[:], upper[1:], lower[:-1]
 
     # Precompute sparse matrix (scipy format)
     diagonal[1:-1] = 1 + Dl*(a[2:] + 2*a[1:-1] + a[:-2])
-    lower[:] = -Dl*(a[1:-1] + a[:-2])
-    upper[:]   = -Dl*(a[2:] + a[1:-1])
+    lower[:-1] = -Dl*(a[1:-1] + a[:-2])
+    upper[1:]  = -Dl*(a[2:] + a[1:-1])
     # Insert boundary conditions
     diagonal[0] = 1
     upper[0] = 0
     diagonal[Nx] = 1
     lower[-1] = 0
 
-    diags = [0, -1, 1]
-    A = scipy.sparse.spdiags(
-        [diagonal, lower, upper], diags, Nx+1, Nx+1)
+    A = scipy.sparse.diags(
+        diagonals=[diagonal, lower, upper],
+        offsets=[0, -1, 1],
+        shape=(Nx+1, Nx+1),
+        format='csr')
     #print A.todense()
 
     # Set initial condition
@@ -115,9 +123,12 @@ def solver_theta(I, a, L, Nx, D, T, theta=0.5, u_L=1, u_R=0,
     # Time loop
     for n in range(0, Nt):
         b[1:-1] = u_1[1:-1] + Dr*(
-            (a[2:] + a[1:-1])*(u_1[:-2] - u_1[1:-1]) -
-            (a[2:] + a[0:-2])*(u_1[1:-1] - u_1[:-2]))
-        b[0] = u_L; b[-1] = u_R  # boundary conditions
+            (a[2:] + a[1:-1])*(u_1[2:] - u_1[1:-1]) -
+            (a[1:-1] + a[0:-2])*(u_1[1:-1] - u_1[:-2]))
+        # Boundary conditions
+        b[0]  = u_L(t[n+1])
+        b[-1] = u_R(t[n+1])
+        # Solve
         u[:] = scipy.sparse.linalg.spsolve(A, b)
 
         if user_action is not None:
@@ -127,25 +138,31 @@ def solver_theta(I, a, L, Nx, D, T, theta=0.5, u_L=1, u_R=0,
         u_1, u = u, u_1
 
     t1 = time.clock()
-    return u, x, t, t1-t0
+    return t1-t0
 
 
 def viz(I, a, L, Nx, D, T, umin, umax, theta, u_L, u_R,
-        animate=True):
+        animate=True, store_u=False):
 
     from scitools.std import plot
-    def plot_u(u, x, t, n):
-        plot(x, u, 'r-', axis=[0, L, umin, umax], title='t=%f' % t[n])
+    solutions = []
+    def process_u(u, x, t, n):
+        if animate:
+            plot(x, u, 'r-', axis=[0, L, umin, umax], title='t=%f' % t[n])
         if t[n] == 0:
+            if store_u:
+                solutions.append(x)
+                solutions.append(t)
+                solutions.append(u.copy())
             time.sleep(3)
         else:
-            time.sleep(0.5)
+            if store_u:
+                solutions.append(u.copy())
+            #time.sleep(0.1)
 
-    user_action = plot_u if animate else lambda u,x,t,n: None
-
-    u, x, t, cpu = solver_theta(
-        I, a, L, Nx, D, T, theta, u_L, u_R, user_action=user_action)
-    return u, x, cpu
+    cpu = solver_theta(
+        I, a, L, Nx, D, T, theta, u_L, u_R, user_action=process_u)
+    return cpu, array(solutions)
 
 def fill_a(a_consts, L, Nx):
     """

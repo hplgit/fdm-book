@@ -1,0 +1,2803 @@
+!split
+===== EDIT THESE SLIDES! =====
+
+Remove everything with finite elements!
+
+
+!split
+===== What makes a differential equations nonlinear? =====
+
+ * In linear differential equations, the unknown $u$ or its derivatives
+   appear in linear terms $au(t)$, $au'(t)$, $a\nabla^2u$,
+   where $a$ is independent of $u$.
+ * All other types of terms containing $u$ are *nonlinear* and contain
+   color{red}{products of $u$ or its derivatives}.
+
+!split
+===== Examples on linear and nonlinear differential equations =====
+
+Linear ODE:
+
+!bt
+\[ u^{\prime} (t) = a(t)u(t) + b(t)\]
+!et
+
+Nonlinear ODE:
+
+!bt
+\[ u^{\prime}(t) = u(t)(1 - u(t)) = u(t) - {\color{red}u(t)^2}\]
+!et
+
+This (pendulum) ODE is also nonlinear:
+
+!bt
+\[ u^{\prime\prime} + \gamma\sin u = 0\]
+!et
+because
+
+!bt
+\[ \sin u = u - \frac{1}{6}u^3 + \Oof{u^5},\]
+!et
+contains products of $u$
+
+!split
+======= Introduction of basic concepts =======
+label{nonlin:timediscrete:logistic}
+
+ * Logistic ODE as simple model for a nonlinear problem
+ * Introduction of basic techniques:
+   * Explicit time integration (no nonlinearities)
+   * Implicit time integration (nonlinearities)
+   * Linearization and Picard iteration
+   * Linearization via Newton's method
+   * Linearization via a trick like geometric mean
+ * Numerical illustration of the performance
+
+!split
+===== The scaled logistic ODE =====
+
+!bt
+\[ u^{\prime}(t) = u(t)(1 - u(t)) = u - {\color{red}u^2}\]
+!et
+
+
+!split
+===== Linearization by explicit time discretization =====
+label{nonlin:timediscrete:logistic:FE}
+
+idx{linearization!explicit time integration}
+
+Forward Euler method:
+
+!bt
+\[ \frac{u^{n+1} - u^n}{\Delta t} = u^n(1 - u^n)\]
+!et
+
+gives a *linear* algebraic
+equation for the unknown value $u^{n+1}$!
+
+!bblock
+Explicit time integration methods will (normally) linearize
+a nonlinear problem.
+!eblock
+
+Another example: 2nd-order Runge-Kutta method
+
+!bt
+\begin{align*}
+u^* &= u^n + \Delta t u^n(1 - u^n),\\
+u^{n+1} &= u^n + \Delta t \half \left(
+u^n(1 - u^n) + u^*(1 - u^*))
+\right)\tp
+\end{align*}
+!et
+
+!split
+===== An implicit method: Backward Euler discretization =====
+label{nonlin:timediscrete:logistic:roots}
+
+A backward time difference
+
+!bt
+\[ \frac{u^{n} - u^{n-1}}{\Delta t} = u^n(1 - u^n) \]
+!et
+
+gives a *nonlinear* algebraic equation for the unknown $u^n$.
+The equation is of quadratic type (which can easily be solved exactly):
+
+!bt
+\[ \Delta t (u^n)^2 + (1-\Delta t)u^n - u^{n-1} = 0 \]
+!et
+
+!split
+===== Detour: new notation =====
+
+To make formulas less overloaded and the mathematics as close as
+possible to computer code, a new notation is introduced:
+
+ * $u^{(1)}$ means $u^{n-1}$
+ * In general: $u^{(\ell)}$ means $u^{n-\ell}$
+ * $u$ is the unknown ($u^n$)
+
+Nonlinear equation to solve in new notation:
+
+!bt
+\[
+F(u) = \Delta t u^2 + (1-\Delta t)u - u^{(1)} = 0
+\]
+!et
+
+!split
+===== Exact solution of quadratic nonlinear equations =====
+
+Solution of $F(u)=0$:
+
+!bt
+\[
+u = \frac{1}{2\Delta t}
+\left(-1+\Delta t \pm \sqrt{(1-\Delta t)^2 - 4\Delta t u^{(1)}}\right)
+\]
+!et
+
+!bwarning Observation:
+Nonlinear algebraic equations may have multiple solutions!
+!ewarning
+
+!split
+===== How do we pick the right solution in this case? =====
+
+Let's investigate the nature of the two roots:
+
+!bc pyshell
+>>> import sympy as sym
+>>> dt, u_1, u = sym.symbols('dt u_1 u')
+>>> r1, r2 = sym.solve(dt*u**2 + (1-dt)*u - u_1, u)  # find roots
+>>> r1
+(dt - sqrt(dt**2 + 4*dt*u_1 - 2*dt + 1) - 1)/(2*dt)
+>>> r2
+(dt + sqrt(dt**2 + 4*dt*u_1 - 2*dt + 1) - 1)/(2*dt)
+>>> print r1.series(dt, 0, 2)
+-1/dt + 1 - u_1 + dt*(u_1**2 - u_1) + O(dt**2)
+>>> print r2.series(dt, 0, 2)
+u_1 + dt*(-u_1**2 + u_1) + O(dt**2)
+!ec
+
+The `r1` root behaves as $1/\Delta t\rightarrow\infty$
+as $\Delta t\rightarrow 0$! Therefore, only the `r2` root is of
+relevance.
+
+!split
+===== Linearization =====
+
+ * In general, we cannot solve nonlinear algebraic equations
+   with formulas
+ * We must *linearize* the equation, or create a recursive set
+   of *linearized* equations whose solutions hopefully converge
+   to the solution of the nonlinear equation
+ * Manual linearization may be an art
+ * Automatic linearization is possible (cf. Newton's method)
+
+Examples will illustrate the points!
+
+!split
+===== Picard iteration =====
+label{nonlin:timediscrete:logistic:Picard}
+
+idx{Picard iteration} idx{successive substitutions}
+idx{linearization!Picard iteration}
+
+Nonliner equation from Backward Euler scheme for logistic ODE:
+
+!bt
+\[ F(u) = au^2 + bu + c = 0\]
+!et
+
+!bblock
+Let $u^{-}$ be an available approximation of the unknown $u$.
+!eblock
+
+Linearization of $u^2$: $u^{-}u$
+
+!bt
+\[ F(u)\approx\hat F(u) = au^{-}u + bu + c = 0\]
+!et
+
+But
+
+ * Problem: the solution $u$ of $\hat F(u)=0$ is not the exact solution
+   of $F(u)=0$
+ * Solution: set $u^{-}=u$ and repeat the procedure
+
+
+!split
+===== The algorithm of Picard iteration =====
+
+idx{fixed-point iteration}
+idx{linearization!successive substitutions}
+idx{linearization!fixed-point iteration}
+
+At a time level, set $u^{-}=u^{(1)}$ (solution at previous time level)
+and iterate:
+
+!bt
+\[ u = -\frac{c}{au^{-} + b},\quad u^{-}\ \leftarrow\ u\]
+!et
+
+This technique is known as
+
+ * fixed-point iteration
+ * successive substitutions
+ * nonlinear Richardson iteration
+ * color{red}{Picard iteration}
+
+!split
+===== The algorithm of Picard iteration with classical math notation =====
+
+ * $u^k$: computed approximation in iteration $k$
+ * $u^{k+1}$ is the next approximation (unknown)
+
+!bt
+\[ au^k u^{k+1} + bu^{k+1} + c = 0\quad\Rightarrow\quad u^{k+1}
+= -\frac{c}{au^k + b},\quad k=0,1,\ldots\]
+!et
+
+Or with a time level $n$ too:
+
+!bt
+\[ au^{n,k} u^{n,k+1} + bu^{n,k+1} - u^{n-1} = 0\quad\Rightarrow\quad u^{n,k+1}
+= \frac{u^{n-1}}{au^{n,k} + b},\quad k=0,1,\ldots\]
+!et
+
+
+
+!split
+===== Stopping criteria =====
+
+idx{stopping criteria (nonlinear problems)}
+
+Using change in solution:
+
+!bt
+\[ |u - u^{-}| \leq\epsilon_u\]
+!et
+
+or change in residual:
+
+!bt
+\[ |F(u)|= |au^2+bu + c| < \epsilon_r\]
+!et
+
+!split
+===== A single Picard iteration =====
+
+idx{single Picard iteration technique}
+
+Common simple and cheap technique: perform 1 single Picard iteration
+
+!bt
+\[
+\frac{u^{n} - u^{n-1}}{\Delta t} = u^n(1 - {\color{red}u^{n-1}})
+\]
+!et
+
+Inconsistent time discretization ($u(1-u)$ must be evaluated for
+$n$, $n-1$, or $n-\frac{1}{2}$) - can produce quite inaccurate results, but
+is very popular.
+
+!split
+===== Implicit Crank-Nicolson discretization =====
+
+Crank-Nicolson discretization:
+
+!bt
+\[ [D_t u = u(1-u)]^{n+\half}\]
+!et
+
+!bt
+\[
+\frac{u^{n+1}-u^n}{\Delta t} = u^{n+\half} -
+(u^{n+\half})^2
+\]
+!et
+
+Approximate $u^{n+\half}$ as usual by an arithmetic
+mean,
+
+!bt
+\[ u^{n+\half}\approx \half(u^n + u^{n+1})\]
+!et
+
+!bt
+\[ (u^{n+\half})^2\approx \frac{1}{4}(u^n + u^{n+1})^2\quad\hbox{(nonlinear term)}\]
+!et
+
+which is nonlinear in the unknown $u^{n+1}$.
+
+!split
+===== Linearization by a geometric mean =====
+label{nonlin:timediscrete:logistic:geometric:mean}
+
+
+Using a *geometric mean* for $(u^{n+\half})^2$ linearizes
+the nonlinear term $(u^{n+\half})^2$ (error $\Oof{\Delta t^2}$ as
+in the discretization of $u^{\prime}$):
+
+!bt
+\[ (u^{n+\half})^2\approx u^nu^{n+1}\]
+!et
+
+Arithmetic mean on the linear $u^{n+\frac{1}{2}}$ term and a geometric
+mean for $(u^{n+\half})^2$ gives a linear equation
+for $u^{n+1}$:
+
+!bt
+\[ \frac{{\color{red}u^{n+1}}-u^n}{\Delta t} =
+\half(u^n + {\color{red}u^{n+1}}) + u^n{\color{red}u^{n+1}}\]
+!et
+
+Note: Here we turned a nonlinear algebraic equation into a linear
+one. No need for iteration! (Consistent $\Oof{\Delta t^2}$ approx.)
+
+
+!split
+===== Newton's method =====
+label{nonlin:timediscrete:logistic:Newton}
+
+
+Write the nonlinear algebraic equation as
+
+!bt
+\[ F(u) = 0 \]
+!et
+
+Newton's method: linearize $F(u)$ by two terms from the Taylor series,
+
+!bt
+\begin{align*}
+F(u) &= F(u^{-}) + F^{\prime}(u^{-})(u - u^{-}) + {\half}F^{\prime\prime}(u^{-})(u-u^{-})^2
++\cdots\\
+& \approx F(u^{-}) + F^{\prime}(u^{-})(u - u^{-}) \equiv \hat F(u)
+\end{align*}
+!et
+
+The linear equation $\hat F(u)=0$ has the solution
+
+!bt
+\[ u = u^{-} - \frac{F(u^{-})}{F^{\prime}(u^{-})}\]
+!et
+
+Note that $\hat F$ in Picard and Newton are different!
+
+!split
+===== Newton's method with an iteration index =====
+
+!bt
+\[ u^{k+1} = u^k - \frac{F(u^k)}{F^{\prime}(u^k)},\quad k=0,1,\ldots\]
+!et
+
+!bblock
+Newton's method exhibits *quadratic convergence* if
+$u^k$ is sufficiently close to the solution. Otherwise, the method
+may diverge.
+!eblock
+
+!split
+===== Using Newton's method on the logistic ODE =====
+
+!bt
+\[ F(u) = au^2 + bu + c\]
+!et
+
+!bt
+\[ F^{\prime}(u) = 2au + b\]
+!et
+
+The iteration method becomes
+
+!bt
+\[
+u = u^{-} + \frac{a(u^{-})^2 + bu^{-} + c}{2au^{-} + b},\quad
+u^{-}\ \leftarrow u
+\]
+!et
+
+Start of iteration: $u^{-}=u^{(1)}$
+
+!split
+===== Using Newton's method on the logistic ODE with typical math notation =====
+
+Set iteration start as $u^{n,0}= u^{n-1}$ and iterate
+with explicit indices for time ($n$) and
+Newton iteration ($k$):
+
+!bt
+\[
+u^{n,k+1} = u^{n,k} +
+\frac{\Delta t (u^{n,k})^2 + (1-\Delta t)u^{n,k} - u^{n-1}}
+{2\Delta t u^{n,k} + 1 - \Delta t}
+\]
+!et
+
+Compare notation with
+
+!bt
+\[
+u = u^{-} +
+\frac{\Delta t (u^{-})^2 + (1-\Delta t)u^{-} - u^{(1)}}
+{2\Delta t u^{-} + 1 - \Delta t}
+\]
+!et
+
+!split
+===== Relaxation may improve the convergence =====
+label{nonlin:timediscrete:logistic:relaxation}
+
+idx{relaxation (nonlinear equations)}
+
+ * Problem: Picard and Newton iteration may change the solution too much
+ * Remedy: relaxation (less change in the solution)
+ * Let $u^*$ be the suggested new value from Picard or Newton iteration
+
+Relaxation with *relaxation parameter* $\omega$ (weight old and new value):
+
+!bt
+\[ u = \omega u^* + (1-\omega) u^{-},\quad \omega \leq 1\]
+!et
+
+Simple formula when used in Newton's method:
+
+!bt
+\[
+u = u^{-} - \omega \frac{F(u^{-})}{F^{\prime}(u^{-})}
+\]
+!et
+
+!split
+===== Implementation; part 1 =====
+label{nonlin:timediscrete:logistic:impl}
+
+Program "`logistic.py`": "${src_nonlin}/logistic.py"
+
+!bc pycod
+def BE_logistic(u0, dt, Nt, choice='Picard',
+                eps_r=1E-3, omega=1, max_iter=1000):
+    if choice == 'Picard1':
+        choice = 'Picard';  max_iter = 1
+
+    u = np.zeros(Nt+1)
+    iterations = []
+    u[0] = u0
+    for n in range(1, Nt+1):
+        a = dt
+        b = 1 - dt
+        c = -u[n-1]
+
+        if choice == 'Picard':
+
+            def F(u):
+                return a*u**2 + b*u + c
+
+            u_ = u[n-1]
+            k = 0
+            while abs(F(u_)) > eps_r and k < max_iter:
+                u_ = omega*(-c/(a*u_ + b)) + (1-omega)*u_
+                k += 1
+            u[n] = u_
+            iterations.append(k)
+!ec
+
+
+!split
+===== Implementation; part 2 =====
+
+!bc pycod
+def BE_logistic(u0, dt, Nt, choice='Picard',
+                eps_r=1E-3, omega=1, max_iter=1000):
+    ...
+        elif choice == 'Newton':
+
+            def F(u):
+                return a*u**2 + b*u + c
+
+            def dF(u):
+                return 2*a*u + b
+
+            u_ = u[n-1]
+            k = 0
+            while abs(F(u_)) > eps_r and k < max_iter:
+                u_ = u_ - F(u_)/dF(u_)
+                k += 1
+            u[n] = u_
+            iterations.append(k)
+    return u, iterations
+!ec
+
+!split
+===== Implementation; part 3 =====
+
+The Crank-Nicolson method with a geometric mean:
+
+@@@CODE src-nonlin/logistic.py fromto: def CN_logistic@from scitools
+
+!split
+===== Experiments: accuracy of iteration methods =====
+
+FIGURE: [fig-nonlin/logistic_u, width=800 frac=1] The impact of solution strategies and for four different time step lengths on the solution. label{nonlin:timediscrete:logistic:impl:fig:u}
+
+!split
+===== Experiments: number of iterations =====
+
+FIGURE: [fig-nonlin/logistic_iter, width=800 frac=1] Comparison of the number of iterations at various time levels for Picard and Newton iteration. label{nonlin:timediscrete:logistic:impl:fig:iter}
+
+!split
+===== The effect of relaxation can potentially be great! =====
+
+ * $\Delta t=0.9$: Picard required 32 iterations on average
+ * $\omega =0.8$: 7 iterations
+ * $\omega =0.5$: 2 iterations (!) - optimal choice
+
+Other $\omega=1$ experiments:
+
+|----------------------------------------------|
+|  $\Delta t$ | $\epsilon_r$ | Picard | Newton |
+|----l-----------l--------------r---------r----|
+|  $0.2$      | $10^{-7}$    |   5    |   2    |
+|  $0.2$      | $10^{-3}$    |   2    |   1    |
+|  $0.4$      | $10^{-7}$    |   12   |   3    |
+|  $0.4$      | $10^{-3}$    |   4    |   2    |
+|  $0.8$      | $10^{-7}$    |   58   |   3    |
+|  $0.8$      | $10^{-3}$    |   4    |   2    |
+|----------------------------------------------|
+
+
+!split
+===== Generalization to a general nonlinear ODE =====
+label{nonlin:ode:generic}
+
+!bt
+\[
+u^{\prime} = f(u, t)
+\]
+!et
+
+Note: $f$ is in general nonlinear in $u$ so the ODE is nonlinear
+
+!split
+===== Explicit time discretization =====
+
+Forward Euler and all explicit methods sample $f$ with known
+values and all nonlinearities are gone:
+
+!bt
+\[ \frac{{\color{red}u^{n+1}}-u^n}{\Delta t} = f(u^n, t_n) \]
+!et
+
+!split
+===== Backward Euler discretization =====
+
+Backward Euler $[D_t^- u = f]^n$ leads to nonlinear algebraic equations:
+
+!bt
+\[ F(u^n) = u^{n} - \Delta t\, f(u^n, t_n) - u^{n-1}=0\]
+!et
+
+Alternative notation:
+
+!bt
+\[ F(u) = u - \Delta t\, f(u, t_n) - u^{(1)} = 0\]
+!et
+
+!split
+===== Picard iteration for Backward Euler scheme =====
+
+A simple Picard iteration, not knowing anything about the nonlinear
+structure of $f$, must approximate $f(u,t_n)$ by $f(u^{-},t_n)$:
+
+!bt
+\[ \hat F(u) = u - \Delta t\, f(u^{-},t_n) - u^{(1)}\]
+!et
+
+The iteration starts with $u^{-}=u^{(1)}$ and proceeds with repeating
+
+!bt
+\[ u^* = \Delta t\, f(u^{-},t_n) + u^{(1)},\quad
+   u = \omega u^* + (1-\omega)u^{-},
+\quad u^{-}\ \leftarrow\ u\]
+!et
+until a stopping criterion is fulfilled.
+
+!split
+===== Manual linearization for a given $f(u,t)$ =====
+
+ * $f(u^{-},t)$: *explicit* treatment of $f$<linebreak>
+   (as in time-discretization)
+ * $f(u,t)$: *fully implicit* treatment of $f$
+ * If $f$ has some structure, say $f(u,t)=u^3$, we may
+   think of a *partially implicit* treatment: $(u^{-})^2u$
+ * More implicit treatment of $f$ often gives faster
+   convergence<linebreak>
+   (as it gives more stable time discretizations)
+
+Trick for partially implicit treatment of a general $f(u,t)$:
+
+!bt
+\[ f(u^{-},t)\frac{u}{u^{-1}} \]
+!et
+
+(Idea: $u\approx u^{-}$)
+
+!split
+===== Computational experiments with partially implicit treatment of $f$ =====
+
+ * $f(u,t)=-u^3$:
+   * $(u^{-})^3$ linearization: 22, 9, 6 iterations
+   * $(u^{-})^2u$ linearization: 8, 5, 4 iterations
+ * $f(u,t)=e^{-u}$: a trick $f(u^{-},t)u/u^{-}$ has no effect
+ * $f(u,t)=\sin(2(u+1))$: a trick $f(u^{-},t)u/u^{-}$ has effect<linebreak>
+   (7, 9, 11 iterations vs 17, 21, 20)
+
+
+!split
+===== Newton's method for Backward Euler scheme =====
+
+Newton's method requires the computation of the derivative
+
+!bt
+\[ F^{\prime}(u) = 1 - \Delta t\frac{\partial f}{\partial u}(u,t_n)\]
+!et
+
+!bblock Algorithm for Newton's method for $u^{\prime}=f(u,t)$
+Start with $u^{-}=u^{(1)}$, then iterate
+
+!bt
+\[
+u = u^{-} - \omega \frac{F(u^{-})}{F^{\prime}(u^{-})}
+= u^{-} - \omega \frac{u^{(1)} + \Delta t\, f(u^{-},t_{n})}{1 - \Delta t
+\frac{\partial}{\partial u}f(u^{-},t_n)}
+\]
+!et
+!eblock
+
+!split
+===== Crank-Nicolson discretization =====
+
+The standard Crank-Nicolson scheme with arithmetic mean approximation of
+$f$ reads
+
+!bt
+\[ \frac{u^{n+1} - u^n}{\Delta t} = \half(f(u^{n+1}, t_{n+1})
++ f(u^n, t_n))\]
+!et
+
+
+Nonlinear algebraic equation:
+
+!bt
+\[
+F(u) = u - u^{(1)} - \Delta t{\half}f(u,t_{n+1}) -
+\Delta t{\half}f(u^{(1)},t_{n}) = 0
+\]
+!et
+
+!split
+===== Picard and Newton iteration in the Crank-Nicolson case =====
+
+Picard iteration (for a general $f$):
+
+!bt
+\[ \hat F(u) = u - u^{(1)} - \Delta t{\half}f(u^{-},t_{n+1}) -
+\Delta t{\half}f(u^{(1)},t_{n})\]
+!et
+
+Newton's method:
+
+!bt
+\[
+F(u) = u - u^{(1)} - \Delta t{\half}f(u,t_{n+1}) -
+\Delta t{\half}f(u^{(1)},t_{n})
+\]
+!et
+
+!bt
+\[ F^{\prime}(u)= 1 - \half\Delta t\frac{\partial f}{\partial u}(u,t_{n+1})\]
+!et
+
+# see ODE_Picard_tricks.py for testing
+
+!split
+===== Systems of ODEs =====
+
+!bt
+\begin{align*}
+\frac{d}{dt}u_0(t) &= f_0(u_0(t),u_1(t),\ldots,u_N(t),t)\\
+\frac{d}{dt}u_1(t) &= f_1(u_0(t),u_1(t),\ldots,u_N(t),t),\\
+&\vdots\\
+\frac{d}{dt}u_N(t) &= f_N(u_0(t),u_1(t),\ldots,u_N(t),t)
+\end{align*}
+!et
+
+Introduce vector notation:
+
+ * $u=(u_0(t),u_1(t),\ldots,u_N(t))$
+ * $(f_0(u,t),f_1(u,t),\ldots,f_N(u,t))$
+
+Vector form:
+
+!bt
+\[ u^{\prime} = f(u,t),\quad u(0)=U_0 \]
+!et
+
+Schemes: apply scalar scheme to each component
+
+!split
+===== A Backward Euler scheme for the vector ODE $u^{\prime}=f(u,t)$ =====
+
+!bt
+\begin{align*}
+\frac{u_0^n- u_0^{n-1}}{\Delta t} &= f_0(u^n,t_n)\\
+\frac{u_1^n- u_1^{n-1}}{\Delta t} &= f_1(u^n,t_n)\\
+&\vdots\\
+\frac{u_N^n- u_N^{n-1}}{\Delta t} &= f_N(u^n,t_n)
+\end{align*}
+!et
+
+This can be written more compactly in vector form as
+
+!bt
+\[ \frac{u^n- u^{n-1}}{\Delta t} = f(u^n,t_n)\]
+!et
+
+This is a system of *nonlinear algebraic equations*,
+
+!bt
+\[ u^n - \Delta t\,f(u^n,t_n) - u^{n-1}=0,\]
+!et
+or written out
+
+!bt
+\begin{align*}
+u_0^n - \Delta t\, f_0(u^n,t_n) - u_0^{n-1} &= 0,\\
+&\vdots\\
+u_N^n - \Delta t\, f_N(u^n,t_n) - u_N^{n-1} &= 0\tp
+\end{align*}
+!et
+
+!split
+===== Example: Crank-Nicolson scheme for the oscillating pendulum model =====
+
+The scaled equations for an oscillating pendulum:
+
+!bt
+\begin{align}
+\dot\omega &= -\sin\theta -\beta \omega |\omega|,\\
+\dot\theta &= \omega,
+\end{align}
+!et
+
+Set $u_0=\omega$, $u_1=\theta$
+
+!bt
+\begin{align*}
+u_0^{\prime} = f_0(u,t) &= -\sin u_1 - \beta u_0|u_0|,\\
+u_1^{\prime} = f_1(u,t) &= u_0\tp
+\end{align*}
+!et
+
+Crank-Nicolson discretization:
+
+!bt
+\begin{align}
+\frac{u_0^{n+1}-u_0^{n}}{\Delta t} &= -\sin u_1^{n+\frac{1}{2}}
+- \beta u_0^{n+\frac{1}{2}}|u_0^{n+\frac{1}{2}}|
+\approx -\sin\left(\frac{1}{2}(u_1^{n+1} + u_1^n)\right)
+- \beta\frac{1}{4} (u_0^{n+1} + u_0^n)|u_0^{n+1}+u_0^n|,\\
+\frac{u_1^{n+1}-u_1^n}{\Delta t} &= u_0^{n+\frac{1}{2}}\approx
+\frac{1}{2} (u_0^{n+1}+u_0^n)\tp
+\end{align}
+!et
+
+!split
+===== The nonlinear $2\times 2$ system =====
+
+Introduce $u_0$ and $u_1$ for $u_0^{n+1}$ and
+$u_1^{n+1}$, write $u_0^{(1)}$ and
+$u_1^{(1)}$ for $u_0^n$ and $u_1^n$, and rearrange:
+
+!bt
+\begin{align*}
+F_0(u_0,u_1) &=
+{\color{red}u_0}
+- u_0^{(1)} + \Delta t\,\sin\left(\frac{1}{2}({\color{red}u_1}
++ u_1^{(1)})\right)
++ \frac{1}{4}\Delta t\beta ({\color{red}u_0} + u_0^{(1)})
+|{\color{red}u_0} + u_0^{(1)}| =0
+\\
+F_1(u_0,u_1) &=
+{\color{red}u_1} - u_1^{(1)} -\frac{1}{2}\Delta t({\color{red}u_0}
++ u_0^{(1)}) =0
+\end{align*}
+!et
+
+
+!split
+======= Systems of nonlinear algebraic equations =======
+label{nonlin:systems:alg}
+
+!bbox
+!bt
+\begin{align*}
+x\cos y + y^3 & = 0\\
+y^2e^x + xy &= 2
+\end{align*}
+!et
+!ebox
+
+Systems of nonlinear algebraic equations arise from solving
+*systems of ODEs* or solving *PDEs*
+
+
+!split
+===== Notation for general systems of algebraic equations =====
+
+!bt
+\[ F(u) = 0\]
+!et
+
+where
+
+!bt
+\[ u=(u_0,\ldots,u_N),\quad F=(F_0,\ldots,F_N)\]
+!et
+
+Special linear system-type structure <linebreak>
+(arises frequently in PDE problems):
+
+!bt
+\[ A(u)u = b(u)\]
+!et
+
+!split
+===== Picard iteration =====
+label{nonlin:systems:alg:Picard}
+
+Picard iteration for $F(u)=0$ is meaningless unless there is
+some structure so we can linearize. For $A(u)u=b(u)$ we can
+linearize
+
+!bt
+\[ A(u^{-})u = b(u^{-})\]
+!et
+
+Note: we solve a system of nonlinear algebraic equations as
+a sequence of linear systems.
+
+!split
+===== Algorithm for relaxed Picard iteration =====
+
+!bblock
+Given $A(u)u=b(u)$ and an initial guess $u^{-}$, iterate until convergence:
+
+ o solve $A(u^{-})u^* = b(u^{-})$ with respect to $u^*$
+ o $u = \omega u^* + (1-\omega) u^{-}$
+ o $u^{-}\ \leftarrow\ u$
+!eblock
+
+``Until convergence'': $||u - u^{-}|| \leq \epsilon_u$ or
+$||A(u)u-b|| \leq\epsilon_r$
+
+!split
+===== Newton's method for $F(u)=0$ =====
+label{nonlin:systems:alg:Newton}
+
+Linearization of $F(u)=0$ equation via multi-dimensional Taylor series:
+
+!bt
+\[ F(u) = F(u^{-}) + J(u^{-}) \cdot (u - u^{-}) + \mathcal{O}(||u - u^{-}||^2) \]
+!et
+
+where $J$ is the *Jacobian* of $F$, sometimes denoted $\nabla_uF$, defined by
+
+!bt
+\[ J_{i,j} = \frac{\partial F_i}{\partial u_j}\]
+!et
+
+Approximate the original nonlinear system $F(u)=0$ by
+
+!bt
+\[ \hat F(u) = F(u^{-}) + J(u^{-}) \cdot \delta u =0,\quad
+\delta u = u - u^{-}\]
+!et
+
+which is linear vector equation in $u$
+
+!split
+===== Algorithm for Newton's method =====
+
+!bt
+\[ \underline{F(u^{-})}_{\mbox{vector}} +
+\underline{J(u^{-})}_{\mbox{matrix}} \cdot
+\underline{\delta u}_{\mbox{vector}} =0\]
+!et
+
+!bblock
+Solution by a two-step procedure:
+
+ o solve linear system $J(u^{-})\delta u = -F(u^{-})$ wrt $\delta u$
+ o update $u = u^{-} + \delta u$
+
+Relaxed update:
+
+!bt
+\[ u = \omega(u^{-} +\delta u)
++ (1-\omega)u^{-} = u^{-}  + \omega\delta u
+\]
+!et
+!eblock
+
+
+!split
+===== Newton's method for $A(u)u=b(u)$ =====
+label{nonlin:systems:alg:Newton:Aub}
+
+For
+
+!bt
+\[ F_i = \sum_k A_{i,k}(u)u_k - b_i(u)\]
+!et
+
+one gets
+
+!bt
+\[
+J_{i,j} = \frac{\partial F_i}{\partial u_j}
+= \sum_k \frac{\partial A_{i,k}}{\partial u_j}u_k
++ A_{i,j} -
+\frac{\partial b_i}{\partial u_j}
+\]
+!et
+
+Matrix form:
+
+!bt
+\[ (A + A^{\prime}u + b^{\prime})\delta u = -Au + b\]
+!et
+
+!bt
+\[ (A(u^{-}) + A^{\prime}(u^{-})u^{-} + b^{\prime}(u^{-}))\delta u
+= -A(u^{-})u^{-} + b(u^{-})\]
+!et
+
+!split
+===== Comparison of Newton and Picard iteration =====
+
+Newton:
+
+!bt
+\[ (A(u^{-}) + A^{\prime}(u^{-})u^{-} + b^{\prime}(u^{-}))\delta u
+= -A(u^{-})u^{-} + b(u^{-})\]
+!et
+
+
+Rewrite:
+
+!bt
+\[ \underbrace{A(u^{-})(u^{-}+\delta u) - b(u^{-})}_{\hbox{Picard system}}
++\, \gamma (A^{\prime}(u^{-})u^{-} + b^{\prime}(u^{-}))\delta u
+= 0\]
+!et
+
+!bblock
+All the ``Picard terms'' are contained in the Newton formulation.
+!eblock
+
+!split
+===== Combined Picard-Newton algorithm =====
+
+!bblock Idea:
+Write a common Picard-Newton algorithm so we can trivially
+switch between the two methods (e.g., start with Picard, get
+faster convergence with Newton when $u$ is closer to the solution)
+!eblock
+
+!bblock Algorithm:
+Given $A(u)$, $b(u)$, and an initial guess $u^{-}$, iterate until convergence:
+
+ o solve $(A + \gamma(A^{\prime}(u^{-})u^{-} +
+   b^{\prime}(u^{-})))\delta u = -A(u^{-})u^{-} + b(u^{-})$
+   with respect to $\delta u$
+ o $u = u^{-} + \omega\delta u$
+ o $u^{-}\ \leftarrow\ u$
+
+Note:
+  * $\gamma =1$: Newton's method
+  * $\gamma =0$: Picard iteration
+!eblock
+
+!split
+===== Stopping criteria =====
+label{nonlin:systems:alg:terminate}
+
+idx{stopping criteria (nonlinear problems)}
+
+Let $||\cdot||$ be the standard Eucledian vector norm. Several termination
+criteria are much in use:
+
+ * Absolute change in solution: $||u - u^{-}||\leq \epsilon_u$
+ * Relative change in solution: $||u - u^{-}||\leq \epsilon_u ||u_0||$,
+   where $u_0$ denotes the start value of $u^{-}$ in the iteration
+ * Absolute residual: $||F(u)|| \leq \epsilon_r$
+ * Relative residual: $||F(u)|| \leq \epsilon_r ||F(u_0)||$
+ * Max no of iterations: stop when $k > k_{\max}$
+
+!split
+===== Combination of absolute and relative stopping criteria =====
+
+Problem with relative criterion: a small
+$||F(u_0)||$ (because $u_0\approx u$, perhaps because of small $\Delta t$)
+must be significantly reduced. Better with absolute criterion.
+
+ * Can make combined absolute-relative criterion
+ * $\epsilon_{rr}$: tolerance for relative part
+ * $\epsilon_{ra}$: tolerance for absolute part
+
+!bt
+\[
+||F(u)|| \leq \epsilon_{rr} ||F(u_0)|| + \epsilon_{ra}
+\]
+!et
+
+!bt
+\[
+||F(u)|| \leq \epsilon_{rr} ||F(u_0)|| + \epsilon_{ra}
+\quad\hbox{or}\quad
+||\delta u|| \leq \epsilon_{ur} ||u_0|| + \epsilon_{ua}
+\quad\hbox{or}\quad
+k>k_{\max}
+\]
+!et
+
+!split
+===== Example: A nonlinear ODE model from epidemiology =====
+label{nonlin:systems:alg:SI}
+
+Spreading of a disease (e.g., a flu) can be modeled by
+a $2\times 2$ ODE system
+
+!bt
+\begin{align*}
+S^{\prime} &= -\beta SI\\
+I^{\prime} &= \beta SI - \nu I
+\end{align*}
+!et
+
+Here:
+
+ * $S(t)$ is the number of people who can get ill (susceptibles)
+ * $I(t)$ is the number of people who are ill (infected)
+ * Must know $\beta >0$ (danger of getting ill) and <linebreak>
+   $\nu >0$ ($1/\nu$: expected recovery time)
+
+!split
+===== Implicit time discretization =====
+
+A Crank-Nicolson scheme:
+
+!bt
+\begin{align*}
+\frac{S^{n+1}-S^n}{\Delta t} &= -\beta [SI]^{n+\half}
+\approx -\frac{\beta}{2}(S^nI^n + S^{n+1}I^{n+1})\\
+\frac{I^{n+1}-I^n}{\Delta t} &= \beta [SI]^{n+\half} -
+\nu I^{n+\half}
+\approx \frac{\beta}{2}(S^nI^n + S^{n+1}I^{n+1}) -
+\frac{\nu}{2}(I^n + I^{n+1})
+\end{align*}
+!et
+
+New notation: $S$ for $S^{n+1}$, $S^{(1)}$ for $S^n$, $I$ for $I^{n+1}$,
+$I^{(1)}$ for $I^n$
+
+!bt
+\begin{align*}
+F_S(S,I) &= S - S^{(1)} +
+\half\Delta t\beta(S^{(1)}I^{(1)} + SI) = 0\\
+F_I(S,I) &= I - I^{(1)} -
+\half\Delta t\beta(S^{(1)}I^{(1)} + SI) +
+\half\Delta t\nu(I^{(1)} + I) =0
+\end{align*}
+!et
+
+!split
+===== A Picard iteration =====
+
+ * We have approximations $S^{-}$ and $I^{-}$ to $S$ and $I$.
+ * Linearize $SI$ in $S$ ODE as $I^{-}S$ (linear equation in $S$!)
+ * Linearize $SI$ in $I$ ODE as $S^{-}I$ (linear equation in $I$!)
+
+!bt
+\begin{align*}
+S &= \frac{S^{(1)} - \half\Delta t\beta S^{(1)}I^{(1)}}
+{1 + \half\Delta t\beta I^{-}}
+\\
+I &= \frac{I^{(1)} + \half\Delta t\beta S^{(1)}I^{(1)} - \half\Delta t\nu I^{(1)}}
+{1 - \half\Delta t\beta S^{-} + \half\Delta t \nu}
+\end{align*}
+!et
+Before a new iteration: $S^{-}\ \leftarrow\ S$ and
+$I^{-}\ \leftarrow\ I$
+
+!split
+===== Newton's method =====
+
+!bt
+\[ F(u)=0,\quad F=(F_S,F_I),\  u=(S,I) \]
+!et
+
+Jacobian:
+
+!bt
+\[
+J = \left(\begin{array}{cc}
+\frac{\partial}{\partial S} F_S & \frac{\partial}{\partial I}F_S\\
+\frac{\partial}{\partial S} F_I & \frac{\partial}{\partial I}F_I
+\end{array}\right)
+= \left(\begin{array}{cc}
+1 + \half\Delta t\beta I & \half\Delta t\beta S\\
+- \half\Delta t\beta I & 1 - \half\Delta t\beta S +
+\half\Delta t\nu
+\end{array}\right)
+\]
+!et
+
+Newton system: $J(u^{-})\delta u = -F(u^{-})$
+
+!bt
+\begin{align*}
+&
+\left(\begin{array}{cc}
+1 + \half\Delta t\beta I^{-} & \half\Delta t\beta S^{-}\\
+- \half\Delta t\beta I^{-} & 1 - \half\Delta t\beta S^{-} +
+\half\Delta t\nu
+\end{array}\right)
+\left(\begin{array}{c}
+\delta S\\
+\delta I
+\end{array}\right)
+=\\
+& \qquad\qquad
+\left(\begin{array}{c}
+S^{-} - S^{(1)} + \half\Delta t\beta(S^{(1)}I^{(1)} + S^{-}I^{-})\\
+I^{-} - I^{(1)} - \half\Delta t\beta(S^{(1)}I^{(1)} + S^{-}I^{-}) -
+\half\Delta t\nu(I^{(1)} + I^{-})
+\end{array}\right)
+\end{align*}
+!et
+
+!split
+===== Actually no need to bother with nonlinear algebraic equations for this particular model... =====
+
+!bblock Remark:
+For this particular system of ODEs, explicit time integration methods work very
+well. Even a Forward Euler scheme is fine, but
+the 4-th order Runge-Kutta method is an excellent
+balance between high accuracy, high efficiency, and simplicity.
+!eblock
+
+!split
+======= Linearization at the differential equation level =======
+label{nonlin:pdelevel}
+
+Goal: linearize a PDE like
+
+!bt
+\[
+\frac{\partial u}{\partial t} = \nabla\cdot ({\color{red}\dfc(u)\nabla u})
++ {\color{red}f(u)}
+\]
+!et
+
+!split
+===== PDE problem =====
+
+!bt
+\begin{align*}
+\frac{\partial u}{\partial t} &= \nabla\cdot (\dfc(u)\nabla u) + f(u),\quad
+&\x\in\Omega,\ t\in (0,T]
+\\
+-\dfc(u)\frac{\partial u}{\partial n} &= g,\quad &\x\in\partial\Omega_N,\
+t\in (0,T]
+\\
+u &= u_0,\quad &\x\in\partial\Omega_D,\ t\in (0,T]
+\end{align*}
+!et
+
+
+!split
+===== Explicit time integration =====
+label{nonlin:pdelevel:explicit}
+
+!bbox
+Explicit time integration methods remove the nonlinearity
+!ebox
+
+Forward Euler method:
+
+!bt
+\[ [D_t^+ u = \nabla\cdot (\dfc(u)\nabla u) + f(u)]^n\]
+!et
+
+!bt
+\[ \frac{u^{n+1} - u^n}{\Delta t} = \nabla\cdot (\dfc(u^n)\nabla u^n)
++ f(u^n)\]
+!et
+
+This is a *linear equation* in the unknown $u^{n+1}(\x)$, with solution
+
+!bt
+\[ u^{n+1} = u^n + \Delta t\nabla\cdot (\dfc(u^n)\nabla u^n) +
+\Delta t f(u^n) \]
+!et
+
+Disadvantage: $\Delta t \leq (\max\alpha)^{-1}(\Delta x^2 + \Delta y^2 + \Delta z^2)$
+
+!split
+===== Backward Euler scheme =====
+label{nonlin:pdelevel:Picard}
+
+Backward Euler scheme:
+
+!bt
+\[ [D_t^- u = \nabla\cdot (\dfc(u)\nabla u) + f(u)]^n\]
+!et
+
+Written out:
+
+!bt
+\[
+\frac{u^{n} - u^{n-1}}{\Delta t} = \nabla\cdot (\dfc(u^n)\nabla u^n)
++ f(u^n)
+\]
+!et
+
+This is a nonlinear, stationary PDE for the unknown function $u^n(\x)$
+
+!split
+===== Picard iteration for Backward Euler scheme =====
+
+We have
+
+!bt
+\[
+\frac{u^{n} - u^{n-1}}{\Delta t} = \nabla\cdot (\dfc(u^n)\nabla u^n)
++ f(u^n)
+\]
+!et
+
+Picard iteration:
+
+!bt
+\[
+\frac{u^{n,k+1} - u^{n-1}}{\Delta t} = \nabla\cdot (\dfc(u^{n,k})
+\nabla u^{n,k+1})
++ f(u^{n,k})
+\]
+!et
+
+Start iteration with $u^{n,0}=u^{n-1}$
+
+!split
+===== Picard iteration with alternative notation =====
+
+!bt
+\[
+\frac{u^{n,k+1} - u^{n-1}}{\Delta t} = \nabla\cdot (\dfc(u^{n,k})
+\nabla u^{n,k+1})
++ f(u^{n,k})
+\]
+!et
+
+Rewrite with a simplified, implementation-friendly notation:
+
+ * $u$ means the unknown $u^{n,k+1}$ to solve for
+ * $u^{-}$ means the most recent approximation to $u$
+ * $u^{(1)}$ means $u^{n-1}$ ($u^{(\ell)}$ means $u^{n-\ell}$)
+
+!bt
+\[
+\frac{u - u^{(1)}}{\Delta t} = \nabla\cdot (\dfc(u^{-})
+\nabla u)
++ f(u^{-})
+\]
+!et
+
+Start iteration with $u^{-}=u^{(1)}$;
+update with $u^{-}$ to $u$.
+
+!split
+===== Backward Euler scheme and Newton's method =====
+label{nonlin:pdelevel:Newton}
+
+!bbox
+Normally, Newton's method is defined for systems of *algebraic equations*,
+but the idea of the method can be applied at the PDE level too!
+!ebox
+
+Let $u^{n,k}$ be an approximation to the unknown $u^n$.
+We seek a better approximation
+
+!bt
+\[
+u^{n} = u^{n,k} + \delta u
+\]
+!et
+
+ * Insert $u^{n} = u^{n,k} + \delta u$ in the PDE
+ * Taylor expand the nonlinearities
+   and keep only terms that are linear in $\delta u$
+
+Result: linear PDE for the *approximate* correction $\delta u$
+
+!split
+===== Calculation details of Newton's method at the PDE level =====
+
+Insert $u^{n,k} +\delta u$ for $u^n$ in PDE:
+
+!bt
+\[
+\frac{u^{n,k} +\delta u - u^{n-1}}{\Delta t} =
+\nabla\cdot (\dfc(u^{n,k} + \delta u)\nabla (u^{n,k}+\delta u))
++ f(u^{n,k}+\delta u)
+\]
+!et
+
+Taylor expand $\dfc(u^{n,k} + \delta u)$ and
+$f(u^{n,k}+\delta u)$:
+
+!bt
+\begin{align*}
+\dfc(u^{n,k} + \delta u) & = \dfc(u^{n,k}) + \frac{d\dfc}{du}(u^{n,k})
+\delta u + \Oof{\delta u^2}\approx \dfc(u^{n,k}) + \dfc^{\prime}(u^{n,k})\delta u\\
+f(u^{n,k}+\delta u) &=  f(u^{n,k}) + \frac{df}{du}(u^{n,k})\delta u
++ \Oof{\delta u^2}\approx f(u^{n,k}) + f^{\prime}(u^{n,k})\delta u
+\end{align*}
+!et
+
+!split
+===== Calculation details of Newton's method at the PDE level =====
+
+Inserting linear approximations of $\dfc$ and $f$:
+
+!bt
+\begin{align*}
+\frac{u^{n,k} +\delta u - u^{n-1}}{\Delta t} &=
+\nabla\cdot (\dfc(u^{n,k})\nabla u^{n,k}) + f(u^{n,k}) + \\
+&\quad \nabla\cdot (\dfc(u^{n,k})\nabla \delta u)
++ \nabla\cdot (\dfc^{\prime}(u^{n,k})\delta u\nabla u^{n,k}) + \\
+&\quad \nabla\cdot (\dfc^{\prime}(u^{n,k})\underbrace{\delta u\nabla \delta u}_{\mbox{dropped}})
++ f^{\prime}(u^{n,k})\delta u
+\end{align*}
+!et
+
+Note: $\dfc^{\prime}(u^{n,k})\delta u\nabla \delta u$ is $\Oof{\delta u^2}$
+and therefore omitted.
+
+!split
+===== Result of Newton's method at the PDE level =====
+
+!bt
+\[ \delta F(\delta u; u^{n,k}) = -F(u^{n,k})\]
+!et
+
+with
+
+!bt
+\begin{align*}
+F(u^{n,k}) &= \frac{u^{n,k} - u^{n-1}}{\Delta t} -
+\nabla\cdot (\dfc(u^{n,k})\nabla u^{n,k}) + f(u^{n,k})
+\\
+\delta F(\delta u; u^{n,k}) &=
+- \frac{1}{\Delta t}\delta u +
+\nabla\cdot (\dfc(u^{n,k})\nabla \delta u) + \\
+&\qquad \nabla\cdot (\dfc^{\prime}(u^{n,k})\delta u\nabla u^{n,k})
++ f^{\prime}(u^{n,k})\delta u
+\end{align*}
+!et
+
+Note:
+
+ * $\delta F$ is linear in $\delta u$
+ * $F$ contains only known terms
+
+# #ifdef OUT
+!bnotice (small) Observations
+The notational form $\delta F = -F$ resembles the Newton system $J\delta u =-F$
+for systems of algebraic equations, with $\delta F$ as $J\delta u$.
+The unknown vector in a linear system of algebraic equations enters
+the system as a linear operator in terms of a
+matrix-vector product ($J\delta u$), while at
+the PDE level we have a linear differential operator instead
+($\delta F$).
+!enotice
+# #endif
+
+!split
+===== Similarity with Picard iteration =====
+
+Rewrite the PDE for $\delta u$ using
+$u^{n,k} + \delta u =u^{n,k+1}$:
+
+!bt
+\begin{align*}
+& \frac{u^{n,k+1} - u^{n-1}}{\Delta t} =
+\nabla\cdot (\dfc(u^{n,k})\nabla u^{n,k+1}) + f(u^{n,k})\\
+&\qquad  + \nabla\cdot (\dfc^{\prime}(u^{n,k})\delta u\nabla u^{n,k})
++ f^{\prime}(u^{n,k})\delta u
+\end{align*}
+!et
+
+Note:
+
+ * The first line is the same PDE as arise in the Picard iteration
+ * The remaining terms arise from the differentiations in Newton's method
+
+!split
+===== Using new notation for implementation =====
+
+ * $u$ for $u^n$
+ * $u^{-}$ for $u^{n,k}$
+ * $u^{(1)}$ for $u^{n-1}$
+
+!bt
+\[ \delta F(\delta u; u^{-}) =- F(u^{-})\quad\hbox{(PDE)}\]
+!et
+
+!bt
+\begin{align*}
+F(u^{-}) &= \frac{u^{-} - u^{(1)}}{\Delta t} -
+\nabla\cdot (\dfc(u^{-})\nabla u^{-}) + f(u^{-})
+\\
+\delta F(\delta u; u^{-}) &=
+- \frac{1}{\Delta t}\delta u +
+\nabla\cdot (\dfc(u^{-})\nabla \delta u) \ + \nonumber\\
+&\quad \nabla\cdot (\dfc^{\prime}(u^{-})\delta u\nabla u^{-})
++ f^{\prime}(u^{-})\delta u
+\end{align*}
+!et
+
+!split
+===== Combined Picard and Newton formulation =====
+
+!bt
+\begin{align*}
+& \frac{u - u^{(1)}}{\Delta t} =
+\nabla\cdot (\dfc(u^{-})\nabla u) + f(u^{-}) + \\
+&\qquad  \gamma(\nabla\cdot (\dfc^{\prime}(u^{-})(u - u^{-})\nabla u^{-})
++ f^{\prime}(u^{-})(u - u^{-}))
+\end{align*}
+!et
+
+Observe:
+
+ * $\gamma=0$: Picard iteration
+ * $\gamma=1$: Newton's method
+
+Why is this formulation convenient?
+Easy to switch (start with Picard, use Newton close to solution)
+
+!split
+===== Crank-Nicolson discretization =====
+label{nonlin:pdelevel:Picard:CN}
+
+Crank-Nicolson discretization applies a centered difference
+at $t_{n+\frac{1}{2}}$:
+
+!bt
+\[ [D_t u = \nabla\cdot (\dfc(u)\nabla u) + f(u)]^{n+\frac{1}{2}}\tp\]
+!et
+
+Many choices of formulating an arithmetic means:
+
+!bt
+\begin{align*}
+[f(u)]^{n+\frac{1}{2}} &\approx f(\frac{1}{2}(u^n + u^{n+1}))
+= [f(\overline{u}^t)]^{n+\frac{1}{2}}\\
+[f(u)]^{n+\frac{1}{2}} &\approx \frac{1}{2}(f(u^n) + f(u^{n+1}))
+=[\overline{f(u)}^t]^{n+\frac{1}{2}}\\
+[\dfc(u)\nabla u]^{n+\frac{1}{2}} &\approx
+\dfc(\frac{1}{2}(u^n + u^{n+1}))\nabla (\frac{1}{2}(u^n + u^{n+1}))
+= \dfc(\overline{u}^t)\nabla \overline{u}^t]^{n+\frac{1}{2}}\\
+[\dfc(u)\nabla u]^{n+\frac{1}{2}} &\approx
+\frac{1}{2}(\dfc(u^n) + \dfc(u^{n+1}))\nabla (\frac{1}{2}(u^n + u^{n+1}))
+= [\overline{\dfc(u)}^t\nabla\overline{u}^t]^{n+\frac{1}{2}}\\
+[\dfc(u)\nabla u]^{n+\frac{1}{2}} &\approx
+\frac{1}{2}(\dfc(u^n)\nabla u^n + \dfc(u^{n+1})\nabla u^{n+1})
+= [\overline{\dfc(u)\nabla u}^t]^{n+\frac{1}{2}}
+\end{align*}
+!et
+
+!split
+===== Arithmetic means: which variant is best? =====
+
+Is there any differences in accuracy between
+
+ o two factors of arithmetic means
+ o the arithmetic mean of a product
+
+More precisely,
+
+!bt
+\begin{align*}
+[PQ]^{n+\frac{1}{2}} = P^{n+\frac{1}{2}}Q^{n+\frac{1}{2}}
+&\approx
+\frac{1}{2}(P^n + P^{n+1})\frac{1}{2}(Q^n + Q^{n+1})\\
+[PQ]^{n+\frac{1}{2}} & \approx \frac{1}{2}(P^nQ^n + P^{n+1}Q^{n+1})
+\end{align*}
+!et
+
+It can be shown (by Taylor series around $t_{n+\frac{1}{2}}$) that
+both approximations are $\Oof{\Delta t^2}$
+
+
+!split
+===== Solution of nonlinear equations in the Crank-Nicolson scheme =====
+
+No big difference from the Backward Euler case, just more terms:
+
+ * Identify the $F(u)=0$ for the unknown $u^{n+1}$
+ * Apply Picard iteration or Newton's method to the PDE
+ * Identify the sequence of linearized PDEs and iterate
+
+!split
+======= Discretization of 1D stationary nonlinear differential equations =======
+label{nonlin:alglevel:1D}
+
+Differential equation:
+
+!bt
+\[
+-(\dfc(u)u^{\prime})^{\prime} + au = f(u),\quad x\in (0,L)
+\]
+!et
+
+Boundary conditions:
+
+!bt
+\[
+\dfc(u(0))u^{\prime}(0) = C,\quad u(L)=D
+\]
+!et
+
+
+!split
+===== Relevance of this stationary 1D problem =====
+
+1. As stationary limit of a diffusion PDE
+
+!bt
+\[ u_t = (\alpha(u)u_x)_x + au + f(u) \]
+!et
+
+($u_t\rightarrow 0$)
+
+2. The time-discrete problem at each time level arising from a Backward Euler scheme for a diffusion PDE
+
+!bt
+\[ u_t = (\alpha(u)u_x)_x + f(u) \]
+!et
+
+($au$ comes from $u_t$, $a\sim 1/\Delta t$, $f(u) := f(u) - u^{n-1}/\Delta t$)
+
+!split
+===== Finite difference discretizations =====
+label{nonlin:alglevel:1D:fd}
+
+The nonlinear term $(\dfc(u)u^{\prime})^{\prime}$ behaves just
+as a variable coefficient term $(\dfc(x)u^{\prime})^{\prime}$ wrt
+discretization:
+
+!bt
+\[ [-D_x\dfc D_x u +au = f]_i\]
+!et
+
+Written out at internal points:
+
+!bt
+\begin{align*}
+-\frac{1}{\Delta x^2}
+\left(\dfc_{i+\half}(u_{i+1}-u_i) -
+\dfc_{i-\half}(u_{i}-u_{i-1})\right)
++ au_i &= f(u_i)
+\end{align*}
+!et
+
+$\dfc_{i+\half}$: two choices
+
+!bt
+\begin{align*}
+\dfc_{i+\half} &\approx
+\dfc(\half(u_i + u_{i+1})) =
+[\dfc(\overline{u}^x)]^{i+\half}
+\\
+\dfc_{i+\half} &\approx
+\half(\dfc(u_i) + \dfc(u_{i+1})) = [\overline{\dfc(u)}^x]^{i+\half}
+\end{align*}
+!et
+
+!split
+===== Finite difference scheme =====
+
+!bt
+\[ \dfc_{i+\half} \approx
+\half(\dfc(u_i) + \dfc(u_{i+1})) = [\overline{\dfc(u)}^x]^{i+\half} \]
+!et
+
+results in
+
+!bt
+\[ [-D_x\overline{\dfc}^x D_x u +au = f]_i\tp\]
+!et
+
+!bt
+\begin{align*}
+&-\frac{1}{2\Delta x^2}
+\left((\dfc(u_i)+\dfc(u_{i+1}))(u_{i+1}-u_i) -
+(\dfc(u_{i-1})+\dfc(u_{i}))(u_{i}-u_{i-1})\right)\\
+&\qquad\qquad + au_i = f(u_i)
+\end{align*}
+!et
+
+!split
+===== Boundary conditions =====
+
+ * At $i=N_x$: $u_i=0$.
+ * At $i=0$: $\dfc(u)u^{\prime}=C$
+
+!bt
+\[ [\dfc(u)D_{2x}u = C]_0\]
+!et
+
+!bt
+\[
+\dfc(u_0)\frac{u_{1} - u_{-1}}{2\Delta x} = C
+\]
+!et
+
+The fictitious value $u_{-1}$ can, as usual, be eliminated with the aid
+of the scheme at $i=0$
+
+!split
+===== The structure of the equation system =====
+
+Structure of nonlinear algebraic equations:
+
+!bt
+\[ A(u)u = b(u)\]
+!et
+
+!bt
+\begin{align*}
+A_{i,i} &= \frac{1}{2\Delta x^2}(-\dfc(u_{i-1}) + 2\dfc(u_{i})
+-\dfc(u_{i+1})) + a\\
+A_{i,i-1} &= -\frac{1}{2\Delta x^2}(\dfc(u_{i-1}) + \dfc(u_{i}))\\
+A_{i,i+1} &= -\frac{1}{2\Delta x^2}(\dfc(u_{i}) + \dfc(u_{i+1}))\\
+b_i &= f(u_i)
+\end{align*}
+!et
+
+Note:
+
+ * $A(u)$ is tridiagonal: $A_{i,j}=0$ for $j > 1+1$ and $j < i-1$.
+ * The $i=0$ and $i=N_x$ equation must incorporate boundary conditions
+
+!split
+===== The equation for the Neumann boundary condition =====
+
+$i=0$: insert
+
+!bt
+\[
+u_{-1} = u_1 -\frac{2\Delta x}{\dfc(u_0)}
+\]
+!et
+in $A_{0,0}$. The expression for $A_{i,i+1}$
+applies for $i=0$, and $A_{i,i-1}$ for $i=0$ does not enter the system.
+
+
+!split
+===== The equation for the Dirichlet boundary condition =====
+
+1. For $i=N_x$ we can use the Dirichlet condition as a separate
+equation
+
+!bt
+\[ u_i = D,\quad i=N_x\]
+!et
+
+2. Alternative: for $i=N_x$ we can substitute $u_{N_x}$ in $A_{i,i}$ by $D$ and have $N_x-1$ equations.
+
+!split
+===== Nonlinear equations for a mesh with two cells =====
+
+Let's do all the details! We omit a separate equation for the
+$u=D$ condition at $i=N_x$. Starting point is then
+
+!bt
+\begin{align*}
+A_{0,-1}u_{-1} + A_{0,0}u_0 + A_{0,1}u_1 &= b_0\\
+A_{1,0}u_{0} + A_{1,1}u_1 + A_{1,2}u_2 &= b_1
+\end{align*}
+!et
+
+Must
+
+ * write out the $A_{i,j}$ and $b_i$ expressions
+ * replace $u_{-1}$ from the Neumann condition
+ * use $D$ for $u_2$ (boundary condition)
+
+!split
+===== Picard iteration =====
+
+Use the most recently computed vaue $u^{-}$ of $u$ in $A(u)$ and
+$b(u)$:
+
+!bt
+\[ A(u^{-})u = b(u^{-})\]
+!et
+
+!bt
+\begin{align*}
+\frac{1}{2\Delta x^2}(& -(\dfc(u^-_{-1}) + 2\dfc(u^-_{0}
++ \dfc(u^-_{1}))u_1\, +\\
+&(\dfc(u^-_{-1}) + 2\dfc(u^-_{0}) + \dfc(u^-_{1}))u_0
+ + au_0\\
+&=f(u^-_0) -
+\frac{1}{\dfc(u^-_0)\Delta x}(\dfc(u^-_{-1}) + \dfc(u^-_{0}))C,
+\end{align*}
+!et
+
+!bt
+\begin{align*}
+\frac{1}{2\Delta x^2}(&-(\dfc(u^-_{0}) + \dfc(u^-_{1}))u_{0}\, +\\
+& (\dfc(u^-_{0}) + 2\dfc(u^-_{1}) + \dfc(D))u_1 + au_1\\
+&=f(u^-_1) + \frac{1}{2\Delta x^2}(\dfc(u^-_{1}) + \dfc(D))D\tp
+\end{align*}
+!et
+
+!split
+===== The matrix systems to be solved =====
+
+Eliminating the Dirichlet condition at $i=N_x$:
+
+!bt
+\[
+\left(\begin{array}{cc}
+B_{0,0}& B_{0,1}\\
+B_{1,0} & B_{1,1}
+\end{array}\right)
+\left(\begin{array}{c}
+u_0\\
+u_1
+\end{array}\right)
+=
+\left(\begin{array}{c}
+d_0\\
+d_1
+\end{array}\right)
+\]
+!et
+
+Including the equation for $i=N_x$:
+
+!bt
+\[
+\left(\begin{array}{ccc}
+B_{0,0}& B_{0,1} & 0\\
+B_{1,0} & B_{1,1} & B_{1,2}\\
+0  & 0 & 1
+\end{array}\right)
+\left(\begin{array}{c}
+u_0\\
+u_1\\
+u_2
+\end{array}\right)
+=
+\left(\begin{array}{c}
+d_0\\
+d_1\\
+D
+\end{array}\right)
+\]
+!et
+
+
+!split
+===== Newton's method; Jacobian (1) =====
+
+Nonlinear eq.no $i$ has the structure
+
+!bt
+\begin{align*}
+F_i &= A_{i,i-1}(u_{i-1},u_i)u_{i-1} +
+A_{i,i}(u_{i-1},u_i,u_{i+1})u_i +\\
+&\qquad A_{i,i+1}(u_i, u_{i+1})u_{i+1} - b_i(u_i)
+\end{align*}
+!et
+
+Need Jacobian, i.e., need to differentiate $F(u)=A(u)u - b(u)$ wrt $u$.
+Example:
+
+
+!bt
+\begin{align*}
+&\frac{\partial}{\partial u_i}(A_{i,i}(u_{i-1},u_i,u_{i+1})u_i) =
+\frac{\partial A_{i,i}}{\partial u_i}u_i + A_{i,i}
+\frac{\partial u_i}{\partial u_i}\\
+&\quad =
+\frac{\partial}{\partial u_i}(
+\frac{1}{2\Delta x^2}(-\dfc(u_{i-1}) + 2\dfc(u_{i})
+-\dfc(u_{i+1})) + a)u_i +\\
+&\qquad\frac{1}{2\Delta x^2}(-\dfc(u_{i-1}) + 2\dfc(u_{i})
+-\dfc(u_{i+1})) + a\\
+&\quad =\frac{1}{2\Delta x^2}(2\dfc^\prime (u_i)u_i
+-\dfc(u_{i-1}) + 2\dfc(u_{i})
+-\dfc(u_{i+1})) + a
+\end{align*}
+!et
+
+!split
+===== Newton's method; Jacobian (2) =====
+
+The complete Jacobian becomes (make sure you get this!)
+
+!bt
+\begin{align*}
+J_{i,i} &= \frac{\partial F_i}{\partial u_i}
+= \frac{\partial A_{i,i-1}}{\partial u_i}u_{i-1}
++ \frac{\partial A_{i,i}}{\partial u_i}u_i
++ A_{i,i}
++ \frac{\partial A_{i,i+1}}{\partial u_i}u_{i+1}
+- \frac{\partial b_i}{\partial u_{i}}\\
+&=
+\frac{1}{2\Delta x^2}(
+-\dfc^{\prime}(u_i)u_{i-1}
++2\dfc^{\prime}(u_i)u_{i}
+-\dfc(u_{i-1}) + 2\dfc(u_i) - \dfc(u_{i+1})) +\\
+&\quad a
+-\frac{1}{2\Delta x^2}\dfc^{\prime}(u_{i})u_{i+1}
+- b^{\prime}(u_i)\\
+J_{i,i-1} &= \frac{\partial F_i}{\partial u_{i-1}}
+= \frac{\partial A_{i,i-1}}{\partial u_{i-1}}u_{i-1}
++ A_{i-1,i}
++ \frac{\partial A_{i,i}}{\partial u_{i-1}}u_i
+- \frac{\partial b_i}{\partial u_{i-1}}\\
+&=
+\frac{1}{2\Delta x^2}(
+-\dfc^{\prime}(u_{i-1})u_{i-1} - (\dfc(u_{i-1}) + \dfc(u_i))
++ \dfc^{\prime}(u_{i-1})u_i)\\
+J_{i,i+1} &= \frac{\partial A_{i,i+1}}{\partial u_{i-1}}u_{i+1}
++ A_{i+1,i} +
+\frac{\partial A_{i,i}}{\partial u_{i+1}}u_i
+- \frac{\partial b_i}{\partial u_{i+1}}\\
+&=\frac{1}{2\Delta x^2}(
+-\dfc^{\prime}(u_{i+1})u_{i+1} - (\dfc(u_{i}) + \dfc(u_{i+1}))
++ \dfc^{\prime}(u_{i+1})u_i)
+\end{align*}
+!et
+
+!split
+===== Newton's method; nonlinear equations at the end points =====
+
+!bt
+\begin{align*}
+F_i &= -\frac{1}{2\Delta x^2}
+((\dfc(u_i)+\dfc(u_{i+1}))(u_{i+1}-u_i) -
+(\dfc(u_{i-1})+\dfc(u_{i}))\times \\
+&\qquad (u_{i}-u_{i-1})) + au_i - f(u_i) = 0
+\end{align*}
+!et
+
+At $i=0$, replace $u_{-1}$ by formula from Neumann condition.
+
+ o Exclude Dirichlet condition as separate equation:
+   replace $u_i$, $i=N_x$, by $D$ in $F_{i}$, $i=N_x-1$
+ o Include Dirichlet condition as separate equation:
+
+!bt
+\[ F_{N_x}(u_0,\ldots,u_{N_x}) = u_{N_x} - D = 0\tp\]
+!et
+
+Note: The size of the Jacobian depends on 1 or 2.
+
+!split
+===== Galerkin-type discretizations =====
+label{nonlin:alglevel:1D:fe}
+
+ * $V$: function space with basis functions $\baspsi_i(x)$, $i\in\If$
+ * Dirichlet conditionat $x=L$: $\baspsi_i(L)=0$, $i\in\If$ ($v(L)=0\ \forall v\in V$)
+ * $u = D + \sum_{j\in\If}c_j\baspsi_j$
+
+Galerkin's method for $-(\dfc(u)u')' + au = f(u)$:
+
+!bt
+\[
+\int_0^L \dfc(u)u^{\prime}v^{\prime}\dx + \int_0^L auv\dx =
+\int_0^L f(u)v\dx + [\dfc(u)u^{\prime}v]_0^L,\quad \forall v\in V
+\]
+!et
+
+Insert Neumann condition:
+
+!bt
+\[ [\dfc(u)u^{\prime}v]_0^L = \dfc(u(L))u^{\prime}(L)v(L) - \dfc(u(0))u^{\prime}(0)v(0)
+= -Cv(0)
+\]
+!et
+
+!split
+===== The nonlinear algebraic equations =====
+
+Find $u\in V$ such that
+
+!bt
+\[
+\int_0^L \dfc(u)u^{\prime}v^{\prime}\dx + \int_0^L auv\dx =
+\int_0^L f(u)v\dx - Cv(0),\quad \forall v\in V
+\]
+!et
+
+$\forall v\in V\ \Rightarrow\ \forall i\in\If$, $v=\baspsi_i$.
+Inserting $u=D+\sum_jc_j\baspsi_j$
+and sorting terms:
+
+!bt
+\[
+\sum_{j}\left(
+\int\limits_0^L \dfc(D+\sum_{k}c_k\baspsi_k)
+\baspsi_j^{\prime}\baspsi_i^{\prime}\dx\right)c_j =
+\int\limits_0^L f(D+\sum_{k}c_k\baspsi_k)\baspsi_i\dx -
+C\baspsi_i(0)
+\]
+!et
+
+This is a *nonlinear algebraic system*
+
+!split
+===== Fundamental integration problem: how to deal with $\int f(\sum_kc_k\baspsi_k)\baspsi_idx$ for unknown $c_k$? =====
+
+ * We do not know $c_k$ in $\int_0^L f(\sum_kc_k\baspsi_k)\baspsi_i dx$ and
+   $\int_0^L \dfc(\sum_{k}c_k\baspsi_k)\baspsi_i^{\prime}\baspsi_j^{\prime}\dx$
+ * Solution: numerical integration with approximations to $c_k$,
+   as in $\int_0^L f(u^{-})\baspsi_idx$
+
+!bbox
+Next: want to do *symbolic integration* of such terms to see the
+structure of nonlinear finite element equations (to compare with
+finite differences)
+!ebox
+
+!split
+===== We choose $\baspsi_i$ as finite element basis functions =====
+
+!bt
+\[ \baspsi_i = \basphi_{\nu(i)},\quad i\in\If\]
+!et
+
+Degree of freedom number $\nu(i)$ in the mesh corresponds to
+unknown number $i$ ($c_i$).
+
+Model problem: $\nu(i)=i$, $\If=\{0,\ldots,N_n-2\}$ (last node excluded)
+
+!bt
+\[ u = D + \sum_{j\in\If} c_j\basphi_{\nu(j)}\]
+!et
+
+or with $\basphi_i$ in the boundary function:
+
+!bt
+\[ u = D\basphi_{N_n-1} + \sum_{j\in\If} c_j\basphi_{j}\]
+!et
+
+!split
+
+===== The group finite element method =====
+label{nonlin:alglevel:1D:fe:group}
+
+Since $u$ is represented by $\sum_j\basphi_j u(\xno{j})$, we may use the
+same approximation for $f(u)$:
+
+!bt
+\[
+f(u)\approx \sum_{j} f(\xno{j})\basphi_j
+\]
+!et
+
+$f(\xno{j})$: value of $f$ at node $j$. With
+$u_j$ as $u(\xno{j})$, we can write
+
+!bt
+\[
+f(u)\approx \sum_{j} f(u_{j})\basphi_j
+\]
+!et
+
+This approximation is known as the *group finite element method*
+or the *product approximation* technique. The index $j$ runs over
+all node numbers in the mesh.
+
+!split
+===== What is the point with the group finite element method? =====
+
+ o Complicated nonlinear expressions can be simplified to increase
+   the efficiency of numerical computations.
+ o One can derive *symbolic forms* of the difference equations arising
+   from the finite element method in nonlinear problems.
+   The symbolic form is useful for comparing finite element and finite
+   difference equations of nonlinear differential equation problems.
+
+!split
+===== Simplified problem for symbolic calculations =====
+
+Simple nonlinear problem: $-u^{\prime\prime}=u^2$,
+$u'(0)=1$, $u'(L)=0$.
+
+!bt
+\[ \int_0^L u^{\prime}v^{\prime}\dx = \int_0^L u^2v\dx
+- v(0),\quad\forall v\in V\]
+!et
+
+Now,
+
+  * Focus on $\int u^2v\dx$
+  * Set $c_j = u(\xno{j}) = u_j$ <linebreak>
+    (to mimic finite difference interpretation of $u_j$)
+  * That is, $u = \sum_ju_j\basphi_j$
+
+!split
+===== Integrating very simple nonlinear functions results in complicated expressions in the finite element method =====
+
+Consider $\int u^2v\dx$ with $u = \sum_ku_k\basphi_k$ and $v=\basphi_i$:
+
+!bt
+\[ \int_0^L (\sum_ku_k\basphi_k)^2\basphi_i\dx\]
+!et
+
+Tedious exact evaluation on uniform P1 elements:
+
+!bt
+\[ \frac{h}{12}(u_{i-1}^2 + 2u_i(u_{i-1} + u_{i+1}) + 6u_i^2
++ u_{i+1}^2)\]
+!et
+
+Finite difference counterpart: $u_i^2$ (!)
+
+
+!split
+===== Application of the group finite element method =====
+
+idx{group finite element method}
+idx{product approximation technique}
+
+!bt
+\[ \int_0^L f(u)\basphi_i\dx \approx
+\int_0^L (\sum_j \basphi_jf(u_j))\basphi_i\dx
+= \sum_j (\underbrace{\int_0^L \basphi_i\basphi_j\dx}_{\mbox{mass matrix }M_{i,j}}) f(u_j)\]
+!et
+
+Corresponding part of difference equation for P1 elements:
+
+!bt
+\[ \frac{h}{6}(f(u_{i-1}) + 4f(u_i) + f(u_{i+1}))\]
+!et
+
+Rewrite as ``finite difference form plus something'':
+
+!bt
+\[ \frac{h}{6}(f(u_{i-1}) + 4f(u_i) + f(u_{i+1}))
+= h[{\color{red}f(u)} - \frac{h^2}{6}D_xD_x f(u)]_i\]
+!et
+
+This is like the finite difference discretization of
+$-u'' = f(u) - \frac{h^2}{6}f''(u)$
+
+!split
+===== Lumping the mass matrix gives finite difference form =====
+
+!bbox
+Lumped mass matrix (integrate at the nodes): $M$ becomes diagonal and
+the finite element and difference method's treatment of $f(u)$
+becomes identical!
+!ebox
+
+!split
+===== Alternative: evaluation of finite element terms at nodes gives great simplifications =====
+
+Idea: integrate $\int f(u)v\dx$ numerically with a rule that samples $f(u)v$
+at the nodes only. This involves great simplifications, since
+
+!bt
+\[ \sum_k u_k\basphi_k(\xno{\ell}) = u_\ell\]
+!et
+
+and
+
+!bt
+\[ f\basphi_i(\xno{\ell}) =
+f(\sum_k u_k\underbrace{\basphi_k(\xno{\ell})}_{\delta_{k\ell}})
+\underbrace{\basphi_i(\xno{\ell})}_{\delta_{i\ell}}
+= f(u_\ell)\delta_{i\ell}\quad \neq 0\mbox{ only for } f(u_i)\]
+!et
+
+($\delta_{ij}=0$ if $i\neq j$ and $\delta_{ij}=1$ if $i=j$)
+
+!split
+===== Numerical integration of nonlinear terms =====
+label{nonlin:alglevel:1D:fe:f}
+
+Trapezoidal rule with the nodes only gives the finite difference form of $[f(u)]_i$:
+
+!bt
+\[
+\int_0^L f(\sum_k u_k\basphi_k)(x)\basphi_i(x)\dx
+\approx h\sum_{\ell=0}^{N_n-1} f(u_\ell)\delta_{i\ell} - \mathcal{C}
+= h{\color{red}f(u_i)}
+\]
+!et
+
+($\mathcal{C}$: boundary adjustment of rule, $i=0,N_n-1$)
+
+
+!split
+===== Finite elements for a variable coefficient Laplace term =====
+label{nonlin:alglevel:1D:fe:Laplace}
+
+Consider the term $(\dfc u^{\prime})^{\prime}$, with
+the group finite element method: $\dfc(u)\approx \sum_k\alpha(u_k)\basphi_k$,
+and the variational counterpart
+
+!bt
+\[
+\int_0^L \dfc(\sum_k c_k\basphi_k)\basphi_i^{\prime}\basphi_j^{\prime}\dx
+\approx
+\sum_k (\int_0^L \basphi_k\basphi_i^{\prime}\basphi_j^{\prime}\dx)
+\dfc(u_k) = \ldots
+\]
+!et
+
+Further calculations (see text) lead to
+
+!bt
+\[
+-\frac{1}{h}(\half(\dfc(u_i) + \dfc(u_{i+1}))(u_{i+1}-u_i)
+-  \half(\dfc(u_{i-1}) + \dfc(u_{i}))(u_{i}-u_{i-1}))
+\]
+!et
+
+= standard finite difference discretization
+of $-(\dfc(u)u^{\prime})^{\prime}$ with an arithmetic mean of $\dfc(u)$
+
+!split
+===== Numerical integration at the nodes =====
+
+Instead of the group finite element method and exact integration, use
+Trapezoidal rule in the nodes for $\int_0^L \dfc(\sum_k u_k\basphi_k)\basphi_i^{\prime}\basphi_j^{\prime}\dx$.
+
+Work at the cell level (most convenient with discontinuous
+$\basphi_i'$):
+
+!bt
+\begin{align*}
+& \int_{-1}^1 \alpha(\sum_t\tilde u_t\refphi_t)\refphi_r'\refphi_s'\frac{h}{2}dX
+= \int_{-1}^1 \dfc(\sum_{t=0}^1
+\tilde u_t\refphi_t)\frac{2}{h}\frac{d\refphi_r}{dX}
+\frac{2}{h}\frac{d\refphi_s}{dX}\frac{h}{2}dX\\
+&\quad = \frac{1}{2h}(-1)^r(-1)^s \int_{-1}^1 \dfc(\sum_{t=0}^1 u_t\refphi_t(X))dX
+\\
+& \qquad \approx \frac{1}{2h}(-1)^r(-1)^s\dfc (
+\sum_{t=0}^1\refphi_t(-1)\tilde u_t) + \dfc(\sum_{t=0}^1\refphi_t(1)\tilde u_t)\\
+&\quad = \frac{1}{2h}(-1)^r(-1)^s(\dfc(\tilde u_0) + \dfc(\tilde u^{(1)}))
+\end{align*}
+!et
+
+
+!split
+===== Summary of finite element vs finite difference nonlinear algebraic equations =====
+
+!bt
+\[ -(\dfc(u)u^{\prime})^{\prime} +au = f(u)\]
+!et
+
+Uniform P1 finite elements:
+
+ * Group finite element or Trapezoidal integration at nodes: <linebreak>
+   $-(\dfc(u)u^{\prime})^{\prime}$ becomes $-h[D_x\overline{\dfc(u)}^xD_x u]_i$
+ * $f(u)$ becomes $hf(u_i)$ with Trapezoidal integration <linebreak>
+   or the ``mass matrix'' representation $h[f(u) - \frac{h}{6}D_xD_x f(u)]_i$
+   if group finite elements
+ * $au$ leads to the ``mass matrix'' form $ah[u - \frac{h}{6}D_xD_x u]_i$
+
+## Set up the full nonlinear system
+
+!split
+===== Real computations utilize accurate numerical integration =====
+
+ * Previous group finite element or Trapezoidal integration examples had
+   one aim: derive symbolic expressions for finite element equations
+ * Real world computations apply numerical integration
+ * How to define Picard iteration and Newton's method from a
+   variational form with numerical integration in real world computations?
+
+!split
+===== Picard iteration defined from the variational form =====
+label{nonlin:alglevel:1D:fe:Picard}
+
+!bt
+\[
+-(\dfc(u)u^{\prime})^{\prime} + au = f(u),\quad x\in (0,L),
+\quad \dfc(u(0))u^{\prime}(0) = C,\ u(L)=D
+\]
+!et
+
+Variational form ($v=\baspsi_i$):
+
+!bt
+\[
+F_i =
+\int_0^L \dfc(u)u^{\prime}\baspsi_i^{\prime}\dx + \int_0^L au\baspsi_i\dx -
+\int_0^L f(u)\baspsi_i\dx + C\baspsi_i(0) = 0
+\]
+!et
+
+Picard iteration: use ``old value'' $u^{-}$ in $\dfc(u)$ and $f(u)$
+and integrate numerically:
+
+!bt
+\[
+F_i = \int_0^L (\dfc(u^{-})u^{\prime}\baspsi_i^{\prime} + au\baspsi_i)\dx -
+\int_0^L f(u^{-})\baspsi_i\dx + C\baspsi_i(0)
+\]
+!et
+
+!split
+===== The linear system in Picard iteration =====
+
+!bt
+\[
+F_i = \int_0^L (\dfc(u^{-})u^{\prime}\baspsi_i^{\prime} + au\baspsi_i)\dx -
+\int_0^L f(u^{-})\baspsi_i\dx + C\baspsi_i(0)
+\]
+!et
+
+This is a linear problem $a(u,v)=L(v)$ with bilinear and linear forms
+
+!bt
+\[ a(u,v) = \int_0^L (\dfc(u^{-})u^{\prime}v^{\prime} + auv)\dx,\quad
+L(v) = \int_0^L f(u^{-})v\dx - Cv(0)\]
+!et
+
+The linear system now is computed the standard way.
+
+!split
+===== The equations in Newton's method =====
+label{nonlin:alglevel:1D:fe:Newton}
+
+
+!bt
+\[
+F_i =
+\int_0^L (\dfc(u)u^{\prime}\baspsi_i^{\prime} + au\baspsi_i -
+f(u)\baspsi_i)\dx + C\baspsi_i(0)=0,\quad i\in\If
+\]
+!et
+
+Easy to evaluate right-hand side $-F_i(u^{-})$ by numerical integration:
+
+!bt
+\[
+F_i =
+\int_0^L (\dfc(u^{-})u^{\prime}\baspsi_i^{\prime} + au\baspsi_i -
+f(u^{-})\baspsi_i)\dx + C\baspsi_i(0)=0
+\]
+!et
+
+(just known functions)
+
+!split
+===== Useful formulas for computing the Jacobian =====
+
+!bt
+\begin{align*}
+\frac{\partial u}{\partial c_j} &= \frac{\partial}{\partial c_j}
+\sum_kc_k\baspsi_k = \baspsi_j\\
+\frac{\partial u^{\prime}}{\partial c_j} &= \frac{\partial}{\partial c_j}
+\sum_kc_k\baspsi_k^{\prime} = \baspsi_j^{\prime}
+\end{align*}
+!et
+
+!split
+===== Computing the Jacobian =====
+
+!bt
+\begin{align*}
+J_{i,j} = \frac{\partial F_i}{\partial c_j}
+& = \int_0^L \frac{\partial}{\partial c_j}
+(\dfc(u)u^{\prime}\baspsi_i^{\prime} + au\baspsi_i -
+f(u)\baspsi_i)\dx\\
+&=
+\int_0^L
+((\dfc^{\prime}(u)\frac{\partial u}{\partial c_j}u^{\prime} +
+\dfc(u)\frac{\partial u^{\prime}}{\partial c_j})\baspsi_i^{\prime}
++ a\frac{\partial u}{\partial c_j}\baspsi_i -
+f^{\prime}(u)\frac{\partial u}{\partial c_j}\baspsi_i)\dx\\
+&=
+\int_0^L
+((\dfc^{\prime}(u)\baspsi_ju^{\prime} +
+\dfc(u)\baspsi_j^{\prime}\baspsi_i^{\prime}
++ a\baspsi_j\baspsi_i -
+f^{\prime}(u)\baspsi_j\baspsi_i)\dx\\
+&=
+\int_0^L
+(\dfc^{\prime}(u)u^{\prime}\baspsi_i^{\prime}\baspsi_j +
+\dfc(u)\baspsi_i^{\prime}\baspsi_j^{\prime}
++ (a - f(u))\baspsi_i\baspsi_j)\dx
+\end{align*}
+!et
+
+Use $\dfc^{\prime}(u^{-})$, $\dfc(u^{-})$, $f^\prime (u^{-})$, $f(u^{-})$
+and integrate expressions numerically (only known functions)
+
+!split
+===== Computations in a reference cell $[-1,1]$ =====
+
+!bt
+\begin{align*}
+\tilde F_r^{(e)} &=
+\int_{-1}^1\left(
+\dfc(\tilde u^{-})\tilde u^{-\prime}\refphi_r^{\prime} +
+(a-f(\tilde u^{-}))\refphi_r\right)\det J\dX -
+C\refphi_r(0)
+\\
+\tilde J_{r,s}^{(e)} &=
+\int_{-1}^1
+(\dfc^{\prime}(\tilde u^{-})\tilde u^{-\prime}\refphi_r^{\prime}\refphi_s +
+\dfc(\tilde u^{-})\refphi_r^{\prime}\refphi_s^{\prime}
++ (a - f(\tilde u^{-}))\refphi_r\refphi_s)\det J\dX
+\end{align*}
+!et
+
+$r,s\in\Ifd$ (local degrees of freedom)
+
+!split
+===== How to handle Dirichlet conditions in Newton's method =====
+
+ * Newton's method solves $J(u^{-})\delta u = -F(u^{-})$
+ * $\delta u$ is a *correction* to $u^{-}$
+ * If $u(\xno{i})$ has Dirchlet condition $D$,
+   set $u^{-}_i=D$ in prior to the first iteration
+ * Set $\delta u_i=0$ (no change for Dirichlet conditions)
+
+
+!split
+======= Multi-dimensional PDE problems =======
+
+!bt
+\[
+u_t = \nabla\cdot(\dfc(u)\nabla u) + f(u)
+\]
+!et
+
+!split
+===== Backward Euler and variational form =====
+label{nonlin:alglevel:dD:fe}
+
+!bt
+\[
+u_t = \nabla\cdot(\dfc(u)\nabla u) + f(u)
+\]
+!et
+
+Backward Euler time discretization:
+
+!bt
+\[ u^n - \Delta t\nabla\cdot(\dfc(u^n)\nabla u^n) + f(u^n) = u^{n-1}\]
+!et
+
+Alternative notation ($u$ for $u^n$, $u^{(1)}$ for $u^{n-1}$):
+
+!bt
+\[ u - \Delta t\nabla\cdot(\dfc(u)\nabla u) - \Delta t f(u) = u^{(1)}\]
+!et
+
+Boundary conditions: $\partial u/\partial n=0$ for simplicity.
+Variational form:
+
+!bt
+\[
+\int_\Omega (uv + \Delta t\,\dfc(u)\nabla u\cdot\nabla v
+- \Delta t f(u)v - u^{(1)} v)\dx = 0
+\]
+!et
+
+!split
+===== Nonlinear algebraic equations arising from the variational form =====
+
+!bt
+\[
+\int_\Omega (uv + \Delta t\,\dfc(u)\nabla u\cdot\nabla v
+- \Delta t f(u)v - u^{(1)} v)\dx = 0
+\]
+!et
+
+!bt
+\[
+F_i =
+\int_\Omega (u\baspsi_i + \Delta t\,\dfc(u)\nabla u\cdot\nabla \baspsi_i
+- \Delta t f(u)\baspsi_i - u^{(1)}\baspsi_i)\dx = 0
+\]
+!et
+
+Picard iteration:
+
+!bt
+\[
+F_i \approx \hat F_i =
+\int_\Omega (u\baspsi_i + \Delta t\,\dfc(u^{-})\nabla u\cdot\nabla \baspsi_i
+- \Delta t f(u^{-})\baspsi_i - u^{(1)}\baspsi_i)\dx = 0
+\]
+!et
+
+This is a variable coefficient problem like $au - \nabla\cdot\dfc(\x)\nabla u
+= f(\x,t)$ and results in a linear system
+
+# #ifdef EXTRA
+!bt
+\[ \sum_{j\in\If}A_{i,j}c_j=b_i,\quad i\in\If\]
+
+!bt
+\[ A_{i,j} =
+\int_\Omega (\basphi_j\baspsi_i + \Delta t\,\dfc(u^{-})\nabla \basphi_j
+\cdot\nabla \baspsi_i)\dx,\quad b_i =
+\int_\Omega (\Delta t f(u^{-})\baspsi_i + u^{(1)}\baspsi_i)\dx\tp
+\]
+!et
+# #endif
+
+!split
+===== A note on our notation and the different meanings of $u$ (1) =====
+
+PDE problem: $u(\x,t)$ is the exact solution of
+
+!bt
+\[
+u_t = \nabla\cdot(\dfc(u)\nabla u) + f(u)
+\]
+!et
+
+Time discretization: $u(\x)$ is the exact solution of the time-discrete
+spatial equation
+
+!bt
+\[ u - \Delta t\nabla\cdot(\dfc(u^n)\nabla u) - \Delta t f(u) = u^{(1)}\]
+!et
+
+The same $u(\x)$ is the exact solution of the
+(continuous) variational form:
+
+!bt
+\[
+\int_\Omega (uv + \Delta t\,\dfc(u)\nabla u\cdot\nabla v
+- \Delta t f(u)v - u^{(1)} v)\dx,\quad\forall v\in V
+\]
+!et
+
+!split
+===== A note on our notation and the different meanings of $u$ (2) =====
+
+Or we may approximate $u$: $u(\x) = \sum_jc_j\baspsi_j(\x)$ and
+let this spatially discrete $u$ enter the variational form,
+
+!bt
+\[
+\int_\Omega (uv + \Delta t\,\dfc(u)\nabla u\cdot\nabla v
+- \Delta t f(u)v - u^{(1)} v)\dx,\quad\forall v\in V
+\]
+!et
+
+Picard iteration: $u(\x)$ solves the *approximate*
+variational form
+
+!bt
+\[
+\int_\Omega (uv + \Delta t\,\dfc(u^{-})\nabla u\cdot\nabla v
+- \Delta t f(u^{-})v - u^{(1)} v)\dx
+\]
+!et
+
+Could introduce
+
+ * $\uex(\x,t)$ for the exact solution of the PDE problem
+ * $\uex(\x)^n$ for the exact solution after time discretization
+ * $u^n(\x)$ for the spatially discrete solution $\sum_jc_j\baspsi_j$
+ * $u^{n,k}$ for approximation in Picard/Newton iteration no $k$
+   to $u^n(\x)$
+
+!split
+===== Newton's method (1) =====
+
+Need to evaluate $F_i(u^{-})$:
+
+!bt
+\[
+F_i \approx \hat F_i =
+\int_\Omega (u^{-}\baspsi_i + \Delta t\,\dfc(u^{-})
+\nabla u^{-}\cdot\nabla \baspsi_i
+- \Delta t f(u^{-})\baspsi_i - u^{(1)}\baspsi_i)\dx
+\]
+!et
+
+To compute the Jacobian we need
+
+!bt
+\begin{align*}
+\frac{\partial u}{\partial c_j} &= \sum_k\frac{\partial}{\partial c_j}
+c_k\baspsi_k = \baspsi_j\\
+\frac{\partial \nabla u}{\partial c_j} &= \sum_k\frac{\partial}{\partial c_j}
+c_k\nabla \baspsi_k = \nabla \baspsi_j
+\end{align*}
+!et
+
+!split
+===== Newton's method (2) =====
+
+The Jacobian becomes
+
+!bt
+\begin{align*}
+J_{i,j} = \frac{\partial F_i}{\partial c_j} =
+\int_\Omega & (\baspsi_j\baspsi_i + \Delta t\,\dfc^{\prime}(u)\baspsi_j
+\nabla u\cdot\nabla \baspsi_i +
+\Delta t\,\dfc(u)\nabla\baspsi_j\cdot\nabla\baspsi_i - \\
+&\ \Delta t f^{\prime}(u)\baspsi_j\baspsi_i)\dx
+\end{align*}
+!et
+
+Evaluation of $J_{i,j}$ as the coefficient matrix in the
+Newton system $J\delta u = -F$ means $J(u^{-})$:
+
+!bt
+\begin{align*}
+J_{i,j} =
+\int_\Omega & (\baspsi_j\baspsi_i + \Delta t\,\dfc^{\prime}(u^{-})\baspsi_j
+\nabla u^{-}\cdot\nabla \baspsi_i +
+\Delta t\,\dfc(u^{-})\nabla\baspsi_j\cdot\nabla\baspsi_i - \\
+&\ \Delta t f^{\prime}(u^{-})\baspsi_j\baspsi_i)\dx
+\end{align*}
+!et
+
+!split
+===== Non-homogeneous Neumann conditions =====
+
+A natural physical flux condition:
+
+!bt
+\[
+-\dfc(u)\frac{\partial u}{\partial n} = g,\quad\x\in\partial\Omega_N
+\]
+!et
+
+Integration by parts gives the boundary term
+
+!bt
+\[
+\int_{\partial\Omega_N}\dfc(u)\frac{\partial u}{\partial u}v\ds
+\]
+!et
+
+Inserting the nonlinear Neumann condition:
+
+!bt
+\[ -\int_{\partial\Omega_N}gv\ds\]
+!et
+
+(no nonlinearity)
+
+!split
+===== Robin condition =====
+
+Heat conduction problems often apply a kind of Newton's cooling law,
+also known as a Robin condition, at the boundary:
+
+!bt
+\[
+-\dfc(u)\frac{\partial u}{\partial u} = h(u)(u-T_s(t)),\quad\x\in\partial\Omega_R
+\]
+!et
+
+Here:
+
+ * $h(u)$: heat transfer coefficient between the body ($\Omega$)
+   and its surroundings
+ * $T_s$: temperature of the surroundings
+
+Inserting the condition in the boundary integral
+$\int_{\partial\Omega_N}\dfc(u)\frac{\partial u}{\partial u}v\ds$:
+
+!bt
+\[ \int_{\partial\Omega_R}h(u)(u-T_s(T))v\ds\]
+!et
+
+Use $h(u^{-})(u-T_s)$ for Picard, differentiate for Newton
+
+
+!split
+===== Finite difference discretization in a 2D problem =====
+label{nonlin:alglevel:dD:fd}
+
+!bt
+\[ u_t = \nabla\cdot(\dfc(u)\nabla u) + f(u)\]
+!et
+
+Backward Euler in time, centered differences in space:
+
+!bt
+\[ [D_t^- u = D_x\overline{\dfc(u)}^xD_x u
++ D_y\overline{\dfc(u)}^yD_y u + f(u)]_{i,j}^n
+\]
+!et
+
+!bt
+\begin{align*}
+u^n_{i,j} &- \frac{\Delta t}{h^2}(
+ \half(\dfc(u_{i,j}^n)   + \dfc(u_{i+1,j}^n))(u_{i+1,j}^n-u_{i,j}^n)\\
+&\quad -
+\half(\dfc(u_{i-1,j}^n) + \dfc(u_{i,j}^n))(u_{i,j}^n-u_{i-1,j}^n) \\
+&\quad +
+ \half(\dfc(u_{i,j}^n)   + \dfc(u_{i,j+1}^n))(u_{i,j+1}^n-u_{i,j}^n)\\
+&\quad -
+ \half(\dfc(u_{i,j-1}^n) + \dfc(u_{i,j}^n))(u_{i,j}^n-u_{i-1,j-1}^n))
+- \Delta tf(u_{i,j}^n) = u^{n-1}_{i,j}
+\end{align*}
+!et
+
+Nonlinear algebraic system on the form $A(u)u=b(u)$
+
+!split
+===== Picard iteration =====
+
+ * Use the most recently computed values $u^{-}$ of $u^n$
+   in $\dfc$ and $f$
+ * Or: $A(u^{-})u=b(u^{-})$
+ * Like solving $u_t = \nabla\cdot (\dfc(\x)\nabla u) + f(\x,t)$
+
+Picard iteration in operator notation:
+
+!bt
+\[ [D_t^- u = D_x\overline{\dfc(u^{-})}^xD_x u
++ D_y\overline{\dfc(u^{-})}^yD_y u + f(u^{-})]_{i,j}^n
+\]
+!et
+
+!split
+===== Newton's method: the nonlinear algebraic equations =====
+
+Define the nonlinear equations (use $u$ for $u^n$, $u^{(1)}$ for $u^{n-1}$):
+
+!bt
+\begin{align*}
+F_{i,j} &= u_{i,j} - \frac{\Delta t}{h^2}(\\
+&\qquad \half(\dfc(u_{i,j})   + \dfc(u_{i+1,j}))(u_{i+1,j}-u_{i,j}) -\\
+&\qquad \half(\dfc(u_{i-1,j}) + \dfc(u_{i,j}))(u_{i,j}-u_{i-1,j}) + \\
+&\qquad \half(\dfc(u_{i,j})   + \dfc(u_{i,j+1}))(u_{i,j+1}-u_{i,j}) -\\
+&\qquad \half(\dfc(u_{i,j-1}) + \dfc(u_{i,j}))(u_{i,j}-u_{i-1,j-1})) -
+\Delta t\, f(u_{i,j}) - u^{(1)}_{i,j} = 0
+\end{align*}
+!et
+
+!split
+===== Newton's method: the Jacobian and its sparsity =====
+
+!bt
+\[ J_{i,j,r,s} = \frac{\partial F_{i,j}}{\partial u_{r,s}} \]
+!et
+
+Newton system:
+
+!bt
+\[ \sum_{r\in\Ix}\sum_{s\in\Iy}J_{i,j,r,s}\delta u_{r,s} = -F_{i,j},
+\quad i\in\Ix,\ j\in\Iy\tp\]
+!et
+
+But $F_{i,j}$ contains only $u_{i\pm 1,j}$,
+$u_{i,j\pm 1}$, and $u_{i,j}$. We get nonzero contributions
+only for
+$J_{i,j,i-1,j}$, $J_{i,j,i+1,j}$, $J_{i,j,i,j-1}$, $J_{i,j,i,j+1}$,
+and $J_{i,j,i,j}$. The Newton system collapses to
+
+
+!bt
+\begin{align*}
+ J_{i,j,r,s}\delta u_{r,s} =
+J_{i,j,i,j}\delta u_{i,j} & +
+J_{i,j,i-1,j}\delta u_{i-1,j} +\\
+& J_{i,j,i+1,j}\delta u_{i+1,j} +
+J_{i,j,i,j-1}\delta u_{i,j-1}
++ J_{i,j,i,j+1}\delta u_{i,j+1}
+\end{align*}
+!et
+
+!split
+===== Newton's method: details of the Jacobian =====
+
+!bt
+\begin{align*}
+J_{i,j,i-1,j} &= \frac{\partial F_{i,j}}{\partial u_{i-1,j}}\\
+&= \frac{\Delta t}{h^2}(\dfc^{\prime}(u_{i-1,j})(u_{i,j}-u_{i-1,j})
++ \dfc(u_{i-1,j})(-1)),\\
+J_{i,j,i+1,j} &= \frac{\partial F_{i,j}}{\partial u_{i+1,j}}\\
+&= \frac{\Delta t}{h^2}(-\dfc^{\prime}(u_{i+1,j})(u_{i+1,j}-u_{i,j})
+- \dfc(u_{i-1,j})),\\
+J_{i,j,i,j-1} &= \frac{\partial F_{i,j}}{\partial u_{i,j-1}}\\
+&= \frac{\Delta t}{h^2}(\dfc^{\prime}(u_{i,j-1})(u_{i,j}-u_{i,j-1})
++ \dfc(u_{i,j-1})(-1)),\\
+J_{i,j,i,j+1} &= \frac{\partial F_{i,j}}{\partial u_{i,j+1}}\\
+&= \frac{\Delta t}{h^2}(-\dfc^{\prime}(u_{i,j+1})(u_{i,j+1}-u_{i,j})
+- \dfc(u_{i,j-1}))\tp
+\end{align*}
+!et
+
+!split
+===== Good exercise at this point: $J_{i,j,i,j}$ =====
+
+Compute $J_{i,j,i,j}$:
+
+
+!bt
+\begin{align*}
+F_{i,j} &= u_{i,j} - \frac{\Delta t}{h^2}(\\
+&\qquad \half(\dfc(u_{i,j})   + \dfc(u_{i+1,j}))(u_{i+1,j}-u_{i,j}) -\\
+&\qquad \half(\dfc(u_{i-1,j}) + \dfc(u_{i,j}))(u_{i,j}-u_{i-1,j}) + \\
+&\qquad \half(\dfc(u_{i,j})   + \dfc(u_{i,j+1}))(u_{i,j+1}-u_{i,j}) -\\
+&\qquad \half(\dfc(u_{i,j-1}) + \dfc(u_{i,j}))(u_{i,j}-u_{i-1,j-1})) -
+\Delta t\, f(u_{i,j}) - u^{(1)}_{i,j} = 0\\
+J_{i,j,i,j} &= \frac{\partial F_{i,j}}{\partial u_{i,j}}
+\end{align*}
+!et
+
+!split
+======= Continuation methods =======
+
+idx{continuation method}
+
+ * Picard iteration or Newton's method may diverge
+ * Relaxation with $\omega <1$ may help
+ * If not, resort to *continuation methods*
+
+!split
+===== Continuation method: solve difficult problem as a sequence of simpler problems =====
+
+ * Introduce a *continuation parameter* $\Lambda$
+ * $\Lambda =0$: simple version of the PDE problem
+ * $\Lambda =1$: desired PDE problem
+ * Increase $\Lambda$ in steps: $\Lambda_0=0 ,\Lambda_1 <\cdots <\Lambda_n=1$
+ * Use the solution from $\Lambda_{i-1}$ as
+   initial guess for the iterations for $\Lambda_i$
+
+!split
+===== Example on a continuation method =====
+
+!bt
+\[ -\nabla\cdot\left( ||\nabla u||^q\nabla u\right) = f, \]
+!et
+
+Pseudo-plastic fluids may be $q=-0.8$, which is a difficult problem for
+Picard/Newton iteration.
+
+!bt
+\[ \Lambda\in [0,1]:\quad q=-\Lambda 0.8 \]
+!et
+
+!bt
+\[
+-\nabla\cdot\left( ||\nabla u||^{-\Lambda 0.8}\nabla u\right) = f\]
+!et
+
+Start with $\Lambda = 0$, increase in steps to $\Lambda =1$, use
+previous solution as initial guess for Newton or Picard

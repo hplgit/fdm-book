@@ -1,0 +1,422 @@
+
+
+
+!split
+======= Multi-dimensional PDE problems =======
+
+The fundamental ideas in the
+derivation of $F_i$ and $J_{i,j}$ in the 1D model problem
+are easily generalized to multi-dimensional problems.
+Nevertheless, the expressions involved are slightly different, with
+derivatives in $x$ replaced by $\nabla$, so we present some
+examples below in detail.
+
+% if FEM_BOOK:
+
+===== Finite element discretization =====
+label{nonlin:alglevel:dD:fe}
+
+As an example, Backward Euler discretization of the
+PDE
+
+!bt
+\begin{equation}
+u_t = \nabla\cdot(\dfc(u)\nabla u) + f(u),
+label{nonlin:alglevel:dD:fe:PDE}
+\end{equation}
+!et
+gives the nonlinear time-discrete PDEs
+
+!bt
+\[ u^n - \Delta t\nabla\cdot(\dfc(u^n)\nabla u^n) + f(u^n) = u^{n-1}\tp\]
+!et
+We may alternatively write this equation
+with $u$ for $u^n$ and $u^{(1)}$ for $u^{n-1}$:
+
+!bt
+\[ u - \Delta t\nabla\cdot(\dfc(u)\nabla u) - \Delta t f(u) = u^{(1)}\tp\]
+!et
+
+!bnotice Understand the meaning of the symbol $u$ in various formulas!
+Note that the mathematical meaning of the symbol $u$ changes in
+the above equations: $u(\x,t)$ is the exact solution of (ref{nonlin:alglevel:dD:fe:PDE}), $u^n(\x)$ is an approximation to the exact solution at $t=t_n$,
+while $u(\x)$ in the latter equation is a synonym for $u^n$.
+Below, this $u(\x)$ will be approximated by a new
+$u=\sum_kc_k\baspsi_k(\x)$ in space, and then the actual $u$ symbol used
+in the Picard and Newton iterations is a further approximation of
+$\sum_kc_k\baspsi_k$ arising from the nonlinear iteration algorithm.
+
+Much literature reserves $u$ for the exact solution, uses $u_h(x, t)$
+for the finite element solution that varies continuously in time,
+introduces perhaps $u_h^n$ as the approximation of $u_h$ at time $t_n$,
+arising from some time discretization, and then finally applies
+$u_h^{n,k}$ for the approximation to $u_h^n$ in the $k$-th
+iteration of a Picard or Newton method. The converged solution at
+the previous time step can be called $u_h^{n-1}$, but then this
+quantity is an approximate solution of the nonlinear equations (at the
+previous time level), while the counterpart $u_h^n$ is formally the
+exact solution of the nonlinear equations at the current time level.
+The various symbols in the
+mathematics can in this way be clearly distinguished. However,
+we favor to use $u$ for the quantity that is most naturally called `u`
+in the code, and that is the most recent approximation to the solution,
+e.g., named $u_h^{n,k}$ above. This is also the key quantity of
+interest in mathematical derivations of algorithms as well.
+Choosing $u$ this way makes the most important mathematical cleaner
+than using more cluttered notation as $u_h^{n,k}$.
+We therefore introduce other symbols for other versions of the unknown
+function. It is most appropriate for us to say that $\uex(\x, t)$ is the
+exact solution, $u^n$ in the equation above
+is the approximation to $\uex(\x,t_n)$ after
+time discretization, and $u$ is the spatial approximation to
+$u^n$ from the most recent iteration in a nonlinear iteration method.
+!enotice
+
+Let us assume homogeneous Neumann conditions
+on the entire boundary for simplicity in the boundary term. The
+variational form becomes: find $u\in V$ such that
+
+!bt
+\begin{equation}
+\int_\Omega (uv + \Delta t\,\dfc(u)\nabla u\cdot\nabla v
+- \Delta t f(u)v - u^{(1)} v)\dx = 0,\quad \forall v\in V\tp
+label{nonlin:alglevel:dD:fe:varform}
+\end{equation}
+!et
+The nonlinear algebraic equations follow from setting $v=\baspsi_i$
+and using the representation $u=\sum_kc_k\baspsi_k$, which we
+just write as
+
+!bt
+\begin{equation}
+F_i =
+\int_\Omega (u\baspsi_i + \Delta t\,\dfc(u)\nabla u\cdot\nabla \baspsi_i
+- \Delta t f(u)\baspsi_i - u^{(1)}\baspsi_i)\dx\tp
+label{nonlin:alglevel:dD:fe:Fi}
+\end{equation}
+!et
+Picard iteration needs a linearization where we use
+the most recent approximation $u^{-}$ to $u$ in
+$\dfc$ and $f$:
+
+!bt
+\begin{equation}
+F_i \approx \hat F_i =
+\int_\Omega (u\baspsi_i + \Delta t\,\dfc(u^{-})\nabla u\cdot\nabla \baspsi_i
+- \Delta t f(u^{-})\baspsi_i - u^{(1)}\baspsi_i)\dx\tp
+label{nonlin:alglevel:dD:fe:Fi:Picard}
+\end{equation}
+!et
+The equations $\hat F_i=0$ are now linear and we can easily derive
+a linear system $\sum_{j\in\If}A_{i,j}c_j=b_i$, $i\in\If$,
+for the unknown coefficients
+$\sequencei{c}$ by inserting $u=\sum_jc_j\baspsi_j$. We get
+
+!bt
+\[ A_{i,j} =
+\int_\Omega (\basphi_j\baspsi_i + \Delta t\,\dfc(u^{-})\nabla \basphi_j
+\cdot\nabla \baspsi_i)\dx,\quad b_i =
+\int_\Omega (\Delta t f(u^{-})\baspsi_i + u^{(1)}\baspsi_i)\dx\tp
+\]
+!et
+
+In Newton's method we need to evaluate $F_i$ with the known value
+$u^{-}$ for $u$:
+
+!bt
+\begin{equation}
+F_i \approx \hat F_i =
+\int_\Omega (u^{-}\baspsi_i + \Delta t\,\dfc(u^{-})
+\nabla u^{-}\cdot\nabla \baspsi_i
+- \Delta t f(u^{-})\baspsi_i - u^{(1)}\baspsi_i)\dx\tp
+label{nonlin:alglevel:dD:fe:Fi:Newton}
+\end{equation}
+!et
+The Jacobian is obtained by differentiating
+(ref{nonlin:alglevel:dD:fe:Fi}) and using
+
+!bt
+\begin{align}
+\frac{\partial u}{\partial c_j} &= \sum_k\frac{\partial}{\partial c_j}
+c_k\baspsi_k = \baspsi_j,\\
+\frac{\partial \nabla u}{\partial c_j} &= \sum_k\frac{\partial}{\partial c_j}
+c_k\nabla \baspsi_k = \nabla \baspsi_j\tp
+\end{align}
+!et
+The result becomes
+
+!bt
+\begin{align}
+J_{i,j} = \frac{\partial F_i}{\partial c_j} =
+\int_\Omega & (\baspsi_j\baspsi_i + \Delta t\,\dfc^{\prime}(u)\baspsi_j
+\nabla u\cdot\nabla \baspsi_i +
+\Delta t\,\dfc(u)\nabla\baspsi_j\cdot\nabla\baspsi_i - \nonumber\\
+&\ \Delta t f^{\prime}(u)\baspsi_j\baspsi_i)\dx\tp
+label{nonlin:alglevel:dD:fe:Jij}
+\end{align}
+!et
+The evaluation of $J_{i,j}$ as the coefficient matrix in the linear
+system in Newton's method applies the known approximation $u^{-}$
+for $u$:
+
+!bt
+\begin{align}
+J_{i,j} =
+\int_\Omega & (\baspsi_j\baspsi_i + \Delta t\,\dfc^{\prime}(u^{-})\baspsi_j
+\nabla u^{-}\cdot\nabla \baspsi_i +
+\Delta t\,\dfc(u^{-})\nabla\baspsi_j\cdot\nabla\baspsi_i - \nonumber\\
+&\ \Delta t f^{\prime}(u^{-})\baspsi_j\baspsi_i)\dx\tp
+label{nonlin:alglevel:dD:fe:Jij2}
+\end{align}
+!et
+Hopefully, this example also shows how convenient the notation
+with $u$ and $u^{-}$ is: the unknown to be computed is always $u$ and
+linearization by inserting known (previously computed) values
+is a matter of adding an underscore.
+One can take great advantage of this quick notation in
+software cite{Mortensen_et_al_2011}.
+
+=== Non-homogeneous Neumann conditions ===
+
+A natural physical flux condition for the PDE (ref{nonlin:alglevel:dD:fe:PDE})
+takes the form of a non-homogeneous Neumann condition
+
+!bt
+\begin{equation}
+-\dfc(u)\frac{\partial u}{\partial n} = g,\quad\x\in\partial\Omega_N,
+label{nonlin:alglevel:dD:fe:Neumann}
+\end{equation}
+!et
+where $g$ is a prescribed function and $\partial\Omega_N$ is a part
+of the boundary of the domain $\Omega$. From integrating
+$\int_\Omega\nabla\cdot(\dfc\nabla u)\dx$ by parts, we get a boundary term
+
+!bt
+\begin{equation}
+\int_{\partial\Omega_N}\dfc(u)\frac{\partial u}{\partial u}v\ds\tp
+label{nonlin:alglevel:dD:fe:boundary:integral}
+\end{equation}
+!et
+Inserting the condition (ref{nonlin:alglevel:dD:fe:Neumann}) into
+this term results in an integral over prescribed values:
+
+!bt
+\[ -\int_{\partial\Omega_N}gv\ds\tp\]
+!et
+The nonlinearity in the $\dfc(u)$ coefficient condition
+(ref{nonlin:alglevel:dD:fe:Neumann}) therefore does not contribute with
+a nonlinearity in the variational form.
+
+=== Robin conditions ===
+
+Heat conduction problems often apply a kind of Newton's cooling law,
+also known as a Robin condition, at the boundary:
+
+!bt
+\begin{equation}
+-\dfc(u)\frac{\partial u}{\partial u} = h(u)(u-T_s(t)),\quad\x\in\partial\Omega_R,
+label{nonlin:alglevel:dD:fe:Robin}
+\end{equation}
+!et
+where $h(u)$ is a heat transfer coefficient between the body ($\Omega$)
+and its surroundings, $T_s$ is the temperature of the surroundings,
+and $\partial\Omega_R$ is a part of the boundary where this Robin
+condition applies. The boundary integral
+(ref{nonlin:alglevel:dD:fe:boundary:integral}) now becomes
+
+!bt
+\[ \int_{\partial\Omega_R}h(u)(u-T_s(T))v\ds\tp\]
+!et
+In many physical applications,
+$h(u)$ can be taken as constant, and then the boundary
+term is linear in $u$, otherwise it is nonlinear and contributes
+to the Jacobian in a Newton method.
+Linearization in a Picard method will typically use a known value
+in $h$, but keep the $u$ in $u-T_s$ as unknown:
+$h(u^{-})(u-T_s(t))$. Exercise ref{nonlin:exer:dD:heat:nonlinear:c:a}
+asks you to carry out the details.
+
+% endif
+
+===== Finite difference discretization =====
+label{nonlin:alglevel:dD:fd}
+
+A typical diffusion equation
+
+!bt
+\[ u_t = \nabla\cdot(\dfc(u)\nabla u) + f(u),\]
+!et
+can be discretized by (e.g.) a Backward Euler scheme,
+which in 2D can be written
+
+!bt
+\[ [D_t^- u = D_x\overline{\dfc(u)}^xD_x u
++ D_y\overline{\dfc(u)}^yD_y u + f(u)]_{i,j}^n\tp
+\]
+!et
+We do not dive into the details of handling boundary conditions now.
+Dirichlet and Neumann conditions are handled as in a
+corresponding linear, variable-coefficient diffusion problems.
+
+Writing the scheme out, putting the unknown values on the
+left-hand side and known values on the right-hand side, and
+introducing $\Delta x=\Delta y=h$ to save some writing, one gets
+
+!bt
+\begin{align*}
+u^n_{i,j} &- \frac{\Delta t}{h^2}(
+ \half(\dfc(u_{i,j}^n)   + \dfc(u_{i+1,j}^n))(u_{i+1,j}^n-u_{i,j}^n)\\
+&\quad -
+\half(\dfc(u_{i-1,j}^n) + \dfc(u_{i,j}^n))(u_{i,j}^n-u_{i-1,j}^n) \\
+&\quad +
+ \half(\dfc(u_{i,j}^n)   + \dfc(u_{i,j+1}^n))(u_{i,j+1}^n-u_{i,j}^n)\\
+&\quad -
+ \half(\dfc(u_{i,j-1}^n) + \dfc(u_{i,j}^n))(u_{i,j}^n-u_{i-1,j-1}^n))
+- \Delta tf(u_{i,j}^n) = u^{n-1}_{i,j}
+\end{align*}
+!et
+This defines a nonlinear algebraic system on the form $A(u)u=b(u)$.
+
+=== Picard iteration ===
+
+The most recently computed values $u^{-}$ of $u^n$ can be
+used in $\dfc$ and $f$ for a Picard iteration,
+or equivalently, we solve $A(u^{-})u=b(u^{-})$.
+The result is a linear system of the same type as arising
+from $u_t = \nabla\cdot (\dfc(\x)\nabla u) + f(\x,t)$.
+
+The Picard iteration scheme can also be expressed in operator notation:
+
+!bt
+\[ [D_t^- u = D_x\overline{\dfc(u^{-})}^xD_x u
++ D_y\overline{\dfc(u^{-})}^yD_y u + f(u^{-})]_{i,j}^n\tp
+\]
+!et
+
+=== Newton's method ===
+
+As always, Newton's method is technically more involved than
+Picard iteration. We first define
+the nonlinear algebraic equations to be solved, drop the
+superscript $n$ (use $u$ for $u^n$), and introduce $u^{(1)}$ for $u^{n-1}$:
+
+!bt
+\begin{align*}
+F_{i,j} &= u_{i,j} - \frac{\Delta t}{h^2}(\\
+&\qquad \half(\dfc(u_{i,j})   + \dfc(u_{i+1,j}))(u_{i+1,j}-u_{i,j}) -\\
+&\qquad \half(\dfc(u_{i-1,j}) + \dfc(u_{i,j}))(u_{i,j}-u_{i-1,j}) + \\
+&\qquad \half(\dfc(u_{i,j})   + \dfc(u_{i,j+1}))(u_{i,j+1}-u_{i,j}) -\\
+&\qquad \half(\dfc(u_{i,j-1}) + \dfc(u_{i,j}))(u_{i,j}-u_{i-1,j-1})) -
+\Delta t\, f(u_{i,j}) - u^{(1)}_{i,j} = 0\tp
+\end{align*}
+!et
+It is convenient to work with two indices $i$ and $j$ in 2D
+finite difference discretizations, but it complicates
+the derivation of the Jacobian, which then gets four indices.
+(Make sure you really understand the 1D version of this problem
+as treated in Section ref{nonlin:alglevel:1D:fd}.)
+The left-hand expression of an equation $F_{i,j}=0$ is to be
+differentiated with respect to each of the unknowns $u_{r,s}$
+(recall that this is short notation for $u_{r,s}^n$), $r\in\Ix$, $s\in\Iy$:
+
+!bt
+\[ J_{i,j,r,s} = \frac{\partial F_{i,j}}{\partial u_{r,s}}\tp \]
+!et
+The Newton system to be solved in each iteration can be written as
+
+!bt
+\[ \sum_{r\in\Ix}\sum_{s\in\Iy}J_{i,j,r,s}\delta u_{r,s} = -F_{i,j},
+\quad i\in\Ix,\ j\in\Iy\tp\]
+!et
+
+Given $i$ and $j$, only a few $r$ and $s$ indices give nonzero
+contribution to the Jacobian since $F_{i,j}$ contains $u_{i\pm 1,j}$,
+$u_{i,j\pm 1}$, and $u_{i,j}$. This means that $J_{i,j,r,s}$ has
+nonzero contributions only if $r=i\pm 1$, $s=j\pm 1$, as well as $r=i$
+and $s=j$.  The corresponding terms in $J_{i,j,r,s}$ are
+$J_{i,j,i-1,j}$, $J_{i,j,i+1,j}$, $J_{i,j,i,j-1}$, $J_{i,j,i,j+1}$,
+and $J_{i,j,i,j}$.  Therefore, the left-hand side of the Newton
+system, $\sum_r\sum_s J_{i,j,r,s}\delta u_{r,s}$ collapses to
+
+
+!bt
+\begin{align*}
+ J_{i,j,r,s}\delta u_{r,s} =
+J_{i,j,i,j}\delta u_{i,j} & +
+J_{i,j,i-1,j}\delta u_{i-1,j} +
+J_{i,j,i+1,j}\delta u_{i+1,j} +
+J_{i,j,i,j-1}\delta u_{i,j-1}\\
+& +
+J_{i,j,i,j+1}\delta u_{i,j+1}
+\end{align*}
+!et
+The specific derivatives become
+
+!bt
+\begin{align*}
+J_{i,j,i-1,j} &= \frac{\partial F_{i,j}}{\partial u_{i-1,j}}\\
+&= \frac{\Delta t}{h^2}(\dfc^{\prime}(u_{i-1,j})(u_{i,j}-u_{i-1,j})
++ \dfc(u_{i-1,j})(-1)),\\
+J_{i,j,i+1,j} &= \frac{\partial F_{i,j}}{\partial u_{i+1,j}}\\
+&= \frac{\Delta t}{h^2}(-\dfc^{\prime}(u_{i+1,j})(u_{i+1,j}-u_{i,j})
+- \dfc(u_{i-1,j})),\\
+J_{i,j,i,j-1} &= \frac{\partial F_{i,j}}{\partial u_{i,j-1}}\\
+&= \frac{\Delta t}{h^2}(\dfc^{\prime}(u_{i,j-1})(u_{i,j}-u_{i,j-1})
++ \dfc(u_{i,j-1})(-1)),\\
+J_{i,j,i,j+1} &= \frac{\partial F_{i,j}}{\partial u_{i,j+1}}\\
+&= \frac{\Delta t}{h^2}(-\dfc^{\prime}(u_{i,j+1})(u_{i,j+1}-u_{i,j})
+- \dfc(u_{i,j-1}))\tp
+\end{align*}
+!et
+The $J_{i,j,i,j}$ entry has a few more terms and is left as an
+exercise.
+Inserting the most recent approximation
+$u^{-}$ for $u$ in the $J$ and $F$ formulas and then
+forming $J\delta u=-F$ gives the linear system to be solved
+in each Newton iteration. Boundary conditions will affect the
+formulas when any of the indices coincide with a boundary value
+of an index.
+
+
+===== Continuation methods =====
+
+idx{continuation method}
+
+Picard iteration or Newton's method may diverge when solving PDEs with
+severe nonlinearities. Relaxation with $\omega <1$
+may help, but in highly nonlinear problems it can be
+necessary to introduce a *continuation parameter* $\Lambda$ in
+the problem: $\Lambda =0$ gives a version of the
+problem that is easy to solve, while
+$\Lambda =1$ is the target problem. The idea is then
+to increase $\Lambda$ in steps, $\Lambda_0=0 ,\Lambda_1 <\cdots <\Lambda_n=1$,
+and use the solution from the problem with $\Lambda_{i-1}$ as
+initial guess for the iterations in the problem corresponding
+to $\Lambda_i$.
+
+The continuation method is easiest to understand through an example.
+Suppose we intend to solve
+
+!bt
+\[ -\nabla\cdot\left( ||\nabla u||^q\nabla u\right) = f, \]
+!et
+which is an equation modeling the flow of a non-Newtonian fluid through
+a channel or pipe. For $q=0$ we have the Poisson equation (corresponding
+to a Newtonian fluid) and the problem is linear. A typical
+value for pseudo-plastic fluids may be $q_n=-0.8$. We can introduce
+the continuation parameter $\Lambda\in [0,1]$ such that
+$q=q_n\Lambda$. Let $\{\Lambda_\ell\}_{\ell=0}^n$ be the sequence of
+$\Lambda$ values in $[0,1]$, with corresponding $q$ values
+$\{q_\ell\}_{\ell=0}^n$. We can then solve a sequence of problems
+
+!bt
+\[
+-\nabla\cdot\left( ||\nabla u^\ell||^q_\ell\nabla u^\ell\right) = f,\quad
+\ell = 0,\ldots,n,\]
+!et
+where the initial guess for iterating on $u^{\ell}$ is the
+previously computed solution $u^{\ell-1}$. If a particular $\Lambda_\ell$
+leads to convergence problems, one may try a smaller
+increase in $\Lambda$:
+$\Lambda_* = \half (\Lambda_{\ell-1}+\Lambda_\ell)$,
+and repeat halving the step in $\Lambda$ until convergence is reestablished.

@@ -283,6 +283,135 @@ view $M$ as a preconditioner of a simplest possible iteration method.
 !esol
 
 ===== Exercise: Oscillating surface temperature of the earth =====
+label{diffu:exer:earthosc}
+
+Consider a day-and-night or seasonal variation in temperature at
+the surface of the earth. How deep down in the ground will the
+surface oscillations reach? For simplicity, we model only the
+vertical variation along a coordinate $x$, where $x=0$ at the
+surface, and $x$ increases as we go down in the ground.
+The temperature is governed by the heat equation
+
+!bt
+\[ \varrho c_v\frac{\partial T}{\partial t} = \nabla\cdot(k\nabla T),\]
+!et
+in some spatial domain $x\in [0,L]$, where $L$ is chosen large enough such
+that we can assume that $T$ is approximately constant, independent of the surface
+oscillations, for $x>L$. The parameters $\varrho$, $c_v$, and $k$ are the
+density, the specific heat capacity at constant volume, and the
+heat conduction coefficient, respectively.
+
+!bsubex
+Derive the mathematical model for computing $T(x,t)$.
+Assume the surface oscillations to be sinusoidal around some mean
+temperature $T_m$. Let $T=T_m$ initially. At $x=L$, assume $T\approx T_m$.
+
+!bsol
+The surface temperature is set as
+
+!bt
+\[ T(0,t) = T_m + A\sin(\omega t)\tp\]
+!et
+With only one ``active'' spatial coordinate we get the initial-boundary
+value problem
+
+!bt
+\begin{align*}
+\varrho c_v \frac{\partial T}{\partial t} &= \frac{\partial}{\partial x}
+\left(k(x)\frac{\partial T}{\partial x}\right), & x\in (0,L),\ t\in (0,T],\\
+T(x,0)&= T_m, & x\in [0,L],\\
+T(0,t)&= T_m + A\sin(\omega t), & t\in (0,T],\\
+T(L,t) &= T_m, & t\in (0,T].
+\end{align*}
+!et
+!esol
+!esubex
+
+!bsubex
+Scale the model in a) assuming $k$ is constant. Use a time scale
+$t_c = \omega^{-1}$ and a length scale $x_c = \sqrt{2\dfc/omega}$,
+where $\dfc = k/(\varrho c_v)$. The primary unknown can be scaled
+as $\frac{T-T_m}{2A}$.
+
+Show that the scaled PDE is
+
+!bt
+\[
+\frac{\partial u}{\partial \bar t} =
+\frac{1}{2}\frac{\partial^2 u}{\partial x^2},\]
+!et
+with initial condition $u(\bar x,0) = 0$,
+left boundary condition
+$u(0,\bar t)  = \sin(\bar t)$,
+and right boundary condition
+$u(\bar L,\bar t)  = 0$. The bar indicates a dimensionless quantity.
+
+Show that $u(\bar x, \bar t)=e^{-\bar x}\sin (\bar x - \bar t)$ is a
+solution that fulfills the PDE and the boundary condition at $\bar x
+=0$ (this is the solution we will experience as $\bar
+t\rightarrow\infty$ and $L\rightarrow\infty$).  Conclude that an
+appropriate domain for $x$ is $[0,4]$ if a damping $e^{-4}\approx
+0.18$ is appropriate for implementing $\bar u\approx\hbox{const}$;
+increasing to $[0,6]$ damps $\bar u$ to 0.0025.
+
+!bsol
+Chapter 3.2.4 in the book cite{Langtangen_scaling} describes the
+scaling of this problem in detail.
+Inserting dimensionless variables $\bar t = \omega t$, $\bar x =
+\sqrt{omega/(2\dfc)} x$, and
+
+!bt
+\[ u = \frac{T-T_m}{2A},\]
+!et
+leads to
+
+!bt
+\begin{align*}
+\frac{\partial u}{\partial \bar t} &=
+\frac{1}{2}\frac{\partial^2 u}{\partial x^2},
+\quad & \bar x\in (0,\bar L),\ \bar t\in (0,\bar T],
+\\
+u(\bar x,0) &= 0,
+\quad &\bar x\in [0,1],
+\\
+u(0,\bar t) & = \sin(\bar t),
+\quad  &\bar t\in (0,\bar T],
+\\
+u(\bar L,\bar t) & = 0,
+\quad &\bar t\in (0,\bar T].
+\end{align*}
+!et
+The domain lengths $\bar L$ and $\bar T$ follows from straightforward
+scaling of $L$ and $T$.
+
+Inserting $u(\bar x, \bar t)=e^{-\bar x}\sin (\bar t - \bar x)$ in the
+PDE shows that this is a solution. It also obeys
+the boundary condition $\bar u(0,\bar t)=sin(\bar t)$. As
+$\bar t\rightarrow\infty$, the initial condition has no longer impact
+on the solution and is ``forgotten'' and of no interest.
+The boundary condition at $\bar x=\bar L$ is never compatible with the
+given solution unless $\bar u$ is damped to zero, which happens
+mathematically as $\bar L\rightarrow\infty$. For a numerical solution,
+however, we may use a small finite value such as $\bar L=4$.
+!esol
+!esubex
+
+!bsubex
+Compute the scaled temperature and make animations comparing two solutions
+with $\bar L=4$ and $\bar L=8$, respectively (keep $\Delta x$ the same).
+
+!bsol
+We can use the `viz` function in `diff1D_vc.py` to do the number
+crunching. Appropriate calls and visualization go here:
+
+@@@CODE exer-diffu/surface_osc.py
+
+MOVIE: [https://github.com/hplgit/fdm-book/raw/master/doc/pub/book/html/mov-diffu/surface_osc/movie.mp4]
+
+!esol
+!esubex
+
+
 
 ===== Exercise: Oscillating and pulsating flow in tubes =====
 
