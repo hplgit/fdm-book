@@ -1038,7 +1038,7 @@ considered to be converged.
 
 === Numerical scheme and linear system ===
 
-To illustrate the idea of the Jacobi method, we simply the numerical scheme to the
+To illustrate the idea of the Jacobi method, we simplify the numerical scheme to the
 Backward Euler case, $\theta=1$, so there are fewer terms to write:
 
 !bt
@@ -1170,13 +1170,13 @@ is less than some tolerance:
 
 === Code-friendly notation ===
 
-To make the mathematics as close as possible to what we will write in a
-computer, we may introduce some new notation: $u_{i,j}$ is a short notation
-for $u^{n+1,r+1}_{i,j}$, $u^{-}_{i,j}$ is a short notation for
-$u^{n+1,r}_{i,j}$, and $u^{(s)}_{i,j}$ denotes $u^{n+1-s}_{i,j}$.
-That is, $u_{i,j}$ is the unknown, $u^{-}_{i,j}$
-is its most recently computed approximation, and $s$ counts time levels
-backwards in time. The Jacobi method
+To make the mathematics as close as possible to what we will write in
+a computer program, we may introduce some new notation: $u_{i,j}$ is a
+short notation for $u^{n+1,r+1}_{i,j}$, $u^{-}_{i,j}$ is a short
+notation for $u^{n+1,r}_{i,j}$, and $u^{(s)}_{i,j}$ denotes
+$u^{n+1-s}_{i,j}$.  That is, $u_{i,j}$ is the unknown, $u^{-}_{i,j}$
+is its most recently computed approximation, and $s$ counts time
+levels backwards in time. The Jacobi method
 (ref(ref{diffu:2D:Jacobi})) takes the following form with the new
 notation:
 
@@ -1225,10 +1225,10 @@ The final update of $u$ applies relaxation:
 label{diffu:2D:Jacobi:impl}
 
 The Jacobi method needs no coefficient matrix and right-hand side
-vector, but it needs an array for $u$ in the previous iteration.
-We call this array `u_` (using the notation at the end of the previous
-section), the unknown is `u`, and `u_1` is, as usual, the computed solution
-one time level back in time.
+vector, but it needs an array for $u$ in the previous iteration.  We
+call this array `u_`, using the notation at the end of the previous
+section (at the same time level). The unknown itself is called `u`,
+while `u_1` is the computed solution one time level back in time.
 With a $\theta$ rule in time, the time loop can be coded like this:
 
 !bc pycod
@@ -1363,7 +1363,7 @@ the discrete `u` if $N_x$ and $N_y$ are even numbers. We can then
 compute $E_u$ as $E_u = |\max \uex - \max u|$, when we know an exact
 solution $\uex$ of the problem.
 
-What about $E_\Delta$? If we use the maximum value as measure of the
+What about $E_\Delta$? If we use the maximum value as a measure of the
 error, we have in fact analytical insight into the approximation error in this
 particular problem. According to Section ref{diffu:2D:analysis}, the exact
 solution (ref{diffu:2D:Jacobi:impl:hill:uex}) of the PDE problem is
@@ -1408,9 +1408,9 @@ $E_i$ is around $5\cdot 10^{-3}$.
 The corresponding number of Jacobi
 iterations (with $\omega=1$) varies from 31 to 12 during the
 time simulation (for $\max u >
-0.02$). Changing the tolerance to $10^{-5}$ requires much more
+0.02$). Changing the tolerance to $10^{-5}$ causes many more
 iterations (61 to 42) without giving any contribution to the overall
-accuracy since the total error is dominated by $E_\Delta$.
+accuracy, because the total error is dominated by $E_\Delta$.
 
 Also, with a $N_x=N_y=20$, the spatial accuracy increases and many more
 iterations are needed (143 to 45), but the dominating error is from
@@ -1476,9 +1476,10 @@ These observations are quite disappointing: if we already have a
 time-dependent diffusion problem and want to take larger time steps by
 an implicit time discretization method, we will with the Jacobi method
 end up with something close to a slow Forward Euler simulation of the
-original problem at each time level.  Nevertheless, the Jacobi method
+original problem at each time level.  Nevertheless, the are two reasons
+for why the Jacobi method
 remains a fundamental building block for solving linear systems
-arising from PDEs of two reasons: 1) a couple of iterations removes
+arising from PDEs: 1) a couple of iterations remove
 large parts of the error and this is effectively used in the very
 efficient class of multigrid methods; and 2) the idea of the Jacobi
 method can be developed into more efficient methods, especially the
@@ -1621,16 +1622,8 @@ The strategy for vectorizing (and parallelizing) the Gauss-Seidel
 method is to use a special numbering of the mesh points called
 red-black numbering: every other point is red or black as in a
 checkerboard pattern. This numbering requires $N_x$ and $N_y$ to
-be even numbers. Here is an example on a $4\times 4$ mesh:
-
-!bc
-r b r b r
-b r b r b
-r b r b r
-b r b r b
-r b r b r
-!ec
-And here is a $6\times 6$ mesh:
+be even numbers.
+Here is an example of a $6\times 6$ mesh:
 
 !bc
 r b r b r b r
@@ -1742,7 +1735,7 @@ with slice objects
 !bc pycod
 i = slice(2, None, 2);  j = slice(1, None, 2)
 !ec
-The second set of black points are shown here:
+The second set of black points is shown here:
 
 !bc
 x x x x x x x
@@ -1759,7 +1752,7 @@ with slice objects
 i = slice(1, None, 2);  j = slice(2, None, 2)
 !ec
 
-That is, we need four set of slices. The simplest way of implementing
+That is, we need four sets of slices. The simplest way of implementing
 the algorithm is to make a function with variables for the slices
 representing $i$, $i-1$, $i+1$, $j$, $j-1$, and $j+1$, here called
 `ic` (``i center''), `im1` (``i minus 1'', `ip1` (``i plus 1''), `jc`, `jm1`,
@@ -1777,7 +1770,7 @@ def update(u_, u_1, ic, im1, ip1, jc, jm1, jp1):
          theta*dt*f_a_np1[ic,jc] + \
          (1-theta)*dt*f_a_n[ic,jc])
 !ec
-The formula returned form `update` is to be compared with
+The formula returned from `update` is to be compared with
 (ref{diffu:2D:SOR3}).
 
 The relaxed Jacobi iteration can be implemented by
@@ -1791,7 +1784,7 @@ u_new[ic,jc] = update(
 u[ic,jc] = omega*u_new[ic,jc] + (1-omega)*u_[ic,jc]
 !ec
 
-The Gauss-Seidel (or SOR) updates needs four different steps.
+The Gauss-Seidel (or SOR) updates need four different steps.
 The `ic` and `jc` slices are specified above. For each of these,
 we must specify the corresponding `im1`, `ip1`, `jm1`, and `jp1`
 slices. The code below contain the details.
@@ -1880,7 +1873,7 @@ substitution).  When $A$ is a dense $N\times N$ matrix, the LU
 factorization costs $\frac{1}{3}N^3$ arithmetic operations, while the
 forward and backward substitution steps each require of
 the order $N^2$ arithmetic operations.
-That is, factorization dominates the costs and the substitution steps are
+That is, factorization dominates the costs, while the substitution steps are
 cheap.
 
 Symmetric, positive definite coefficient matrices often arise when
@@ -1892,19 +1885,18 @@ substitution (`scipy.linalg` is the relevant Python package).
 
 Finite difference discretizations lead to sparse coefficient matrices.
 An extreme case arose in Section ref{diffu:pde1:BE} where $A$ is
-tridiagonal. The amount of arithmetic operations in the
-LU and Cholesky factorization algorithms is for a tridiagonal matrix just
-of the order $N$, not $N^3$. Tridiagonal matrices are special cases of *banded
-matrices*, where the matrices contain just a set of diagonal bands.
-Finite difference methods on regularly numbered
-rectangular and box-shaped meshes
-give rise to such banded matrices, with 5 bands in 2D and 7 in
-3D for diffusion problems.
-Gaussian elimination only needs to work within the bands, leading to
-much more efficient algorithms. For example,
-factorization of more general, sparse matrices can
-often take advantage of the sparsity through modified Gaussian elimination
-algorithms. The relevant Python package is `scipy.sparse.linalg`.
+tridiagonal. For a tridiagonal matrix, the amount of arithmetic
+operations in the LU and Cholesky factorization algorithms is just of
+the order $N$, not $N^3$. Tridiagonal matrices are special cases of
+*banded matrices*, where the matrices contain just a set of diagonal
+bands.  Finite difference methods on regularly numbered rectangular
+and box-shaped meshes give rise to such banded matrices, with 5 bands
+in 2D and 7 in 3D for diffusion problems.  Gaussian elimination only
+needs to work within the bands, leading to much more efficient
+algorithms. For example, factorization of more general, sparse
+matrices can often take advantage of the sparsity through modified
+Gaussian elimination algorithms. The relevant Python package is
+`scipy.sparse.linalg`.
 
 Although a direct method is an exact algorithm, rounding errors
 may in practice accumulate and pollute the solution. The effect
@@ -1962,17 +1954,18 @@ and $G^k$ is a matrix exponential. For the method to converge,
 $\lim_{r\rightarrow\infty}||G^r||=0$ is a necessary and sufficient condition.
 This implies that the *spectral radius* of $G$ must be less than one.
 Since $G$ is directly related to the finite difference scheme for the
-underlying PDE problem, one can in principle compute the spectral radius,
-but in practice for a given PDE problem,
-this is not feasible and does not lead to
-useful formulas. Analysis of model problems, usually
+underlying PDE problem, one can in principle compute the spectral radius.
+For a given PDE problem, however, this is not a practical strategy, since it
+is very difficult to develop useful formulas.
+Analysis of model problems, usually
 related to the Poisson equation,
 reveals some trends of interest: the convergence rate of the Jacobi
 method goes like $h^2$, while that of SOR with an optimal $\omega$ goes
 like $h$, where $h$ is the spatial spacing: $h=\Delta x=\Delta y$.
 That is, the efficiency of the Jacobi method quickly deteriorates with
-the mesh resolution, and SOR is much to be preferred, but the optimal
-$\omega$ remains an open question. We refer to
+the increasing mesh resolution, and SOR is much to be preferred
+(even if the optimal
+$\omega$ remains an open question). We refer to
 Chapter 4 of cite{Saad_2003} for more information on the convergence theory.
 One important result is that if $A$ is symmetric and positive definite,
 then SOR will converge for any $0<\omega <2$.
@@ -2038,23 +2031,25 @@ for the system. That is, instead of solving $Au=b$, we try to solve
 $M^{-1}Au=M^{-1}b$ in the hope that the method works better for this
 *preconditioned* system. The matrix $M$ is the *preconditioner* or
 preconditioning matrix.  Now we need to perform matrix-vector products
-$M^{-1}Au$, which implies computing $y=Au$ and solving a system
-$My=b$. Therefore, $M$ must be cheap to compute and systems $My=b$
+$y = M^{-1}Au$, which is done in two steps: first the matrix-vector
+product $v=Au$ is carried out and then the system
+$My=v$ must be solved.
+Therefore, $M$ must be cheap to compute and systems $My=v$
 must be cheap to solve.
 
-A perfect preconditioner is $M=A$, but in each
-iteration in the Conjugate gradient method one then has so solve a
-system with $A$ as coefficient matrix. A key idea is to let $M$ be
-some approximation to $A$.
-The simplest preconditioner is to set $M=D$, where
-$D$ is the diagonal of $A$. This choice means running one Jacobi iteration
-as preconditioner. Exercise ref{diffu:exer:splitting_prec} shows that
-the Jacobi and SOR methods can also be viewed as preconditioners.
+A perfect preconditioner is $M=A$, but in each iteration in the
+Conjugate gradient method one then has so solve a system with $A$ as
+coefficient matrix! A key idea is to let $M$ be some kind of *cheap
+approximation* to $A$.  The simplest preconditioner is to set $M=D$,
+where $D$ is the diagonal of $A$. This choice means running one Jacobi
+iteration as preconditioner. Exercise ref{diffu:exer:splitting_prec}
+shows that the Jacobi and SOR methods can also be viewed as
+preconditioners.
 
-Constructing good preconditioners is a scientific field on its own. Here
-we shall treat the topic just very briefly. For a user having access to
-the `scipy.sparse.linalg` library, there are Conjugate gradient
-methods and preconditioners readily available:
+Constructing good preconditioners is a scientific field on its
+own. Here we shall treat the topic just very briefly. For a user
+having access to the `scipy.sparse.linalg` library, there are
+Conjugate gradient methods and preconditioners readily available:
 
  * For positive definite, symmetric systems: `cg` (the Conjugate gradient method)
  * For symmetric systems: `minres` (Minimum residual method)
