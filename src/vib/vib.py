@@ -171,7 +171,8 @@ def main():
     parser.add_argument('--s', type=str, default='u')
     parser.add_argument('--F', type=str, default='0')
     parser.add_argument('--dt', type=float, default=0.05)
-    parser.add_argument('--T', type=float, default=10)
+    #parser.add_argument('--T', type=float, default=10)
+    parser.add_argument('--T', type=float, default=20)
     parser.add_argument('--window_width', type=float, default=30.,
                         help='Number of periods in a window')
     parser.add_argument('--damping', type=str, default='linear')
@@ -188,15 +189,15 @@ def main():
        a.damping
 
     u, t = solver(I, V, m, b, s, F, dt, T, damping)
+
     num_periods = plot_empirical_freq_and_amplitude(u, t)
-    num_periods = 4
     if num_periods <= 40:
-        figure()
+        plt.figure()
         visualize(u, t)
     else:
         visualize_front(u, t, window_width, savefig)
         visualize_front_ascii(u, t)
-    show()
+    plt.show()
 
 def plot_empirical_freq_and_amplitude(u, t):
     minima, maxima = minmax(t, u)
@@ -204,7 +205,7 @@ def plot_empirical_freq_and_amplitude(u, t):
     a = amplitudes(minima, maxima)
     plt.figure()
     from math import pi
-    w = 2*pi/p
+    w = 2*pi/p    
     plt.plot(range(len(p)), w, 'r-')
     plt.hold('on')
     plt.plot(range(len(a)), a, 'b-')
@@ -280,7 +281,7 @@ def periods(extrema):
     """
     p = [extrema[n][0] - extrema[n-1][0]
          for n in range(1, len(extrema))]
-    return array(p)
+    return np.array(p)
 
 def amplitudes(minima, maxima):
     """
@@ -290,7 +291,7 @@ def amplitudes(minima, maxima):
     # Compare first maxima with first minima and so on
     a = [(abs(maxima[n][1] - minima[n][1]))/2.0
          for n in range(min(len(minima),len(maxima)))]
-    return array(a)
+    return np.array(a)
 
 if __name__ == '__main__':
     main()
