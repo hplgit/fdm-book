@@ -29,48 +29,19 @@ from scitools.std import *
 
 def solver(I, V, f, c, Lx, Ly, Nx, Ny, dt, T,
            user_action=None, version='scalar'):
-    if version == 'cython':
-        try:
-            #import pyximport; pyximport.install()
-            import wave2D_u0_loop_cy as compiled_loops
-            advance = compiled_loops.advance
-        except ImportError as e:
-            print 'No module wave2D_u0_loop_cy. Run make_wave2D.sh!'
-            print e
-            sys.exit(1)
-    elif version == 'f77':
-        try:
-            import wave2D_u0_loop_f77 as compiled_loops
-            advance = compiled_loops.advance
-        except ImportError:
-            print 'No module wave2D_u0_loop_f77. Run make_wave2D.sh!'
-            sys.exit(1)
-    elif version == 'c_f2py':
-        try:
-            import wave2D_u0_loop_c_f2py as compiled_loops
-            advance = compiled_loops.advance
-        except ImportError:
-            print 'No module wave2D_u0_loop_c_f2py. Run make_wave2D.sh!'
-            sys.exit(1)
-    elif version == 'c_cy':
-        try:
-            import wave2D_u0_loop_c_cy as compiled_loops
-            advance = compiled_loops.advance_cwrap
-        except ImportError as e:
-            print 'No module wave2D_u0_loop_c_cy. Run make_wave2D.sh!'
-            print e
-            sys.exit(1)
-    elif version == 'vectorized':
+    if version == 'vectorized':
         advance = advance_vectorized
     elif version == 'scalar':
         advance = advance_scalar
 
-    x = linspace(0, Lx, Nx+1)  # mesh points in x dir
-    y = linspace(0, Ly, Ny+1)  # mesh points in y dir
+    x = linspace(0, Lx, Nx+1)  # Mesh points in x dir
+    y = linspace(0, Ly, Ny+1)  # Mesh points in y dir
+    # Make sure dx, dy, and dt are compatible with x, y and t
     dx = x[1] - x[0]
     dy = y[1] - y[0]
+    dt = t[1] - t[0]
 
-    xv = x[:,newaxis]          # for vectorized function evaluations
+    xv = x[:,newaxis]          # For vectorized function evaluations
     yv = y[newaxis,:]
 
     stability_limit = (1/float(c))*(1/sqrt(1/dx**2 + 1/dy**2))
@@ -149,11 +120,6 @@ def solver(I, V, f, c, Lx, Ly, Nx, Ny, dt, T,
         else:
             f_a[:,:] = f(xv, yv, t[n])  # precompute, size as u
             u = advance(u, u_1, u_2, f_a, Cx2, Cy2, dt2)
-
-        if version == 'f77':
-            for a in 'u', 'u_1', 'u_2', 'f_a':
-                if not isfortran(eval(a)):
-                    print '%s: not Fortran storage!' % a
 
         if user_action is not None:
             if user_action(u, x, xv, y, yv, t, n+1):

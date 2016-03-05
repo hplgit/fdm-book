@@ -6,10 +6,10 @@ Automatically generated HTML file from DocOnce source
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="DocOnce: https://github.com/hplgit/doconce/" />
-<meta name="description" content="Finite difference methods for wave motion">
-<meta name="keywords" content="waves on a string,wave equation 1D,wave equation 1D, finite difference method,mesh finite differences,stencil 1D wave equation,mesh function,wave equation 1D, implementation,callback function,nose test,pytest test,unit testing,software testing nose,software testing pytest,closure,vectorization,scalar code,vectorization,array computing,array slices,slice,lambda function (Python),Neumann conditions,Dirichlet conditions,homogeneous Neumann conditions,homogeneous Dirichlet conditions,boundary conditions Neumann,boundary conditions Dirichlet,stencil Neumann boundary,index set notation,geometric mean,arithmetic mean,harmonic average,averaging geometric,averaging arithmetic,averaging harmonic,radiation condition,open boundary condition,boundary condition open (radiation),periodic boundary conditions,boundary conditions periodic,wave equation 1D, analytical properties,Fourier series,Fourier transform,discrete Fourier transform,wave equation 1D, exact numerical solution,Courant number,stability criterion,wave equation 1D, stability,wave equation 2D, implementation,index set notation">
+<meta name="description" content="Finite difference methods for wave equations">
+<meta name="keywords" content="waves on a string,wave equation 1D,wave equation 1D, finite difference method,mesh finite differences,stencil 1D wave equation,mesh function,wave equation 1D, implementation,callback function,verification polynomial solution,nose,pytest,unit testing,test function,closure,vectorization,parallelism,scalar code,vectorization,array computing,array slices,slice,lambda function (Python),Neumann conditions,Dirichlet conditions,homogeneous Neumann conditions,homogeneous Dirichlet conditions,boundary conditions Neumann,boundary conditions Dirichlet,stencil Neumann boundary,index set notation,geometric mean,arithmetic mean,harmonic average,averaging geometric,averaging arithmetic,averaging harmonic,radiation condition,open boundary condition,boundary condition open (radiation),periodic boundary conditions,boundary conditions periodic,wave equation 1D, analytical properties,Fourier series,Fourier transform,discrete Fourier transform,wave equation 1D, exact numerical solution,Courant number,stability criterion,wave equation 1D, stability,wave equation 2D, implementation,index set notation">
 
-<title>Finite difference methods for wave motion</title>
+<title>Finite difference methods for wave equations</title>
 
 
 <link href="https://cdn.rawgit.com/hplgit/doconce/master/bundled/html_styles/style_solarized_box/css/solarized_light_code.css" rel="stylesheet" type="text/css" title="light"/>
@@ -581,7 +581,8 @@ The solution at all spatial points at a new time level is stored in an
 array <code>u</code> of length \( N_x+1 \). We need to decide what do to with
 this solution, e.g., visualize the curve, analyze the values, or write
 the array to file for later use. The decision about what to do is left to
-the user in the form of a user-suppled supplied function
+the user in the form of a user-suppled function
+
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
@@ -589,7 +590,7 @@ the user in the form of a user-suppled supplied function
 </pre></div>
 <p>
 where <code>u</code> is the solution at the spatial points <code>x</code> at time <code>t[n]</code>.
-The <code>user_action</code> function is call from the solver at each time level <code>n</code>.
+The <code>user_action</code> function is called from the solver at each time level <code>n</code>.
 
 <p>
 If the user wants to plot the solution or store the solution at a
@@ -622,7 +623,11 @@ A first attempt at a solver function is listed below.
     dx = dt*c/<span style="color: #658b00">float</span>(C)
     Nx = <span style="color: #658b00">int</span>(<span style="color: #658b00">round</span>(L/dx))
     x = np.linspace(<span style="color: #B452CD">0</span>, L, Nx+<span style="color: #B452CD">1</span>)       <span style="color: #228B22"># Mesh points in space</span>
-    C2 = C**<span style="color: #B452CD">2</span>                      <span style="color: #228B22"># Help variable in the scheme</span>
+    C2 = C**<span style="color: #B452CD">2</span>                         <span style="color: #228B22"># Help variable in the scheme</span>
+    <span style="color: #228B22"># Make sure dx and dt are compatible with x and t</span>
+    dx = x[<span style="color: #B452CD">1</span>] - x[<span style="color: #B452CD">0</span>]
+    dt = t[<span style="color: #B452CD">1</span>] - t[<span style="color: #B452CD">0</span>]
+
     <span style="color: #8B008B; font-weight: bold">if</span> f <span style="color: #8B008B">is</span> <span style="color: #658b00">None</span> <span style="color: #8B008B">or</span> f == <span style="color: #B452CD">0</span> :
         f = <span style="color: #8B008B; font-weight: bold">lambda</span> x, t: <span style="color: #B452CD">0</span>
     <span style="color: #8B008B; font-weight: bold">if</span> V <span style="color: #8B008B">is</span> <span style="color: #658b00">None</span> <span style="color: #8B008B">or</span> V == <span style="color: #B452CD">0</span>:
@@ -687,8 +692,8 @@ A first attempt at a solver function is listed below.
 <p>
 We use the test problem derived in the section <a href="._wave-solarized001.html#wave:pde2:fd">A slightly generalized model problem</a> for
 verification. Below is a unit test based on this test problem
-and realized as a proper <em>test function</em> (compatible with the unit test
-frameworks nose or pytest).
+and realized as a proper <em>test function</em> compatible with the unit test
+frameworks nose or pytest.
 
 <p>
 
@@ -725,17 +730,15 @@ frameworks nose or pytest).
            user_action=assert_no_error)
 </pre></div>
 <p>
-When this function resides in the file <code>wave1D_u0.py</code>, one can run ether
-<code>py.test</code> or <code>nosetests</code>,
+When this function resides in the file <code>wave1D_u0.py</code>, one can run
+pytest to check that all test functions with names <code>test_*()</code>
+in this file work:
 
 <p>
 
 <!-- code=text (!bc sys) typeset with pygments style "perldoc" -->
-<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%">Terminal&gt; py.test   -s -v wave1D_u0.py
-Terminal&gt; nosetests -s -v wave1D_u0.py
+<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%">Terminal&gt; py.test -s -v wave1D_u0.py
 </pre></div>
-<p>
-to automatically run all test functions with name <code>test_*()</code>.
 
 <h2 id="wave:pde1:impl:animate">Visualization: animating the solution</h2>
 
@@ -763,7 +766,7 @@ The following <code>viz</code> function
 
 <!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
 <div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%"><span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">viz</span>(
-    I, V, f, c, L, dt, C, T,  <span style="color: #228B22"># PDE paramteres</span>
+    I, V, f, c, L, dt, C, T,  <span style="color: #228B22"># PDE parameters</span>
     umin, umax,               <span style="color: #228B22"># Interval for u in plots</span>
     animate=<span style="color: #658b00">True</span>,             <span style="color: #228B22"># Simulation with animation?</span>
     tool=<span style="color: #CD5555">&#39;matplotlib&#39;</span>,        <span style="color: #228B22"># &#39;matplotlib&#39; or &#39;scitools&#39;</span>
@@ -930,7 +933,7 @@ files, as specified by the <code>%04d</code> format, is essential so that the wi
 notation <code>frame_*.png</code> expands to the correct set of files.
 
 <p>
-The <code>viz</code> function creates a <code>ffmpeg</code> or <code>avconv</code> command
+The <code>viz</code> function creates an <code>ffmpeg</code> or <code>avconv</code> command
 with the proper arguments for each of the formats Flash, MP4, WebM,
 and Ogg. The task is greatly simplified by having a
 <code>codec2ext</code> dictionary for mapping
@@ -940,7 +943,7 @@ two formats are actually needed to ensure that all browsers can
 successfully play the video: MP4 and WebM.
 
 <p>
-Some animations consisting of a large number of plot files may not
+Some animations having a large number of plot files may not
 be properly combined into a video using <code>ffmpeg</code> or <code>avconv</code>.
 A method that always works is to play the PNG files as an animation
 in a browser using JavaScript code in an HTML file.
@@ -1012,7 +1015,7 @@ $$
 We choose \( L=75 \) cm, \( x_0=0.8L \), \( a=5 \) mm, and a time frequency
 \( \nu = 440 \) Hz. The relation between the wave speed \( c \) and \( \nu \) is
 \( c=\nu\lambda \), where \( \lambda \) is the wavelength, taken as \( 2L \) because
-the longest wave on the string form half a wavelength. There is no
+the longest wave on the string forms half a wavelength. There is no
 external force, so \( f=0 \), and the string is at rest initially so
 that \( V=0 \).
 
@@ -1077,8 +1080,11 @@ the mathematical problem we can often reduce the need to estimate
 physical parameters dramatically. The scaling technique
 consists of introducing new
 independent and dependent variables, with the aim that the absolute
-value of these is not very large or small, but preferably around unity
-in size. We introduce the dimensionless variables
+values of these lie in \( [0,1] \). We introduce the dimensionless variables
+(details are found in
+the section
+<a href="http://hplgit.github.io/scaling-book/doc/pub/book/html/._scaling-book007.html#sec:scale:wave:bc_u0" target="_self">Homogeneous Dirichlet conditions in 1D</a>
+in the book <a href="http://tinyurl.com/qfjgxmf/web" target="_self">Scaling of differential equations</a> <a href="._wave-solarized010.html#Langtangen_scaling">[2]</a>
 
 $$ \bar x = \frac{x}{L},\quad \bar t = \frac{c}{L}t,\quad
 \bar u = \frac{u}{a}
@@ -1090,26 +1096,35 @@ and \( a \) is a typical size of \( u \), e.g., determined from the
 initial condition: \( a=\max_x|I(x)| \).
 
 <p>
-Inserting these new variables in the PDE and noting that
+We get by the chain rule that
 
-$$ \frac{\partial u}{\partial t} = \frac{aL}{c}\frac{\partial\bar u}{\partial\bar t},$$
+$$ \frac{\partial u}{\partial t} =
+\frac{\partial}{\partial\bar t}\left(\frac{\bar u}{a}\right)
+\frac{d\bar t}{dt} =
+\frac{\partial\bar u}{\partial\bar t}\frac{1}{a}\frac{c}{L}
+= \frac{ac}{L}\frac{\partial\bar u}{\partial\bar t}\tp$$
 
-by the chain rule, one gets
+Similarly,
 
-$$ \frac{a^2L^2}{c^2}\frac{\partial^2\bar u}{\partial\bar t^2}
-= \frac{a^2c^2}{L^2}\frac{\partial^2\bar u}{\partial\bar x^2},$$
+$$ \frac{\partial u}{\partial x} =
+= \frac{a}{L}\frac{\partial\bar u}{\partial\bar x}\tp$$
 
-in case \( f=0 \).
+Inserting the dimensionless variables in the PDE gives, in case \( f=0 \),
+
+$$ \frac{a^2c^2}{L^2}\frac{\partial^2\bar u}{\partial\bar t^2}
+= \frac{a^2c^2}{L^2}\frac{\partial^2\bar u}{\partial\bar x^2}\tp$$
+
 Dropping the bars, we arrive at the scaled PDE
 
 $$
 \begin{equation}
 \frac{\partial^2 u}{\partial t^2} = \frac{\partial^2 u}{\partial x^2},
+\quad x\in (0,1),\ t\in (0,cT/L),
 \tag{34}
 \end{equation}
 $$
 
-which has not parameter \( c^2 \) anymore. The initial conditions are scaled
+which has no parameter \( c^2 \) anymore. The initial conditions are scaled
 as
 
 $$ a\bar u(\bar x, 0) = I(L\bar x)$$
@@ -1149,8 +1164,8 @@ set to the desired number of periods times 2.
 <p>
 Why the dimensionless period is 2 can be explained by the following
 reasoning.
-Suppose as \( u \) behaves as \( \cos (\omega t) \) in time in variables
-with dimension. The corresponding period is then \( P=2\pi/\omega \), but
+Suppose that \( u \) behaves as \( \cos (\omega t) \) in time in the original
+problem with dimensions. The corresponding period is then \( P=2\pi/\omega \), but
 we need to estimate \( \omega \). A typical solution of the wave
 equation is \( u(x,t)=A\cos(kx)\cos(\omega t) \), where \( A \) is an amplitude
 and \( k \) is related to the wave length \( \lambda \) in space: \( \lambda = 2\pi/k \).
@@ -1168,20 +1183,20 @@ shorter period \( \tilde P=2/n \) (\( n>1 \)).
 
 <p>
 The computational algorithm for solving the wave equation visits one
-mesh point at a time and evaluates a formula for the new value \( u_i^{n+1} \)
-at
-that point. Technically, this is implemented by a loop over array
-elements in a program. Such loops may run slowly in Python (and
-similar interpreted languages such as R and MATLAB).
-One technique for speeding up loops is to
-perform operations on entire arrays instead of working with one element
-at a time. This is referred to as <em>vectorization</em>, <em>vector computing</em>,
-or <em>array computing</em>.
-Operations on whole arrays are possible if the computations
-involving each element is independent of each other and therefore can,
-at least in principle, be performed simultaneously.
-Vectorization not only speeds up the code on serial computers, but
-also makes it easy to exploit parallel computing.
+mesh point at a time and evaluates a formula for the new value
+\( u_i^{n+1} \) at that point. Technically, this is implemented by a loop
+over array elements in a program. Such loops may run slowly in Python
+(and similar interpreted languages such as R and MATLAB).  One
+technique for speeding up loops is to perform operations on entire
+arrays instead of working with one element at a time. This is referred
+to as <em>vectorization</em>, <em>vector computing</em>, or <em>array computing</em>.
+Operations on whole arrays are possible if the computations involving
+each element is independent of each other and therefore can, at least
+in principle, be performed simultaneously.  That is, vectorization not
+only speeds up the code on serial computers, but also makes it easy to
+exploit parallel computing. Actually, there are Python tools like
+<a href="http://numba.pydata.org" target="_self">Numba</a> that can automatically turn
+vectorized code into parallel code.
 
 <h2 id="wave:pde1:impl:vec:slices:basics">Operations on slices of arrays</h2>
 
@@ -1234,9 +1249,9 @@ an equivalent <em>vectorized code</em>. The process of vectorizing code is calle
 <em>vectorization</em>.
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="wave:pde1:vec:fig1"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 3:  Illustration of subtracting two slices of two arrays. <div id="wave:pde1:vec:fig1"></div> </p></center>
+<center><p class="caption">Figure 3:  Illustration of subtracting two slices of two arrays.  <!-- caption label: wave:pde1:vec:fig1 --> </p></center>
 <p><img src="fig-wave/vectorized_diff.png" align="bottom" width=400></p>
 </center>
 
@@ -1286,7 +1301,7 @@ u2[<span style="color: #B452CD">1</span>:n-<span style="color: #B452CD">1</span>
 The first expression's right-hand side is realized by the
 following steps, involving temporary arrays with intermediate results,
 since each array operation can only involve one or two arrays.
-The <code>numpy</code> package performs the first line above in
+The <code>numpy</code> package performs (behind the scenes) the first line above in
 four steps:
 
 <p>
@@ -1370,7 +1385,7 @@ version becomes
 <div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%">u2[<span style="color: #B452CD">1</span>:-<span style="color: #B452CD">1</span>] = u[:-<span style="color: #B452CD">2</span>] - <span style="color: #B452CD">2</span>*u[<span style="color: #B452CD">1</span>:-<span style="color: #B452CD">1</span>] + u[<span style="color: #B452CD">2</span>:] + f(x[<span style="color: #B452CD">1</span>:-<span style="color: #B452CD">1</span>])
 </pre></div>
 <p>
-Obviously, <code>f</code> must be able to take an array as argument for <code>f[x[1:-1])</code>
+Obviously, <code>f</code> must be able to take an array as argument for <code>f(x[1:-1])</code>
 to make sense.
 
 <h2 id="wave:pde1:impl:vec:slices:fdm">Finite difference schemes expressed as slices</h2>
@@ -1434,7 +1449,7 @@ solution at each time level and performs a test:
 <!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
 <div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%"><span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">test_quadratic</span>():
     <span style="color: #CD5555">&quot;&quot;&quot;</span>
-<span style="color: #CD5555">    Check the scalar and vectorized versions work for</span>
+<span style="color: #CD5555">    Check the scalar and vectorized versions for</span>
 <span style="color: #CD5555">    a quadratic u(x,t)=x(L-x)(1+t/2) that is exactly reproduced.</span>
 <span style="color: #CD5555">    &quot;&quot;&quot;</span>
     <span style="color: #228B22"># The following function must work for x as array or scalar</span>
@@ -1517,10 +1532,13 @@ for our efficiency measurements.
 <p>
 One solution is to copy the <code>viz</code> code from <code>wave1D_u0</code> into
 <code>wave1D_u0v.py</code> and add a <code>version</code> argument to the <code>solver_function</code> call.
-Taking into account how much quite complicated animation code we
+Taking into account how much animation code we
 then duplicate, this is not a good idea.
-Introducing the <code>version</code> argument in <code>wave1D_u0.viz</code> is not
-a good solution since <code>version</code> has no meaning in that file.
+Alternatively,
+introducing the <code>version</code> argument in <code>wave1D_u0.viz</code>, so that this function
+can be imported into <code>wave1D_u0v.py</code>, is not
+a good solution either, since <code>version</code> has no meaning in that file.
+We need better ideas!
 
 <h3 id="___sec32">Solution 1 </h3>
 
@@ -1537,7 +1555,7 @@ calls <code>wave1D_u0.viz</code>:
 
 <!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
 <div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%"><span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">viz</span>(
-    I, V, f, c, L, dt, C, T,  <span style="color: #228B22"># PDE paramteres</span>
+    I, V, f, c, L, dt, C, T,  <span style="color: #228B22"># PDE parameters</span>
     umin, umax,               <span style="color: #228B22"># Interval for u in plots</span>
     animate=<span style="color: #658b00">True</span>,             <span style="color: #228B22"># Simulation with animation?</span>
     tool=<span style="color: #CD5555">&#39;matplotlib&#39;</span>,        <span style="color: #228B22"># &#39;matplotlib&#39; or &#39;scitools&#39;</span>
@@ -1565,7 +1583,7 @@ calls <code>wave1D_u0.viz</code>:
 <h3 id="___sec33">Solution 2 </h3>
 
 <p>
-There is a more advanced, fancier solution featuring a very useful trick:
+There is a more advanced and fancier solution featuring a very useful trick:
 we can make a new function that will always call <code>wave1D_u0v.solver</code>
 with <code>version='scalar'</code>. The <code>functools.partial</code> function from
 standard Python takes a function <code>func</code> as argument and
@@ -1844,7 +1862,7 @@ Redo <a href="#wave:exer:store:list">Exercise 2: Add storage of solution in a us
 user action function. That is, define a class <code>Action</code> where
 the <code>all_u</code> list is an attribute, and implement the user action
 function as a method (the special method <code>__call__</code> is a natural
-choice). The class versions avoids that the user action function
+choice). The class versions avoid that the user action function
 depends on parameters defined outside the function (such as <code>all_u</code>
 in <a href="#wave:exer:store:list">Exercise 2: Add storage of solution in a user action function</a>).
 Filename: <code>wave1D_u0_s2c</code>.
@@ -1916,8 +1934,8 @@ have
 $$ F_i = \int_{x_0}^{x_i} f(x) dx\tp$$
 
 The exact integral of a piecewise linear function \( f(x) \) is
-given by the Trapezoidal rule. S
-how that if \( F_{i} \) is already computed, we can find \( F_{i+1} \)
+given by the Trapezoidal rule. Show
+that if \( F_{i} \) is already computed, we can find \( F_{i+1} \)
 from
 
 $$ F_{i+1} = F_i + \half(f_i + f_{i+1})\Delta x\tp$$

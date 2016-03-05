@@ -1817,13 +1817,13 @@ u(L,t)  = U_L, \quad  t&gt;0.\end{split}\]</div>
 <span class="math">\(u_t = (\alpha u_x)_x\)</span>.</p>
 <div class="section" id="discretization-1">
 <span id="diffu-varcoeff-discr"></span><h2>Discretization<a class="headerlink" href="#discretization-1" title="Permalink to this headline">¶</a></h2>
-<p>We can discretize <a class="reference internal" href="#eq-diffu-pde2"><span class="std std-ref">(69)</span></a> by a <span class="math">\(theta\)</span>-rule in time
+<p>We can discretize <a class="reference internal" href="#eq-diffu-pde2"><span class="std std-ref">(69)</span></a> by a <span class="math">\(\theta\)</span>-rule in time
 and centered differences in space:</p>
 <div class="math">
 \[\lbrack D_t u\rbrack^{n+\frac{1}{2}} = \theta\lbrack D_x\overline{{\alpha}}^x
-D_x u + f\rbrack]^{n+1} +
+D_x u + f\rbrack^{n+1} +
 (1-\theta)\lbrack D_x\overline{{\alpha}}^x
-D_x u + f\rbrack]^{n}{\thinspace .}\]</div>
+D_x u + f\rbrack^{n}{\thinspace .}\]</div>
 <p>Written out, this becomes</p>
 <div class="math">
 \[\begin{split}\frac{u^{n+1}-u^{n}}{\Delta t} &amp;=
@@ -1832,15 +1832,86 @@ D_x u + f\rbrack]^{n}{\thinspace .}\]</div>
 - {\alpha}_{i-\frac{1}{2}}(u^{n+1}_i - u^{n+1}_{i+1})) +\\
 &amp;\quad (1-\theta)\frac{1}{\Delta x^2}
 ({\alpha}_{i+\frac{1}{2}}(u^{n}_{i+1} - u^{n}_{i})
-- {\alpha}_{i-\frac{1}{2}}(u^{n}_i - u^{n}_{i+1})) +
-\theta f_i^{n+1} + (1-\theta)f_i^{n},\end{split}\]</div>
+- {\alpha}_{i-\frac{1}{2}}(u^{n}_i - u^{n}_{i+1})) +\\
+&amp;\quad \theta f_i^{n+1} + (1-\theta)f_i^{n},\end{split}\]</div>
 <p>where, e.g., an arithmetic mean can to be used for <span class="math">\({\alpha}_{i+\frac{1}{2}}\)</span>:</p>
 <div class="math">
 \[{\alpha}_{i+\frac{1}{2}} = \frac{1}{2}({\alpha}_i + {\alpha}_{i+1}){\thinspace .}\]</div>
 </div>
+<div class="section" id="implementation-2">
+<span id="diffu-varcoeff-impl"></span><h2>Implementation<a class="headerlink" href="#implementation-2" title="Permalink to this headline">¶</a></h2>
+<p>Suitable code for solving the discrete equations is very similar to
+what we created for a constant <span class="math">\({\alpha}\)</span>.
+Since the Fourier number has no meaning for varying
+<span class="math">\({\alpha}\)</span>, we introduce a related parameter <span class="math">\(D=\Delta t /\Delta x^2\)</span>.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">solver_theta</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">Nx</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">u_L</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">u_R</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">user_action</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>   <span class="c"># mesh points in space</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">D</span><span class="o">*</span><span class="n">dx</span><span class="o">**</span><span class="mi">2</span>
+    <span class="n">Nt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dt</span><span class="p">)))</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>   <span class="c"># mesh points in time</span>
+
+    <span class="n">u</span>   <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>   <span class="c"># solution array at t[n+1]</span>
+    <span class="n">u_1</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>   <span class="c"># solution at t[n]</span>
+
+    <span class="n">Dl</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">D</span><span class="o">*</span><span class="n">theta</span>
+    <span class="n">Dr</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">D</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">theta</span><span class="p">)</span>
+
+    <span class="c"># Representation of sparse matrix and right-hand side</span>
+    <span class="n">diagonal</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">lower</span>    <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="p">)</span>
+    <span class="n">upper</span>    <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="p">)</span>
+    <span class="n">b</span>        <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c"># Precompute sparse matrix (scipy format)</span>
+    <span class="n">diagonal</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">Dl</span><span class="o">*</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">a</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">lower</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">Dl</span><span class="o">*</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">a</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">upper</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>  <span class="o">=</span> <span class="o">-</span><span class="n">Dl</span><span class="o">*</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span> <span class="o">+</span> <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="c"># Insert boundary conditions</span>
+    <span class="n">diagonal</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">upper</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">diagonal</span><span class="p">[</span><span class="n">Nx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">lower</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">A</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">diags</span><span class="p">(</span>
+        <span class="n">diagonals</span><span class="o">=</span><span class="p">[</span><span class="n">diagonal</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">],</span>
+        <span class="n">offsets</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+        <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">format</span><span class="o">=</span><span class="s">&#39;csr&#39;</span><span class="p">)</span>
+
+    <span class="c"># Set initial condition</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">u_1</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">I</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">user_action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">user_action</span><span class="p">(</span><span class="n">u_1</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="c"># Time loop</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="p">):</span>
+        <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_1</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">Dr</span><span class="o">*</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span> <span class="o">+</span> <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="p">(</span><span class="n">u_1</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span> <span class="o">-</span> <span class="n">u_1</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span>
+            <span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span><span class="o">*</span><span class="p">(</span><span class="n">u_1</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">u_1</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]))</span>
+        <span class="c"># Boundary conditions</span>
+        <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="o">=</span> <span class="n">u_L</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">b</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_R</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+        <span class="c"># Solve</span>
+        <span class="n">u</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">spsolve</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">user_action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">user_action</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c"># Switch variables before next step</span>
+        <span class="n">u_1</span><span class="p">,</span> <span class="n">u</span> <span class="o">=</span> <span class="n">u</span><span class="p">,</span> <span class="n">u_1</span>
+</pre></div>
+</div>
+<p>The code is found in the file <a class="reference external" href="http://tinyurl.com/nm5587k/diffu/diffu1D_vc.py">diffu1D_vc.py</a>.</p>
+</div>
 <div class="section" id="stationary-solution">
 <span id="diffu-varcoeff-stationary"></span><h2>Stationary solution<a class="headerlink" href="#stationary-solution" title="Permalink to this headline">¶</a></h2>
-<p>As <span class="math">\(t\rightarrow\infty\)</span>, the solution of the above problem will approach
+<p>As <span class="math">\(t\rightarrow\infty\)</span>, the solution of the
+problem <a class="reference internal" href="#eq-diffu-pde2"><span class="std std-ref">(69)</span></a>-<a class="reference internal" href="#eq-diffu-pde2-bc-l"><span class="std std-ref">(72)</span></a>
+will approach
 a stationary limit where <span class="math">\(\partial u/\partial t=0\)</span>. The governing
 equation is then</p>
 <div class="math" id="eq-diffu-fd2-pde-st">
@@ -1888,8 +1959,8 @@ equation where one is to differentiate, but a discontinuous <span class="math">\
 is compensated by a discontinuous <span class="math">\(u_x\)</span> such that <span class="math">\(\alpha u_x\)</span> is
 continuous and therefore can be differentiated as <span class="math">\((\alpha u_x)_x\)</span>.</p>
 </div>
-<div class="section" id="implementation-2">
-<span id="diffu-varcoeff-impl"></span><h2>Implementation<a class="headerlink" href="#implementation-2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="implementation-of-diffusion-in-a-piecewise-constant-medium">
+<span id="diffu-varcoeff-impl-piecewise"></span><h2>Implementation of diffusion in a piecewise constant medium<a class="headerlink" href="#implementation-of-diffusion-in-a-piecewise-constant-medium" title="Permalink to this headline">¶</a></h2>
 <p>Programming with piecewise function definition quickly becomes
 cumbersome as the most naive approach is to test for which interval
 <span class="math">\(x\)</span> lies, and then start evaluating a formula like
@@ -2194,7 +2265,7 @@ F_y
 \qquad \theta \Delta t f^{n+1}_{i,j} + (1-\theta) \Delta t f^{n}_{i,j},\]</div>
 <p>where</p>
 <div class="math">
-\[F_x = \frac{{\alpha}\Delta t}{\Delta x^2},\quad F_y = \frac{{\alpha}\Delta t}{\Delta x^y},\]</div>
+\[F_x = \frac{{\alpha}\Delta t}{\Delta x^2},\quad F_y = \frac{{\alpha}\Delta t}{\Delta y^2},\]</div>
 <p>are the Fourier numbers in <span class="math">\(x\)</span> and <span class="math">\(y\)</span> direction, respectively.</p>
 <div class="figure" id="id20">
 <span id="diffu-2d-fig-mesh3x2"></span><a class="reference internal image-reference" href="_images/mesh3x2.png"><img alt="_images/mesh3x2.png" src="_images/mesh3x2.png" style="width: 500px;" /></a>
@@ -3090,7 +3161,7 @@ the core algorithm is repeated many times until the solution is
 considered to be converged.</p>
 <div class="section" id="numerical-scheme-and-linear-system">
 <h3>Numerical scheme and linear system<a class="headerlink" href="#numerical-scheme-and-linear-system" title="Permalink to this headline">¶</a></h3>
-<p>To illustrate the idea of the Jacobi method, we simply the numerical scheme to the
+<p>To illustrate the idea of the Jacobi method, we simplify the numerical scheme to the
 Backward Euler case, <span class="math">\(\theta=1\)</span>, so there are fewer terms to write:</p>
 <div class="math">
 \[ u^{n+1}_{i,j} -
@@ -3196,13 +3267,13 @@ is less than some tolerance:</p>
 </div>
 <div class="section" id="code-friendly-notation">
 <h3>Code-friendly notation<a class="headerlink" href="#code-friendly-notation" title="Permalink to this headline">¶</a></h3>
-<p>To make the mathematics as close as possible to what we will write in a
-computer, we may introduce some new notation: <span class="math">\(u_{i,j}\)</span> is a short notation
-for <span class="math">\(u^{n+1,r+1}_{i,j}\)</span>, <span class="math">\(u^{-}_{i,j}\)</span> is a short notation for
-<span class="math">\(u^{n+1,r}_{i,j}\)</span>, and <span class="math">\(u^{(s)}_{i,j}\)</span> denotes <span class="math">\(u^{n+1-s}_{i,j}\)</span>.
-That is, <span class="math">\(u_{i,j}\)</span> is the unknown, <span class="math">\(u^{-}_{i,j}\)</span>
-is its most recently computed approximation, and <span class="math">\(s\)</span> counts time levels
-backwards in time. The Jacobi method
+<p>To make the mathematics as close as possible to what we will write in
+a computer program, we may introduce some new notation: <span class="math">\(u_{i,j}\)</span> is a
+short notation for <span class="math">\(u^{n+1,r+1}_{i,j}\)</span>, <span class="math">\(u^{-}_{i,j}\)</span> is a short
+notation for <span class="math">\(u^{n+1,r}_{i,j}\)</span>, and <span class="math">\(u^{(s)}_{i,j}\)</span> denotes
+<span class="math">\(u^{n+1-s}_{i,j}\)</span>.  That is, <span class="math">\(u_{i,j}\)</span> is the unknown, <span class="math">\(u^{-}_{i,j}\)</span>
+is its most recently computed approximation, and <span class="math">\(s\)</span> counts time
+levels backwards in time. The Jacobi method
 (ref:ref:<cite>(98) &lt;Eq:diffu:2D:Jacobi&gt;</cite>) takes the following form with the new
 notation:</p>
 <div class="math">
@@ -3245,10 +3316,10 @@ u^{(1)}_{i,j} + \theta \Delta t f^{n+1}_{i,j}
 <div class="section" id="implementation-of-the-jacobi-method">
 <span id="diffu-2d-jacobi-impl"></span><h2>Implementation of the Jacobi method<a class="headerlink" href="#implementation-of-the-jacobi-method" title="Permalink to this headline">¶</a></h2>
 <p>The Jacobi method needs no coefficient matrix and right-hand side
-vector, but it needs an array for <span class="math">\(u\)</span> in the previous iteration.
-We call this array <code class="docutils literal"><span class="pre">u_</span></code> (using the notation at the end of the previous
-section), the unknown is <code class="docutils literal"><span class="pre">u</span></code>, and <code class="docutils literal"><span class="pre">u_1</span></code> is, as usual, the computed solution
-one time level back in time.
+vector, but it needs an array for <span class="math">\(u\)</span> in the previous iteration.  We
+call this array <code class="docutils literal"><span class="pre">u_</span></code>, using the notation at the end of the previous
+section (at the same time level). The unknown itself is called <code class="docutils literal"><span class="pre">u</span></code>,
+while <code class="docutils literal"><span class="pre">u_1</span></code> is the computed solution one time level back in time.
 With a <span class="math">\(\theta\)</span> rule in time, the time loop can be coded like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">It</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
     <span class="c"># Solve linear system by Jacobi iteration at time level n+1</span>
@@ -3371,7 +3442,7 @@ the midpoint <span class="math">\(x=L_x/2\)</span> and <span class="math">\(y=L_
 the discrete <code class="docutils literal"><span class="pre">u</span></code> if <span class="math">\(N_x\)</span> and <span class="math">\(N_y\)</span> are even numbers. We can then
 compute <span class="math">\(E_u\)</span> as <span class="math">\(E_u = |\max {u_{\small\mbox{e}}} - \max u|\)</span>, when we know an exact
 solution <span class="math">\({u_{\small\mbox{e}}}\)</span> of the problem.</p>
-<p>What about <span class="math">\(E_\Delta\)</span>? If we use the maximum value as measure of the
+<p>What about <span class="math">\(E_\Delta\)</span>? If we use the maximum value as a measure of the
 error, we have in fact analytical insight into the approximation error in this
 particular problem. According to the section <a class="reference internal" href="#diffu-2d-analysis"><span class="std std-ref">Analysis of the 2D diffusion equation</span></a>, the exact
 solution <a class="reference internal" href="#eq-diffu-2d-jacobi-impl-hill-uex"><span class="std std-ref">(107)</span></a> of the PDE problem is
@@ -3410,9 +3481,9 @@ the discretization error. In that case,
 The corresponding number of Jacobi
 iterations (with <span class="math">\(\omega=1\)</span>) varies from 31 to 12 during the
 time simulation (for <span class="math">\(\max u &gt;
-0.02\)</span>). Changing the tolerance to <span class="math">\(10^{-5}\)</span> requires much more
+0.02\)</span>). Changing the tolerance to <span class="math">\(10^{-5}\)</span> causes many more
 iterations (61 to 42) without giving any contribution to the overall
-accuracy since the total error is dominated by <span class="math">\(E_\Delta\)</span>.</p>
+accuracy, because the total error is dominated by <span class="math">\(E_\Delta\)</span>.</p>
 <p>Also, with a <span class="math">\(N_x=N_y=20\)</span>, the spatial accuracy increases and many more
 iterations are needed (143 to 45), but the dominating error is from
 the time discretization. However, with such a finer spatial mesh, a higher
@@ -3463,9 +3534,10 @@ the Forward Euler scheme requires many small time steps to reach the stationary 
 time-dependent diffusion problem and want to take larger time steps by
 an implicit time discretization method, we will with the Jacobi method
 end up with something close to a slow Forward Euler simulation of the
-original problem at each time level.  Nevertheless, the Jacobi method
+original problem at each time level.  Nevertheless, the are two reasons
+for why the Jacobi method
 remains a fundamental building block for solving linear systems
-arising from PDEs of two reasons: 1) a couple of iterations removes
+arising from PDEs: 1) a couple of iterations remove
 large parts of the error and this is effectively used in the very
 efficient class of multigrid methods; and 2) the idea of the Jacobi
 method can be developed into more efficient methods, especially the
@@ -3593,15 +3665,8 @@ Therefore, also vectorization will require new thinking.</p>
 method is to use a special numbering of the mesh points called
 red-black numbering: every other point is red or black as in a
 checkerboard pattern. This numbering requires <span class="math">\(N_x\)</span> and <span class="math">\(N_y\)</span> to
-be even numbers. Here is an example on a <span class="math">\(4\times 4\)</span> mesh:</p>
-<div class="highlight-text"><div class="highlight"><pre>r b r b r
-b r b r b
-r b r b r
-b r b r b
-r b r b r
-</pre></div>
-</div>
-<p>And here is a <span class="math">\(6\times 6\)</span> mesh:</p>
+be even numbers.
+Here is an example of a <span class="math">\(6\times 6\)</span> mesh:</p>
 <div class="highlight-text"><div class="highlight"><pre>r b r b r b r
 b r b r b r b
 r b r b r b r
@@ -3700,7 +3765,7 @@ x x x x x x x
 <div class="highlight-python"><div class="highlight"><pre><span class="n">i</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>  <span class="n">j</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The second set of black points are shown here:</p>
+<p>The second set of black points is shown here:</p>
 <div class="highlight-text"><div class="highlight"><pre>x x x x x x x
 x r b r b r x
 x B r B r B x
@@ -3714,7 +3779,7 @@ x x x x x x x
 <div class="highlight-python"><div class="highlight"><pre><span class="n">i</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>  <span class="n">j</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>That is, we need four set of slices. The simplest way of implementing
+<p>That is, we need four sets of slices. The simplest way of implementing
 the algorithm is to make a function with variables for the slices
 representing <span class="math">\(i\)</span>, <span class="math">\(i-1\)</span>, <span class="math">\(i+1\)</span>, <span class="math">\(j\)</span>, <span class="math">\(j-1\)</span>, and <span class="math">\(j+1\)</span>, here called
 <code class="docutils literal"><span class="pre">ic</span></code> (&#8220;i center&#8221;), <code class="docutils literal"><span class="pre">im1</span></code> (&#8220;i minus 1&#8221;, <code class="docutils literal"><span class="pre">ip1</span></code> (&#8220;i plus 1&#8221;), <code class="docutils literal"><span class="pre">jc</span></code>, <code class="docutils literal"><span class="pre">jm1</span></code>,
@@ -3731,7 +3796,7 @@ and <code class="docutils literal"><span class="pre">jp1</span></code>, respecti
          <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">theta</span><span class="p">)</span><span class="o">*</span><span class="n">dt</span><span class="o">*</span><span class="n">f_a_n</span><span class="p">[</span><span class="n">ic</span><span class="p">,</span><span class="n">jc</span><span class="p">])</span>
 </pre></div>
 </div>
-<p>The formula returned form <code class="docutils literal"><span class="pre">update</span></code> is to be compared with
+<p>The formula returned from <code class="docutils literal"><span class="pre">update</span></code> is to be compared with
 <a class="reference internal" href="#eq-diffu-2d-sor3"><span class="std std-ref">(109)</span></a>.</p>
 <p>The relaxed Jacobi iteration can be implemented by</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">ic</span>  <span class="o">=</span> <span class="n">jc</span>  <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
@@ -3742,7 +3807,7 @@ and <code class="docutils literal"><span class="pre">jp1</span></code>, respecti
 <span class="n">u</span><span class="p">[</span><span class="n">ic</span><span class="p">,</span><span class="n">jc</span><span class="p">]</span> <span class="o">=</span> <span class="n">omega</span><span class="o">*</span><span class="n">u_new</span><span class="p">[</span><span class="n">ic</span><span class="p">,</span><span class="n">jc</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">omega</span><span class="p">)</span><span class="o">*</span><span class="n">u_</span><span class="p">[</span><span class="n">ic</span><span class="p">,</span><span class="n">jc</span><span class="p">]</span>
 </pre></div>
 </div>
-<p>The Gauss-Seidel (or SOR) updates needs four different steps.
+<p>The Gauss-Seidel (or SOR) updates need four different steps.
 The <code class="docutils literal"><span class="pre">ic</span></code> and <code class="docutils literal"><span class="pre">jc</span></code> slices are specified above. For each of these,
 we must specify the corresponding <code class="docutils literal"><span class="pre">im1</span></code>, <code class="docutils literal"><span class="pre">ip1</span></code>, <code class="docutils literal"><span class="pre">jm1</span></code>, and <code class="docutils literal"><span class="pre">jp1</span></code>
 slices. The code below contain the details.</p>
@@ -3819,7 +3884,7 @@ substitution).  When <span class="math">\(A\)</span> is a dense <span class="mat
 factorization costs <span class="math">\(\frac{1}{3}N^3\)</span> arithmetic operations, while the
 forward and backward substitution steps each require of
 the order <span class="math">\(N^2\)</span> arithmetic operations.
-That is, factorization dominates the costs and the substitution steps are
+That is, factorization dominates the costs, while the substitution steps are
 cheap.</p>
 <p>Symmetric, positive definite coefficient matrices often arise when
 discretizing PDEs. In this case, the LU factorization becomes <span class="math">\(A=LL^T\)</span>,
@@ -3829,19 +3894,18 @@ LU and Cholesky factorization as well as forward and backward
 substitution (<code class="docutils literal"><span class="pre">scipy.linalg</span></code> is the relevant Python package).</p>
 <p>Finite difference discretizations lead to sparse coefficient matrices.
 An extreme case arose in the section <a class="reference internal" href="#diffu-pde1-be"><span class="std std-ref">Backward Euler scheme</span></a> where <span class="math">\(A\)</span> is
-tridiagonal. The amount of arithmetic operations in the
-LU and Cholesky factorization algorithms is for a tridiagonal matrix just
-of the order <span class="math">\(N\)</span>, not <span class="math">\(N^3\)</span>. Tridiagonal matrices are special cases of <em>banded
-matrices</em>, where the matrices contain just a set of diagonal bands.
-Finite difference methods on regularly numbered
-rectangular and box-shaped meshes
-give rise to such banded matrices, with 5 bands in 2D and 7 in
-3D for diffusion problems.
-Gaussian elimination only needs to work within the bands, leading to
-much more efficient algorithms. For example,
-factorization of more general, sparse matrices can
-often take advantage of the sparsity through modified Gaussian elimination
-algorithms. The relevant Python package is <code class="docutils literal"><span class="pre">scipy.sparse.linalg</span></code>.</p>
+tridiagonal. For a tridiagonal matrix, the amount of arithmetic
+operations in the LU and Cholesky factorization algorithms is just of
+the order <span class="math">\(N\)</span>, not <span class="math">\(N^3\)</span>. Tridiagonal matrices are special cases of
+<em>banded matrices</em>, where the matrices contain just a set of diagonal
+bands.  Finite difference methods on regularly numbered rectangular
+and box-shaped meshes give rise to such banded matrices, with 5 bands
+in 2D and 7 in 3D for diffusion problems.  Gaussian elimination only
+needs to work within the bands, leading to much more efficient
+algorithms. For example, factorization of more general, sparse
+matrices can often take advantage of the sparsity through modified
+Gaussian elimination algorithms. The relevant Python package is
+<code class="docutils literal"><span class="pre">scipy.sparse.linalg</span></code>.</p>
 <p>Although a direct method is an exact algorithm, rounding errors
 may in practice accumulate and pollute the solution. The effect
 grows with the size of the linear system, so both for accuracy and
@@ -3886,17 +3950,18 @@ and <span class="math">\(G^k\)</span> is a matrix exponential. For the method to
 <span class="math">\(\lim_{r\rightarrow\infty}||G^r||=0\)</span> is a necessary and sufficient condition.
 This implies that the <em>spectral radius</em> of <span class="math">\(G\)</span> must be less than one.
 Since <span class="math">\(G\)</span> is directly related to the finite difference scheme for the
-underlying PDE problem, one can in principle compute the spectral radius,
-but in practice for a given PDE problem,
-this is not feasible and does not lead to
-useful formulas. Analysis of model problems, usually
+underlying PDE problem, one can in principle compute the spectral radius.
+For a given PDE problem, however, this is not a practical strategy, since it
+is very difficult to develop useful formulas.
+Analysis of model problems, usually
 related to the Poisson equation,
 reveals some trends of interest: the convergence rate of the Jacobi
 method goes like <span class="math">\(h^2\)</span>, while that of SOR with an optimal <span class="math">\(\omega\)</span> goes
 like <span class="math">\(h\)</span>, where <span class="math">\(h\)</span> is the spatial spacing: <span class="math">\(h=\Delta x=\Delta y\)</span>.
 That is, the efficiency of the Jacobi method quickly deteriorates with
-the mesh resolution, and SOR is much to be preferred, but the optimal
-<span class="math">\(\omega\)</span> remains an open question. We refer to
+the increasing mesh resolution, and SOR is much to be preferred
+(even if the optimal
+<span class="math">\(\omega\)</span> remains an open question). We refer to
 Chapter 4 of <a class="reference internal" href="._main_diffu003.html#ref2" id="id2">[Ref2]</a> for more information on the convergence theory.
 One important result is that if <span class="math">\(A\)</span> is symmetric and positive definite,
 then SOR will converge for any <span class="math">\(0&lt;\omega &lt;2\)</span>.</p>
@@ -3942,21 +4007,23 @@ for the system. That is, instead of solving <span class="math">\(Au=b\)</span>, 
 <span class="math">\(M^{-1}Au=M^{-1}b\)</span> in the hope that the method works better for this
 <em>preconditioned</em> system. The matrix <span class="math">\(M\)</span> is the <em>preconditioner</em> or
 preconditioning matrix.  Now we need to perform matrix-vector products
-<span class="math">\(M^{-1}Au\)</span>, which implies computing <span class="math">\(y=Au\)</span> and solving a system
-<span class="math">\(My=b\)</span>. Therefore, <span class="math">\(M\)</span> must be cheap to compute and systems <span class="math">\(My=b\)</span>
+<span class="math">\(y = M^{-1}Au\)</span>, which is done in two steps: first the matrix-vector
+product <span class="math">\(v=Au\)</span> is carried out and then the system
+<span class="math">\(My=v\)</span> must be solved.
+Therefore, <span class="math">\(M\)</span> must be cheap to compute and systems <span class="math">\(My=v\)</span>
 must be cheap to solve.</p>
-<p>A perfect preconditioner is <span class="math">\(M=A\)</span>, but in each
-iteration in the Conjugate gradient method one then has so solve a
-system with <span class="math">\(A\)</span> as coefficient matrix. A key idea is to let <span class="math">\(M\)</span> be
-some approximation to <span class="math">\(A\)</span>.
-The simplest preconditioner is to set <span class="math">\(M=D\)</span>, where
-<span class="math">\(D\)</span> is the diagonal of <span class="math">\(A\)</span>. This choice means running one Jacobi iteration
-as preconditioner. <a class="reference internal" href="#diffu-exer-splitting-prec"><span class="std std-ref">Exercise 8: Splitting methods and preconditioning</span></a> shows that
-the Jacobi and SOR methods can also be viewed as preconditioners.</p>
-<p>Constructing good preconditioners is a scientific field on its own. Here
-we shall treat the topic just very briefly. For a user having access to
-the <code class="docutils literal"><span class="pre">scipy.sparse.linalg</span></code> library, there are Conjugate gradient
-methods and preconditioners readily available:</p>
+<p>A perfect preconditioner is <span class="math">\(M=A\)</span>, but in each iteration in the
+Conjugate gradient method one then has so solve a system with <span class="math">\(A\)</span> as
+coefficient matrix! A key idea is to let <span class="math">\(M\)</span> be some kind of <em>cheap
+approximation</em> to <span class="math">\(A\)</span>.  The simplest preconditioner is to set <span class="math">\(M=D\)</span>,
+where <span class="math">\(D\)</span> is the diagonal of <span class="math">\(A\)</span>. This choice means running one Jacobi
+iteration as preconditioner. <a class="reference internal" href="#diffu-exer-splitting-prec"><span class="std std-ref">Exercise 8: Splitting methods and preconditioning</span></a>
+shows that the Jacobi and SOR methods can also be viewed as
+preconditioners.</p>
+<p>Constructing good preconditioners is a scientific field on its
+own. Here we shall treat the topic just very briefly. For a user
+having access to the <code class="docutils literal"><span class="pre">scipy.sparse.linalg</span></code> library, there are
+Conjugate gradient methods and preconditioners readily available:</p>
 <blockquote>
 <div><ul class="simple">
 <li>For positive definite, symmetric systems: <code class="docutils literal"><span class="pre">cg</span></code> (the Conjugate gradient method)</li>
@@ -4063,7 +4130,7 @@ molecules, but an average of a large number of molecules is performed
 in a small volume before the modeling starts, and the averaged
 quantity inside this volume is assigned as a point value at the
 centroid of the volume. This means that concentration, temperature,
-and velocity at a space-time point represent an average around the
+and velocity at a space-time point represent averages around the
 point in a small time interval and small spatial volume.</p>
 <p>Random walk is a principally totally different kind of modeling procedure.
 The idea is to have a large number of &#8220;particles&#8221; that undergo
@@ -4074,9 +4141,9 @@ molecules, much simpler and computationally much more efficient than
 direct <a class="reference external" href="https://en.wikipedia.org/wiki/Molecular_dynamics">molecular simulation</a>,
 yet the random walk model has been very powerful to describe a wide
 range of phenomena, including heat conduction, quantum mechanics,
-polymer chains, population genetics, brain research, hazard games, and
+polymer chains, population genetics, neuroscience, hazard games, and
 pricing of financial instruments.</p>
-<p>It can be shown that random walk, when averaged, produce models that
+<p>It can be shown that random walk, when averaged, produces models that
 are mathematically equivalent to diffusion equations. This is the
 primary reason why we treat random walk in this chapter: two very
 different algorithms (finite difference stencils and random walk)
@@ -4454,7 +4521,7 @@ inserted in <code class="docutils literal"><span class="pre">pos_hist[n,:]</span
 <div class="section" id="improved-vectorized-version">
 <h3>Improved vectorized version<a class="headerlink" href="#improved-vectorized-version" title="Permalink to this headline">¶</a></h3>
 <p>Looking at the vectorized version above, we still have one potentially
-long over <code class="docutils literal"><span class="pre">n</span></code>. Normally, <code class="docutils literal"><span class="pre">num_walks</span></code> will be much larger than <code class="docutils literal"><span class="pre">N</span></code>.
+long Python loop over <code class="docutils literal"><span class="pre">n</span></code>. Normally, <code class="docutils literal"><span class="pre">num_walks</span></code> will be much larger than <code class="docutils literal"><span class="pre">N</span></code>.
 The vectorization of the loop over <code class="docutils literal"><span class="pre">N</span></code> certainly speeds up the program,
 but if we think of vectorization as also a way to parallelize the code,
 all the independent walks (the <code class="docutils literal"><span class="pre">n</span></code> loop) can be executed in parallel.
@@ -4625,7 +4692,7 @@ function.</p>
 <p>First, we need to check that the simulation of multiple random walks
 reproduces the results of <code class="docutils literal"><span class="pre">random_walk1D</span></code>, <code class="docutils literal"><span class="pre">random_walk1D_vec1</span></code>, and
 <code class="docutils literal"><span class="pre">random_walk1D_vec2</span></code> for the first walk, if the seed is the
-same. Second, we run three random walks with <code class="docutils literal"><span class="pre">N=4</span></code> with the scalar and
+same. Second, we run three random walks (<code class="docutils literal"><span class="pre">N=4</span></code>) with the scalar and
 the two vectorized versions and check that the returned arrays are
 identical.</p>
 <p>For this type of test to be successful, we must be sure that exactly
@@ -4700,7 +4767,7 @@ numbers are used for the second walk, and so on.</p>
 </pre></div>
 </div>
 <p>Such test functions are indispensable for further development of the code
-as we can anytime test that the basic computations remain correct.
+as we can at any time test whether the basic computations remain correct or not.
 This is particularly important in stochastic simulations since without
 test functions and fixed seeds, we always experience variations from run to
 run, and it can be very difficult to spot bugs through averaged statistical
@@ -5036,7 +5103,7 @@ the volume of the substance flowing out through <span class="math">\(dS\)</span>
 time interval <span class="math">\(\Delta t\)</span> is <span class="math">\(\varrho \boldsymbol{q}\cdot\boldsymbol{n} \Delta t \Delta S\)</span>,
 where <span class="math">\(\boldsymbol{n}\)</span> is an outward unit
 normal to the boundary <span class="math">\(\partial V\)</span>, see Figure <a class="reference internal" href="#diffu-app-substance-fig1"><span class="std std-ref">An arbitrary volume of a fluid</span></a>.
-We realize that only normal component of <span class="math">\(\boldsymbol{q}\)</span> is able to transport mass
+We realize that only the normal component of <span class="math">\(\boldsymbol{q}\)</span> is able to transport mass
 in and out of <span class="math">\(V\)</span>.
 The total outflow of the mass of the substance in a small time interval
 <span class="math">\(\Delta t\)</span> becomes the surface integral</p>
@@ -5162,8 +5229,8 @@ is <span class="math">\(f\Delta t\Delta V\)</span>, and inside an arbitrary volu
 supplied generated heat becomes</p>
 <div class="math">
 \[\int\limits_V f\Delta t dV{\thinspace .}\]</div>
-<p>Adding this to the integral statement reflecting the first law of
-thermodynamics and continuing the derivation leads to the PDE</p>
+<p>Adding this to the integral statement of the (simplified) first law of
+thermodynamics, and continuing the derivation, leads to the PDE</p>
 <div class="math" id="eq-diffu-app-heat-pde2">
 \[\tag{123}
 \varrho \frac{\partial e}{\partial t} = -\nabla\cdot\boldsymbol{q} + f{\thinspace .}\]</div>
@@ -5194,21 +5261,21 @@ in the PDE gives</p>
 system, we need a relation between the heat flux <span class="math">\(\boldsymbol{q}\)</span> and the temperature <span class="math">\(T\)</span>
 called Fourier&#8217;s law:</p>
 <div class="math">
-\[\boldsymbol{q} = -{\alpha}\nabla T,\]</div>
-<p>which simply states that heat flows from cold to hot areas, along the
-path of greatest variation. In a solid medium, <span class="math">\(\alpha\)</span> depends on the
+\[\boldsymbol{q} = -k\nabla T,\]</div>
+<p>which simply states that heat flows from hot to cold areas, along the
+path of greatest variation. In a solid medium, <span class="math">\(k\)</span> depends on the
 material of the medium, and in multi-material media one must regard
-<span class="math">\({\alpha}\)</span> as spatially dependent. In a fluid, it is common to assume that
-<span class="math">\({\alpha}\)</span> is a constant. The value of <span class="math">\({\alpha}\)</span> reflects how easy heat is
-conducted through the medium, and <span class="math">\({\alpha}\)</span> is named the <em>coefficient of
+<span class="math">\(k\)</span> as spatially dependent. In a fluid, it is common to assume that
+<span class="math">\(k\)</span> is a constant. The value of <span class="math">\(k\)</span> reflects how easy heat is
+conducted through the medium, and <span class="math">\(k\)</span> is named the <em>coefficient of
 heat conduction</em>.</p>
 <p>We have now one scalar PDE for the unknown temperature field <span class="math">\(T(\boldsymbol{x},t)\)</span>:</p>
 <div class="math" id="eq-diffu-app-heat-pde">
 \[\tag{124}
-\varrho  c_v\frac{\partial T}{\partial t} = \nabla\cdot({\alpha}\nabla T) + f{\thinspace .}\]</div>
+\varrho  c_v\frac{\partial T}{\partial t} = \nabla\cdot(k\nabla T) + f{\thinspace .}\]</div>
 </div>
 <div class="section" id="development-of-flow-between-two-flat-plates">
-<h2>Development of flow between two flat plates<a class="headerlink" href="#development-of-flow-between-two-flat-plates" title="Permalink to this headline">¶</a></h2>
+<span id="diffu-app-couette"></span><h2>Development of flow between two flat plates<a class="headerlink" href="#development-of-flow-between-two-flat-plates" title="Permalink to this headline">¶</a></h2>
 <p>Diffusion equations may also arise as simplified versions of other
 mathematical models, especially in fluid flow. Consider a fluid flowing
 between two flat, parallel plates. The velocity is uni-directional, say
@@ -5261,13 +5328,55 @@ the adjusted boundary condition</p>
 </div>
 <div class="section" id="tribology-thin-film-fluid-flow">
 <h2>Tribology: thin film fluid flow<a class="headerlink" href="#tribology-thin-film-fluid-flow" title="Permalink to this headline">¶</a></h2>
-<p>Thin fluid films are extremely important in many industries.</p>
+<p>Thin fluid films are extremely important inside machinery to reduce friction
+between gliding surfaces. The mathematical model for the fluid motion takes
+the form of a diffusion problem and is quickly derived here.
+We consider two solid surfaces whose distance is described by a
+gap function <span class="math">\(h(x,y)\)</span>. The space between these surfaces is filled with
+a fluid with dynamic viscosity <span class="math">\(\mu\)</span>. The fluid may move partially
+because of pressure gradients and partially because the surfaces
+move. Let <span class="math">\(U\boldsymbol{i} + V\boldsymbol{j}\)</span> be the relative velocity of the two surfaces and
+<span class="math">\(p\)</span> the pressure in the fluid. The mathematical model builds on two
+principles: 1) conservation of mass, 2) assumption of locally quasi-static
+flow between flat plates.</p>
+<p>The conservation of mass equation reads <span class="math">\(\nabla\cdot\boldsymbol{u}\)</span>, where <span class="math">\(\boldsymbol{u}\)</span> is
+the local fluid velocity. For thin films the detailed variation between
+the surfaces is not of interest, so <span class="math">\(\nabla\cdot\boldsymbol{u} = 0\)</span> is integrated
+(average) in the direction perpendicular to the surfaces. This gives
+rise to the alternative mass conservation equation</p>
+<div class="math">
+\[\nabla\cdot\boldsymbol{q} = 0,\quad \boldsymbol{q} = \int\limits_0^{h(x,y)}\boldsymbol{u} dz,\]</div>
+<p>where <span class="math">\(z\)</span> is the coordinate perpendicular to the surfaces, and <span class="math">\(\boldsymbol{q}\)</span>
+is then the volume flux in the fluid gap.</p>
+<p>Locally, we may assume that we have steady flow between two flat
+surfaces, with a pressure gradient and where the lower surface is at rest
+and the upper moves with velocity <span class="math">\(U\boldsymbol{i} + V\boldsymbol{j}\)</span>.
+The corresponding mathematical problem is actually the limit problem
+in the section <a class="reference internal" href="#diffu-app-couette"><span class="std std-ref">Development of flow between two flat plates</span></a> as <span class="math">\(t\rightarrow\infty\)</span>. The limit
+problem can be solved analytically, and the local volume flux becomes</p>
+<div class="math">
+\[\boldsymbol{q}(x,y,z) = \int\limits_0^{h}\boldsymbol{u}(x,y,z) dz
+= -\frac{h^3}{12\mu}\nabla p + \frac{1}{2} Uh\boldsymbol{i} + \frac{1}{2} Vh\boldsymbol{j}{\thinspace .}\]</div>
+<p>The idea is to use this expression locally
+also when the surfaces are not flat,
+but slowly varying, and if <span class="math">\(U\)</span>, <span class="math">\(V\)</span>, or <span class="math">\(p\)</span> varies in time, provided the
+time variation is sufficiently slow. This is a common quasi-static
+approximation much used in mathematical modeling.</p>
+<p>Inserting the expression for <span class="math">\(\boldsymbol{q}\)</span> via <span class="math">\(p\)</span>, <span class="math">\(U\)</span>, and <span class="math">\(V\)</span> in the
+equation <span class="math">\(\nabla\boldsymbol{q} = 0\)</span> gives a diffusion PDE for <span class="math">\(p\)</span>:</p>
+<div class="math" id="eq-auto57">
+\[\tag{125}
+\nabla\cdot\left(\frac{h^3}{12\mu}\nabla p\right) =
+    \frac{1}{2}\frac{\partial}{\partial x}(hU)
+    + \frac{1}{2}\frac{\partial}{\partial x}(hV){\thinspace .}\]</div>
+<p>The boundary conditions must involve <span class="math">\(p\)</span> or <span class="math">\(\boldsymbol{q}\)</span> at the boundary.</p>
+<p>[<strong>hpl 12</strong>: Exercise!]</p>
 </div>
 <div class="section" id="propagation-of-electrical-signals-in-the-brain">
 <h2>Propagation of electrical signals in the brain<a class="headerlink" href="#propagation-of-electrical-signals-in-the-brain" title="Permalink to this headline">¶</a></h2>
 <p>One can make a model of how electrical signals are propagated along the
 neuronal fibers that receive synaptic inputs in the brain. The signal
-propagation is one-dimensional and can is the simplest cases be
+propagation is one-dimensional and can, in the simplest cases, be
 governed by the <a class="reference external" href="http://en.wikipedia.org/wiki/Cable_equation">Cable equation</a>:</p>
 <div class="math">
 \[c_m \frac{\partial V}{\partial t} =
@@ -5276,7 +5385,7 @@ label{}\]</div>
 <p>where <span class="math">\(V(x,t)\)</span> is the voltage to be determined,
 <span class="math">\(c_m\)</span> is capacitance of the neuronal fiber, while
 <span class="math">\(r_l\)</span> and <span class="math">\(r_m\)</span> are measures of the resistance.
-The boundary conditions of often taken as <span class="math">\(V=0\)</span> at a short circuit or open end,
+The boundary conditions are often taken as <span class="math">\(V=0\)</span> at a short circuit or open end,
 <span class="math">\(\partial V/\partial x=0\)</span> at a sealed end, or <span class="math">\(\partial V/\partial x \propto
 V\)</span> where there is an injection of current.</p>
 </div>
@@ -5318,91 +5427,91 @@ verification of implementations.</p>
 We start with a 1D homogeneous diffusion equation with zero Dirichlet
 conditions:</p>
 <div class="math" id="eq-diffu-exer-estimates-p1-pdf">
-\[\tag{125}
+\[\tag{126}
 u_t = \alpha u_xx,  x\in \Omega =(0,L),\ t\in (0,T],\]</div>
 <div class="math" id="eq-diffu-exer-estimates-p1-bc">
-\[\tag{126}
+\[\tag{127}
 u(0,t) = u(L,t) = 0,  t\in (0,T],\]</div>
 <div class="math" id="eq-diffu-exer-estimates-p1-ic">
-\[\tag{127}
+\[\tag{128}
 u(x,0) = I(x),  x\in [0,L]\]\[    {\thinspace .}\]</div>
 <p>The energy estimate for this problem reads</p>
 <div class="math" id="eq-diffu-exer-estimates-p1-result">
-\[\tag{128}
+\[\tag{129}
 ||u||_{L^2} \leq ||I||_{L^2},\]</div>
 <p>where the <span class="math">\(||\cdot ||_{L^2}\)</span> norm is defined by</p>
 <div class="math" id="eq-diffu-exer-estimates-l2">
-\[\tag{129}
+\[\tag{130}
 ||g||_{L^2} = \sqrt{\int_0^L g^2dx}{\thinspace .}\]</div>
 <p>The quantify  <span class="math">\(||u||_{L^2}\)</span> or <span class="math">\(\frac{1}{2} ||u||_{L^2}\)</span> is known
 as the <em>energy</em> of the solution, although it is not the physical
 energy of the system. A mathematical tradition has introduced the
 notion <em>energy</em> in this context.</p>
-<p>The estimate <a class="reference internal" href="#eq-diffu-exer-estimates-p1-result"><span class="std std-ref">(128)</span></a> says that the
+<p>The estimate <a class="reference internal" href="#eq-diffu-exer-estimates-p1-result"><span class="std std-ref">(129)</span></a> says that the
 &#8220;size of $u$&#8221; never exceeds that of the initial condition, or
 more equivalently, that the area under the <span class="math">\(u\)</span> curve decreases
 with time.</p>
-<p>To show <a class="reference internal" href="#eq-diffu-exer-estimates-p1-result"><span class="std std-ref">(128)</span></a>, multiply the PDE
+<p>To show <a class="reference internal" href="#eq-diffu-exer-estimates-p1-result"><span class="std std-ref">(129)</span></a>, multiply the PDE
 by <span class="math">\(u\)</span> and integrate from <span class="math">\(0\)</span> to <span class="math">\(L\)</span>. Use that <span class="math">\(uu_t\)</span> can be
 expressed as the time derivative of <span class="math">\(u^2\)</span> and that <span class="math">\(u_xxu\)</span> can
 integrated by parts to form an integrand <span class="math">\(u_x^2\)</span>. Show that
 the time derivative of <span class="math">\(||u||_{L^2}^2\)</span> must be less than or equal
 to zero. Integrate this expression and derive
-<a class="reference internal" href="#eq-diffu-exer-estimates-p1-result"><span class="std std-ref">(128)</span></a>.</p>
+<a class="reference internal" href="#eq-diffu-exer-estimates-p1-result"><span class="std std-ref">(129)</span></a>.</p>
 <p><strong>b)</strong>
 Now we address a slightly different problem,</p>
 <div class="math" id="eq-diffu-exer-estimates-p2-pdf">
-\[\tag{130}
+\[\tag{131}
 u_t = \alpha u_xx + f(x,t),  x\in \Omega =(0,L),\ t\in (0,T],\]</div>
 <div class="math" id="eq-diffu-exer-estimates-p2-bc">
-\[\tag{131}
+\[\tag{132}
 u(0,t) = u(L,t) = 0,  t\in (0,T],\]</div>
 <div class="math" id="eq-diffu-exer-estimates-p2-ic">
-\[\tag{132}
+\[\tag{133}
 u(x,0) = 0,  x\in [0,L]\]\[    {\thinspace .}\]</div>
 <p>The associated energy estimate is</p>
 <div class="math" id="eq-diffu-exer-estimates-p2-result">
-\[\tag{133}
+\[\tag{134}
 ||u||_{L^2} \leq ||f||_{L^2}{\thinspace .}\]</div>
 <p>(This result is more difficult to derive.)</p>
 <p>Now consider the compound problem with an initial condition <span class="math">\(I(x)\)</span> and
 a right-hand side <span class="math">\(f(x,t)\)</span>:</p>
 <div class="math" id="eq-diffu-exer-estimates-p3-pdf">
-\[\tag{134}
+\[\tag{135}
 u_t = \alpha u_xx + f(x,t),  x\in \Omega =(0,L),\ t\in (0,T],\]</div>
 <div class="math" id="eq-diffu-exer-estimates-p3-bc">
-\[\tag{135}
+\[\tag{136}
 u(0,t) = u(L,t) = 0,  t\in (0,T],\]</div>
 <div class="math" id="eq-diffu-exer-estimates-p3-ic">
-\[\tag{136}
+\[\tag{137}
 u(x,0) = I(x),  x\in [0,L]\]\[    {\thinspace .}\]</div>
 <p>Show that if <span class="math">\(w_1\)</span> fulfills
-<a class="reference internal" href="#eq-diffu-exer-estimates-p1-pdf"><span class="std std-ref">(125)</span></a>-<a class="reference internal" href="#eq-diffu-exer-estimates-p1-ic"><span class="std std-ref">(127)</span></a>
+<a class="reference internal" href="#eq-diffu-exer-estimates-p1-pdf"><span class="std std-ref">(126)</span></a>-<a class="reference internal" href="#eq-diffu-exer-estimates-p1-ic"><span class="std std-ref">(128)</span></a>
 and <span class="math">\(w_2\)</span> fulfills
-<a class="reference internal" href="#eq-diffu-exer-estimates-p2-pdf"><span class="std std-ref">(130)</span></a>-<a class="reference internal" href="#eq-diffu-exer-estimates-p2-ic"><span class="std std-ref">(132)</span></a>,
+<a class="reference internal" href="#eq-diffu-exer-estimates-p2-pdf"><span class="std std-ref">(131)</span></a>-<a class="reference internal" href="#eq-diffu-exer-estimates-p2-ic"><span class="std std-ref">(133)</span></a>,
 then <span class="math">\(u=w_1 + w_2\)</span> is the solution of
-<a class="reference internal" href="#eq-diffu-exer-estimates-p3-pdf"><span class="std std-ref">(134)</span></a>-<a class="reference internal" href="#eq-diffu-exer-estimates-p3-ic"><span class="std std-ref">(136)</span></a>.
+<a class="reference internal" href="#eq-diffu-exer-estimates-p3-pdf"><span class="std std-ref">(135)</span></a>-<a class="reference internal" href="#eq-diffu-exer-estimates-p3-ic"><span class="std std-ref">(137)</span></a>.
 Using the triangle inequality for norms,</p>
 <div class="math">
 \[||a + b|| \leq ||a|| + ||b||,\]</div>
 <p>show that the energy estimate for
-<a class="reference internal" href="#eq-diffu-exer-estimates-p3-pdf"><span class="std std-ref">(134)</span></a>-<a class="reference internal" href="#eq-diffu-exer-estimates-p3-ic"><span class="std std-ref">(136)</span></a>
+<a class="reference internal" href="#eq-diffu-exer-estimates-p3-pdf"><span class="std std-ref">(135)</span></a>-<a class="reference internal" href="#eq-diffu-exer-estimates-p3-ic"><span class="std std-ref">(137)</span></a>
 becomes</p>
 <div class="math" id="eq-diffu-exer-estimates-p3-result">
-\[\tag{137}
+\[\tag{138}
 ||u||_{L^2} \leq ||I||_{L^2} + ||f||_{L^2}{\thinspace .}\]</div>
 <p><strong>c)</strong>
-One application of <a class="reference internal" href="#eq-diffu-exer-estimates-p3-result"><span class="std std-ref">(137)</span></a> is to prove uniqueness
+One application of <a class="reference internal" href="#eq-diffu-exer-estimates-p3-result"><span class="std std-ref">(138)</span></a> is to prove uniqueness
 of the solution.
 Suppose <span class="math">\(u_1\)</span> and <span class="math">\(u_2\)</span> both fulfill
-<a class="reference internal" href="#eq-diffu-exer-estimates-p3-pdf"><span class="std std-ref">(134)</span></a>-<a class="reference internal" href="#eq-diffu-exer-estimates-p3-ic"><span class="std std-ref">(136)</span></a>.
+<a class="reference internal" href="#eq-diffu-exer-estimates-p3-pdf"><span class="std std-ref">(135)</span></a>-<a class="reference internal" href="#eq-diffu-exer-estimates-p3-ic"><span class="std std-ref">(137)</span></a>.
 Show that <span class="math">\(u=u_1 - u_2\)</span> then fulfills
-<a class="reference internal" href="#eq-diffu-exer-estimates-p3-pdf"><span class="std std-ref">(134)</span></a>-<a class="reference internal" href="#eq-diffu-exer-estimates-p3-ic"><span class="std std-ref">(136)</span></a>
-with <span class="math">\(f=0\)</span> and <span class="math">\(I=0\)</span>. Use <a class="reference internal" href="#eq-diffu-exer-estimates-p3-result"><span class="std std-ref">(137)</span></a>
+<a class="reference internal" href="#eq-diffu-exer-estimates-p3-pdf"><span class="std std-ref">(135)</span></a>-<a class="reference internal" href="#eq-diffu-exer-estimates-p3-ic"><span class="std std-ref">(137)</span></a>
+with <span class="math">\(f=0\)</span> and <span class="math">\(I=0\)</span>. Use <a class="reference internal" href="#eq-diffu-exer-estimates-p3-result"><span class="std std-ref">(138)</span></a>
 to deduce that the energy must be zero for all times and therefore
 that <span class="math">\(u_1=u_2\)</span>, which proves that the solution is unique.</p>
 <p><strong>d)</strong>
-Generalize <a class="reference internal" href="#eq-diffu-exer-estimates-p3-result"><span class="std std-ref">(137)</span></a> to a 2D/3D
+Generalize <a class="reference internal" href="#eq-diffu-exer-estimates-p3-result"><span class="std std-ref">(138)</span></a> to a 2D/3D
 diffusion equation <span class="math">\(u_t = \nabla\cdot (\alpha \nabla u)\)</span> for <span class="math">\(x\in\Omega\)</span>.</p>
 <p><strong>Hint.</strong>
 Use integration by parts in multi dimensions:</p>
@@ -5422,20 +5531,20 @@ and use Gauss&#8217; divergence theorem, <span class="math">\(\int_\Omega \nabla
 on the boundary, <span class="math">\(\partial u/\partial n=0\)</span>, area under the
 <span class="math">\(u\)</span> surface remains constant in time and</p>
 <div class="math" id="eq-diffu-exer-estimates-p4-result">
-\[\tag{138}
+\[\tag{139}
 \int_{\Omega} u{\, \mathrm{d}x} = \int_{\Omega} I{\, \mathrm{d}x}
     {\thinspace .}\]</div>
 <p><strong>f)</strong>
 Establish a code in 1D, 2D, or 3D that can solve a diffusion equation with a
 source term <span class="math">\(f\)</span>, initial condition <span class="math">\(I\)</span>, and zero Dirichlet or
 Neumann conditions on the whole boundary.</p>
-<p>We can use <a class="reference internal" href="#eq-diffu-exer-estimates-p3-result"><span class="std std-ref">(137)</span></a>
-and <a class="reference internal" href="#eq-diffu-exer-estimates-p4-result"><span class="std std-ref">(138)</span></a> as a partial verification
+<p>We can use <a class="reference internal" href="#eq-diffu-exer-estimates-p3-result"><span class="std std-ref">(138)</span></a>
+and <a class="reference internal" href="#eq-diffu-exer-estimates-p4-result"><span class="std std-ref">(139)</span></a> as a partial verification
 of the code. Choose some functions <span class="math">\(f\)</span> and <span class="math">\(I\)</span> and
-check that <a class="reference internal" href="#eq-diffu-exer-estimates-p3-result"><span class="std std-ref">(137)</span></a> is obeyed at any
+check that <a class="reference internal" href="#eq-diffu-exer-estimates-p3-result"><span class="std std-ref">(138)</span></a> is obeyed at any
 time when zero Dirichlet conditions are used.
 Iterate over the same <span class="math">\(I\)</span> functions and check that
-<a class="reference internal" href="#eq-diffu-exer-estimates-p4-result"><span class="std std-ref">(138)</span></a> is fulfilled
+<a class="reference internal" href="#eq-diffu-exer-estimates-p4-result"><span class="std std-ref">(139)</span></a> is fulfilled
 when using zero Neumann conditions.</p>
 <p><strong>g)</strong>
 Make a list of some possible bugs in the code, such as indexing errors
@@ -5443,7 +5552,7 @@ in arrays, failure to set the correct boundary conditions,
 evaluation of a term at a wrong time level, and similar.
 For each of the bugs, see if the verification tests from the previous
 subexercise pass or fail. This investigation shows how strong
-the energy estimates and the estimate <a class="reference internal" href="#eq-diffu-exer-estimates-p4-result"><span class="std std-ref">(138)</span></a>
+the energy estimates and the estimate <a class="reference internal" href="#eq-diffu-exer-estimates-p4-result"><span class="std std-ref">(139)</span></a>
 are for pointing out errors in the implementation.</p>
 <p>Filename: <code class="docutils literal"><span class="pre">diffu_energy</span></code>.</p>
 </div>
@@ -5457,13 +5566,13 @@ and introducing the iteration</p>
 <p>The very simplest splitting is <span class="math">\(M=I\)</span>, where <span class="math">\(I\)</span> is the identity
 matrix. Show that this choice corresponds to the iteration</p>
 <div class="math" id="eq-diffu-exer-splitting-prec-simplest">
-\[\tag{139}
+\[\tag{140}
 u^k = u^{k-1} + r^{k-1},\quad r^{k-1} = b - Au^{k-1},\]</div>
 <p>where <span class="math">\(r^{k-1}\)</span> is the residual in the linear system in iteration
-<span class="math">\(k-1\)</span>. The formula <a class="reference internal" href="#eq-diffu-exer-splitting-prec-simplest"><span class="std std-ref">(139)</span></a> is known
+<span class="math">\(k-1\)</span>. The formula <a class="reference internal" href="#eq-diffu-exer-splitting-prec-simplest"><span class="std std-ref">(140)</span></a> is known
 as Richardson&#8217;s iteration.
 Show that if we apply the simple iteration method
-<a class="reference internal" href="#eq-diffu-exer-splitting-prec-simplest"><span class="std std-ref">(139)</span></a> to the <em>preconditioned</em>
+<a class="reference internal" href="#eq-diffu-exer-splitting-prec-simplest"><span class="std std-ref">(140)</span></a> to the <em>preconditioned</em>
 system <span class="math">\(M^{-1}Au=M^{-1}b\)</span>, we arrive at the Jacobi method by choosing
 <span class="math">\(M=D\)</span> (the diagonal of <span class="math">\(A\)</span>) as preconditioner and the SOR method by
 choosing <span class="math">\(M=\omega^{-1}D + L\)</span> (<span class="math">\(L\)</span> being the lower triangular part of
@@ -5471,7 +5580,48 @@ choosing <span class="math">\(M=\omega^{-1}D + L\)</span> (<span class="math">\(
 Jacobi or SOR method as preconditioner.</p>
 </div>
 <div class="section" id="exercise-9-oscillating-surface-temperature-of-the-earth">
-<h2>Exercise 9: Oscillating surface temperature of the earth<a class="headerlink" href="#exercise-9-oscillating-surface-temperature-of-the-earth" title="Permalink to this headline">¶</a></h2>
+<span id="diffu-exer-earthosc"></span><h2>Exercise 9: Oscillating surface temperature of the earth<a class="headerlink" href="#exercise-9-oscillating-surface-temperature-of-the-earth" title="Permalink to this headline">¶</a></h2>
+<p>Consider a day-and-night or seasonal variation in temperature at
+the surface of the earth. How deep down in the ground will the
+surface oscillations reach? For simplicity, we model only the
+vertical variation along a coordinate <span class="math">\(x\)</span>, where <span class="math">\(x=0\)</span> at the
+surface, and <span class="math">\(x\)</span> increases as we go down in the ground.
+The temperature is governed by the heat equation</p>
+<div class="math">
+\[\varrho c_v\frac{\partial T}{\partial t} = \nabla\cdot(k\nabla T),\]</div>
+<p>in some spatial domain <span class="math">\(x\in [0,L]\)</span>, where <span class="math">\(L\)</span> is chosen large enough such
+that we can assume that <span class="math">\(T\)</span> is approximately constant, independent of the surface
+oscillations, for <span class="math">\(x&gt;L\)</span>. The parameters <span class="math">\(\varrho\)</span>, <span class="math">\(c_v\)</span>, and <span class="math">\(k\)</span> are the
+density, the specific heat capacity at constant volume, and the
+heat conduction coefficient, respectively.</p>
+<p><strong>a)</strong>
+Derive the mathematical model for computing <span class="math">\(T(x,t)\)</span>.
+Assume the surface oscillations to be sinusoidal around some mean
+temperature <span class="math">\(T_m\)</span>. Let <span class="math">\(T=T_m\)</span> initially. At <span class="math">\(x=L\)</span>, assume <span class="math">\(T\approx T_m\)</span>.</p>
+<p><strong>b)</strong>
+Scale the model in a) assuming <span class="math">\(k\)</span> is constant. Use a time scale
+<span class="math">\(t_c = \omega^{-1}\)</span> and a length scale <span class="math">\(x_c = \sqrt{2{\alpha}/omega}\)</span>,
+where <span class="math">\({\alpha} = k/(\varrho c_v)\)</span>. The primary unknown can be scaled
+as <span class="math">\(\frac{T-T_m}{2A}\)</span>.</p>
+<p>Show that the scaled PDE is</p>
+<div class="math">
+\[\frac{\partial u}{\partial \bar t} =
+\frac{1}{2}\frac{\partial^2 u}{\partial x^2},\]</div>
+<p>with initial condition <span class="math">\(u(\bar x,0) = 0\)</span>,
+left boundary condition
+<span class="math">\(u(0,\bar t)  = \sin(\bar t)\)</span>,
+and right boundary condition
+<span class="math">\(u(\bar L,\bar t)  = 0\)</span>. The bar indicates a dimensionless quantity.</p>
+<p>Show that <span class="math">\(u(\bar x, \bar t)=e^{-\bar x}\sin (\bar x - \bar t)\)</span> is a
+solution that fulfills the PDE and the boundary condition at <span class="math">\(\bar x
+=0\)</span> (this is the solution we will experience as <span class="math">\(\bar
+t\rightarrow\infty\)</span> and <span class="math">\(L\rightarrow\infty\)</span>).  Conclude that an
+appropriate domain for <span class="math">\(x\)</span> is <span class="math">\([0,4]\)</span> if a damping <span class="math">\(e^{-4}\approx
+0.18\)</span> is appropriate for implementing <span class="math">\(\bar u\approx\hbox{const}\)</span>;
+increasing to <span class="math">\([0,6]\)</span> damps <span class="math">\(\bar u\)</span> to 0.0025.</p>
+<p><strong>c)</strong>
+Compute the scaled temperature and make animations comparing two solutions
+with <span class="math">\(\bar L=4\)</span> and <span class="math">\(\bar L=8\)</span>, respectively (keep <span class="math">\(\Delta x\)</span> the same).</p>
 </div>
 <div class="section" id="exercise-10-oscillating-and-pulsating-flow-in-tubes">
 <h2>Exercise 10: Oscillating and pulsating flow in tubes<a class="headerlink" href="#exercise-10-oscillating-and-pulsating-flow-in-tubes" title="Permalink to this headline">¶</a></h2>
@@ -5554,9 +5704,10 @@ Jacobi or SOR method as preconditioner.</p>
 </li>
 <li><a class="reference internal" href="#diffusion-in-heterogeneous-media">Diffusion in heterogeneous media</a><ul>
 <li><a class="reference internal" href="#discretization-1">Discretization</a></li>
+<li><a class="reference internal" href="#implementation-2">Implementation</a></li>
 <li><a class="reference internal" href="#stationary-solution">Stationary solution</a></li>
 <li><a class="reference internal" href="#piecewise-constant-medium">Piecewise constant medium</a></li>
-<li><a class="reference internal" href="#implementation-2">Implementation</a></li>
+<li><a class="reference internal" href="#implementation-of-diffusion-in-a-piecewise-constant-medium">Implementation of diffusion in a piecewise constant medium</a></li>
 <li><a class="reference internal" href="#diffusion-equation-in-axi-symmetric-geometries">Diffusion equation in axi-symmetric geometries</a></li>
 <li><a class="reference internal" href="#diffusion-equation-in-spherically-symmetric-geometries">Diffusion equation in spherically-symmetric geometries</a><ul>
 <li><a class="reference internal" href="#discretization-in-spherical-coordinates">Discretization in spherical coordinates</a></li>

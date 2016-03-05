@@ -12,10 +12,11 @@ This section presents a mathematical analysis that explains the
 observed behavior and arrives at criteria for obtaining numerical
 solutions that reproduce the qualitative properties of the exact
 solutions. In short, we shall explain what is observed in
-Figures ref{diffu:pde1:FE:fig:F=0.5},
-ref{diffu:pde1:FE:fig:gauss:F=0.5},
+Figures
+ref{diffu:pde1:FE:fig:F=0.5},
 ref{diffu:pde1:FE:fig:F=0.25},
 ref{diffu:pde1:FE:fig:F=0.51},
+ref{diffu:pde1:FE:fig:gauss:F=0.5},
 ref{diffu:pde1:BE:fig:F=0.5},
 ref{diffu:pde1:CN:fig:F=3},
 and
@@ -190,28 +191,6 @@ becomes very small.
 FIGURE: [fig-diffu/diffusion_damping, width=800] Evolution of the solution of a diffusion problem: initial condition (upper left), 1/100 reduction of the small waves (upper right), 1/10 reduction of the long wave (lower left), and 1/100 reduction of the long wave (lower right). label{diffu:pde1:fig:damping}
 
 # x/sqrt(t) solution, kernel with integral
-
-===== Example: Diffusion of a discontinues profile =====
-
-We shall see how different schemes predict the evolution of a
-discontinuous initial condition:
-
-!bt
-\[
-u(x,0)=\left\lbrace
-\begin{array}{ll}
-U_L, & x < L/2\\
-U_R,& x\geq L/2
-\end{array}\right.
-\]
-!et
-Such a discontinuous initial condition may arise when two insulated
-blocks of metals at different temperature are brought in contact at
-$t=0$. Alternatively, signaling in the brain is based on release
-of a huge ion concentration on one side of a synapse, which implies
-diffusive transport of a discontinuous concentration function.
-
-_More to be written..._
 
 ===== Analysis of discrete equations =====
 
@@ -441,7 +420,7 @@ The result is
 !et
 Recalling that $F=\dfc\Delta t/\Delta x$, $p=k\Delta x/2$, and that
 $\sin^2p\leq 1$, we
-realize that the dominating error terms are at most
+realize that the dominating terms in $A/\Aex$ are at most
 
 !bt
 \[ 1 - 4\dfc \frac{\Delta t}{\Delta x^2} +
@@ -555,6 +534,9 @@ u^n_q = \left(\frac{ 1 - 2F\sin^2p}{1 + 2F\sin^2p}\right)^ne^{ikp\Delta x}
 === Stability ===
 
 The criteria $A>-1$ and $A<1$ are fulfilled for any $\Delta t >0$.
+Therefore, the solution cannot grow, but it will oscillate if
+$1-2F\sin^p < 0$. To avoid such non-physical oscillations, we must demand
+$F\leq\half$.
 
 ===== Summary of accuracy of amplification factors =====
 
@@ -578,6 +560,7 @@ oscillations in time in an animation of the solution. We see from
 Figure ref{diffu:pde1:fig:A:err:C20} that for $F=20$, waves with
 $p\geq \pi/2$ undergo a damping close to $-1$, which means that the
 amplitude does not decay and that the wave component jumps up and down
+(flips amplitude)
 in time. For $F=2$ we have a damping of a factor of 0.5 from one time
 level to the next, which is very much smaller than the exact
 damping. Short waves will therefore fail to be effectively dampened.
@@ -602,9 +585,8 @@ label{diffu:2D:analysis}
 We first consider the 2D diffusion equation
 
 !bt
-\[ u_{t} = \dfc(u_{xx} + u_{yy},\]
+\[ u_{t} = \dfc(u_{xx} + u_{yy}),\]
 !et
-
 which has Fourier component solutions of the form
 
 !bt
@@ -678,6 +660,13 @@ F_x + F_y \leq \half\tp
 label{diffu:2D:analysis:FE:stab}
 \end{equation}
 !et
+For the special, yet common, case $\Delta x=\Delta y=h$, the
+stability criterion can be written as
+
+!bt
+\[ \Delta t \leq \frac{h^2}{2d\dfc},\]
+!et
+where $d$ is the number of space dimensions: $d=1,2,3$.
 
 === The Backward Euler scheme ===
 
@@ -750,6 +739,65 @@ e^{i(k_xq\Delta x + k_yr\Delta y)}\tp
 label{diffu:2D:analysis:CN:numexact}
 \end{equation}
 !et
+
+===== Explanation of numerical artifacts =====
+
+
+The behavior of the Forward Euler discretiztion in time (and centered
+differences in space) is summarized at the end of
+Section ref{diffu:pde1:FE:experiments}. Can we from the analysis
+above explain the behavior?
+
+We may start by looking at Figure ref{diffu:pde1:FE:fig:F=0.51}
+where $F=0.51$. The figure shows that the solution is unstable and
+grows in time. The stability limit for such growth is $F=0.5$ and
+since the $F$ in this simulation is slightly larger, growth is
+unvoidable.
+
+Figure ref{diffu:pde1:FE:fig:F=0.5} has unexpected features:
+we would expect the solution of the diffusion equation to be
+smooth, but the graphs in Figure ref{diffu:pde1:FE:fig:F=0.5}
+contain non-smooth noise. Turning to Figure
+ref{diffu:pde1:FE:fig:gauss:F=0.5},  which has a quite similar
+initial condition, we see that the curves are indeed smooth.
+The problem with the results in Figure ref{diffu:pde1:FE:fig:F=0.5}
+is that the initial condition is discontinuous. To represent it, we
+need a significant amplitude on the shortest waves in the mesh.
+However, for $F=0.5$, the shortest wave ($p=\pi/2$) gives
+the amplitide in the numerical solution as $(1-4F)^n$, which oscillates
+between negative and positive values at subsequent time levels
+for $F>\frac{1}{4}$. Since the shortest waves have visible amplitudes in
+the solution profile, the oscillations becomes visible. The
+smooth initial condition in Figure ref{diffu:pde1:FE:fig:gauss:F=0.5},
+on the other hand, lead to very small amplitudes of the shortest waves.
+That these waves then oscillate in a non-physical way for
+$F=0.5$ is not a visible effect. The oscillations
+in time in the amplitude $(1-4F)^n$ disappear for $F\leq\fraq{1}{4}$,
+and that is why also the discontinuous initial condition leads to
+always smooth solutions in Figure refref{diffu:pde1:FE:fig:F=0.25}, where
+$F=\frac{1}{4}$.
+
+Turning the attention to the Backward Euler scheme and the experiments
+in Figure ref{diffu:pde1:BE:fig:F=0.5}, we see that even the discontinuous
+initial condition gives smooth solutions for $F=0.5$ (and in fact all other
+$F$ values). From the exact expression of the numerical amplitude,
+$(1  + 4F\sin^2p)^{-1}$, we realize that this factor can never flip between
+positive and negative values, and no instabilities can occur. The conclusion
+is that the Backward Euler scheme always produces smooth solutions.
+Also, the Backward Euler scheme guarantees that the solution cannot grow
+in time (unless we add a source term to the PDE, but that is meant to
+represent a physically relevant growoth).
+
+Finally, we have some small, strange artifacts when simulating the
+development of the initial plug profile with the Crank-Nicolson scheme,
+see Figure ref{diffu:pde1:CN:fig:F=10}, where $F=3$.
+The Crank-Nicolson scheme cannot give growing amplitudes, but it may
+give oscillating amplitudes in time. The critical factor is
+$1 - 2F\sin^2p$, which for the shortest waves ($p=\pi/2$) indicates
+a stability limit $F=0.5$. With the discontinuous initial condition, we have
+enough amplitude on the shortest waves so their wrong behavior is visible,
+and this is what we see as small instabilities in
+Figure ref{diffu:pde1:CN:fig:F=10}. The only remedy is to lower the $F$ value.
 
 
 

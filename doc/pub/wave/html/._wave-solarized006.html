@@ -6,10 +6,10 @@ Automatically generated HTML file from DocOnce source
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="DocOnce: https://github.com/hplgit/doconce/" />
-<meta name="description" content="Finite difference methods for wave motion">
-<meta name="keywords" content="waves on a string,wave equation 1D,wave equation 1D, finite difference method,mesh finite differences,stencil 1D wave equation,mesh function,wave equation 1D, implementation,callback function,nose test,pytest test,unit testing,software testing nose,software testing pytest,closure,vectorization,scalar code,vectorization,array computing,array slices,slice,lambda function (Python),Neumann conditions,Dirichlet conditions,homogeneous Neumann conditions,homogeneous Dirichlet conditions,boundary conditions Neumann,boundary conditions Dirichlet,stencil Neumann boundary,index set notation,geometric mean,arithmetic mean,harmonic average,averaging geometric,averaging arithmetic,averaging harmonic,radiation condition,open boundary condition,boundary condition open (radiation),periodic boundary conditions,boundary conditions periodic,wave equation 1D, analytical properties,Fourier series,Fourier transform,discrete Fourier transform,wave equation 1D, exact numerical solution,Courant number,stability criterion,wave equation 1D, stability,wave equation 2D, implementation,index set notation">
+<meta name="description" content="Finite difference methods for wave equations">
+<meta name="keywords" content="waves on a string,wave equation 1D,wave equation 1D, finite difference method,mesh finite differences,stencil 1D wave equation,mesh function,wave equation 1D, implementation,callback function,verification polynomial solution,nose,pytest,unit testing,test function,closure,vectorization,parallelism,scalar code,vectorization,array computing,array slices,slice,lambda function (Python),Neumann conditions,Dirichlet conditions,homogeneous Neumann conditions,homogeneous Dirichlet conditions,boundary conditions Neumann,boundary conditions Dirichlet,stencil Neumann boundary,index set notation,geometric mean,arithmetic mean,harmonic average,averaging geometric,averaging arithmetic,averaging harmonic,radiation condition,open boundary condition,boundary condition open (radiation),periodic boundary conditions,boundary conditions periodic,wave equation 1D, analytical properties,Fourier series,Fourier transform,discrete Fourier transform,wave equation 1D, exact numerical solution,Courant number,stability criterion,wave equation 1D, stability,wave equation 2D, implementation,index set notation">
 
-<title>Finite difference methods for wave motion</title>
+<title>Finite difference methods for wave equations</title>
 
 
 <link href="https://cdn.rawgit.com/hplgit/doconce/master/bundled/html_styles/style_solarized_box/css/solarized_light_code.css" rel="stylesheet" type="text/css" title="light"/>
@@ -557,13 +557,13 @@ the complete initial-boundary value problem is defined by
 
 $$
 \begin{align}
-u_{tt} &= c^2(u_{xx} + u_{yy}) + f(x,y,t),\quad &(x,y)\in \Omega,\ t\in (0,T],
+&u_{tt} = c^2(u_{xx} + u_{yy}) + f(x,y,t),\quad &(x,y)\in \Omega,\ t\in (0,T],
 \tag{113}\\ 
-u(x,y,0) &= I(x,y),\quad &(x,y)\in\Omega,
+&u(x,y,0) = I(x,y),\quad &(x,y)\in\Omega,
 \tag{114}\\ 
-u_t(x,y,0) &= V(x,y),\quad &(x,y)\in\Omega,
+&u_t(x,y,0) = V(x,y),\quad &(x,y)\in\Omega,
 \tag{115}\\ 
-u &= 0,\quad &(x,y)\in\partial\Omega,\ t\in (0,T],
+&u = 0,\quad &(x,y)\in\partial\Omega,\ t\in (0,T],
 \tag{116}
 \end{align}
 $$
@@ -582,7 +582,7 @@ program:
 
 $$
 \begin{align}
-u^{n+1} &= -u^{n-1}_{i,j} + 2u^n_{i,j} + \nonumber\\ 
+u^{n+1}_{i,j} &= -u^{n-1}_{i,j} + 2u^n_{i,j} + \nonumber\\ 
 &\quad C_x^2(
 u^{n}_{i+1,j} - 2u^{n}_{i,j} + u^{n}_{i-1,j}) + C_y^2
 (u^{n}_{i,j+1} - 2u^{n}_{i,j} + u^{n}_{i,j-1}) + \Delta t^2 f_{i,j}^n,
@@ -591,7 +591,7 @@ u^{n}_{i+1,j} - 2u^{n}_{i,j} + u^{n}_{i-1,j}) + C_y^2
 $$
 
 for all interior mesh points \( i\in\seti{\Ix} \) and
-\( j\in\seti{\Iy} \), and for \( n\in\setr{\It} \).
+\( j\in\seti{\Iy} \), for \( n\in\setr{\It} \).
 The constants \( C_x \) and \( C_y \) are defined as
 
 $$ C_x = c\frac{\Delta t}{\Delta x},\quad C_x = c\frac{\Delta t}{\Delta y}
@@ -609,10 +609,11 @@ is combined with the discretization of the initial condition \( u_t=V \),
 
 $$
 \begin{align}
-u^{1} &= u^0_{i,j} + \Delta t V_{i,j} + \nonumber\\ 
+u^{1}_{i,j} &= u^0_{i,j} + \Delta t V_{i,j} + \nonumber\\ 
 &\quad {\half}C_x^2(
 u^{0}_{i+1,j} - 2u^{0}_{i,j} + u^{0}_{i-1,j}) + {\half}C_y^2
-(u^{0}_{i,j+1} - 2u^{0}_{i,j} + u^{0}_{i,j-1}) + \half\Delta t^2f_{i,j}^n,
+(u^{0}_{i,j+1} - 2u^{0}_{i,j} + u^{0}_{i,j-1}) +\nonumber\\ 
+&\quad \half\Delta t^2f_{i,j}^n,
 \tag{118}
 \end{align}
 $$
@@ -624,9 +625,9 @@ The algorithm is very similar to the one in 1D:
 <li> Set initial condition \( u^0_{i,j}=I(x_i,y_j) \)</li>
 <li> Compute \( u^1_{i,j} \) from <a href="#mjx-eqn-117">(117)</a></li>
 <li> Set \( u^1_{i,j}=0 \) for the boundaries \( i=0,N_x \), \( j=0,N_y \)</li>
-<li> For \( n=1,2,\ldots,N_t \):</li>
+<li> For \( n=1,2,\ldots,N_t \):
 
-<ol>
+<ol type="a"></li>
  <li> Find \( u^{n+1}_{i,j} \) from <a href="#mjx-eqn-117">(117)</a>
     for all internal mesh points, \( i\in\seti{\Ix} \), \( j\in\seti{\Iy} \)</li>
  <li> Set \( u^{n+1}_{i,j}=0 \) for the boundaries \( i=0,N_x \), \( j=0,N_y \)</li>
@@ -698,7 +699,7 @@ where \( u^{n+1}_{i,j} \) corresponds to <code>u[i,j]</code>,
 <h3 id="___sec96">Index sets </h3>
 
 <p>
-It is also convenient to introduce the index sets (cf. The section <a href="._wave-solarized003.html#wave:indexset">Index set notation</a>)
+It is also convenient to introduce the index sets (cf. the section <a href="._wave-solarized003.html#wave:indexset">Index set notation</a>)
 
 <p>
 
@@ -797,17 +798,18 @@ meshes, and probably useless in 3D beyond debugging of small test cases.
 Vectorization is therefore a must for multi-dimensional
 finite difference computations in Python. For example,
 with a mesh consisting of \( 30\times 30 \) cells, vectorization
-brings down the CPU time by a factor of 70 (!).
+brings down the CPU time by a factor of 70 (!). Equally important,
+vectorized code can also easily be parallelized to take (usually)
+optimal advantage of parallel computer platforms.
 
 <p>
-In the vectorized case, we must be able to evaluate user-given functions
-like \( I(x,y) \) and \( f(x,y,t) \) for the entire mesh in one operation (without
-loops). These user-given functions are
-provided as Python functions <code>I(x,y)</code>
-and <code>f(x,y,t)</code>, respectively.
-Having the one-dimensional coordinate arrays <code>x</code> and <code>y</code> is not
-sufficient when calling <code>I</code> and <code>f</code> in a vectorized way.
-We must extend <code>x</code> and <code>y</code> to their vectorized versions <code>xv</code> and <code>yv</code>:
+In the vectorized case, we must be able to evaluate user-given
+functions like \( I(x,y) \) and \( f(x,y,t) \) for the entire mesh in one
+operation (without loops). These user-given functions are provided as
+Python functions <code>I(x,y)</code> and <code>f(x,y,t)</code>, respectively.  Having the
+one-dimensional coordinate arrays <code>x</code> and <code>y</code> is not sufficient when
+calling <code>I</code> and <code>f</code> in a vectorized way.  We must extend <code>x</code> and <code>y</code>
+to their vectorized versions <code>xv</code> and <code>yv</code>:
 
 <p>
 
@@ -835,11 +837,12 @@ setting the initial condition is just a matter of
 <div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%">u_1[:,:] = I(xv, yv)
 </pre></div>
 <p>
-One could also have written <code>u_1 = I(xv, yv)</code> and let <code>u_1</code> point
-to a new object, but vectorized operations often make use of
-direct insertion in the original array through <code>u_1[:,:]</code>, because
-sometimes not all of the array is to be filled by such a function
-evaluation. This is the case with the computational scheme for \( u^{n+1}_{i,j} \):
+One could also have written <code>u_1 = I(xv, yv)</code> and let <code>u_1</code> point to a
+new object, but vectorized operations often make use of direct
+insertion in the original array through <code>u_1[:,:]</code>, because sometimes
+not all of the array is to be filled by such a function
+evaluation. This is the case with the computational scheme for
+\( u^{n+1}_{i,j} \):
 
 <p>
 
@@ -1097,7 +1100,8 @@ that the quadratic solution fits the special formula for
 \( u^1_{i,j} \). The details are left as <a href="#wave:exer:quadratic:2D">Exercise 15: Check that a solution fulfills the discrete model</a>.
 The <code>test_quadratic</code> function in the
 <a href="http://tinyurl.com/nm5587k/wave/wave2D_u0/wave2D_u0.py" target="_self"><tt>wave2D_u0.py</tt></a>
-program implements this verification as a nose test.
+program implements this verification as a proper test function
+for the pytest and nose frameworks.
 
 <h1 id="___sec101">Using classes to implement a simulator </h1>
 

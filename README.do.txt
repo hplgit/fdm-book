@@ -1,6 +1,6 @@
 ======= fdm-book =======
 
-Resources for the book *The Craft of Finite Difference Computing with Partial Differential Equations* by Hans Petter Langtangen and Svein Linge.
+Resources for the book *Finite Difference Computing with Partial Differential Equations* by Hans Petter Langtangen and Svein Linge.
 
 !bquote
 # #include "doc/.src/book/backcover.do.txt"
@@ -26,4 +26,4 @@ or `/doc/.src/book` (the entire book) and copied to some subdirectory
 under `doc/pub` for publication in the gh-pages branch.
 
 Development takes place in the master branch, and the gh-pages branch
-is always merge with master.
+is always merged and in sync with master.

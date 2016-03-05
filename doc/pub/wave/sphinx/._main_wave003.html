@@ -43,7 +43,7 @@
         </style>
 
     
-    <link rel="top" title="Finite difference methods for wave motion" href="index.html" />
+    <link rel="top" title="Finite difference methods for wave equations" href="index.html" />
     <link rel="next" title="Analysis of the difference equations" href="._main_wave004.html" />
     <link rel="prev" title="Implementation" href="._main_wave002.html" />
  
@@ -69,7 +69,7 @@
         <li class="right" >
           <a href="._main_wave002.html" title="Implementation"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Finite difference methods for wave motion</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Finite difference methods for wave equations</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -108,9 +108,9 @@ For a 1D domain <span class="math">\([0,L]\)</span>,
 we have that</p>
 <div class="math">
 \[\left.\frac{\partial}{\partial n}\right\vert_{x=L} =
-\frac{\partial}{\partial x},\quad
+\left.\frac{\partial}{\partial x}\right\vert_{x=L},\quad
 \left.\frac{\partial}{\partial n}\right\vert_{x=0} = -
-\frac{\partial}{\partial x}{\thinspace .}\]</div>
+\left.\frac{\partial}{\partial x}\right\vert_{x=0}{\thinspace .}\]</div>
 <div class="admonition-boundary-condition-terminology admonition">
 <p class="first admonition-title">Boundary condition terminology</p>
 <p class="last">Boundary conditions
@@ -216,7 +216,7 @@ contains a complete implementation of the 1D wave equation with
 boundary conditions <span class="math">\(u_x = 0\)</span> at <span class="math">\(x=0\)</span> and <span class="math">\(x=L\)</span>.</p>
 <p>It would be nice to modify the <code class="docutils literal"><span class="pre">test_quadratic</span></code> test case from the
 <code class="docutils literal"><span class="pre">wave1D_u0.py</span></code> with Dirichlet conditions, described in the section <a class="reference internal" href="._main_wave002.html#wave-pde1-impl-vec-verify-quadratic"><span class="std std-ref">Verification</span></a>. However, the Neumann
-conditions requires the polynomial variation in <span class="math">\(x\)</span> direction to
+conditions require the polynomial variation in the <span class="math">\(x\)</span> direction to
 be of third degree, which causes challenging problems when
 designing a test where the numerical solution is known exactly.
 <a class="reference internal" href="#wave-fd2-exer-verify-cubic"><span class="std std-ref">Exercise 14: Verification by a cubic polynomial in space</span></a> outlines ideas and code
@@ -373,7 +373,7 @@ typical initial shape of a guitar string.</li>
 <span id="wave-pde1-verify"></span><h2>Verifying the implementation of Neumann conditions<a class="headerlink" href="#verifying-the-implementation-of-neumann-conditions" title="Permalink to this headline">¶</a></h2>
 <p>How can we test that the Neumann conditions are correctly implemented?
 The <code class="docutils literal"><span class="pre">solver</span></code> function in the <code class="docutils literal"><span class="pre">wave1D_dn.py</span></code> program described in the
-box above accepts Dirichlet and Neumann conditions at <span class="math">\(x=0\)</span> and <span class="math">\(x=L\)</span>.
+box above accepts Dirichlet or Neumann conditions at <span class="math">\(x=0\)</span> and <span class="math">\(x=L\)</span>.
 It is tempting to apply a quadratic solution as described in
 the sections <a class="reference internal" href="._main_wave001.html#wave-pde2-fd"><span class="std std-ref">A slightly generalized model problem</span></a> and <a class="reference internal" href="._main_wave002.html#wave-pde1-impl-verify-quadratic"><span class="std std-ref">Verification: exact quadratic solution</span></a>,
 but it turns out that this solution is no longer an exact solution
@@ -383,7 +383,7 @@ homogeneous Neumann conditions in <code class="docutils literal"><span class="pr
 consequently left with testing just a constant solution: <span class="math">\(u=\hbox{const}\)</span>.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">test_constant</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Check the scalar and vectorized versions work for</span>
+<span class="sd">    Check the scalar and vectorized versions for</span>
 <span class="sd">    a constant u(x,t). We simulate in [0, L] and apply</span>
 <span class="sd">    Neumann and Dirichlet conditions at both ends.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -704,7 +704,7 @@ However, when  \( q \)  exhibits (potentially large) jumps,
 a better solution than arithmetic averaging or
 :ref:`(45) &lt;Eq:wave:pde2:var:c:chainrule_scheme&gt;`.
 In the literature, the discretization  \( [D_x(q D_x u)]^n_i \)  totally
-dominant and very few mention the possibility of
+dominants and very few mention the possibility of
 :ref:`(45) &lt;Eq:wave:pde2:var:c:chainrule_scheme&gt;`.\end{split}\]</div>
 </div>
 <div class="section" id="computing-the-coefficient-between-mesh-points">
@@ -796,18 +796,19 @@ and a worst case value of <span class="math">\(c(x)\)</span> (with a safety fact
 discretized as</p>
 <div class="math">
 \[[D_{2x} u]^n_i =
-\frac{u_{i+1}^{n} - u_{i-1}^n}{2\Delta x} = 0\quad u_{i+1}^n = u_{i-1}^n,\]</div>
+\frac{u_{i+1}^{n} - u_{i-1}^n}{2\Delta x} = 0\quad\Rightarrow\quad
+u_{i+1}^n = u_{i-1}^n,\]</div>
 <p>for <span class="math">\(i=N_x\)</span>. Using the scheme <a class="reference internal" href="#eq-wave-pde2-var-c-scheme-impl"><span class="std std-ref">(50)</span></a>
 at the end point <span class="math">\(i=N_x\)</span> with <span class="math">\(u_{i+1}^n=u_{i-1}^n\)</span> results in</p>
 <div class="math">
 \[u^{n+1}_i = - u_i^{n-1}  + 2u_i^n + \nonumber\]</div>
-<div class="math" id="eq-wave-pde2-var-c-scheme-impl-neumann0">
+<div class="math" id="eq-auto17">
 \[\tag{52}
 \quad \left(\frac{\Delta t}{\Delta x}\right)^2 \left(
     q_{i+\frac{1}{2}}(u_{i-1}^n - u_{i}^n) -
     q_{i-\frac{1}{2}}(u_{i}^n - u_{i-1}^n)\right)
     + \Delta t^2 f^n_i\]</div>
-<div class="math" id="eq-auto17">
+<div class="math" id="eq-wave-pde2-var-c-scheme-impl-neumann0">
 \[\tag{53}
 = - u_i^{n-1}  + 2u_i^n + \left(\frac{\Delta t}{\Delta x}\right)^2
     (q_{i+\frac{1}{2}} + q_{i-\frac{1}{2}})(u_{i-1}^n - u_{i}^n) +
@@ -834,7 +835,7 @@ q_i + \left(\frac{dq}{dx}\right)_i \Delta x
 \approx 2q_i
     {\thinspace .}\]</div>
 <p>An alternative derivation may apply the arithmetic mean of <span class="math">\(q\)</span> in
-<a class="reference internal" href="#eq-wave-pde2-var-c-scheme-impl-neumann0"><span class="std std-ref">(52)</span></a>, leading to the term</p>
+<a class="reference internal" href="#eq-wave-pde2-var-c-scheme-impl-neumann0"><span class="std std-ref">(53)</span></a>, leading to the term</p>
 <div class="math">
 \[(q_i + \frac{1}{2}(q_{i+1}+q_{i-1}))(u_{i-1}^n-u_i^n){\thinspace .}\]</div>
 <p>Since <span class="math">\(\frac{1}{2}(q_{i+1}+q_{i-1}) = q_i + {\cal O}(\Delta x^2)\)</span>,
@@ -923,7 +924,7 @@ with varying density, cf.&nbsp;(<a class="reference internal" href="._main_wave0
 [\varrho D_tD_t u = D_x\overline{q}^xD_x u + f]^n_i
     {\thinspace .}\]</div>
 <p>We realize that the <span class="math">\(\varrho\)</span> coefficient poses no particular
-difficulty, since <span class="math">\(\varrho\)</span> enters the formula just a simple factor
+difficulty, since <span class="math">\(\varrho\)</span> enters the formula just as a simple factor
 in front of a derivative. There is hence no need for any averaging
 of <span class="math">\(\varrho\)</span>. Often, <span class="math">\(\varrho\)</span> will be moved to the right-hand side,
 also without any difficulty:</p>
@@ -1002,7 +1003,7 @@ These are trivial to implement:</p>
 <p>The <code class="docutils literal"><span class="pre">solver</span></code> function is a natural extension of the simplest
 <code class="docutils literal"><span class="pre">solver</span></code> function in the initial <code class="docutils literal"><span class="pre">wave1D_u0.py</span></code> program,
 extended with Neumann boundary conditions (<span class="math">\(u_x=0\)</span>),
-a the time-varying Dirichlet conditions, as well as
+time-varying Dirichlet conditions, as well as
 a variable wave velocity. The different code segments needed
 to make these extensions have been shown and commented upon in the
 preceding text. We refer to the <code class="docutils literal"><span class="pre">solver</span></code> function in the
@@ -1077,10 +1078,10 @@ files, like the function <code class="docutils literal"><span class="pre">wave1D
             <span class="n">name</span> <span class="o">=</span> <span class="s">&#39;u</span><span class="si">%04d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">n</span>  <span class="c"># array name</span>
             <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">u</span><span class="p">}</span>
             <span class="n">fname</span> <span class="o">=</span> <span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">+</span> <span class="s">&#39;_&#39;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s">&#39;.dat&#39;</span>
-            <span class="n">savez</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>  <span class="c"># store corresponding time value</span>
             <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>           <span class="c"># save x once</span>
-                <span class="n">savez</span><span class="p">(</span><span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">+</span> <span class="s">&#39;_x.dat&#39;</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">+</span> <span class="s">&#39;_x.dat&#39;</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
 
         <span class="c"># Animate</span>
         <span class="k">if</span> <span class="n">n</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">skip_frame</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
@@ -1150,7 +1151,7 @@ later retrieval.</p>
 in
 the document
 <a class="reference external" href="http://tinyurl.com/k3sdbuv/pub/softeng2">Scientific software engineering; wave equation case</a>
-<a class="reference internal" href="._main_wave010.html#ref2" id="id1">[Ref2]</a>.</p>
+<a class="reference internal" href="._main_wave010.html#ref3" id="id1">[Ref3]</a>.</p>
 </div>
 </div>
 <div class="section" id="pulse-propagation-in-two-media">
@@ -1213,7 +1214,7 @@ flexibility with the building blocks we have already developed:</p>
 
     <span class="k">if</span> <span class="n">pulse_tp</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;gaussian&#39;</span><span class="p">,</span><span class="s">&#39;Gaussian&#39;</span><span class="p">):</span>
         <span class="k">def</span> <span class="nf">I</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="p">((</span><span class="n">x</span><span class="o">-</span><span class="n">xc</span><span class="p">)</span><span class="o">/</span><span class="n">sigma</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="p">((</span><span class="n">x</span><span class="o">-</span><span class="n">xc</span><span class="p">)</span><span class="o">/</span><span class="n">sigma</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">pulse_tp</span> <span class="o">==</span> <span class="s">&#39;plug&#39;</span><span class="p">:</span>
         <span class="k">def</span> <span class="nf">I</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
             <span class="k">return</span> <span class="mi">0</span> <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">xc</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">sigma</span> <span class="k">else</span> <span class="mi">1</span>
@@ -1222,7 +1223,7 @@ flexibility with the building blocks we have already developed:</p>
             <span class="c"># One period of a cosine</span>
             <span class="n">w</span> <span class="o">=</span> <span class="mi">2</span>
             <span class="n">a</span> <span class="o">=</span> <span class="n">w</span><span class="o">*</span><span class="n">sigma</span>
-            <span class="k">return</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">cos</span><span class="p">(</span><span class="n">pi</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">xc</span><span class="p">)</span><span class="o">/</span><span class="n">a</span><span class="p">))</span> \
+            <span class="k">return</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">xc</span><span class="p">)</span><span class="o">/</span><span class="n">a</span><span class="p">))</span> \
                    <span class="k">if</span> <span class="n">xc</span> <span class="o">-</span> <span class="n">a</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">xc</span> <span class="o">+</span> <span class="n">a</span> <span class="k">else</span> <span class="mi">0</span>
 
     <span class="k">elif</span> <span class="n">pulse_tp</span> <span class="o">==</span> <span class="s">&#39;half-cosinehat&#39;</span><span class="p">:</span>
@@ -1230,7 +1231,7 @@ flexibility with the building blocks we have already developed:</p>
             <span class="c"># Half a period of a cosine</span>
             <span class="n">w</span> <span class="o">=</span> <span class="mi">4</span>
             <span class="n">a</span> <span class="o">=</span> <span class="n">w</span><span class="o">*</span><span class="n">sigma</span>
-            <span class="k">return</span> <span class="n">cos</span><span class="p">(</span><span class="n">pi</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">xc</span><span class="p">)</span><span class="o">/</span><span class="n">a</span><span class="p">)</span> \
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">xc</span><span class="p">)</span><span class="o">/</span><span class="n">a</span><span class="p">)</span> \
                    <span class="k">if</span> <span class="n">xc</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">a</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">xc</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">a</span> <span class="k">else</span> <span class="mi">0</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Wrong pulse_tp=&quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="n">pulse_tp</span><span class="p">)</span>
@@ -1333,7 +1334,7 @@ is <span class="math">\(u_x=0\)</span> at <span class="math">\(x=0\)</span>.</p>
 Symmetry of a function about <span class="math">\(x=x_0\)</span> means that
 <span class="math">\(f(x_0+h) = f(x_0-h)\)</span>.</p>
 <p><strong>b)</strong>
-Perform simulations of the complete wave problem from
+Perform simulations of the complete wave problem
 on <span class="math">\([-L,L]\)</span>. Thereafter, utilize the
 symmetry of the solution and run a simulation
 in half of the domain <span class="math">\([0,L]\)</span>, using a boundary condition
@@ -1456,7 +1457,7 @@ open boundary condition at the left end.</li>
 <li>Disturbance at the left end, <span class="math">\(I(x)=g(x;0,s)\)</span>, and <span class="math">\(u_x=0\)</span>
 as symmetry boundary condition at this end.</li>
 </ol>
-<p>Make nose tests for both cases, testing that the solution is zero
+<p>Make test functions for both cases, testing that the solution is zero
 after the waves have left the domain.</p>
 <p><strong>d)</strong>
 In 2D and 3D it is difficult to compute the correct wave velocity
@@ -1464,7 +1465,7 @@ normal to the boundary, which is needed in generalizations of
 the open boundary conditions in higher dimensions. Test the effect
 of having a slightly wrong wave velocity in
 <a class="reference internal" href="#eq-wave-app-exer-radiationbc-eq-op-1storder"><span class="std std-ref">(72)</span></a>.
-Make a movies to illustrate what happens.</p>
+Make movies to illustrate what happens.</p>
 <p>Filename: <code class="docutils literal"><span class="pre">wave1D_open_BC</span></code>.</p>
 <div class="section" id="remarks-2">
 <h3>Remarks<a class="headerlink" href="#remarks-2" title="Permalink to this headline">¶</a></h3>
@@ -1481,7 +1482,7 @@ let waves move out of a computational domain.</p>
 <span id="wave-exer-periodic"></span><h2>Exercise 12: Implement periodic boundary conditions<a class="headerlink" href="#exercise-12-implement-periodic-boundary-conditions" title="Permalink to this headline">¶</a></h2>
 <span class="target" id="index-17"></span><p id="index-18">It is frequently of interest to follow wave motion over large
 distances and long times. A straightforward approach is to
-work with a very large domain, but might lead to a lot of
+work with a very large domain, but that might lead to a lot of
 computations in areas of the domain where the waves cannot
 be noticed. A more efficient approach is to let a right-going
 wave out of the domain and at the same time let it enter
@@ -1684,7 +1685,7 @@ function that compares the numerical solution to this exact
 solution <span class="math">\(u\)</span> of the discrete PDE problem.</p>
 <p><strong>Hint.</strong>
 To turn a <code class="docutils literal"><span class="pre">sympy</span></code> expression <code class="docutils literal"><span class="pre">e</span></code>, depending on a series of
-symbols, say <code class="docutils literal"><span class="pre">x</span></code>, <code class="docutils literal"><span class="pre">t</span></code>, <code class="docutils literal"><span class="pre">dx</span></code>, <code class="docutils literal"><span class="pre">dt</span></code>, <code class="docutils literal"><span class="pre">L</span></code>, and <code class="docutils literal"><span class="pre">c</span></code>, into plain
+symbols, say <code class="docutils literal"><span class="pre">x</span></code>, <code class="docutils literal"><span class="pre">t</span></code>, <code class="docutils literal"><span class="pre">dx</span></code>, <code class="docutils literal"><span class="pre">dt</span></code>, <code class="docutils literal"><span class="pre">L</span></code>, and <code class="docutils literal"><span class="pre">c</span></code>, into a plain
 Python function <code class="docutils literal"><span class="pre">e_exact(x,t,L,dx,dt,c)</span></code>, one can write</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">e_exact</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">lambdify</span><span class="p">([</span><span class="n">x</span><span class="p">,</span><span class="n">t</span><span class="p">,</span><span class="n">L</span><span class="p">,</span><span class="n">dx</span><span class="p">,</span><span class="n">dt</span><span class="p">,</span><span class="n">c</span><span class="p">],</span> <span class="n">e</span><span class="p">,</span> <span class="s">&#39;numpy&#39;</span><span class="p">)</span>
 </pre></div>
@@ -1704,7 +1705,7 @@ condition, we seek <span class="math">\(u\)</span> such that</p>
 <p>since this <span class="math">\(u\)</span> will fit the discrete boundary condition.
 Assuming <span class="math">\(u=T(t)\sum_{j=0}^3a_jx^j\)</span>, we can use the above equation to
 determine the coefficients <span class="math">\(a_1,a_2,a_3\)</span>. A value, e.g., 1 can be used for
-<span class="math">\(a_0\)</span>. The following <code class="docutils literal"><span class="pre">sumpy</span></code> code computes this <span class="math">\(u\)</span>:</p>
+<span class="math">\(a_0\)</span>. The following <code class="docutils literal"><span class="pre">sympy</span></code> code computes this <span class="math">\(u\)</span>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">test_cubic2</span><span class="p">():</span>
     <span class="kn">import</span> <span class="nn">sympy</span> <span class="kn">as</span> <span class="nn">sm</span>
     <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s">&#39;x t c L dx&#39;</span><span class="p">)</span>
@@ -1847,7 +1848,7 @@ time level using an appropriate <code class="docutils literal"><span class="pre"
         <li class="right" >
           <a href="._main_wave002.html" title="Implementation"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Finite difference methods for wave motion</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Finite difference methods for wave equations</a> &raquo;</li> 
       </ul>
     </div>
 <div class="wrapper">

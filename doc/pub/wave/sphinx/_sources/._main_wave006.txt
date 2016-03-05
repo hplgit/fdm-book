@@ -68,7 +68,7 @@ program:
 
 .. math::
         
-        u^{n+1} = -u^{n-1}_{i,j} + 2u^n_{i,j} + \nonumber
+        u^{n+1}_{i,j} = -u^{n-1}_{i,j} + 2u^n_{i,j} + \nonumber
         
 
 .. _Eq:wave:2D3D:impl1:2Du0:ueq:discrete:
@@ -83,7 +83,7 @@ program:
         
 
 for all interior mesh points :math:`i\in{{\mathcal{I^i}_x}}` and
-:math:`j\in{{\mathcal{I^i}_y}}`, and for :math:`n\in{{\mathcal{I^+}_t}}`.
+:math:`j\in{{\mathcal{I^i}_y}}`, for :math:`n\in{{\mathcal{I^+}_t}}`.
 The constants :math:`C_x` and :math:`C_y` are defined as
 
 .. math::
@@ -101,7 +101,14 @@ is combined with the discretization of the initial condition :math:`u_t=V`,
 
 .. math::
         
-        u^{1} = u^0_{i,j} + \Delta t V_{i,j} + \nonumber
+        u^{1}_{i,j} = u^0_{i,j} + \Delta t V_{i,j} + \nonumber
+        
+
+.. math::
+          
+        \quad {\frac{1}{2}}C_x^2(
+        u^{0}_{i+1,j} - 2u^{0}_{i,j} + u^{0}_{i-1,j}) + {\frac{1}{2}}C_y^2
+        (u^{0}_{i,j+1} - 2u^{0}_{i,j} + u^{0}_{i,j-1}) +\nonumber
         
 
 .. _Eq:wave:2D3D:impl1:2Du0:ueq:n0:discrete:
@@ -109,9 +116,7 @@ is combined with the discretization of the initial condition :math:`u_t=V`,
 .. math::
 
     \tag{118}
-    \quad {\frac{1}{2}}C_x^2(
-        u^{0}_{i+1,j} - 2u^{0}_{i,j} + u^{0}_{i-1,j}) + {\frac{1}{2}}C_y^2
-        (u^{0}_{i,j+1} - 2u^{0}_{i,j} + u^{0}_{i,j-1}) + \frac{1}{2}\Delta t^2f_{i,j}^n,
+    \quad \frac{1}{2}\Delta t^2f_{i,j}^n,
         
         
 
@@ -125,10 +130,10 @@ The algorithm is very similar to the one in 1D:
 
 4. For :math:`n=1,2,\ldots,N_t`:
 
- 1. Find :math:`u^{n+1}_{i,j}` from :ref:`(117) <Eq:wave:2D3D:impl1:2Du0:ueq:discrete>`
+ a. Find :math:`u^{n+1}_{i,j}` from :ref:`(117) <Eq:wave:2D3D:impl1:2Du0:ueq:discrete>`
     for all internal mesh points, :math:`i\in{{\mathcal{I^i}_x}}`, :math:`j\in{{\mathcal{I^i}_y}}`
 
- 2. Set :math:`u^{n+1}_{i,j}=0` for the boundaries :math:`i=0,N_x`, :math:`j=0,N_y`
+ b. Set :math:`u^{n+1}_{i,j}=0` for the boundaries :math:`i=0,N_x`, :math:`j=0,N_y`
 
 .. _wave2D3D:impl:scalar:
 
@@ -284,16 +289,17 @@ meshes, and probably useless in 3D beyond debugging of small test cases.
 Vectorization is therefore a must for multi-dimensional
 finite difference computations in Python. For example,
 with a mesh consisting of :math:`30\times 30` cells, vectorization
-brings down the CPU time by a factor of 70 (!).
+brings down the CPU time by a factor of 70 (!). Equally important,
+vectorized code can also easily be parallelized to take (usually)
+optimal advantage of parallel computer platforms.
 
-In the vectorized case, we must be able to evaluate user-given functions
-like :math:`I(x,y)` and :math:`f(x,y,t)` for the entire mesh in one operation (without
-loops). These user-given functions are
-provided as Python functions ``I(x,y)``
-and ``f(x,y,t)``, respectively.
-Having the one-dimensional coordinate arrays ``x`` and ``y`` is not
-sufficient when calling ``I`` and ``f`` in a vectorized way.
-We must extend ``x`` and ``y`` to their vectorized versions ``xv`` and ``yv``:
+In the vectorized case, we must be able to evaluate user-given
+functions like :math:`I(x,y)` and :math:`f(x,y,t)` for the entire mesh in one
+operation (without loops). These user-given functions are provided as
+Python functions ``I(x,y)`` and ``f(x,y,t)``, respectively.  Having the
+one-dimensional coordinate arrays ``x`` and ``y`` is not sufficient when
+calling ``I`` and ``f`` in a vectorized way.  We must extend ``x`` and ``y``
+to their vectorized versions ``xv`` and ``yv``:
 
 .. code-block:: python
 
@@ -316,11 +322,12 @@ setting the initial condition is just a matter of
 
         u_1[:,:] = I(xv, yv)
 
-One could also have written ``u_1 = I(xv, yv)`` and let ``u_1`` point
-to a new object, but vectorized operations often make use of
-direct insertion in the original array through ``u_1[:,:]``, because
-sometimes not all of the array is to be filled by such a function
-evaluation. This is the case with the computational scheme for :math:`u^{n+1}_{i,j}`:
+One could also have written ``u_1 = I(xv, yv)`` and let ``u_1`` point to a
+new object, but vectorized operations often make use of direct
+insertion in the original array through ``u_1[:,:]``, because sometimes
+not all of the array is to be filled by such a function
+evaluation. This is the case with the computational scheme for
+:math:`u^{n+1}_{i,j}`:
 
 .. code-block:: python
 
@@ -573,7 +580,8 @@ that the quadratic solution fits the special formula for
 :math:`u^1_{i,j}`. The details are left as :ref:`wave:exer:quadratic:2D`.
 The ``test_quadratic`` function in the
 `wave2D_u0.py <http://tinyurl.com/nm5587k/wave/wave2D_u0/wave2D_u0.py>`__
-program implements this verification as a nose test.
+program implements this verification as a proper test function
+for the pytest and nose frameworks.
 
 Using classes to implement a simulator
 ======================================

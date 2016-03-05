@@ -6,10 +6,10 @@ Automatically generated HTML file from DocOnce source
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="DocOnce: https://github.com/hplgit/doconce/" />
-<meta name="description" content="Finite difference methods for wave motion">
-<meta name="keywords" content="waves on a string,wave equation 1D,wave equation 1D, finite difference method,mesh finite differences,stencil 1D wave equation,mesh function,wave equation 1D, implementation,callback function,nose test,pytest test,unit testing,software testing nose,software testing pytest,closure,vectorization,scalar code,vectorization,array computing,array slices,slice,lambda function (Python),Neumann conditions,Dirichlet conditions,homogeneous Neumann conditions,homogeneous Dirichlet conditions,boundary conditions Neumann,boundary conditions Dirichlet,stencil Neumann boundary,index set notation,geometric mean,arithmetic mean,harmonic average,averaging geometric,averaging arithmetic,averaging harmonic,radiation condition,open boundary condition,boundary condition open (radiation),periodic boundary conditions,boundary conditions periodic,wave equation 1D, analytical properties,Fourier series,Fourier transform,discrete Fourier transform,wave equation 1D, exact numerical solution,Courant number,stability criterion,wave equation 1D, stability,wave equation 2D, implementation,index set notation">
+<meta name="description" content="Finite difference methods for wave equations">
+<meta name="keywords" content="waves on a string,wave equation 1D,wave equation 1D, finite difference method,mesh finite differences,stencil 1D wave equation,mesh function,wave equation 1D, implementation,callback function,verification polynomial solution,nose,pytest,unit testing,test function,closure,vectorization,parallelism,scalar code,vectorization,array computing,array slices,slice,lambda function (Python),Neumann conditions,Dirichlet conditions,homogeneous Neumann conditions,homogeneous Dirichlet conditions,boundary conditions Neumann,boundary conditions Dirichlet,stencil Neumann boundary,index set notation,geometric mean,arithmetic mean,harmonic average,averaging geometric,averaging arithmetic,averaging harmonic,radiation condition,open boundary condition,boundary condition open (radiation),periodic boundary conditions,boundary conditions periodic,wave equation 1D, analytical properties,Fourier series,Fourier transform,discrete Fourier transform,wave equation 1D, exact numerical solution,Courant number,stability criterion,wave equation 1D, stability,wave equation 2D, implementation,index set notation">
 
-<title>Finite difference methods for wave motion</title>
+<title>Finite difference methods for wave equations</title>
 
 
 <link href="https://cdn.rawgit.com/hplgit/doconce/master/bundled/html_styles/style_solarized_box/css/solarized_light_code.css" rel="stylesheet" type="text/css" title="light"/>
@@ -579,13 +579,13 @@ signal
 moving to the right in time with constant velocity \( c \).
 This feature can be explained as follows.
 At time \( t=0 \) the signal looks like \( g_R(x) \). Introducing a
-moving \( x \) axis with coordinates \( \xi = x-ct \), we see the function
-\( g_R(\xi) \) is "at rest"
+moving horizontal with coordinates \( \xi = x-ct \), we see the function
+\( g_R(\xi) \) is &quot;at rest&quot;
 in the \( \xi \) coordinate system, and the shape is always
 the same. Say the \( g_R(\xi) \) function has a peak at \( \xi=0 \). This peak
 is located at \( x=ct \), which means that it moves with the velocity
 \( dx/dt=c \) in the \( x \) coordinate system. Similarly, \( g_L(x+ct) \)
-is a function initially with shape \( g_L(x) \) that moves in the negative
+is a function, initially with shape \( g_L(x) \), that moves in the negative
 \( x \) direction with constant velocity \( c \) (introduce \( \xi=x+ct \),
 look at the point \( \xi=0 \), \( x=-ct \), which has velocity \( dx/dt=-c \)).
 
@@ -602,11 +602,12 @@ we get, with \( u \) as in <a href="#mjx-eqn-75">(75)</a>,
 
 $$
 \begin{equation*}
-g_R(x) + g_L(x) = I(x),\quad -cg_R'(x) + cg_L'(x) = 0,
+g_R(x) + g_L(x) = I(x),\quad -cg_R'(x) + cg_L'(x) = 0\tp
 \end{equation*}
 $$
 
-which have the solution \( g_R=g_L=I/2 \), and consequently
+The former suggests \( g_R=g_L \), and the former then leads to
+\( g_R=g_L=I/2 \). Consequently,
 
 $$
 \begin{equation}
@@ -631,7 +632,7 @@ other one to the right.
 </div>
 <p><em>Splitting of the initial profile into two waves.</em></p>
 
-<!-- Issue warning if only .ogg or .webm movie in a Safari browser -->
+<!-- Issue warning if in a Safari browser -->
 <script language="javascript">
 if (!!(window.safari)) {
   document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
@@ -760,7 +761,7 @@ components \( e^{ikx} \) for very large \( k \), because the shortest possible
 sine or cosine wave that can be represented uniquely
 on a mesh with spacing \( \Delta x \)
 is the wave with wavelength \( 2\Delta x \). This wave has its peaks
-and throughs at every two mesh points. That is, the &quot;jumps up and down&quot;
+and throughs at every two mesh points. That is, the wave &quot;jumps up and down&quot;
 between the mesh points.
 
 <p>
@@ -830,7 +831,7 @@ $$
 \end{equation}
 $$
 
-for the wave equation \( u_t = c^2u_{xx} \) allows basic wave components
+for the wave equation \( u_{tt} = c^2u_{xx} \) allows basic wave components
 
 $$ u^n_q=e^{i(kx_q - \tilde\omega t_n)} $$
 
@@ -849,7 +850,8 @@ questions:
 </ul>
 
 The following analysis will answer these questions. We shall
-continue using \( q \) as counter for the mesh point in \( x \) direction.
+continue using \( q \) as an identifier for a certain mesh point in
+the \( x \) direction.
 
 <h3 id="___sec81">Preliminary results </h3>
 
@@ -1087,9 +1089,9 @@ parameters in the problem into a dependence on two dimensionless
 numbers, \( C \) and \( p \).
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="wave:pde1:fig:disprel"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 6:  The fractional error in the wave velocity for different Courant numbers.  <div id="wave:pde1:fig:disprel"></div> </p></center>
+<center><p class="caption">Figure 6:  The fractional error in the wave velocity for different Courant numbers.   <!-- caption label: wave:pde1:fig:disprel --> </p></center>
 <p><img src="fig-wave/disprel.png" align="bottom" width=600></p>
 </center>
 
@@ -1137,7 +1139,7 @@ p**<span style="color: #B452CD">2</span>*(C**<span style="color: #B452CD">2</spa
 <span style="color: #B452CD">1.0</span>
 </pre></div>
 <p>
-Note that without the <code>.removeO()</code> call the series get an <code>O(x**7)</code> term
+Note that without the <code>.removeO()</code> call the series gets an <code>O(x**7)</code> term
 that makes it impossible to convert the series to a Python function
 (for, e.g., plotting).
 
@@ -1202,7 +1204,8 @@ The typical analytical solution of a 2D wave equation
 $$ u_{tt} = c^2(u_{xx} + u_{yy}), $$
 
 is a wave traveling in the direction of \( \kk = k_x\ii + k_y\jj \), where
-\( \ii \) and \( \jj \) are unit vectors in the \( x \) and \( y \) directions, respectively.
+\( \ii \) and \( \jj \) are unit vectors in the \( x \) and \( y \) directions, respectively
+(\( \ii \) must not be confused with \( i=\sqrt{-1} \)).
 Such a wave can be expressed by
 
 $$ u(x,y,t) = g(k_xx + k_yy - kct) $$
@@ -1215,7 +1218,7 @@ We can, in particular, build a solution by adding complex Fourier components
 of the form
 
 $$
-\exp{(i(k_xx + k_yy - \omega t))}
+e^{(i(k_xx + k_yy - \omega t))}
 \tp
 $$
 
@@ -1232,7 +1235,7 @@ $$
 This equation admits a Fourier component
 $$
 \begin{equation}
-u^n_{q,r} = \exp{\left( i(k_x q\Delta x + k_y r\Delta y -
+u^n_{q,r} = e^{\left( i(k_x q\Delta x + k_y r\Delta y -
 \tilde\omega n\Delta t)\right)},
 \tag{94}
 \end{equation}
@@ -1260,8 +1263,8 @@ $$
 
 where we have eliminated the factor 4 and introduced the symbols
 
-$$ C_x = \frac{c^2\Delta t^2}{\Delta x^2},\quad
-C_y = \frac{c^2\Delta t^2}{\Delta y^2}, \quad
+$$ C_x = \frac{c\Delta t}{\Delta x},\quad
+C_y = \frac{c\Delta t}{\Delta y}, \quad
 p_x = \frac{k_x\Delta x}{2},\quad
 p_y = \frac{k_y\Delta y}{2}\tp
 $$
@@ -1351,7 +1354,7 @@ The numerical frequency \( \tilde\omega \)
 is now a function of three parameters:
 
 <ul>
-  <li> \( C \), reflecting the number cells a wave is displaced during a time step,</li>
+  <li> \( C \), reflecting the number of cells a wave is displaced during a time step,</li>
   <li> \( p=\half kh \), reflecting the number of cells per wave length in space,</li>
   <li> \( \theta \), expressing the direction of the wave.</li>
 </ul>
@@ -1431,9 +1434,9 @@ plt.savefig(<span style="color: #CD5555">&#39;disprel2D.png&#39;</span>);  plt.s
 plt.show()
 </pre></div>
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="wave:pde1:fig:disprel2D"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 7:  Error in numerical dispersion in 2D. <div id="wave:pde1:fig:disprel2D"></div> </p></center>
+<center><p class="caption">Figure 7:  Error in numerical dispersion in 2D.  <!-- caption label: wave:pde1:fig:disprel2D --> </p></center>
 <p><img src="fig-wave/disprel2D.png" align="bottom" width=600></p>
 </center>
 

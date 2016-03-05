@@ -2661,14 +2661,14 @@ A short form of the diffusion equation with variable coefficients is
 Discretization          (1)
 ---------------------------
 
-We can discretize :ref:`(69) <Eq:diffu:pde2>` by a :math:`theta`-rule in time
+We can discretize :ref:`(69) <Eq:diffu:pde2>` by a :math:`\theta`-rule in time
 and centered differences in space:
 
 .. math::
          \lbrack D_t u\rbrack^{n+\frac{1}{2}} = \theta\lbrack D_x\overline{{\alpha}}^x
-        D_x u + f\rbrack]^{n+1} +
+        D_x u + f\rbrack^{n+1} +
         (1-\theta)\lbrack D_x\overline{{\alpha}}^x
-        D_x u + f\rbrack]^{n}{\thinspace .}
+        D_x u + f\rbrack^{n}{\thinspace .}
 
 Written out, this becomes
 
@@ -2680,8 +2680,8 @@ Written out, this becomes
         - {\alpha}_{i-\frac{1}{2}}(u^{n+1}_i - u^{n+1}_{i+1})) +\\ 
         &\quad (1-\theta)\frac{1}{\Delta x^2}
         ({\alpha}_{i+\frac{1}{2}}(u^{n}_{i+1} - u^{n}_{i})
-        - {\alpha}_{i-\frac{1}{2}}(u^{n}_i - u^{n}_{i+1})) +
-        \theta f_i^{n+1} + (1-\theta)f_i^{n},
+        - {\alpha}_{i-\frac{1}{2}}(u^{n}_i - u^{n}_{i+1})) +\\ 
+        &\quad \theta f_i^{n+1} + (1-\theta)f_i^{n},
         
 
 where, e.g., an arithmetic mean can to be used for :math:`{\alpha}_{i+\frac{1}{2}}`:
@@ -2689,12 +2689,88 @@ where, e.g., an arithmetic mean can to be used for :math:`{\alpha}_{i+\frac{1}{2
 .. math::
          {\alpha}_{i+\frac{1}{2}} = \frac{1}{2}({\alpha}_i + {\alpha}_{i+1}){\thinspace .}
 
+.. _diffu:varcoeff:impl:
+
+Implementation          (2)
+---------------------------
+
+Suitable code for solving the discrete equations is very similar to
+what we created for a constant :math:`{\alpha}`.
+Since the Fourier number has no meaning for varying
+:math:`{\alpha}`, we introduce a related parameter :math:`D=\Delta t /\Delta x^2`.
+
+.. code-block:: python
+
+        def solver_theta(I, a, L, Nx, D, T, theta=0.5, u_L=1, u_R=0,
+                         user_action=None):
+            x = linspace(0, L, Nx+1)   # mesh points in space
+            dx = x[1] - x[0]
+            dt = D*dx**2
+            Nt = int(round(T/float(dt)))
+            t = linspace(0, T, Nt+1)   # mesh points in time
+        
+            u   = zeros(Nx+1)   # solution array at t[n+1]
+            u_1 = zeros(Nx+1)   # solution at t[n]
+        
+            Dl = 0.5*D*theta
+            Dr = 0.5*D*(1-theta)
+        
+            # Representation of sparse matrix and right-hand side
+            diagonal = zeros(Nx+1)
+            lower    = zeros(Nx)
+            upper    = zeros(Nx)
+            b        = zeros(Nx+1)
+        
+            # Precompute sparse matrix (scipy format)
+            diagonal[1:-1] = 1 + Dl*(a[2:] + 2*a[1:-1] + a[:-2])
+            lower[:-1] = -Dl*(a[1:-1] + a[:-2])
+            upper[1:]  = -Dl*(a[2:] + a[1:-1])
+            # Insert boundary conditions
+            diagonal[0] = 1
+            upper[0] = 0
+            diagonal[Nx] = 1
+            lower[-1] = 0
+        
+            A = scipy.sparse.diags(
+                diagonals=[diagonal, lower, upper],
+                offsets=[0, -1, 1],
+                shape=(Nx+1, Nx+1),
+                format='csr')
+        
+            # Set initial condition
+            for i in range(0,Nx+1):
+                u_1[i] = I(x[i])
+        
+            if user_action is not None:
+                user_action(u_1, x, t, 0)
+        
+            # Time loop
+            for n in range(0, Nt):
+                b[1:-1] = u_1[1:-1] + Dr*(
+                    (a[2:] + a[1:-1])*(u_1[2:] - u_1[1:-1]) -
+                    (a[1:-1] + a[0:-2])*(u_1[1:-1] - u_1[:-2]))
+                # Boundary conditions
+                b[0]  = u_L(t[n+1])
+                b[-1] = u_R(t[n+1])
+                # Solve
+                u[:] = scipy.sparse.linalg.spsolve(A, b)
+        
+                if user_action is not None:
+                    user_action(u, x, t, n+1)
+        
+                # Switch variables before next step
+                u_1, u = u, u_1
+
+The code is found in the file `diffu1D_vc.py <http://tinyurl.com/nm5587k/diffu/diffu1D_vc.py>`__.
+
 .. _diffu:varcoeff:stationary:
 
 Stationary solution
 -------------------
 
-As :math:`t\rightarrow\infty`, the solution of the above problem will approach
+As :math:`t\rightarrow\infty`, the solution of the
+problem :ref:`(69) <Eq:diffu:pde2>`-:ref:`(72) <Eq:diffu:pde2:bc:L>`
+will approach
 a stationary limit where :math:`\partial u/\partial t=0`. The governing
 equation is then
 
@@ -2772,10 +2848,10 @@ equation where one is to differentiate, but a discontinuous :math:`\alpha`
 is compensated by a discontinuous :math:`u_x` such that :math:`\alpha u_x` is
 continuous and therefore can be differentiated as :math:`(\alpha u_x)_x`.
 
-.. _diffu:varcoeff:impl:
+.. _diffu:varcoeff:impl:piecewise:
 
-Implementation          (2)
----------------------------
+Implementation of diffusion in a piecewise constant medium
+----------------------------------------------------------
 
 Programming with piecewise function definition quickly becomes
 cumbersome as the most naive approach is to test for which interval
@@ -3244,7 +3320,7 @@ We collect the unknowns on the left-hand side
 where
 
 .. math::
-         F_x = \frac{{\alpha}\Delta t}{\Delta x^2},\quad F_y = \frac{{\alpha}\Delta t}{\Delta x^y},
+         F_x = \frac{{\alpha}\Delta t}{\Delta x^2},\quad F_y = \frac{{\alpha}\Delta t}{\Delta y^2},
 
 are the Fourier numbers in :math:`x` and :math:`y` direction, respectively.
 
@@ -4323,7 +4399,7 @@ considered to be converged.
 Numerical scheme and linear system
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To illustrate the idea of the Jacobi method, we simply the numerical scheme to the
+To illustrate the idea of the Jacobi method, we simplify the numerical scheme to the
 Backward Euler case, :math:`\theta=1`, so there are fewer terms to write:
 
 .. math::
@@ -4509,13 +4585,13 @@ is less than some tolerance:
 Code-friendly notation
 ~~~~~~~~~~~~~~~~~~~~~~
 
-To make the mathematics as close as possible to what we will write in a
-computer, we may introduce some new notation: :math:`u_{i,j}` is a short notation
-for :math:`u^{n+1,r+1}_{i,j}`, :math:`u^{-}_{i,j}` is a short notation for
-:math:`u^{n+1,r}_{i,j}`, and :math:`u^{(s)}_{i,j}` denotes :math:`u^{n+1-s}_{i,j}`.
-That is, :math:`u_{i,j}` is the unknown, :math:`u^{-}_{i,j}`
-is its most recently computed approximation, and :math:`s` counts time levels
-backwards in time. The Jacobi method
+To make the mathematics as close as possible to what we will write in
+a computer program, we may introduce some new notation: :math:`u_{i,j}` is a
+short notation for :math:`u^{n+1,r+1}_{i,j}`, :math:`u^{-}_{i,j}` is a short
+notation for :math:`u^{n+1,r}_{i,j}`, and :math:`u^{(s)}_{i,j}` denotes
+:math:`u^{n+1-s}_{i,j}`.  That is, :math:`u_{i,j}` is the unknown, :math:`u^{-}_{i,j}`
+is its most recently computed approximation, and :math:`s` counts time
+levels backwards in time. The Jacobi method
 (ref:ref:`(98) <Eq:diffu:2D:Jacobi>`) takes the following form with the new
 notation:
 
@@ -4583,10 +4659,10 @@ Implementation of the Jacobi method
 -----------------------------------
 
 The Jacobi method needs no coefficient matrix and right-hand side
-vector, but it needs an array for :math:`u` in the previous iteration.
-We call this array ``u_`` (using the notation at the end of the previous
-section), the unknown is ``u``, and ``u_1`` is, as usual, the computed solution
-one time level back in time.
+vector, but it needs an array for :math:`u` in the previous iteration.  We
+call this array ``u_``, using the notation at the end of the previous
+section (at the same time level). The unknown itself is called ``u``,
+while ``u_1`` is the computed solution one time level back in time.
 With a :math:`\theta` rule in time, the time loop can be coded like this:
 
 .. code-block:: python
@@ -4728,7 +4804,7 @@ the discrete ``u`` if :math:`N_x` and :math:`N_y` are even numbers. We can then
 compute :math:`E_u` as :math:`E_u = |\max {u_{\small\mbox{e}}} - \max u|`, when we know an exact
 solution :math:`{u_{\small\mbox{e}}}` of the problem.
 
-What about :math:`E_\Delta`? If we use the maximum value as measure of the
+What about :math:`E_\Delta`? If we use the maximum value as a measure of the
 error, we have in fact analytical insight into the approximation error in this
 particular problem. According to the section :ref:`diffu:2D:analysis`, the exact
 solution :ref:`(107) <Eq:diffu:2D:Jacobi:impl:hill:uex>` of the PDE problem is
@@ -4772,9 +4848,9 @@ the discretization error. In that case,
 The corresponding number of Jacobi
 iterations (with :math:`\omega=1`) varies from 31 to 12 during the
 time simulation (for :math:`\max u >
-0.02`). Changing the tolerance to :math:`10^{-5}` requires much more
+0.02`). Changing the tolerance to :math:`10^{-5}` causes many more
 iterations (61 to 42) without giving any contribution to the overall
-accuracy since the total error is dominated by :math:`E_\Delta`.
+accuracy, because the total error is dominated by :math:`E_\Delta`.
 
 Also, with a :math:`N_x=N_y=20`, the spatial accuracy increases and many more
 iterations are needed (143 to 45), but the dominating error is from
@@ -4841,9 +4917,10 @@ These observations are quite disappointing: if we already have a
 time-dependent diffusion problem and want to take larger time steps by
 an implicit time discretization method, we will with the Jacobi method
 end up with something close to a slow Forward Euler simulation of the
-original problem at each time level.  Nevertheless, the Jacobi method
+original problem at each time level.  Nevertheless, the are two reasons
+for why the Jacobi method
 remains a fundamental building block for solving linear systems
-arising from PDEs of two reasons: 1) a couple of iterations removes
+arising from PDEs: 1) a couple of iterations remove
 large parts of the error and this is effectively used in the very
 efficient class of multigrid methods; and 2) the idea of the Jacobi
 method can be developed into more efficient methods, especially the
@@ -5019,17 +5096,8 @@ The strategy for vectorizing (and parallelizing) the Gauss-Seidel
 method is to use a special numbering of the mesh points called
 red-black numbering: every other point is red or black as in a
 checkerboard pattern. This numbering requires :math:`N_x` and :math:`N_y` to
-be even numbers. Here is an example on a :math:`4\times 4` mesh:
-
-.. code-block:: text
-
-        r b r b r
-        b r b r b
-        r b r b r
-        b r b r b
-        r b r b r
-
-And here is a :math:`6\times 6` mesh:
+be even numbers.
+Here is an example of a :math:`6\times 6` mesh:
 
 .. code-block:: text
 
@@ -5149,7 +5217,7 @@ with slice objects
 
         i = slice(2, None, 2);  j = slice(1, None, 2)
 
-The second set of black points are shown here:
+The second set of black points is shown here:
 
 .. code-block:: text
 
@@ -5167,7 +5235,7 @@ with slice objects
 
         i = slice(1, None, 2);  j = slice(2, None, 2)
 
-That is, we need four set of slices. The simplest way of implementing
+That is, we need four sets of slices. The simplest way of implementing
 the algorithm is to make a function with variables for the slices
 representing :math:`i`, :math:`i-1`, :math:`i+1`, :math:`j`, :math:`j-1`, and :math:`j+1`, here called
 ``ic`` ("i center"), ``im1`` ("i minus 1", ``ip1`` ("i plus 1"), ``jc``, ``jm1``,
@@ -5186,7 +5254,7 @@ and ``jp1``, respectively.
                  theta*dt*f_a_np1[ic,jc] + \ 
                  (1-theta)*dt*f_a_n[ic,jc])
 
-The formula returned form ``update`` is to be compared with
+The formula returned from ``update`` is to be compared with
 :ref:`(109) <Eq:diffu:2D:SOR3>`.
 
 The relaxed Jacobi iteration can be implemented by
@@ -5200,7 +5268,7 @@ The relaxed Jacobi iteration can be implemented by
             u_, u_1, ic, im1, ip1, jc, jm1, jp1)
         u[ic,jc] = omega*u_new[ic,jc] + (1-omega)*u_[ic,jc]
 
-The Gauss-Seidel (or SOR) updates needs four different steps.
+The Gauss-Seidel (or SOR) updates need four different steps.
 The ``ic`` and ``jc`` slices are specified above. For each of these,
 we must specify the corresponding ``im1``, ``ip1``, ``jm1``, and ``jp1``
 slices. The code below contain the details.
@@ -5289,7 +5357,7 @@ substitution).  When :math:`A` is a dense :math:`N\times N` matrix, the LU
 factorization costs :math:`\frac{1}{3}N^3` arithmetic operations, while the
 forward and backward substitution steps each require of
 the order :math:`N^2` arithmetic operations.
-That is, factorization dominates the costs and the substitution steps are
+That is, factorization dominates the costs, while the substitution steps are
 cheap.
 
 Symmetric, positive definite coefficient matrices often arise when
@@ -5301,19 +5369,18 @@ substitution (``scipy.linalg`` is the relevant Python package).
 
 Finite difference discretizations lead to sparse coefficient matrices.
 An extreme case arose in the section :ref:`diffu:pde1:BE` where :math:`A` is
-tridiagonal. The amount of arithmetic operations in the
-LU and Cholesky factorization algorithms is for a tridiagonal matrix just
-of the order :math:`N`, not :math:`N^3`. Tridiagonal matrices are special cases of *banded
-matrices*, where the matrices contain just a set of diagonal bands.
-Finite difference methods on regularly numbered
-rectangular and box-shaped meshes
-give rise to such banded matrices, with 5 bands in 2D and 7 in
-3D for diffusion problems.
-Gaussian elimination only needs to work within the bands, leading to
-much more efficient algorithms. For example,
-factorization of more general, sparse matrices can
-often take advantage of the sparsity through modified Gaussian elimination
-algorithms. The relevant Python package is ``scipy.sparse.linalg``.
+tridiagonal. For a tridiagonal matrix, the amount of arithmetic
+operations in the LU and Cholesky factorization algorithms is just of
+the order :math:`N`, not :math:`N^3`. Tridiagonal matrices are special cases of
+*banded matrices*, where the matrices contain just a set of diagonal
+bands.  Finite difference methods on regularly numbered rectangular
+and box-shaped meshes give rise to such banded matrices, with 5 bands
+in 2D and 7 in 3D for diffusion problems.  Gaussian elimination only
+needs to work within the bands, leading to much more efficient
+algorithms. For example, factorization of more general, sparse
+matrices can often take advantage of the sparsity through modified
+Gaussian elimination algorithms. The relevant Python package is
+``scipy.sparse.linalg``.
 
 Although a direct method is an exact algorithm, rounding errors
 may in practice accumulate and pollute the solution. The effect
@@ -5370,17 +5437,18 @@ and :math:`G^k` is a matrix exponential. For the method to converge,
 :math:`\lim_{r\rightarrow\infty}||G^r||=0` is a necessary and sufficient condition.
 This implies that the *spectral radius* of :math:`G` must be less than one.
 Since :math:`G` is directly related to the finite difference scheme for the
-underlying PDE problem, one can in principle compute the spectral radius,
-but in practice for a given PDE problem,
-this is not feasible and does not lead to
-useful formulas. Analysis of model problems, usually
+underlying PDE problem, one can in principle compute the spectral radius.
+For a given PDE problem, however, this is not a practical strategy, since it
+is very difficult to develop useful formulas.
+Analysis of model problems, usually
 related to the Poisson equation,
 reveals some trends of interest: the convergence rate of the Jacobi
 method goes like :math:`h^2`, while that of SOR with an optimal :math:`\omega` goes
 like :math:`h`, where :math:`h` is the spatial spacing: :math:`h=\Delta x=\Delta y`.
 That is, the efficiency of the Jacobi method quickly deteriorates with
-the mesh resolution, and SOR is much to be preferred, but the optimal
-:math:`\omega` remains an open question. We refer to
+the increasing mesh resolution, and SOR is much to be preferred
+(even if the optimal
+:math:`\omega` remains an open question). We refer to
 Chapter 4 of [Ref2]_ for more information on the convergence theory.
 One important result is that if :math:`A` is symmetric and positive definite,
 then SOR will converge for any :math:`0<\omega <2`.
@@ -5459,23 +5527,25 @@ for the system. That is, instead of solving :math:`Au=b`, we try to solve
 :math:`M^{-1}Au=M^{-1}b` in the hope that the method works better for this
 *preconditioned* system. The matrix :math:`M` is the *preconditioner* or
 preconditioning matrix.  Now we need to perform matrix-vector products
-:math:`M^{-1}Au`, which implies computing :math:`y=Au` and solving a system
-:math:`My=b`. Therefore, :math:`M` must be cheap to compute and systems :math:`My=b`
+:math:`y = M^{-1}Au`, which is done in two steps: first the matrix-vector
+product :math:`v=Au` is carried out and then the system
+:math:`My=v` must be solved.
+Therefore, :math:`M` must be cheap to compute and systems :math:`My=v`
 must be cheap to solve.
 
-A perfect preconditioner is :math:`M=A`, but in each
-iteration in the Conjugate gradient method one then has so solve a
-system with :math:`A` as coefficient matrix. A key idea is to let :math:`M` be
-some approximation to :math:`A`.
-The simplest preconditioner is to set :math:`M=D`, where
-:math:`D` is the diagonal of :math:`A`. This choice means running one Jacobi iteration
-as preconditioner. :ref:`diffu:exer:splitting_prec` shows that
-the Jacobi and SOR methods can also be viewed as preconditioners.
+A perfect preconditioner is :math:`M=A`, but in each iteration in the
+Conjugate gradient method one then has so solve a system with :math:`A` as
+coefficient matrix! A key idea is to let :math:`M` be some kind of *cheap
+approximation* to :math:`A`.  The simplest preconditioner is to set :math:`M=D`,
+where :math:`D` is the diagonal of :math:`A`. This choice means running one Jacobi
+iteration as preconditioner. :ref:`diffu:exer:splitting_prec`
+shows that the Jacobi and SOR methods can also be viewed as
+preconditioners.
 
-Constructing good preconditioners is a scientific field on its own. Here
-we shall treat the topic just very briefly. For a user having access to
-the ``scipy.sparse.linalg`` library, there are Conjugate gradient
-methods and preconditioners readily available:
+Constructing good preconditioners is a scientific field on its
+own. Here we shall treat the topic just very briefly. For a user
+having access to the ``scipy.sparse.linalg`` library, there are
+Conjugate gradient methods and preconditioners readily available:
 
  * For positive definite, symmetric systems: ``cg`` (the Conjugate gradient method)
 
@@ -5589,7 +5659,7 @@ molecules, but an average of a large number of molecules is performed
 in a small volume before the modeling starts, and the averaged
 quantity inside this volume is assigned as a point value at the
 centroid of the volume. This means that concentration, temperature,
-and velocity at a space-time point represent an average around the
+and velocity at a space-time point represent averages around the
 point in a small time interval and small spatial volume.
 
 Random walk is a principally totally different kind of modeling procedure.
@@ -5601,10 +5671,10 @@ molecules, much simpler and computationally much more efficient than
 direct `molecular simulation <https://en.wikipedia.org/wiki/Molecular_dynamics>`__,
 yet the random walk model has been very powerful to describe a wide
 range of phenomena, including heat conduction, quantum mechanics,
-polymer chains, population genetics, brain research, hazard games, and
+polymer chains, population genetics, neuroscience, hazard games, and
 pricing of financial instruments.
 
-It can be shown that random walk, when averaged, produce models that
+It can be shown that random walk, when averaged, produces models that
 are mathematically equivalent to diffusion equations. This is the
 primary reason why we treat random walk in this chapter: two very
 different algorithms (finite difference stencils and random walk)
@@ -6106,7 +6176,7 @@ Improved vectorized version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Looking at the vectorized version above, we still have one potentially
-long over ``n``. Normally, ``num_walks`` will be much larger than ``N``.
+long Python loop over ``n``. Normally, ``num_walks`` will be much larger than ``N``.
 The vectorization of the loop over ``N`` certainly speeds up the program,
 but if we think of vectorization as also a way to parallelize the code,
 all the independent walks (the ``n`` loop) can be executed in parallel.
@@ -6311,7 +6381,7 @@ function.
 First, we need to check that the simulation of multiple random walks
 reproduces the results of ``random_walk1D``, ``random_walk1D_vec1``, and
 ``random_walk1D_vec2`` for the first walk, if the seed is the
-same. Second, we run three random walks with ``N=4`` with the scalar and
+same. Second, we run three random walks (``N=4``) with the scalar and
 the two vectorized versions and check that the returned arrays are
 identical.
 
@@ -6390,7 +6460,7 @@ We arrive at the test function below.
                 assert (s == v).all(), msg
 
 Such test functions are indispensable for further development of the code
-as we can anytime test that the basic computations remain correct.
+as we can at any time test whether the basic computations remain correct or not.
 This is particularly important in stochastic simulations since without
 test functions and fixed seeds, we always experience variations from run to
 run, and it can be very difficult to spot bugs through averaged statistical
@@ -6832,7 +6902,7 @@ the volume of the substance flowing out through :math:`dS` in a small
 time interval :math:`\Delta t` is :math:`\varrho \boldsymbol{q}\cdot\boldsymbol{n} \Delta t \Delta S`,
 where :math:`\boldsymbol{n}` is an outward unit
 normal to the boundary :math:`\partial V`, see Figure :ref:`diffu:app:substance:fig1`.
-We realize that only normal component of :math:`\boldsymbol{q}` is able to transport mass
+We realize that only the normal component of :math:`\boldsymbol{q}` is able to transport mass
 in and out of :math:`V`.
 The total outflow of the mass of the substance in a small time interval
 :math:`\Delta t` becomes the surface integral
@@ -7036,8 +7106,8 @@ supplied generated heat becomes
 .. math::
          \int\limits_V f\Delta t dV{\thinspace .}
 
-Adding this to the integral statement reflecting the first law of
-thermodynamics and continuing the derivation leads to the PDE
+Adding this to the integral statement of the (simplified) first law of
+thermodynamics, and continuing the derivation, leads to the PDE
 
 .. _Eq:diffu:app:heat:PDE2:
 
@@ -7083,14 +7153,14 @@ system, we need a relation between the heat flux :math:`\boldsymbol{q}` and the 
 called Fourier's law:
 
 .. math::
-         \boldsymbol{q} = -{\alpha}\nabla T,
+         \boldsymbol{q} = -k\nabla T,
 
-which simply states that heat flows from cold to hot areas, along the
-path of greatest variation. In a solid medium, :math:`\alpha` depends on the
+which simply states that heat flows from hot to cold areas, along the
+path of greatest variation. In a solid medium, :math:`k` depends on the
 material of the medium, and in multi-material media one must regard
-:math:`{\alpha}` as spatially dependent. In a fluid, it is common to assume that
-:math:`{\alpha}` is a constant. The value of :math:`{\alpha}` reflects how easy heat is
-conducted through the medium, and :math:`{\alpha}` is named the *coefficient of
+:math:`k` as spatially dependent. In a fluid, it is common to assume that
+:math:`k` is a constant. The value of :math:`k` reflects how easy heat is
+conducted through the medium, and :math:`k` is named the *coefficient of
 heat conduction*.
 
 We have now one scalar PDE for the unknown temperature field :math:`T(\boldsymbol{x},t)`:
@@ -7100,9 +7170,11 @@ We have now one scalar PDE for the unknown temperature field :math:`T(\boldsymbo
 .. math::
 
     \tag{124}
-    \varrho  c_v\frac{\partial T}{\partial t} = \nabla\cdot({\alpha}\nabla T) + f{\thinspace .}
+    \varrho  c_v\frac{\partial T}{\partial t} = \nabla\cdot(k\nabla T) + f{\thinspace .}
         
         
+
+.. _diffu:app:Couette:
 
 Development of flow between two flat plates
 -------------------------------------------
@@ -7182,7 +7254,64 @@ the adjusted boundary condition
 Tribology: thin film fluid flow
 -------------------------------
 
-Thin fluid films are extremely important in many industries.
+Thin fluid films are extremely important inside machinery to reduce friction
+between gliding surfaces. The mathematical model for the fluid motion takes
+the form of a diffusion problem and is quickly derived here.
+We consider two solid surfaces whose distance is described by a
+gap function :math:`h(x,y)`. The space between these surfaces is filled with
+a fluid with dynamic viscosity :math:`\mu`. The fluid may move partially
+because of pressure gradients and partially because the surfaces
+move. Let :math:`U\boldsymbol{i} + V\boldsymbol{j}` be the relative velocity of the two surfaces and
+:math:`p` the pressure in the fluid. The mathematical model builds on two
+principles: 1) conservation of mass, 2) assumption of locally quasi-static
+flow between flat plates.
+
+The conservation of mass equation reads :math:`\nabla\cdot\boldsymbol{u}`, where :math:`\boldsymbol{u}` is
+the local fluid velocity. For thin films the detailed variation between
+the surfaces is not of interest, so :math:`\nabla\cdot\boldsymbol{u} = 0` is integrated
+(average) in the direction perpendicular to the surfaces. This gives
+rise to the alternative mass conservation equation
+
+.. math::
+         \nabla\cdot\boldsymbol{q} = 0,\quad \boldsymbol{q} = \int\limits_0^{h(x,y)}\boldsymbol{u} dz,
+
+where :math:`z` is the coordinate perpendicular to the surfaces, and :math:`\boldsymbol{q}`
+is then the volume flux in the fluid gap.
+
+Locally, we may assume that we have steady flow between two flat
+surfaces, with a pressure gradient and where the lower surface is at rest
+and the upper moves with velocity :math:`U\boldsymbol{i} + V\boldsymbol{j}`.
+The corresponding mathematical problem is actually the limit problem
+in the section :ref:`diffu:app:Couette` as :math:`t\rightarrow\infty`. The limit
+problem can be solved analytically, and the local volume flux becomes
+
+.. math::
+         \boldsymbol{q}(x,y,z) = \int\limits_0^{h}\boldsymbol{u}(x,y,z) dz
+        = -\frac{h^3}{12\mu}\nabla p + \frac{1}{2} Uh\boldsymbol{i} + \frac{1}{2} Vh\boldsymbol{j}{\thinspace .}
+
+The idea is to use this expression locally
+also when the surfaces are not flat,
+but slowly varying, and if :math:`U`, :math:`V`, or :math:`p` varies in time, provided the
+time variation is sufficiently slow. This is a common quasi-static
+approximation much used in mathematical modeling.
+
+Inserting the expression for :math:`\boldsymbol{q}` via :math:`p`, :math:`U`, and :math:`V` in the
+equation :math:`\nabla\boldsymbol{q} = 0` gives a diffusion PDE for :math:`p`:
+
+.. _Eq:_auto57:
+
+.. math::
+
+    \tag{125}
+    \nabla\cdot\left(\frac{h^3}{12\mu}\nabla p\right) =
+        \frac{1}{2}\frac{\partial}{\partial x}(hU)
+        + \frac{1}{2}\frac{\partial}{\partial x}(hV){\thinspace .}
+        
+        
+
+The boundary conditions must involve :math:`p` or :math:`\boldsymbol{q}` at the boundary.
+
+[**hpl 12**: Exercise!]
 
 Propagation of electrical signals in the brain
 ----------------------------------------------
@@ -7197,7 +7326,7 @@ Propagation of electrical signals in the brain
 
 One can make a model of how electrical signals are propagated along the
 neuronal fibers that receive synaptic inputs in the brain. The signal
-propagation is one-dimensional and can is the simplest cases be
+propagation is one-dimensional and can, in the simplest cases, be
 governed by the `Cable equation <http://en.wikipedia.org/wiki/Cable_equation>`__:
 
 .. math::
@@ -7210,7 +7339,7 @@ governed by the `Cable equation <http://en.wikipedia.org/wiki/Cable_equation>`__
 where :math:`V(x,t)` is the voltage to be determined,
 :math:`c_m` is capacitance of the neuronal fiber, while
 :math:`r_l` and :math:`r_m` are measures of the resistance.
-The boundary conditions of often taken as :math:`V=0` at a short circuit or open end,
+The boundary conditions are often taken as :math:`V=0` at a short circuit or open end,
 :math:`\partial V/\partial x=0` at a sealed end, or :math:`\partial V/\partial x \propto
 V` where there is an injection of current.
 
@@ -7272,7 +7401,7 @@ conditions:
 
 .. math::
 
-    \tag{125}
+    \tag{126}
     u_t = \alpha u_xx,  x\in \Omega =(0,L),\ t\in (0,T],
          
         
@@ -7281,7 +7410,7 @@ conditions:
 
 .. math::
 
-    \tag{126}
+    \tag{127}
     u(0,t) = u(L,t) = 0,  t\in (0,T],
         
         
@@ -7290,7 +7419,7 @@ conditions:
 
 .. math::
 
-    \tag{127}
+    \tag{128}
     u(x,0) = I(x),  x\in [0,L]
         
         {\thinspace .}
@@ -7302,7 +7431,7 @@ The energy estimate for this problem reads
 
 .. math::
 
-    \tag{128}
+    \tag{129}
     ||u||_{L^2} \leq ||I||_{L^2},
         
         
@@ -7313,7 +7442,7 @@ where the :math:`||\cdot ||_{L^2}` norm is defined by
 
 .. math::
 
-    \tag{129}
+    \tag{130}
     ||g||_{L^2} = \sqrt{\int_0^L g^2dx}{\thinspace .}
         
         
@@ -7323,18 +7452,18 @@ as the *energy* of the solution, although it is not the physical
 energy of the system. A mathematical tradition has introduced the
 notion *energy* in this context.
 
-The estimate :ref:`(128) <Eq:diffu:exer:estimates:p1:result>` says that the
+The estimate :ref:`(129) <Eq:diffu:exer:estimates:p1:result>` says that the
 "size of $u$" never exceeds that of the initial condition, or
 more equivalently, that the area under the :math:`u` curve decreases
 with time.
 
-To show :ref:`(128) <Eq:diffu:exer:estimates:p1:result>`, multiply the PDE
+To show :ref:`(129) <Eq:diffu:exer:estimates:p1:result>`, multiply the PDE
 by :math:`u` and integrate from :math:`0` to :math:`L`. Use that :math:`uu_t` can be
 expressed as the time derivative of :math:`u^2` and that :math:`u_xxu` can
 integrated by parts to form an integrand :math:`u_x^2`. Show that
 the time derivative of :math:`||u||_{L^2}^2` must be less than or equal
 to zero. Integrate this expression and derive
-:ref:`(128) <Eq:diffu:exer:estimates:p1:result>`.
+:ref:`(129) <Eq:diffu:exer:estimates:p1:result>`.
 
 .. `<http://www.ann.jussieu.fr/~frey/cours/UdC/ma691/ma691_ch6.pdf>`_
 
@@ -7345,7 +7474,7 @@ Now we address a slightly different problem,
 
 .. math::
 
-    \tag{130}
+    \tag{131}
     u_t = \alpha u_xx + f(x,t),  x\in \Omega =(0,L),\ t\in (0,T],
          
         
@@ -7354,7 +7483,7 @@ Now we address a slightly different problem,
 
 .. math::
 
-    \tag{131}
+    \tag{132}
     u(0,t) = u(L,t) = 0,  t\in (0,T],
         
         
@@ -7363,7 +7492,7 @@ Now we address a slightly different problem,
 
 .. math::
 
-    \tag{132}
+    \tag{133}
     u(x,0) = 0,  x\in [0,L]
         
         {\thinspace .}
@@ -7375,7 +7504,7 @@ The associated energy estimate is
 
 .. math::
 
-    \tag{133}
+    \tag{134}
     ||u||_{L^2} \leq ||f||_{L^2}{\thinspace .}
         
         
@@ -7389,7 +7518,7 @@ a right-hand side :math:`f(x,t)`:
 
 .. math::
 
-    \tag{134}
+    \tag{135}
     u_t = \alpha u_xx + f(x,t),  x\in \Omega =(0,L),\ t\in (0,T],
          
         
@@ -7398,7 +7527,7 @@ a right-hand side :math:`f(x,t)`:
 
 .. math::
 
-    \tag{135}
+    \tag{136}
     u(0,t) = u(L,t) = 0,  t\in (0,T],
         
         
@@ -7407,49 +7536,49 @@ a right-hand side :math:`f(x,t)`:
 
 .. math::
 
-    \tag{136}
+    \tag{137}
     u(x,0) = I(x),  x\in [0,L]
         
         {\thinspace .}
         
 
 Show that if :math:`w_1` fulfills
-:ref:`(125) <Eq:diffu:exer:estimates:p1:pdf>`-:ref:`(127) <Eq:diffu:exer:estimates:p1:ic>`
+:ref:`(126) <Eq:diffu:exer:estimates:p1:pdf>`-:ref:`(128) <Eq:diffu:exer:estimates:p1:ic>`
 and :math:`w_2` fulfills
-:ref:`(130) <Eq:diffu:exer:estimates:p2:pdf>`-:ref:`(132) <Eq:diffu:exer:estimates:p2:ic>`,
+:ref:`(131) <Eq:diffu:exer:estimates:p2:pdf>`-:ref:`(133) <Eq:diffu:exer:estimates:p2:ic>`,
 then :math:`u=w_1 + w_2` is the solution of
-:ref:`(134) <Eq:diffu:exer:estimates:p3:pdf>`-:ref:`(136) <Eq:diffu:exer:estimates:p3:ic>`.
+:ref:`(135) <Eq:diffu:exer:estimates:p3:pdf>`-:ref:`(137) <Eq:diffu:exer:estimates:p3:ic>`.
 Using the triangle inequality for norms,
 
 .. math::
          ||a + b|| \leq ||a|| + ||b||,
 
 show that the energy estimate for
-:ref:`(134) <Eq:diffu:exer:estimates:p3:pdf>`-:ref:`(136) <Eq:diffu:exer:estimates:p3:ic>`
+:ref:`(135) <Eq:diffu:exer:estimates:p3:pdf>`-:ref:`(137) <Eq:diffu:exer:estimates:p3:ic>`
 becomes
 
 .. _Eq:diffu:exer:estimates:p3:result:
 
 .. math::
 
-    \tag{137}
+    \tag{138}
     ||u||_{L^2} \leq ||I||_{L^2} + ||f||_{L^2}{\thinspace .}
         
         
 
 **c)**
-One application of :ref:`(137) <Eq:diffu:exer:estimates:p3:result>` is to prove uniqueness
+One application of :ref:`(138) <Eq:diffu:exer:estimates:p3:result>` is to prove uniqueness
 of the solution.
 Suppose :math:`u_1` and :math:`u_2` both fulfill
-:ref:`(134) <Eq:diffu:exer:estimates:p3:pdf>`-:ref:`(136) <Eq:diffu:exer:estimates:p3:ic>`.
+:ref:`(135) <Eq:diffu:exer:estimates:p3:pdf>`-:ref:`(137) <Eq:diffu:exer:estimates:p3:ic>`.
 Show that :math:`u=u_1 - u_2` then fulfills
-:ref:`(134) <Eq:diffu:exer:estimates:p3:pdf>`-:ref:`(136) <Eq:diffu:exer:estimates:p3:ic>`
-with :math:`f=0` and :math:`I=0`. Use :ref:`(137) <Eq:diffu:exer:estimates:p3:result>`
+:ref:`(135) <Eq:diffu:exer:estimates:p3:pdf>`-:ref:`(137) <Eq:diffu:exer:estimates:p3:ic>`
+with :math:`f=0` and :math:`I=0`. Use :ref:`(138) <Eq:diffu:exer:estimates:p3:result>`
 to deduce that the energy must be zero for all times and therefore
 that :math:`u_1=u_2`, which proves that the solution is unique.
 
 **d)**
-Generalize :ref:`(137) <Eq:diffu:exer:estimates:p3:result>` to a 2D/3D
+Generalize :ref:`(138) <Eq:diffu:exer:estimates:p3:result>` to a 2D/3D
 diffusion equation :math:`u_t = \nabla\cdot (\alpha \nabla u)` for :math:`x\in\Omega`.
 
 .. --- begin hint in exercise ---
@@ -7481,7 +7610,7 @@ on the boundary, :math:`\partial u/\partial n=0`, area under the
 
 .. math::
 
-    \tag{138}
+    \tag{139}
     \int_{\Omega} u{\, \mathrm{d}x} = \int_{\Omega} I{\, \mathrm{d}x}
         {\thinspace .}
         
@@ -7492,13 +7621,13 @@ Establish a code in 1D, 2D, or 3D that can solve a diffusion equation with a
 source term :math:`f`, initial condition :math:`I`, and zero Dirichlet or
 Neumann conditions on the whole boundary.
 
-We can use :ref:`(137) <Eq:diffu:exer:estimates:p3:result>`
-and :ref:`(138) <Eq:diffu:exer:estimates:p4:result>` as a partial verification
+We can use :ref:`(138) <Eq:diffu:exer:estimates:p3:result>`
+and :ref:`(139) <Eq:diffu:exer:estimates:p4:result>` as a partial verification
 of the code. Choose some functions :math:`f` and :math:`I` and
-check that :ref:`(137) <Eq:diffu:exer:estimates:p3:result>` is obeyed at any
+check that :ref:`(138) <Eq:diffu:exer:estimates:p3:result>` is obeyed at any
 time when zero Dirichlet conditions are used.
 Iterate over the same :math:`I` functions and check that
-:ref:`(138) <Eq:diffu:exer:estimates:p4:result>` is fulfilled
+:ref:`(139) <Eq:diffu:exer:estimates:p4:result>` is fulfilled
 when using zero Neumann conditions.
 
 **g)**
@@ -7507,7 +7636,7 @@ in arrays, failure to set the correct boundary conditions,
 evaluation of a term at a wrong time level, and similar.
 For each of the bugs, see if the verification tests from the previous
 subexercise pass or fail. This investigation shows how strong
-the energy estimates and the estimate :ref:`(138) <Eq:diffu:exer:estimates:p4:result>`
+the energy estimates and the estimate :ref:`(139) <Eq:diffu:exer:estimates:p4:result>`
 are for pointing out errors in the implementation.
 
 Filename: ``diffu_energy``.
@@ -7539,16 +7668,16 @@ matrix. Show that this choice corresponds to the iteration
 
 .. math::
 
-    \tag{139}
+    \tag{140}
     u^k = u^{k-1} + r^{k-1},\quad r^{k-1} = b - Au^{k-1},
         
         
 
 where :math:`r^{k-1}` is the residual in the linear system in iteration
-:math:`k-1`. The formula :ref:`(139) <Eq:diffu:exer:splitting_prec:simplest>` is known
+:math:`k-1`. The formula :ref:`(140) <Eq:diffu:exer:splitting_prec:simplest>` is known
 as Richardson's iteration.
 Show that if we apply the simple iteration method
-:ref:`(139) <Eq:diffu:exer:splitting_prec:simplest>` to the *preconditioned*
+:ref:`(140) <Eq:diffu:exer:splitting_prec:simplest>` to the *preconditioned*
 system :math:`M^{-1}Au=M^{-1}b`, we arrive at the Jacobi method by choosing
 :math:`M=D` (the diagonal of :math:`A`) as preconditioner and the SOR method by
 choosing :math:`M=\omega^{-1}D + L` (:math:`L` being the lower triangular part of
@@ -7561,8 +7690,68 @@ Jacobi or SOR method as preconditioner.
 
 .. --- begin exercise ---
 
+.. _diffu:exer:earthosc:
+
 Exercise 9: Oscillating surface temperature of the earth
 --------------------------------------------------------
+
+Consider a day-and-night or seasonal variation in temperature at
+the surface of the earth. How deep down in the ground will the
+surface oscillations reach? For simplicity, we model only the
+vertical variation along a coordinate :math:`x`, where :math:`x=0` at the
+surface, and :math:`x` increases as we go down in the ground.
+The temperature is governed by the heat equation
+
+.. math::
+         \varrho c_v\frac{\partial T}{\partial t} = \nabla\cdot(k\nabla T),
+
+in some spatial domain :math:`x\in [0,L]`, where :math:`L` is chosen large enough such
+that we can assume that :math:`T` is approximately constant, independent of the surface
+oscillations, for :math:`x>L`. The parameters :math:`\varrho`, :math:`c_v`, and :math:`k` are the
+density, the specific heat capacity at constant volume, and the
+heat conduction coefficient, respectively.
+
+**a)**
+Derive the mathematical model for computing :math:`T(x,t)`.
+Assume the surface oscillations to be sinusoidal around some mean
+temperature :math:`T_m`. Let :math:`T=T_m` initially. At :math:`x=L`, assume :math:`T\approx T_m`.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
+**b)**
+Scale the model in a) assuming :math:`k` is constant. Use a time scale
+:math:`t_c = \omega^{-1}` and a length scale :math:`x_c = \sqrt{2{\alpha}/omega}`,
+where :math:`{\alpha} = k/(\varrho c_v)`. The primary unknown can be scaled
+as :math:`\frac{T-T_m}{2A}`.
+
+Show that the scaled PDE is
+
+.. math::
+        
+        \frac{\partial u}{\partial \bar t} =
+        \frac{1}{2}\frac{\partial^2 u}{\partial x^2},
+
+with initial condition :math:`u(\bar x,0) = 0`,
+left boundary condition
+:math:`u(0,\bar t)  = \sin(\bar t)`,
+and right boundary condition
+:math:`u(\bar L,\bar t)  = 0`. The bar indicates a dimensionless quantity.
+
+Show that :math:`u(\bar x, \bar t)=e^{-\bar x}\sin (\bar x - \bar t)` is a
+solution that fulfills the PDE and the boundary condition at :math:`\bar x
+=0` (this is the solution we will experience as :math:`\bar
+t\rightarrow\infty` and :math:`L\rightarrow\infty`).  Conclude that an
+appropriate domain for :math:`x` is :math:`[0,4]` if a damping :math:`e^{-4}\approx
+0.18` is appropriate for implementing :math:`\bar u\approx\hbox{const}`;
+increasing to :math:`[0,6]` damps :math:`\bar u` to 0.0025.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
+**c)**
+Compute the scaled temperature and make animations comparing two solutions
+with :math:`\bar L=4` and :math:`\bar L=8`, respectively (keep :math:`\Delta x` the same).
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
 
 .. --- end exercise ---
 

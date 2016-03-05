@@ -29,7 +29,11 @@ def solver(I, V, f, c, L, dt, C, T, user_action=None):
     dx = dt*c/float(C)
     Nx = int(round(L/dx))
     x = np.linspace(0, L, Nx+1)       # Mesh points in space
-    C2 = C**2                      # Help variable in the scheme
+    C2 = C**2                         # Help variable in the scheme
+    # Make sure dx and dt are compatible with x and t
+    dx = x[1] - x[0]
+    dt = t[1] - t[0]
+
     if f is None or f == 0 :
         f = lambda x, t: 0
     if V is None or V == 0:
@@ -124,7 +128,7 @@ def test_constant():
     assert np.abs(u - u_const).max() < tol
 
 def viz(
-    I, V, f, c, L, dt, C, T,  # PDE paramteres
+    I, V, f, c, L, dt, C, T,  # PDE parameters
     umin, umax,               # Interval for u in plots
     animate=True,             # Simulation with animation?
     tool='matplotlib',        # 'matplotlib' or 'scitools'

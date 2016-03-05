@@ -83,7 +83,7 @@ in time, we need *two initial conditions*. The condition
 :ref:`(2) <Eq:wave:pde1:ic:u>` specifies
 the initial shape of the string, :math:`I(x)`, and
 :ref:`(3) <Eq:wave:pde1:ic:ut>` expresses that the initial velocity of the
-string is zero. In addition, PDEs need *boundary conditions*, give here as
+string is zero. In addition, PDEs need *boundary conditions*, given here as
 :ref:`(4) <Eq:wave:pde1:bc:0>` and :ref:`(5) <Eq:wave:pde1:bc:L>`. These two
 conditions specify that
 the string is fixed at the ends, i.e., that the displacement :math:`u` is zero.
@@ -101,7 +101,7 @@ move with velocity :math:`c` to the left and right.
         </div>
         <p><em>Example of waves on a string.</em></p>
         
-        <!-- Issue warning if only .ogg or .webm movie in a Safari browser -->
+        <!-- Issue warning if in a Safari browser -->
         <script language="javascript">
         if (!!(window.safari)) {
           document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
@@ -288,7 +288,7 @@ A typical feature of :ref:`(11) <Eq:wave:pde1:step3b>` is that it involves
 :math:`u_i^{n+1}`, :math:`u^n_{i\pm 1}`, :math:`u^n_i`, and :math:`u^{n-1}_i`.
 The circles in Figure
 :ref:`wave:pde1:fig:mesh` illustrate such neighboring mesh points that
-contributes to an algebraic equation. In this
+contribute to an algebraic equation. In this
 particular case, we have sampled the PDE at the point :math:`(2,2)`
 and constructed :ref:`(11) <Eq:wave:pde1:step3b>`, which then
 involves a coupling of :math:`u_2^1`, :math:`u_1^2`, :math:`u_2^2`, :math:`u_3^2`, and :math:`u_2^3`.
@@ -332,7 +332,7 @@ Writing out this equation and ordering the terms give
 .. math::
 
     \tag{13}
-    u^{n-1}_i=u^{n+1}_i,\quad i=0,\ldots,N_x,\ n=0{\thinspace .}
+    u^{-1}_i=u^{1}_i,\quad i=0,\ldots,N_x{\thinspace .}
         
         
 
@@ -433,9 +433,9 @@ We can now summarize the computational algorithm:
 
 3. For each time level :math:`n=1,2,\ldots,N_t-1`
 
-  1. apply :ref:`(14) <Eq:wave:pde1:step4>` to find :math:`u^{n+1}_i` for :math:`i=1,\ldots,N_x-1`
+  a. apply :ref:`(14) <Eq:wave:pde1:step4>` to find :math:`u^{n+1}_i` for :math:`i=1,\ldots,N_x-1`
 
-  2. set :math:`u^{n+1}_i=0` for the boundary points :math:`i=0`, :math:`i=N_x`.
+  b. set :math:`u^{n+1}_i=0` for the boundary points :math:`i=0`, :math:`i=N_x`.
 
 The algorithm essentially consists of moving
 a finite difference stencil through all the mesh points, which can be
@@ -449,8 +449,8 @@ Sketch of an implementation
 
 In a Python implementation of this algorithm, we use the array
 elements ``u[i]`` to store :math:`u^{n+1}_i`, ``u_1[i]`` to store :math:`u^n_i`, and
-``u_2[i]`` to store :math:`u^{n-1}_i`. Our naming convention is use ``u`` for the
-unknown new spatial field to be computed, ``u_1`` as the solution at
+``u_2[i]`` to store :math:`u^{n-1}_i`. Our naming convention is to use ``u`` for the
+unknown new spatial field to be computed, ``u_1`` as the solution
 one time step back in time, ``u_2`` as the solution two time steps back
 in time and so forth.
 
@@ -503,9 +503,9 @@ Verification          (1)
 =========================
 
 Before implementing the algorithm, it is convenient to add a source
-term to the PDE :ref:`(1) <Eq:wave:pde1>`
-since it gives us more freedom in finding test problems for
-verification. Physically, a source term acts as a generation of waves
+term to the PDE :ref:`(1) <Eq:wave:pde1>`, since that
+gives us more freedom in finding test problems for
+verification. Physically, a source term acts as a generator for waves
 in the interior of the domain.
 
 .. _wave:pde2:fd:
@@ -632,31 +632,38 @@ This :math:`{u_{\small\mbox{e}}}` fulfills the PDE with :math:`f=0`, boundary co
 :math:`{u_{\small\mbox{e}}}(0,t)={u_{\small\mbox{e}}}(L,0)=0`, as well as initial
 conditions :math:`I(x)=A\sin\left(\frac{\pi}{L}x\right)` and :math:`V=0`.
 
-It is common to use such exact solutions of physical interest
-to verify implementations. However, the numerical
-solution :math:`u^n_i` will only be an approximation to :math:`{u_{\small\mbox{e}}}(x_i,t_n)`.
-We have no knowledge of the precise size of the error in
-this approximation, and therefore we can never know if discrepancies
-between :math:`u^n_i` and :math:`{u_{\small\mbox{e}}}(x_i,t_n)` are caused
-by mathematical approximations or programming errors.
-In particular, if a plot of the computed solution :math:`u^n_i` and
-the exact one \eq:ref:`wave:pde2:test:ue` looks similar, many
-are tempted to claim that the implementation works. However,
-even if color plots look nice and the accuracy is "deemed good",
-there can still be serious programming errors present!
 
-The only way to use exact physical solutions like
-:ref:`(25) <Eq:wave:pde2:test:ue>` for serious and thorough verification is to
-run a series of finer and finer meshes, measure the integrated error
-in each mesh, and from this information estimate the empirical convergence
-rate of the method.
-An introduction to the computing convergence rates is given in
+.. admonition:: How to use exact solutions for verification
+
+   It is common to use such exact solutions of physical interest
+   to verify implementations. However, the numerical
+   solution :math:`u^n_i` will only be an approximation to :math:`{u_{\small\mbox{e}}}(x_i,t_n)`.
+   We have no knowledge of the precise size of the error in
+   this approximation, and therefore we can never know if discrepancies
+   between :math:`u^n_i` and :math:`{u_{\small\mbox{e}}}(x_i,t_n)` are caused
+   by mathematical approximations or programming errors.
+   In particular, if a plot of the computed solution :math:`u^n_i` and
+   the exact one :ref:`(25) <Eq:wave:pde2:test:ue>` looks similar, many
+   are tempted to claim that the implementation works. However,
+   even if color plots look nice and the accuracy is "deemed good",
+   there can still be serious programming errors present!
+   
+   The only way to use exact physical solutions like
+   :ref:`(25) <Eq:wave:pde2:test:ue>` for serious and thorough verification is to
+   run a series of finer and finer meshes, measure the integrated error
+   in each mesh, and from this information estimate the empirical convergence
+   rate of the method.
+
+
+
+
+An introduction to the computing of convergence rates is given in
 the section
 on `convergence rates <http://hplgit.github.io/decay-book/doc/pub/book/sphinx/._book007.html#computing-convergence-rates>`__ in [Ref1]_.
 
 In the present problem, one expects the method to have a convergence rate
 of 2 (see the section :ref:`wave:pde1:analysis`), so if the computed rates
-are close to 2 on a sufficiently mesh, we have good evidence that
+are close to 2 on a sufficiently fine mesh, we have good evidence that
 the implementation is free of programming mistakes.
 
 .. _wave:pde2:fd:MMS:
@@ -894,7 +901,8 @@ Similarly, we get that
 .. math::
         
         \lbrack D_xD_x {u_{\small\mbox{e}}}\rbrack^n_i &=
-        (1+{\frac{1}{2}}t_n)\lbrack D_xD_x (xL-x^2)\rbrack_i =
+        (1+{\frac{1}{2}}t_n)\lbrack D_xD_x (xL-x^2)\rbrack_i\\ 
+        & =
         (1+{\frac{1}{2}}t_n)\lbrack LD_xD_x x - D_xD_x x^2\rbrack_i \\ 
         &= -2(1+{\frac{1}{2}}t_n)
         {\thinspace .}

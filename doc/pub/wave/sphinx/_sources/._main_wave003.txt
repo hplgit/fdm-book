@@ -67,9 +67,9 @@ we have that
 .. math::
         
         \left.\frac{\partial}{\partial n}\right\vert_{x=L} =
-        \frac{\partial}{\partial x},\quad
+        \left.\frac{\partial}{\partial x}\right\vert_{x=L},\quad
         \left.\frac{\partial}{\partial n}\right\vert_{x=0} = -
-        \frac{\partial}{\partial x}{\thinspace .}
+        \left.\frac{\partial}{\partial x}\right\vert_{x=0}{\thinspace .}
         
 
 
@@ -234,7 +234,7 @@ boundary conditions :math:`u_x = 0` at :math:`x=0` and :math:`x=L`.
 
 It would be nice to modify the ``test_quadratic`` test case from the
 ``wave1D_u0.py`` with Dirichlet conditions, described in the section :ref:`wave:pde1:impl:vec:verify:quadratic`. However, the Neumann
-conditions requires the polynomial variation in :math:`x` direction to
+conditions require the polynomial variation in the :math:`x` direction to
 be of third degree, which causes challenging problems when
 designing a test where the numerical solution is known exactly.
 :ref:`wave:fd2:exer:verify:cubic` outlines ideas and code
@@ -406,7 +406,7 @@ Verifying the implementation of Neumann conditions
 
 How can we test that the Neumann conditions are correctly implemented?
 The ``solver`` function in the ``wave1D_dn.py`` program described in the
-box above accepts Dirichlet and Neumann conditions at :math:`x=0` and :math:`x=L`.
+box above accepts Dirichlet or Neumann conditions at :math:`x=0` and :math:`x=L`.
 It is tempting to apply a quadratic solution as described in
 the sections :ref:`wave:pde2:fd` and :ref:`wave:pde1:impl:verify:quadratic`,
 but it turns out that this solution is no longer an exact solution
@@ -419,7 +419,7 @@ consequently left with testing just a constant solution: :math:`u=\hbox{const}`.
 
         def test_constant():
             """
-            Check the scalar and vectorized versions work for
+            Check the scalar and vectorized versions for
             a constant u(x,t). We simulate in [0, L] and apply
             Neumann and Dirichlet conditions at both ends.
             """
@@ -845,7 +845,7 @@ With operator notation we can write the discretization as
    a better solution than arithmetic averaging or
    :ref:`(45) <Eq:wave:pde2:var:c:chainrule_scheme>`.
    In the literature, the discretization :math:`[D_x(q D_x u)]^n_i` totally
-   dominant and very few mention the possibility of
+   dominants and very few mention the possibility of
    :ref:`(45) <Eq:wave:pde2:var:c:chainrule_scheme>`.
 
 
@@ -1021,7 +1021,8 @@ discretized as
 
 .. math::
          [D_{2x} u]^n_i =
-        \frac{u_{i+1}^{n} - u_{i-1}^n}{2\Delta x} = 0\quad u_{i+1}^n = u_{i-1}^n,
+        \frac{u_{i+1}^{n} - u_{i-1}^n}{2\Delta x} = 0\quad\Rightarrow\quad
+        u_{i+1}^n = u_{i-1}^n,
         
 
 for :math:`i=N_x`. Using the scheme :ref:`(50) <Eq:wave:pde2:var:c:scheme:impl>`
@@ -1032,7 +1033,7 @@ at the end point :math:`i=N_x` with :math:`u_{i+1}^n=u_{i-1}^n` results in
         u^{n+1}_i = - u_i^{n-1}  + 2u_i^n + \nonumber
         
 
-.. _Eq:wave:pde2:var:c:scheme:impl:Neumann0:
+.. _Eq:_auto17:
 
 .. math::
 
@@ -1044,7 +1045,7 @@ at the end point :math:`i=N_x` with :math:`u_{i+1}^n=u_{i-1}^n` results in
         
         
 
-.. _Eq:_auto17:
+.. _Eq:wave:pde2:var:c:scheme:impl:Neumann0:
 
 .. math::
 
@@ -1099,7 +1100,7 @@ Here we used the approximation
         
 
 An alternative derivation may apply the arithmetic mean of :math:`q` in
-:ref:`(52) <Eq:wave:pde2:var:c:scheme:impl:Neumann0>`, leading to the term
+:ref:`(53) <Eq:wave:pde2:var:c:scheme:impl:Neumann0>`, leading to the term
 
 .. math::
          (q_i + \frac{1}{2}(q_{i+1}+q_{i-1}))(u_{i-1}^n-u_i^n){\thinspace .}
@@ -1236,7 +1237,7 @@ A natural scheme for :ref:`(58) <Eq:wave:pde2:var:c:pde2>` is
         
 
 We realize that the :math:`\varrho` coefficient poses no particular
-difficulty, since :math:`\varrho` enters the formula just a simple factor
+difficulty, since :math:`\varrho` enters the formula just as a simple factor
 in front of a derivative. There is hence no need for any averaging
 of :math:`\varrho`. Often, :math:`\varrho` will be moved to the right-hand side,
 also without any difficulty:
@@ -1381,7 +1382,7 @@ These are trivial to implement:
 The ``solver`` function is a natural extension of the simplest
 ``solver`` function in the initial ``wave1D_u0.py`` program,
 extended with Neumann boundary conditions (:math:`u_x=0`),
-a the time-varying Dirichlet conditions, as well as
+time-varying Dirichlet conditions, as well as
 a variable wave velocity. The different code segments needed
 to make these extensions have been shown and commented upon in the
 preceding text. We refer to the ``solver`` function in the
@@ -1465,10 +1466,10 @@ files, like the function ``wave1D_u0.viz`` did, can be coded as follows:
                     name = 'u%04d' % n  # array name
                     kwargs = {name: u}
                     fname = '.' + self.filename + '_' + name + '.dat'
-                    savez(fname, **kwargs)
+                    np.savez(fname, **kwargs)
                     self.t.append(t[n])  # store corresponding time value
                     if n == 0:           # save x once
-                        savez('.' + self.filename + '_x.dat', x=x)
+                        np.savez('.' + self.filename + '_x.dat', x=x)
         
                 # Animate
                 if n % self.skip_frame != 0:
@@ -1552,7 +1553,7 @@ More details on storing the solution in files appear in
 in
 the document
 `Scientific software engineering; wave equation case <http://tinyurl.com/k3sdbuv/pub/softeng2>`__
-[Ref2]_.
+[Ref3]_.
 
 Pulse propagation in two media
 ------------------------------
@@ -1624,7 +1625,7 @@ flexibility with the building blocks we have already developed:
         
             if pulse_tp in ('gaussian','Gaussian'):
                 def I(x):
-                    return exp(-0.5*((x-xc)/sigma)**2)
+                    return np.exp(-0.5*((x-xc)/sigma)**2)
             elif pulse_tp == 'plug':
                 def I(x):
                     return 0 if abs(x-xc) > sigma else 1
@@ -1633,7 +1634,7 @@ flexibility with the building blocks we have already developed:
                     # One period of a cosine
                     w = 2
                     a = w*sigma
-                    return 0.5*(1 + cos(pi*(x-xc)/a)) \ 
+                    return 0.5*(1 + np.cos(np.pi*(x-xc)/a)) \ 
                            if xc - a <= x <= xc + a else 0
         
             elif pulse_tp == 'half-cosinehat':
@@ -1641,7 +1642,7 @@ flexibility with the building blocks we have already developed:
                     # Half a period of a cosine
                     w = 4
                     a = w*sigma
-                    return cos(pi*(x-xc)/a) \ 
+                    return np.cos(np.pi*(x-xc)/a) \ 
                            if xc - 0.5*a <= x <= xc + 0.5*a else 0
             else:
                 raise ValueError('Wrong pulse_tp="%s"' % pulse_tp)
@@ -1776,7 +1777,7 @@ Symmetry of a function about :math:`x=x_0` means that
 .. --- end hint in exercise ---
 
 **b)**
-Perform simulations of the complete wave problem from
+Perform simulations of the complete wave problem
 on :math:`[-L,L]`. Thereafter, utilize the
 symmetry of the solution and run a simulation
 in half of the domain :math:`[0,L]`, using a boundary condition
@@ -1994,7 +1995,7 @@ Run two tests:
 2. Disturbance at the left end, :math:`I(x)=g(x;0,s)`, and :math:`u_x=0`
    as symmetry boundary condition at this end.
 
-Make nose tests for both cases, testing that the solution is zero
+Make test functions for both cases, testing that the solution is zero
 after the waves have left the domain.
 
 **d)**
@@ -2003,7 +2004,7 @@ normal to the boundary, which is needed in generalizations of
 the open boundary conditions in higher dimensions. Test the effect
 of having a slightly wrong wave velocity in
 :ref:`(72) <Eq:wave:app:exer:radiationBC:eq:op:1storder>`.
-Make a movies to illustrate what happens.
+Make movies to illustrate what happens.
 
 Filename: ``wave1D_open_BC``.
 
@@ -2036,7 +2037,7 @@ Exercise 12: Implement periodic boundary conditions
 
 It is frequently of interest to follow wave motion over large
 distances and long times. A straightforward approach is to
-work with a very large domain, but might lead to a lot of
+work with a very large domain, but that might lead to a lot of
 computations in areas of the domain where the waves cannot
 be noticed. A more efficient approach is to let a right-going
 wave out of the domain and at the same time let it enter
@@ -2293,7 +2294,7 @@ solution :math:`u` of the discrete PDE problem.
 
 **Hint.**
 To turn a ``sympy`` expression ``e``, depending on a series of
-symbols, say ``x``, ``t``, ``dx``, ``dt``, ``L``, and ``c``, into plain
+symbols, say ``x``, ``t``, ``dx``, ``dt``, ``L``, and ``c``, into a plain
 Python function ``e_exact(x,t,L,dx,dt,c)``, one can write
 
 .. code-block:: python
@@ -2320,7 +2321,7 @@ condition, we seek :math:`u` such that
 since this :math:`u` will fit the discrete boundary condition.
 Assuming :math:`u=T(t)\sum_{j=0}^3a_jx^j`, we can use the above equation to
 determine the coefficients :math:`a_1,a_2,a_3`. A value, e.g., 1 can be used for
-:math:`a_0`. The following ``sumpy`` code computes this :math:`u`:
+:math:`a_0`. The following ``sympy`` code computes this :math:`u`:
 
 .. code-block:: python
 

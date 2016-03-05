@@ -43,14 +43,14 @@ The solution at all spatial points at a new time level is stored in an
 array ``u`` of length :math:`N_x+1`. We need to decide what do to with
 this solution, e.g., visualize the curve, analyze the values, or write
 the array to file for later use. The decision about what to do is left to
-the user in the form of a user-suppled supplied function
+the user in the form of a user-suppled function
 
 .. code-block:: python
 
         user_action(u, x, t, n)
 
 where ``u`` is the solution at the spatial points ``x`` at time ``t[n]``.
-The ``user_action`` function is call from the solver at each time level ``n``.
+The ``user_action`` function is called from the solver at each time level ``n``.
 
 If the user wants to plot the solution or store the solution at a
 time point, she needs to write such a function and take appropriate
@@ -82,7 +82,11 @@ A first attempt at a solver function is listed below.
             dx = dt*c/float(C)
             Nx = int(round(L/dx))
             x = np.linspace(0, L, Nx+1)       # Mesh points in space
-            C2 = C**2                      # Help variable in the scheme
+            C2 = C**2                         # Help variable in the scheme
+            # Make sure dx and dt are compatible with x and t
+            dx = x[1] - x[0]
+            dt = t[1] - t[0]
+        
             if f is None or f == 0 :
                 f = lambda x, t: 0
             if V is None or V == 0:
@@ -151,22 +155,21 @@ A first attempt at a solver function is listed below.
 Verification: exact quadratic solution
 --------------------------------------
 
-.. index:: nose test
+.. index::
+   single: verification; polynomial solution
 
-.. index:: pytest test
+.. index:: nose
+
+.. index:: pytest
 
 .. index:: unit testing
 
-.. index::
-   single: software testing; nose
-
-.. index::
-   single: software testing; pytest
+.. index:: test function
 
 We use the test problem derived in the section :ref:`wave:pde2:fd` for
 verification. Below is a unit test based on this test problem
-and realized as a proper *test function* (compatible with the unit test
-frameworks nose or pytest).
+and realized as a proper *test function* compatible with the unit test
+frameworks nose or pytest.
 
 .. code-block:: python
 
@@ -201,15 +204,13 @@ frameworks nose or pytest).
             solver(I, V, f, c, L, dt, C, T,
                    user_action=assert_no_error)
 
-When this function resides in the file ``wave1D_u0.py``, one can run ether
-``py.test`` or ``nosetests``,
+When this function resides in the file ``wave1D_u0.py``, one can run
+pytest to check that all test functions with names ``test_*()``
+in this file work:
 
 .. code-block:: text
 
-        Terminal> py.test   -s -v wave1D_u0.py
-        Terminal> nosetests -s -v wave1D_u0.py
-
-to automatically run all test functions with name ``test_*()``.
+        Terminal> py.test -s -v wave1D_u0.py
 
 .. _wave:pde1:impl:animate:
 
@@ -238,7 +239,7 @@ The following ``viz`` function
 .. code-block:: python
 
         def viz(
-            I, V, f, c, L, dt, C, T,  # PDE paramteres
+            I, V, f, c, L, dt, C, T,  # PDE parameters
             umin, umax,               # Interval for u in plots
             animate=True,             # Simulation with animation?
             tool='matplotlib',        # 'matplotlib' or 'scitools'
@@ -397,7 +398,7 @@ Note that padding the frame counter with zeros in the ``frame_*.png``
 files, as specified by the ``%04d`` format, is essential so that the wildcard
 notation ``frame_*.png`` expands to the correct set of files.
 
-The ``viz`` function creates a ``ffmpeg`` or ``avconv`` command
+The ``viz`` function creates an ``ffmpeg`` or ``avconv`` command
 with the proper arguments for each of the formats Flash, MP4, WebM,
 and Ogg. The task is greatly simplified by having a
 ``codec2ext`` dictionary for mapping
@@ -406,7 +407,7 @@ Only
 two formats are actually needed to ensure that all browsers can
 successfully play the video: MP4 and WebM.
 
-Some animations consisting of a large number of plot files may not
+Some animations having a large number of plot files may not
 be properly combined into a video using ``ffmpeg`` or ``avconv``.
 A method that always works is to play the PNG files as an animation
 in a browser using JavaScript code in an HTML file.
@@ -479,7 +480,7 @@ a guitar string:
 We choose :math:`L=75` cm, :math:`x_0=0.8L`, :math:`a=5` mm, and a time frequency
 :math:`\nu = 440` Hz. The relation between the wave speed :math:`c` and :math:`\nu` is
 :math:`c=\nu\lambda`, where :math:`\lambda` is the wavelength, taken as :math:`2L` because
-the longest wave on the string form half a wavelength. There is no
+the longest wave on the string forms half a wavelength. There is no
 external force, so :math:`f=0`, and the string is at rest initially so
 that :math:`V=0`.
 
@@ -536,8 +537,11 @@ the mathematical problem we can often reduce the need to estimate
 physical parameters dramatically. The scaling technique
 consists of introducing new
 independent and dependent variables, with the aim that the absolute
-value of these is not very large or small, but preferably around unity
-in size. We introduce the dimensionless variables
+values of these lie in :math:`[0,1]`. We introduce the dimensionless variables
+(details are found in
+the section
+`Homogeneous Dirichlet conditions in 1D <http://hplgit.github.io/scaling-book/doc/pub/book/html/._scaling-book007.html#sec:scale:wave:bc_u0>`__
+in the book `Scaling of differential equations <http://tinyurl.com/qfjgxmf/web>`__ [Ref2]_
 
 .. math::
          \bar x = \frac{x}{L},\quad \bar t = \frac{c}{L}t,\quad
@@ -549,18 +553,27 @@ Here, :math:`L` is a typical length scale, e.g., the length of the domain,
 and :math:`a` is a typical size of :math:`u`, e.g., determined from the
 initial condition: :math:`a=\max_x|I(x)|`.
 
-Inserting these new variables in the PDE and noting that
+We get by the chain rule that
 
 .. math::
-         \frac{\partial u}{\partial t} = \frac{aL}{c}\frac{\partial\bar u}{\partial\bar t},
+         \frac{\partial u}{\partial t} =
+        \frac{\partial}{\partial\bar t}\left(\frac{\bar u}{a}\right)
+        \frac{d\bar t}{dt} =
+        \frac{\partial\bar u}{\partial\bar t}\frac{1}{a}\frac{c}{L}
+        = \frac{ac}{L}\frac{\partial\bar u}{\partial\bar t}{\thinspace .}
 
-by the chain rule, one gets
+Similarly,
 
 .. math::
-         \frac{a^2L^2}{c^2}\frac{\partial^2\bar u}{\partial\bar t^2}
-        = \frac{a^2c^2}{L^2}\frac{\partial^2\bar u}{\partial\bar x^2},
+         \frac{\partial u}{\partial x} =
+        = \frac{a}{L}\frac{\partial\bar u}{\partial\bar x}{\thinspace .}
 
-in case :math:`f=0`.
+Inserting the dimensionless variables in the PDE gives, in case :math:`f=0`,
+
+.. math::
+         \frac{a^2c^2}{L^2}\frac{\partial^2\bar u}{\partial\bar t^2}
+        = \frac{a^2c^2}{L^2}\frac{\partial^2\bar u}{\partial\bar x^2}{\thinspace .}
+
 Dropping the bars, we arrive at the scaled PDE
 
 .. _Eq:_auto12:
@@ -569,10 +582,11 @@ Dropping the bars, we arrive at the scaled PDE
 
     \tag{34}
     \frac{\partial^2 u}{\partial t^2} = \frac{\partial^2 u}{\partial x^2},
+        \quad x\in (0,1),\ t\in (0,cT/L),
         
         
 
-which has not parameter :math:`c^2` anymore. The initial conditions are scaled
+which has no parameter :math:`c^2` anymore. The initial conditions are scaled
 as
 
 .. math::
@@ -612,8 +626,8 @@ set to the desired number of periods times 2.
 
 Why the dimensionless period is 2 can be explained by the following
 reasoning.
-Suppose as :math:`u` behaves as :math:`\cos (\omega t)` in time in variables
-with dimension. The corresponding period is then :math:`P=2\pi/\omega`, but
+Suppose that :math:`u` behaves as :math:`\cos (\omega t)` in time in the original
+problem with dimensions. The corresponding period is then :math:`P=2\pi/\omega`, but
 we need to estimate :math:`\omega`. A typical solution of the wave
 equation is :math:`u(x,t)=A\cos(kx)\cos(\omega t)`, where :math:`A` is an amplitude
 and :math:`k` is related to the wave length :math:`\lambda` in space: :math:`\lambda = 2\pi/k`.
@@ -634,21 +648,23 @@ Vectorization
 
 .. index:: vectorization
 
+.. index:: parallelism
+
 The computational algorithm for solving the wave equation visits one
-mesh point at a time and evaluates a formula for the new value :math:`u_i^{n+1}`
-at
-that point. Technically, this is implemented by a loop over array
-elements in a program. Such loops may run slowly in Python (and
-similar interpreted languages such as R and MATLAB).
-One technique for speeding up loops is to
-perform operations on entire arrays instead of working with one element
-at a time. This is referred to as *vectorization*, *vector computing*,
-or *array computing*.
-Operations on whole arrays are possible if the computations
-involving each element is independent of each other and therefore can,
-at least in principle, be performed simultaneously.
-Vectorization not only speeds up the code on serial computers, but
-also makes it easy to exploit parallel computing.
+mesh point at a time and evaluates a formula for the new value
+:math:`u_i^{n+1}` at that point. Technically, this is implemented by a loop
+over array elements in a program. Such loops may run slowly in Python
+(and similar interpreted languages such as R and MATLAB).  One
+technique for speeding up loops is to perform operations on entire
+arrays instead of working with one element at a time. This is referred
+to as *vectorization*, *vector computing*, or *array computing*.
+Operations on whole arrays are possible if the computations involving
+each element is independent of each other and therefore can, at least
+in principle, be performed simultaneously.  That is, vectorization not
+only speeds up the code on serial computers, but also makes it easy to
+exploit parallel computing. Actually, there are Python tools like
+`Numba <http://numba.pydata.org>`__ that can automatically turn
+vectorized code into parallel code.
 
 .. _wave:pde1:impl:vec:slices:basics:
 
@@ -756,7 +772,7 @@ elements of ``u2``, as we will when solving a 1D wave equation, we can write
 The first expression's right-hand side is realized by the
 following steps, involving temporary arrays with intermediate results,
 since each array operation can only involve one or two arrays.
-The ``numpy`` package performs the first line above in
+The ``numpy`` package performs (behind the scenes) the first line above in
 four steps:
 
 .. code-block:: text
@@ -827,7 +843,7 @@ version becomes
 
         u2[1:-1] = u[:-2] - 2*u[1:-1] + u[2:] + f(x[1:-1])
 
-Obviously, ``f`` must be able to take an array as argument for ``f[x[1:-1])``
+Obviously, ``f`` must be able to take an array as argument for ``f(x[1:-1])``
 to make sense.
 
 .. _wave:pde1:impl:vec:slices:fdm:
@@ -892,7 +908,7 @@ solution at each time level and performs a test:
 
         def test_quadratic():
             """
-            Check the scalar and vectorized versions work for
+            Check the scalar and vectorized versions for
             a quadratic u(x,t)=x(L-x)(1+t/2) that is exactly reproduced.
             """
             # The following function must work for x as array or scalar
@@ -966,10 +982,13 @@ for our efficiency measurements.
 
 One solution is to copy the ``viz`` code from ``wave1D_u0`` into
 ``wave1D_u0v.py`` and add a ``version`` argument to the ``solver_function`` call.
-Taking into account how much quite complicated animation code we
+Taking into account how much animation code we
 then duplicate, this is not a good idea.
-Introducing the ``version`` argument in ``wave1D_u0.viz`` is not
-a good solution since ``version`` has no meaning in that file.
+Alternatively,
+introducing the ``version`` argument in ``wave1D_u0.viz``, so that this function
+can be imported into ``wave1D_u0v.py``, is not
+a good solution either, since ``version`` has no meaning in that file.
+We need better ideas!
 
 Solution 1
 ~~~~~~~~~~
@@ -985,7 +1004,7 @@ calls ``wave1D_u0.viz``:
 .. code-block:: python
 
         def viz(
-            I, V, f, c, L, dt, C, T,  # PDE paramteres
+            I, V, f, c, L, dt, C, T,  # PDE parameters
             umin, umax,               # Interval for u in plots
             animate=True,             # Simulation with animation?
             tool='matplotlib',        # 'matplotlib' or 'scitools'
@@ -1012,7 +1031,7 @@ calls ``wave1D_u0.viz``:
 Solution 2
 ~~~~~~~~~~
 
-There is a more advanced, fancier solution featuring a very useful trick:
+There is a more advanced and fancier solution featuring a very useful trick:
 we can make a new function that will always call ``wave1D_u0v.solver``
 with ``version='scalar'``. The ``functools.partial`` function from
 standard Python takes a function ``func`` as argument and
@@ -1267,7 +1286,7 @@ Redo :ref:`wave:exer:store:list` using a class for the
 user action function. That is, define a class ``Action`` where
 the ``all_u`` list is an attribute, and implement the user action
 function as a method (the special method ``__call__`` is a natural
-choice). The class versions avoids that the user action function
+choice). The class versions avoid that the user action function
 depends on parameters defined outside the function (such as ``all_u``
 in :ref:`wave:exer:store:list`).
 Filename: ``wave1D_u0_s2c``.
@@ -1336,8 +1355,8 @@ have
          F_i = \int_{x_0}^{x_i} f(x) dx{\thinspace .}
 
 The exact integral of a piecewise linear function :math:`f(x)` is
-given by the Trapezoidal rule. S
-how that if :math:`F_{i}` is already computed, we can find :math:`F_{i+1}`
+given by the Trapezoidal rule. Show
+that if :math:`F_{i}` is already computed, we can find :math:`F_{i+1}`
 from
 
 .. math::
