@@ -1,0 +1,230 @@
+label{ch:advec}
+
+Wave (Chapter ref{ch:wave}) and diffusion (Chapter ref{ch:diffu}) equations
+are solve reliably by finite difference methods. As soon as we add a
+first-order derivative in space, representing *advective transport* (also
+known as convective transport), the numerics gets more complicated, and
+and intuitively attractive methods no longer work well. We shall show
+how and why methods fail and provide remedies. The present chapter
+builds on basic knowledge about finite difference methods for
+the diffusion equations, including the analysis by Fourier components,
+truncation error analysis (Appendix ref{ch:trunc}), and
+compact difference notation.
+
+======= One-dimensional time-dependent advection equations =======
+label{advec:1D}
+
+We consider the pure advection model
+
+!bt
+\begin{align}
+\frac{\partial u}{\partial t} + v\frac{partial u}{\partial x} &= 0,\quad
+& x\in (0,L),\ t\in (0,T],
+label{advec:1D:pde1:u}\\
+u(x,0) &= I(x),& x\in (0,L),
+label{advec:1D:pde1:U0}\\
+u(0,t) &= U_0,& t\in (0,T].
+label{advec:1D:pde1:I}
+\end{align}
+!et
+In (ref{advec:1D:pde1:u}), $v$ is a given parameter, typically reflecting
+the velocity of transport of a quantity $u$ with a flow.
+There is only one boundary condition (ref{advec:1D:pde1:U0}) since
+there is only a first-derivative term in the PDE (ref{advec:1D:pde1:u}).
+The information at $x=0$ and the initial condition get
+transported in positive $x$ direction
+if $v>0$ through the domain.
+
+===== Simplest scheme: forward in time, centered in space =====
+
+=== Method ===
+
+A first attempt to solve a PDE like (ref{advec:1D:pde1:u}) will normally
+look for a time-discretization scheme that is explicit so we avoid
+solving systems of linear equations. In space, we anticipate that
+centered differences are most accurate and therefore best. These
+two arguments lead us to a Forward Euler scheme in time and
+centered differences in space:
+
+!bt
+\begin{equation
+[D_t^+ u + vD_{2x} u = 0]^n_i
+\end{equation}
+!et
+Written out,
+
+!bt
+\[ u^{n+1} = u^n - \half C (u_^n_{i+1}-u_{i-1}),\]
+!et
+with $C$ as the Courant number
+
+!bt
+\[ C = \frac{v\Delta t}{\Delta x}\tp\]
+!et
+
+=== Implementation ===
+
+A solver function for our scheme goes as follows.
+
+@@@CODE src-advec/advec1D.py fromto: import numpy@def solver\(
+
+=== Test cases ===
+
+The typical solution is $u$ has the shape of $I$ and is transported at
+velocity $v$ to the right (if $v>0$). Let us choose a smooth and non-smooth
+initial condition:
+
+!bt
+\begin{align}
+u(x,0) &= Ae^{-\half\left(\frac{x-L/10}{\sigma}\right)^2,
+label{advec:1D:case_gaussian}\\
+u(x,0) &= A\cos\left(\frac{5\pi}{L}\left( x - \frac{L}{10}\right)\right),\quad
+x < \frac{L}{5} \hbox{ else } 0\tp
+label{advec:1D:case_cos}
+\end{align}
+!et
+The parameter $A$ is the maximum value of the initial condition.
+
+We scale the problem and introduce $\bar x x/L$ and $\bar t= vt/L$,
+which gives
+
+!bt
+\[ \frac{\partial\bar u}{\partial \bar t} +
+\frac{\partial\bar u}{\partial\bar x} = 0\tp\]
+!et
+The unknown $u$ is scaled by the maximum value of the initial condition:
+$\bar u = u/\max |I(x)|$ such that $|\bar u(\bar x, 0)|\in [0,1]$.
+The scaled problem is solved by setting $v=1$, $L=1$, and $A=1$.
+From now on we drop the bars.
+
+To run a case and plot the solution, we make the function
+
+@@@CODE src-advec/advec1D.py fromto: def run_FECS@def run\(
+
+=== Bug? ===
+
+Running either of the test cases, the plot becomes a mess, and
+the printout of $u$ values in the `plot` function reveals that
+$u$ grows very quickly. We may reduce $\Delta t$ and make it
+very small, yet the solution just grows.
+Such behavior points to a bug in the code.
+However, choosing a coarse mesh and performing a time step by
+hand calculations produce the same numbers as in the code, so
+it seems that the implementation is correct.
+The hypothesis is therefore that the solution is unstable.
+
+===== Analysis of the scheme =====
+
+We can analyize the finite difference scheme by look at how it treats
+a Fourier component
+
+!bt
+\[ u_q^n = A^n e^{ikq\Delta x}\tp\]
+!et
+The corresponding analytical Fourier component is
+
+!bt
+\[ u = \Aex^n e^{ikx},\quad \Aex = e^{-ivk\Delta t}\tp\]
+!et
+In particular, $|\Aex| \leq 1$.
+
+Inserting the numerical component in the scheme,
+
+!bt
+\[ [D_t^+ A^n e^{ikq\Delta x} + v D_{2x}A^n e^{ikq\Delta x}]^n_i,\]
+!et
+and making use of (ref{form:exp:fd1c:center})
+results in
+
+!bt
+\[ [e^{ikq\Delta x} (\frac{A-1}{\Delta t} + v\frac{1}{\Delta x}i\sin (k\Delta x))]^n_i,\]
+!et
+which implies
+
+!bt
+\[ A = 1 - iC\sin(kx)\tp\]
+!et
+The numerical solution features $A^n$, and the magnitude of this complex
+number is $|A|^n = (1 + C^2\sin^2(kx))^{n/2} > 1$. Therefore, the
+amplitude of the numerical solution is increasing in time, whereas the
+exact solution is not. Regardless of $\Delta t$, we get unstable
+numerical solutions.
+
+===== Leapfrog in time, centered differences in space =====
+
+=== Method ===
+
+Another explicit scheme is to do a leapfrog jump over $2\Delta t$ in
+time and combine it with centeral differences in space:
+
+!bt
+\[ [D_{2t} u + vD_{2x} u = 0,\]
+!et
+which results in the updating formula
+
+!bt
+\[ u^{n+1} = u^{n-1} - C(u_{i+1}-u_{i-1})\tp\]
+!et
+A special scheme is needed to compute $u^1$, but we leave that problem for
+now.
+
+=== Implementation ===
+
+We now need to have three time levels and must modify our solver a bit:
+
+!bc pycod
+Nt = int(round(T/float(dt)))
+t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
+...
+u   = np.zeros(Nx+1)
+u_1 = np.zeros(Nx+1)
+u_2 = np.zeros(Nx+1)
+...
+for n in range(0, Nt):
+    if scheme == 'FECS':
+        for i in range(1, Nx):
+            u[i] = u_1[i] - 0.5*C*(u_1[i+1] - u_1[i-1])
+    elif scheme == 'LFCS':
+        if n == 0:
+            # Use some scheme for the first step
+            for i in range(1, Nx):
+                ...
+        else:
+            for i in range(1, Nx+1):
+                u[i] = u_2[i] - C*(u_1[i] - u_1[i-1])
+
+    # Switch variables before next step
+    u_2, u_1, u = u_1, u, u_2
+!ec
+
+=== Running the test case ===
+
+Let us try a coarse mesh such that the smooth Gaussian initial condition
+is represented by 1 at mesh node 1 and 0 at all other nodes. This
+triangular initial condition should then be advected to the right.
+Choosing scaled variables as $\Delta t=0.1$, $T=1$, and $C=1$ gives
+the plot in Figure ref{advec:1D:case_gaussian:fig:FECS}, which
+is in fact identical to the exact solution (!).
+
+FIGURE: [src-advec/solver_FECS, width=500 frac=0.8] Leapfrog scheme with $\Delta t = 0.1$ and $C=1$. label{advec:1D:case_gaussian:fig:FECS}
+
+
+=== Analyis ===
+
+We can perform a Fourier analyis again. Inserting the numerical
+Fourier component in the leapfrog scheme, we get
+
+!bt
+\[ A^2 - iC\sin(kx) A - 1 = 0,\]
+!et
+and
+
+!bt
+\[ A = -i\half C\sin(kx) \pm \sqrt{1-C^2\sin^2(kx)}\tp\]
+!et
+
+======= One-dimensional stationary advection-diffusion equation =======
+
+======= Two-dimensional advection-diffusion equations =======
+
+======= Applications of advection equations =======
