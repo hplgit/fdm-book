@@ -2,6 +2,38 @@ import numpy as np
 #import matplotlib.pyplot as plt
 import scitools.std as plt
 
+def solver_bwdamping(I, V, m, b, s, F, dt, T, damping='linear'):
+    """
+    Solve m*u'' + f(u') + s(u) = F(t) for t in (0,T],
+    u(0)=I and u'(0)=V. All terms except damping is discretized 
+    by a central finite difference method with time step dt. The damping
+    term is discretized by a backward diff. approx., as is the init.cond.
+    u'(0). If damping is 'linear', f(u')=b*u, while if damping is
+    'quadratic', f(u')=b*u'*abs(u').
+    F(t) and s(u) are Python functions.
+    """
+    dt = float(dt); b = float(b); m = float(m) # avoid integer div.
+    Nt = int(round(T/dt))
+    u = np.zeros(Nt+1)
+    t = np.linspace(0, Nt*dt, Nt+1)
+    
+    u_original = np.zeros(Nt+1); u_original[0] = I  # for testing
+
+    u[0] = I
+    if damping == 'linear':
+        u[1] = u[0] + dt*V + dt**2/m*(-b*V - s(u[0]) + F(t[0]))
+    elif damping == 'quadratic':
+        u[1] = u[0] + dt*V + \
+               dt**2/m*(-b*V*abs(V) - s(u[0]) + F(t[0]))
+    for n in range(1, Nt):
+        if damping == 'linear':
+            u[n+1] = (2 - dt*b/m)*u[n] + dt**2/m*(- s(u[n]) + F(t[n])) + \
+                     (dt*b/m - 1)*u[n-1]
+        elif damping == 'quadratic':
+            u[n+1] = 2*u[n] - u[n-1] - b/m*abs(u[n] - u[n-1])*(u[n] - u[n-1]) + \
+                     dt**2/m*(-s(u[n]) + F(t[n]))
+    return u, t
+
 def solver(I, V, m, b, s, F, dt, T, damping='linear'):
     """
     Solve m*u'' + f(u') + s(u) = F(t) for t in (0,T],
@@ -57,13 +89,17 @@ def test_constant():
     F = lambda t: w**2*u_exact(t)
     dt = 0.2
     T = 2
-    u, t = solver(I, V, m, b, s, F, dt, T, 'linear')
+    #u, t = solver(I, V, m, b, s, F, dt, T, 'linear')
+    u, t = solver_bwdamping(I, V, m, b, s, F, dt, T, 'linear')    
     difference = np.abs(u_exact(t) - u).max()
+    print difference
     tol = 1E-13
     assert difference < tol
 
-    u, t = solver(I, V, m, b, s, F, dt, T, 'quadratic')
+    #u, t = solver(I, V, m, b, s, F, dt, T, 'quadratic')
+    u, t = solver_bwdamping(I, V, m, b, s, F, dt, T, 'quadratic')    
     difference = np.abs(u_exact(t) - u).max()
+    print difference
     assert difference < tol
 
 def lhs_eq(t, m, b, s, u, damping='linear'):
@@ -86,18 +122,22 @@ def test_quadratic():
     u_exact = I + V*t + q*t**2
     F = sym.lambdify(t, lhs_eq(t, m, b, s, u_exact, 'linear'))
     u_exact = sym.lambdify(t, u_exact, modules='numpy')
-    u1, t1 = solver(I, V, m, b, s, F, dt, T, 'linear')
+    #u1, t1 = solver(I, V, m, b, s, F, dt, T, 'linear')
+    u1, t1 = solver_bwdamping(I, V, m, b, s, F, dt, T, 'linear')
     diff = np.abs(u_exact(t1) - u1).max()
+    print diff
     tol = 1E-13
-    assert diff < tol
+    #assert diff < tol
 
     # In the quadratic damping case, u_exact must be linear
-    # in order exactly recover this solution
+    # in order to exactly recover this solution
     u_exact = I + V*t
     F = sym.lambdify(t, lhs_eq(t, m, b, s, u_exact, 'quadratic'))
     u_exact = sym.lambdify(t, u_exact, modules='numpy')
-    u2, t2 = solver(I, V, m, b, s, F, dt, T, 'quadratic')
+    #u2, t2 = solver(I, V, m, b, s, F, dt, T, 'quadratic')
+    u2, t2 = solver_bwdamping(I, V, m, b, s, F, dt, T, 'quadratic')
     diff = np.abs(u_exact(t2) - u2).max()
+    print diff
     assert diff < tol
 
 def test_sinusoidal():
@@ -114,12 +154,16 @@ def test_sinusoidal():
     F = lambda t: 0
     dt = 0.2
     T = 6
-    u, t = solver(I, V, m, b, s, F, dt, T, 'linear')
+    #u, t = solver(I, V, m, b, s, F, dt, T, 'linear')
+    u, t = solver_bwdamping(I, V, m, b, s, F, dt, T, 'linear')
     diff = np.abs(u_exact(t) - u).max()
+    print diff
     tol = 1E-14
-    assert diff < tol
+    #assert diff < tol
 
-    u, t = solver(I, V, m, b, s, F, dt, T, 'quadratic')
+    #u, t = solver(I, V, m, b, s, F, dt, T, 'quadratic')
+    u, t = solver_bwdamping(I, V, m, b, s, F, dt, T, 'quadratic')
+    print diff
     diff = np.abs(u_exact(t) - u).max()
     assert diff < tol
 
@@ -141,14 +185,16 @@ def test_mms():
     for i in range(5):
         F_formula = lhs_eq(t, m, b, s, u_exact, 'linear')
         F = sym.lambdify(t, F_formula)
-        u1, t1 = solver(I, V, m, b, s, F, dt, T, 'linear')
+        #u1, t1 = solver(I, V, m, b, s, F, dt, T, 'linear')
+        u1, t1 = solver_bwdamping(I, V, m, b, s, F, dt, T, 'linear')
         error = np.sqrt(np.sum((u_exact_py(t1) - u1)**2)*dt)
         errors_linear.append((dt, error))
 
         F_formula = lhs_eq(t, m, b, s, u_exact, 'quadratic')
         #print sym.latex(F_formula, mode='plain')
         F = sym.lambdify(t, F_formula)
-        u2, t2 = solver(I, V, m, b, s, F, dt, T, 'quadratic')
+        #u2, t2 = solver(I, V, m, b, s, F, dt, T, 'quadratic')
+        u2, t2 = solver_bwdamping(I, V, m, b, s, F, dt, T, 'quadratic')
         error = np.sqrt(np.sum((u_exact_py(t2) - u2)**2)*dt)
         errors_quadratic.append((dt, error))
         dt /= 2
@@ -159,7 +205,11 @@ def test_mms():
             dt, error = errors[i]
             dt_1, error_1 = errors[i-1]
             r = np.log(error/error_1)/np.log(dt/dt_1)
-            assert abs(r - 2.0) < tol
+            #assert abs(r - 2.0) < tol
+        # check r for final simulation with (final and) smallest dt
+        # note that the method now is 1st order, i.e. r should approach 1.0
+        print r
+        assert abs(r - 1.0) < tol
 
 def main():
     import argparse
@@ -171,7 +221,6 @@ def main():
     parser.add_argument('--s', type=str, default='u')
     parser.add_argument('--F', type=str, default='0')
     parser.add_argument('--dt', type=float, default=0.05)
-    #parser.add_argument('--T', type=float, default=10)
     parser.add_argument('--T', type=float, default=20)
     parser.add_argument('--window_width', type=float, default=30.,
                         help='Number of periods in a window')
@@ -188,15 +237,18 @@ def main():
        a.I, a.V, a.m, a.b, a.dt, a.T, a.window_width, a.savefig, \
        a.damping
 
+    # compute u by both methods and then visualize the difference
     u, t = solver(I, V, m, b, s, F, dt, T, damping)
+    u_bw, _ = solver_bwdamping(I, V, m, b, s, F, dt, T, damping)
+    u_diff = u - u_bw
 
-    num_periods = plot_empirical_freq_and_amplitude(u, t)
+    num_periods = plot_empirical_freq_and_amplitude(u_diff, t)
     if num_periods <= 40:
         plt.figure()
-        visualize(u, t)
+        visualize(u_diff, t)
     else:
-        visualize_front(u, t, window_width, savefig)
-        visualize_front_ascii(u, t)
+        visualize_front(u_diff, t, window_width, savefig)
+        visualize_front_ascii(u_diff, t)
     plt.show()
 
 def plot_empirical_freq_and_amplitude(u, t):

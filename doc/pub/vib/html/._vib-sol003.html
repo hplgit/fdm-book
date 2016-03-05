@@ -3203,6 +3203,144 @@ Try to call up as much existing functionality in <code>vib.py</code> as possible
 
 <p>
 <!-- --- end hint in exercise --- -->
+
+<p>
+<!-- --- begin solution of exercise --- -->
+
+<p>
+<a class="glyphicon glyphicon-hand-right showdetails" data-toggle="collapse"
+ data-target="#exer_14_2" style="font-size: 80%;"></a>
+<b>Solution.</b>
+<div class="collapse-group">
+<p><div class="collapse" id="exer_14_2">
+
+<p>
+The code:
+<p>
+
+<!-- code=python (!bc pypro) typeset with pygments style "default" -->
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #408080; font-style: italic"># Reimplementation of vib.py using classes</span>
+
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">scitools.std</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">plt</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">sympy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">sym</span>
+<span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">vib</span> <span style="color: #008000; font-weight: bold">import</span> solver <span style="color: #008000; font-weight: bold">as</span> vib_solver
+<span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">vib</span> <span style="color: #008000; font-weight: bold">import</span> visualize <span style="color: #008000; font-weight: bold">as</span> vib_visualize
+<span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">vib</span> <span style="color: #008000; font-weight: bold">import</span> visualize_front <span style="color: #008000; font-weight: bold">as</span> vib_visualize_front
+<span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">vib</span> <span style="color: #008000; font-weight: bold">import</span> visualize_front_ascii <span style="color: #008000; font-weight: bold">as</span> vib_visualize_front_ascii
+<span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">vib</span> <span style="color: #008000; font-weight: bold">import</span> plot_empirical_freq_and_amplitude <span style="color: #008000; font-weight: bold">as</span> vib_plot_empirical_freq_and_amplitude
+
+<span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">Vibration</span>:
+    <span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;</span>
+<span style="color: #BA2121; font-style: italic">    Problem: m*u&#39;&#39; + f(u&#39;) + s(u) = F(t) for t in (0,T],</span>
+<span style="color: #BA2121; font-style: italic">    u(0)=I and u&#39;(0)=V. The problem is solved</span>
+<span style="color: #BA2121; font-style: italic">    by a central finite difference method with time step dt.</span>
+<span style="color: #BA2121; font-style: italic">    If damping is &#39;linear&#39;, f(u&#39;)=b*u, while if damping is</span>
+<span style="color: #BA2121; font-style: italic">    &#39;quadratic&#39;, f(u&#39;)=b*u&#39;*abs(u&#39;). Zero damping is achieved with b=0.</span>
+<span style="color: #BA2121; font-style: italic">    F(t) and s(u) are Python functions.</span>
+<span style="color: #BA2121; font-style: italic">    &#39;&#39;&#39;</span>
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>, I<span style="color: #666666">=1</span>, V<span style="color: #666666">=0</span>, m<span style="color: #666666">=1</span>, b<span style="color: #666666">=0</span>, damping<span style="color: #666666">=</span><span style="color: #BA2121">&#39;linear&#39;</span>):
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>I <span style="color: #666666">=</span> I; <span style="color: #008000">self</span><span style="color: #666666">.</span>V <span style="color: #666666">=</span> V; <span style="color: #008000">self</span><span style="color: #666666">.</span>m <span style="color: #666666">=</span> m; <span style="color: #008000">self</span><span style="color: #666666">.</span>b<span style="color: #666666">=</span>b; <span style="color: #008000">self</span><span style="color: #666666">.</span>damping <span style="color: #666666">=</span> damping
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">s</span>(<span style="color: #008000">self</span>, u):
+        <span style="color: #008000; font-weight: bold">return</span> u
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">F</span>(<span style="color: #008000">self</span>, t):
+        <span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;Driving force. Zero implies free oscillations&#39;&#39;&#39;</span>
+        <span style="color: #008000; font-weight: bold">return</span> <span style="color: #666666">0</span>
+        
+<span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">Free_vibrations</span>(Vibration):
+    <span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;F(t) = 0&#39;&#39;&#39;</span>
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>, s<span style="color: #666666">=</span><span style="color: #008000">None</span>, I<span style="color: #666666">=1</span>, V<span style="color: #666666">=0</span>, m<span style="color: #666666">=1</span>, b<span style="color: #666666">=0</span>, damping<span style="color: #666666">=</span><span style="color: #BA2121">&#39;linear&#39;</span>):
+        Vibration<span style="color: #666666">.</span>__init__(<span style="color: #008000">self</span>, I<span style="color: #666666">=</span>I, V<span style="color: #666666">=</span>V, m<span style="color: #666666">=</span>m, b<span style="color: #666666">=</span>b, damping<span style="color: #666666">=</span>damping)
+        <span style="color: #008000; font-weight: bold">if</span> s <span style="color: #666666">!=</span> <span style="color: #008000">None</span>:
+            <span style="color: #008000">self</span><span style="color: #666666">.</span>s <span style="color: #666666">=</span> s
+
+<span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">Forced_vibrations</span>(Vibration):
+    <span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;F(t)! = 0&#39;&#39;&#39;</span>
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>, F, s<span style="color: #666666">=</span><span style="color: #008000">None</span>, I<span style="color: #666666">=1</span>, V<span style="color: #666666">=0</span>, m<span style="color: #666666">=1</span>, b<span style="color: #666666">=0</span>, damping<span style="color: #666666">=</span><span style="color: #BA2121">&#39;linear&#39;</span>):
+        Vibration<span style="color: #666666">.</span>__init__(<span style="color: #008000">self</span>, I<span style="color: #666666">=</span>I, V<span style="color: #666666">=</span>V, m<span style="color: #666666">=</span>m, b<span style="color: #666666">=</span>b, damping<span style="color: #666666">=</span>damping)
+        <span style="color: #008000; font-weight: bold">if</span> s <span style="color: #666666">!=</span> <span style="color: #008000">None</span>:
+            <span style="color: #008000">self</span><span style="color: #666666">.</span>s <span style="color: #666666">=</span> s
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>F <span style="color: #666666">=</span> F
+
+<span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">Solver</span>:
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>, dt<span style="color: #666666">=0.05</span>, T<span style="color: #666666">=20</span>):
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>dt <span style="color: #666666">=</span> dt; <span style="color: #008000">self</span><span style="color: #666666">.</span>T <span style="color: #666666">=</span> T
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solve</span>(<span style="color: #008000">self</span>, problem):
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>u, <span style="color: #008000">self</span><span style="color: #666666">.</span>t <span style="color: #666666">=</span> vib_solver(problem<span style="color: #666666">.</span>I, problem<span style="color: #666666">.</span>V, 
+                                    problem<span style="color: #666666">.</span>m, problem<span style="color: #666666">.</span>b,
+                                    problem<span style="color: #666666">.</span>s, problem<span style="color: #666666">.</span>F, 
+                                    <span style="color: #008000">self</span><span style="color: #666666">.</span>dt, <span style="color: #008000">self</span><span style="color: #666666">.</span>T, problem<span style="color: #666666">.</span>damping)
+
+<span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">Visualizer</span>:
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>, problem, solver, window_width, savefig):
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>problem <span style="color: #666666">=</span> problem; <span style="color: #008000">self</span><span style="color: #666666">.</span>solver <span style="color: #666666">=</span> solver
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>window_width <span style="color: #666666">=</span> window_width; <span style="color: #008000">self</span><span style="color: #666666">.</span>savefig <span style="color: #666666">=</span> savefig
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">visualize</span>(<span style="color: #008000">self</span>):
+        u <span style="color: #666666">=</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>solver<span style="color: #666666">.</span>u; t <span style="color: #666666">=</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>solver<span style="color: #666666">.</span>t   <span style="color: #408080; font-style: italic"># short forms</span>
+        num_periods <span style="color: #666666">=</span> vib_plot_empirical_freq_and_amplitude(u, t)
+        <span style="color: #008000; font-weight: bold">if</span> num_periods <span style="color: #666666">&lt;=</span> <span style="color: #666666">40</span>:
+            plt<span style="color: #666666">.</span>figure()
+            vib_visualize(u, t)
+        <span style="color: #008000; font-weight: bold">else</span>:
+            vib_visualize_front(u, t, <span style="color: #008000">self</span><span style="color: #666666">.</span>window_width, <span style="color: #008000">self</span><span style="color: #666666">.</span>savefig)
+            vib_visualize_front_ascii(u, t)
+        plt<span style="color: #666666">.</span>show()
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">main</span>():
+    <span style="color: #408080; font-style: italic"># Note: the reading of parameter values would better be done </span>
+    <span style="color: #408080; font-style: italic"># from each relevant class, i.e. class Problem should read I, V, etc.,</span>
+    <span style="color: #408080; font-style: italic"># while class Solver should read dt and T, and so on. Consult, e.g., </span>
+    <span style="color: #408080; font-style: italic"># Langtangen: &quot;A Primer on Scientific Programming&quot;, App E.</span>
+    <span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">argparse</span>
+    parser <span style="color: #666666">=</span> argparse<span style="color: #666666">.</span>ArgumentParser()
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--I&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=1.0</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--V&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=0.0</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--m&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=1.0</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--b&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=0.0</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--s&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">str</span>, default<span style="color: #666666">=</span><span style="color: #008000">None</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--F&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">str</span>, default<span style="color: #666666">=</span><span style="color: #BA2121">&#39;0&#39;</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--dt&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=0.05</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--T&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=20</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--window_width&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=30.</span>,
+                        help<span style="color: #666666">=</span><span style="color: #BA2121">&#39;Number of periods in a window&#39;</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--damping&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">str</span>, default<span style="color: #666666">=</span><span style="color: #BA2121">&#39;linear&#39;</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--savefig&#39;</span>, action<span style="color: #666666">=</span><span style="color: #BA2121">&#39;store_true&#39;</span>)
+    <span style="color: #408080; font-style: italic"># Hack to allow --SCITOOLS options (scitools.std reads this argument</span>
+    <span style="color: #408080; font-style: italic"># at import)</span>
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--SCITOOLS_easyviz_backend&#39;</span>, default<span style="color: #666666">=</span><span style="color: #BA2121">&#39;matplotlib&#39;</span>)
+    a <span style="color: #666666">=</span> parser<span style="color: #666666">.</span>parse_args()
+    
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">scitools.std</span> <span style="color: #008000; font-weight: bold">import</span> StringFunction
+    <span style="color: #008000; font-weight: bold">if</span> a<span style="color: #666666">.</span>s <span style="color: #666666">!=</span> <span style="color: #008000">None</span>:
+        s <span style="color: #666666">=</span> StringFunction(a<span style="color: #666666">.</span>s, independent_variable<span style="color: #666666">=</span><span style="color: #BA2121">&#39;u&#39;</span>)
+    <span style="color: #008000; font-weight: bold">else</span>:
+        s <span style="color: #666666">=</span> <span style="color: #008000">None</span>
+    F <span style="color: #666666">=</span> StringFunction(a<span style="color: #666666">.</span>F, independent_variable<span style="color: #666666">=</span><span style="color: #BA2121">&#39;t&#39;</span>)
+
+    <span style="color: #008000; font-weight: bold">if</span> a<span style="color: #666666">.</span>F <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;0&#39;</span>:  <span style="color: #408080; font-style: italic"># free vibrations</span>
+        problem <span style="color: #666666">=</span> Free_vibrations(s<span style="color: #666666">=</span>s, I<span style="color: #666666">=</span>a<span style="color: #666666">.</span>I, V<span style="color: #666666">=</span>a<span style="color: #666666">.</span>V, m<span style="color: #666666">=</span>a<span style="color: #666666">.</span>m, b<span style="color: #666666">=</span>a<span style="color: #666666">.</span>b, 
+                                  damping<span style="color: #666666">=</span>a<span style="color: #666666">.</span>damping)
+    <span style="color: #008000; font-weight: bold">else</span>:   <span style="color: #408080; font-style: italic"># forced vibrations</span>
+        problem <span style="color: #666666">=</span> Forced_vibrations(<span style="color: #008000; font-weight: bold">lambda</span> t: np<span style="color: #666666">.</span>sin(t), s<span style="color: #666666">=</span>s, I<span style="color: #666666">=</span>a<span style="color: #666666">.</span>I, V<span style="color: #666666">=</span>a<span style="color: #666666">.</span>V, 
+                                    m<span style="color: #666666">=</span>a<span style="color: #666666">.</span>m, b<span style="color: #666666">=</span>a<span style="color: #666666">.</span>b, damping<span style="color: #666666">=</span>a<span style="color: #666666">.</span>damping)
+            
+    solver <span style="color: #666666">=</span> Solver(dt<span style="color: #666666">=</span>a<span style="color: #666666">.</span>dt, T<span style="color: #666666">=</span>a<span style="color: #666666">.</span>T) 
+    solver<span style="color: #666666">.</span>solve(problem)      
+            
+    visualizer <span style="color: #666666">=</span> Visualizer(problem, solver, a<span style="color: #666666">.</span>window_width, a<span style="color: #666666">.</span>savefig)
+    visualizer<span style="color: #666666">.</span>visualize()
+
+<span style="color: #008000; font-weight: bold">if</span> __name__ <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;__main__&#39;</span>:
+    main()
+</pre></div>
+<p>
+</div></p>
+</div>
+</p>
+
+<p>
+<!-- --- end solution of exercise --- -->
 Filename: <code>vib_class</code>.
 
 <p>
@@ -3218,6 +3356,43 @@ Show that the difference \( [D_t D_tu]^n \) is equal to \( [D_t^+D_t^-u]^n \)
 and \( D_t^-D_t^+u]^n \). That is, instead of applying a centered difference
 twice one can alternatively apply a mixture forward and backward
 differences.
+
+<p>
+<!-- --- begin solution of exercise --- -->
+
+<p>
+<a class="glyphicon glyphicon-hand-right showdetails" data-toggle="collapse"
+ data-target="#exer_15_1" style="font-size: 80%;"></a>
+<b>Solution.</b>
+<div class="collapse-group">
+<p><div class="collapse" id="exer_15_1">
+
+$$
+\begin{align}
+[D_t^+D_t^-u]^n &= [D_t^+\left(\frac{u^n - u^{n-1}}{\Delta t}\right)]^n \nonumber\\ 
+                 &= [\left(\frac{u^{n+1} - u^n}{\Delta t}\right) - \left(\frac{u^n - u^{n-1}}{\Delta t}\right)]^n  \nonumber\\ 
+                 &= \frac{u^{n+1}-2u^n+u^{n-1}}{\Delta t^2} \nonumber\\ 
+                 &= [D_t D_tu]^n. \nonumber
+\end{align}
+$$
+
+Similarly, we get that
+$$
+\begin{align}
+[D_t^-D_t^+u]^n &= [D_t^-\left(\frac{u^{n+1} - u^n}{\Delta t}\right)]^n \nonumber\\ 
+                 &= [\left(\frac{u^{n+1} - u^n}{\Delta t}\right) - \left(\frac{u^n - u^{n-1}}{\Delta t}\right)]^n  \nonumber\\ 
+                 &= \frac{u^{n+1}-2u^n+u^{n-1}}{\Delta t^2} \nonumber\\ 
+                 &= [D_t D_tu]^n. \nonumber
+\end{align}
+$$
+
+<p>
+</div></p>
+</div>
+</p>
+
+<p>
+<!-- --- end solution of exercise --- -->
 Filename: <code>vib_DtDt_fw_bw</code>.
 
 <p>
@@ -3249,6 +3424,474 @@ to compare the original approach with centered difference and the
 new idea launched in this exercise. Perform numerical experiments
 to investigate how much accuracy that is lost by using the backward
 differences.
+
+<p>
+<!-- --- begin solution of exercise --- -->
+
+<p>
+<a class="glyphicon glyphicon-hand-right showdetails" data-toggle="collapse"
+ data-target="#exer_16_1" style="font-size: 80%;"></a>
+<b>Solution.</b>
+<div class="collapse-group">
+<p><div class="collapse" id="exer_16_1">
+
+<p>
+The new discretization approach of the linear and quadratic damping terms call for new derivations of the updating formulas (for \( u \)) in the solver. Since backward difference approximations will be used for the damping term, we may also use this approximation for the initial condition on \( u'(0) \) without deteriorating the convergence rate any further. Note that introducing backward difference approximations for the damping term make our computational schemes first order, as opposed to the original second order schemes which used central difference approximations also for the damping terms. The motivation for also using a backward difference approximation for the initial condition on \( u'(0) \), is simply that the computational schemes get much simpler.
+
+<p>
+With linear damping, the new discretized form of the equation reads
+$$
+\begin{equation*}
+m\frac{u^{n+1}-2u^n+u^{n-1}}{\Delta t^2} + b\frac{u^n - u^{n-1}}{\Delta t} + s(u^n) = F^n,
+\nonumber
+\end{equation*}
+$$
+
+which gives us 
+$$
+\begin{equation*}
+u^{n+1} = \left(2-\frac{\Delta t b}{m}\right)u^n + \frac{\Delta t^2}{m}\left(F^n - s(u^n)\right) + \left(\frac{\Delta t b}{m} - 1\right)u^{n-1}.
+\nonumber
+\end{equation*}
+$$
+
+With \( n=0 \), the updating formula becomes
+$$
+\begin{equation*}
+u^1 = \left(2-\frac{\Delta t b}{m}\right)u^0 + \frac{\Delta t^2}{m}\left(F^0 - s(u^0)\right) + \left(\frac{\Delta t b}{m} - 1\right)u^{-1},
+\nonumber
+\end{equation*}
+$$
+
+which requires some further elaboration because of the unknown \( u^{-1} \). We handle this by discretizing the initial condition \( u'(0) = V \) by a backward difference approximation as 
+$$
+\begin{equation*}
+\frac{u^0 - u^{-1}}{\Delta t} = V,
+\nonumber
+\end{equation*}
+$$
+
+which implies that
+$$
+\begin{equation*}
+u^{-1} = u^0 - \Delta t V.
+\nonumber
+\end{equation*}
+$$
+
+Inserting this expression for \( u^{-1} \) in the updating formula for \( u^{n+1} \), and simplifying,
+gives us the following special formula for the first time step:
+$$
+\begin{equation*}
+u^1 = u^0 + \Delta t V + \frac{\Delta t^2}{m}\left(-bV - s(u^0) + F^0\right).
+\nonumber
+\end{equation*}
+$$
+
+Switching to quadratic damping, the new discretized form of the equations becomes
+$$
+\begin{equation*}
+m\frac{u^{n+1}-2u^n+u^{n-1}}{\Delta t^2} + b|\frac{u^n - u^{n-1}}{\Delta t}|\frac{u^n - u^{n-1}}{\Delta t} + s(u^n) = F^n,
+\nonumber
+\end{equation*}
+$$
+
+which leads to
+$$
+\begin{equation*}
+u^{n+1} = 2u^n - u^{n-1} - \frac{b}{m}|u^n - u^{n-1}|(u^n - u^{n-1}) + \frac{\Delta t^2}{m}\left(F^n - s(u^n)\right).
+\nonumber
+\end{equation*}
+$$
+
+With \( n=0 \), this updating formula becomes
+$$
+\begin{equation*}
+u^1 = 2u^0 - u^{-1} - \frac{b}{m}|u^0 - u^{-1}|(u^0 - u^{-1}) + \frac{\Delta t^2}{m}\left(F^0 - s(u^0)\right).
+\nonumber
+\end{equation*}
+$$
+
+Again, we handle the unknown \( u^{-1} \) via the same expression as above, which be derived from a backward difference approximation to the initial condition on the derivative. Inserting this expression for \( u^{-1} \) and simplifying, gives the special updating formula for \( u^1 \) as
+$$
+\begin{equation*}
+u^1 = u^0 + \Delta t V + \frac{\Delta t^2}{m}\left(-b|V|V - s(u^0) + F^0\right).
+\nonumber
+\end{equation*}
+$$
+
+We implement these new computational schemes in a new solver function <code>solver_bwdamping</code>, so that the discrete solution for \( u \) can be found by both the original and the new solver. The difference between the two different solutions is then visualized in the same way as the original solution in <code>main</code>.
+
+<p>
+The convergence rates computed in <code>test_mms</code> demonstrates that our scheme now is a first order scheme, as \( r \) is seen to approach 1.0 with decreasing \( \Delta t \).
+
+<p>
+Both solvers reproduce a constant solution exactly (within machine precision), whereas sinusoidal and quadratic solutions differ, as should be expected after comparing the schemes.
+
+<p>
+
+<!-- code=python (!bc pypro) typeset with pygments style "default" -->
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
+<span style="color: #408080; font-style: italic">#import matplotlib.pyplot as plt</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">scitools.std</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">plt</span>
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solver_bwdamping</span>(I, V, m, b, s, F, dt, T, damping<span style="color: #666666">=</span><span style="color: #BA2121">&#39;linear&#39;</span>):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Solve m*u&#39;&#39; + f(u&#39;) + s(u) = F(t) for t in (0,T],</span>
+<span style="color: #BA2121; font-style: italic">    u(0)=I and u&#39;(0)=V. All terms except damping is discretized </span>
+<span style="color: #BA2121; font-style: italic">    by a central finite difference method with time step dt. The damping</span>
+<span style="color: #BA2121; font-style: italic">    term is discretized by a backward diff. approx., as is the init.cond.</span>
+<span style="color: #BA2121; font-style: italic">    u&#39;(0). If damping is &#39;linear&#39;, f(u&#39;)=b*u, while if damping is</span>
+<span style="color: #BA2121; font-style: italic">    &#39;quadratic&#39;, f(u&#39;)=b*u&#39;*abs(u&#39;).</span>
+<span style="color: #BA2121; font-style: italic">    F(t) and s(u) are Python functions.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    dt <span style="color: #666666">=</span> <span style="color: #008000">float</span>(dt); b <span style="color: #666666">=</span> <span style="color: #008000">float</span>(b); m <span style="color: #666666">=</span> <span style="color: #008000">float</span>(m) <span style="color: #408080; font-style: italic"># avoid integer div.</span>
+    Nt <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(T<span style="color: #666666">/</span>dt))
+    u <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nt<span style="color: #666666">+1</span>)
+    t <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, Nt<span style="color: #666666">*</span>dt, Nt<span style="color: #666666">+1</span>)
+    
+    u_original <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nt<span style="color: #666666">+1</span>); u_original[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> I  <span style="color: #408080; font-style: italic"># for testing</span>
+
+    u[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> I
+    <span style="color: #008000; font-weight: bold">if</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;linear&#39;</span>:
+        u[<span style="color: #666666">1</span>] <span style="color: #666666">=</span> u[<span style="color: #666666">0</span>] <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>V <span style="color: #666666">+</span> dt<span style="color: #666666">**2/</span>m<span style="color: #666666">*</span>(<span style="color: #666666">-</span>b<span style="color: #666666">*</span>V <span style="color: #666666">-</span> s(u[<span style="color: #666666">0</span>]) <span style="color: #666666">+</span> F(t[<span style="color: #666666">0</span>]))
+    <span style="color: #008000; font-weight: bold">elif</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;quadratic&#39;</span>:
+        u[<span style="color: #666666">1</span>] <span style="color: #666666">=</span> u[<span style="color: #666666">0</span>] <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>V <span style="color: #666666">+</span> \
+               dt<span style="color: #666666">**2/</span>m<span style="color: #666666">*</span>(<span style="color: #666666">-</span>b<span style="color: #666666">*</span>V<span style="color: #666666">*</span><span style="color: #008000">abs</span>(V) <span style="color: #666666">-</span> s(u[<span style="color: #666666">0</span>]) <span style="color: #666666">+</span> F(t[<span style="color: #666666">0</span>]))
+    <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>, Nt):
+        <span style="color: #008000; font-weight: bold">if</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;linear&#39;</span>:
+            u[n<span style="color: #666666">+1</span>] <span style="color: #666666">=</span> (<span style="color: #666666">2</span> <span style="color: #666666">-</span> dt<span style="color: #666666">*</span>b<span style="color: #666666">/</span>m)<span style="color: #666666">*</span>u[n] <span style="color: #666666">+</span> dt<span style="color: #666666">**2/</span>m<span style="color: #666666">*</span>(<span style="color: #666666">-</span> s(u[n]) <span style="color: #666666">+</span> F(t[n])) <span style="color: #666666">+</span> \
+                     (dt<span style="color: #666666">*</span>b<span style="color: #666666">/</span>m <span style="color: #666666">-</span> <span style="color: #666666">1</span>)<span style="color: #666666">*</span>u[n<span style="color: #666666">-1</span>]
+        <span style="color: #008000; font-weight: bold">elif</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;quadratic&#39;</span>:
+            u[n<span style="color: #666666">+1</span>] <span style="color: #666666">=</span> <span style="color: #666666">2*</span>u[n] <span style="color: #666666">-</span> u[n<span style="color: #666666">-1</span>] <span style="color: #666666">-</span> b<span style="color: #666666">/</span>m<span style="color: #666666">*</span><span style="color: #008000">abs</span>(u[n] <span style="color: #666666">-</span> u[n<span style="color: #666666">-1</span>])<span style="color: #666666">*</span>(u[n] <span style="color: #666666">-</span> u[n<span style="color: #666666">-1</span>]) <span style="color: #666666">+</span> \
+                     dt<span style="color: #666666">**2/</span>m<span style="color: #666666">*</span>(<span style="color: #666666">-</span>s(u[n]) <span style="color: #666666">+</span> F(t[n]))
+    <span style="color: #008000; font-weight: bold">return</span> u, t
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solver</span>(I, V, m, b, s, F, dt, T, damping<span style="color: #666666">=</span><span style="color: #BA2121">&#39;linear&#39;</span>):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Solve m*u&#39;&#39; + f(u&#39;) + s(u) = F(t) for t in (0,T],</span>
+<span style="color: #BA2121; font-style: italic">    u(0)=I and u&#39;(0)=V,</span>
+<span style="color: #BA2121; font-style: italic">    by a central finite difference method with time step dt.</span>
+<span style="color: #BA2121; font-style: italic">    If damping is &#39;linear&#39;, f(u&#39;)=b*u, while if damping is</span>
+<span style="color: #BA2121; font-style: italic">    &#39;quadratic&#39;, f(u&#39;)=b*u&#39;*abs(u&#39;).</span>
+<span style="color: #BA2121; font-style: italic">    F(t) and s(u) are Python functions.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    dt <span style="color: #666666">=</span> <span style="color: #008000">float</span>(dt); b <span style="color: #666666">=</span> <span style="color: #008000">float</span>(b); m <span style="color: #666666">=</span> <span style="color: #008000">float</span>(m) <span style="color: #408080; font-style: italic"># avoid integer div.</span>
+    Nt <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(T<span style="color: #666666">/</span>dt))
+    u <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nt<span style="color: #666666">+1</span>)
+    t <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, Nt<span style="color: #666666">*</span>dt, Nt<span style="color: #666666">+1</span>)
+
+    u[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> I
+    <span style="color: #008000; font-weight: bold">if</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;linear&#39;</span>:
+        u[<span style="color: #666666">1</span>] <span style="color: #666666">=</span> u[<span style="color: #666666">0</span>] <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>V <span style="color: #666666">+</span> dt<span style="color: #666666">**2/</span>(<span style="color: #666666">2*</span>m)<span style="color: #666666">*</span>(<span style="color: #666666">-</span>b<span style="color: #666666">*</span>V <span style="color: #666666">-</span> s(u[<span style="color: #666666">0</span>]) <span style="color: #666666">+</span> F(t[<span style="color: #666666">0</span>]))
+    <span style="color: #008000; font-weight: bold">elif</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;quadratic&#39;</span>:
+        u[<span style="color: #666666">1</span>] <span style="color: #666666">=</span> u[<span style="color: #666666">0</span>] <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>V <span style="color: #666666">+</span> \
+               dt<span style="color: #666666">**2/</span>(<span style="color: #666666">2*</span>m)<span style="color: #666666">*</span>(<span style="color: #666666">-</span>b<span style="color: #666666">*</span>V<span style="color: #666666">*</span><span style="color: #008000">abs</span>(V) <span style="color: #666666">-</span> s(u[<span style="color: #666666">0</span>]) <span style="color: #666666">+</span> F(t[<span style="color: #666666">0</span>]))
+
+    <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>, Nt):
+        <span style="color: #008000; font-weight: bold">if</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;linear&#39;</span>:
+            u[n<span style="color: #666666">+1</span>] <span style="color: #666666">=</span> (<span style="color: #666666">2*</span>m<span style="color: #666666">*</span>u[n] <span style="color: #666666">+</span> (b<span style="color: #666666">*</span>dt<span style="color: #666666">/2</span> <span style="color: #666666">-</span> m)<span style="color: #666666">*</span>u[n<span style="color: #666666">-1</span>] <span style="color: #666666">+</span>
+                      dt<span style="color: #666666">**2*</span>(F(t[n]) <span style="color: #666666">-</span> s(u[n])))<span style="color: #666666">/</span>(m <span style="color: #666666">+</span> b<span style="color: #666666">*</span>dt<span style="color: #666666">/2</span>)
+        <span style="color: #008000; font-weight: bold">elif</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;quadratic&#39;</span>:
+            u[n<span style="color: #666666">+1</span>] <span style="color: #666666">=</span> (<span style="color: #666666">2*</span>m<span style="color: #666666">*</span>u[n] <span style="color: #666666">-</span> m<span style="color: #666666">*</span>u[n<span style="color: #666666">-1</span>] <span style="color: #666666">+</span> b<span style="color: #666666">*</span>u[n]<span style="color: #666666">*</span><span style="color: #008000">abs</span>(u[n] <span style="color: #666666">-</span> u[n<span style="color: #666666">-1</span>])
+                      <span style="color: #666666">+</span> dt<span style="color: #666666">**2*</span>(F(t[n]) <span style="color: #666666">-</span> s(u[n])))<span style="color: #666666">/</span>\
+                      (m <span style="color: #666666">+</span> b<span style="color: #666666">*</span><span style="color: #008000">abs</span>(u[n] <span style="color: #666666">-</span> u[n<span style="color: #666666">-1</span>]))
+    <span style="color: #008000; font-weight: bold">return</span> u, t
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">visualize</span>(u, t, title<span style="color: #666666">=</span><span style="color: #BA2121">&#39;&#39;</span>, filename<span style="color: #666666">=</span><span style="color: #BA2121">&#39;tmp&#39;</span>):
+    plt<span style="color: #666666">.</span>plot(t, u, <span style="color: #BA2121">&#39;b-&#39;</span>)
+    plt<span style="color: #666666">.</span>xlabel(<span style="color: #BA2121">&#39;t&#39;</span>)
+    plt<span style="color: #666666">.</span>ylabel(<span style="color: #BA2121">&#39;u&#39;</span>)
+    dt <span style="color: #666666">=</span> t[<span style="color: #666666">1</span>] <span style="color: #666666">-</span> t[<span style="color: #666666">0</span>]
+    plt<span style="color: #666666">.</span>title(<span style="color: #BA2121">&#39;dt=</span><span style="color: #BB6688; font-weight: bold">%g</span><span style="color: #BA2121">&#39;</span> <span style="color: #666666">%</span> dt)
+    umin <span style="color: #666666">=</span> <span style="color: #666666">1.2*</span>u<span style="color: #666666">.</span>min(); umax <span style="color: #666666">=</span> <span style="color: #666666">1.2*</span>u<span style="color: #666666">.</span>max()
+    plt<span style="color: #666666">.</span>axis([t[<span style="color: #666666">0</span>], t[<span style="color: #666666">-1</span>], umin, umax])
+    plt<span style="color: #666666">.</span>title(title)
+    plt<span style="color: #666666">.</span>savefig(filename <span style="color: #666666">+</span> <span style="color: #BA2121">&#39;.png&#39;</span>)
+    plt<span style="color: #666666">.</span>savefig(filename <span style="color: #666666">+</span> <span style="color: #BA2121">&#39;.pdf&#39;</span>)
+    plt<span style="color: #666666">.</span>show()
+
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">sympy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">sym</span>
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_constant</span>():
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Verify a constant solution.&quot;&quot;&quot;</span>
+    u_exact <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> t: I
+    I <span style="color: #666666">=</span> <span style="color: #666666">1.2</span>; V <span style="color: #666666">=</span> <span style="color: #666666">0</span>; m <span style="color: #666666">=</span> <span style="color: #666666">2</span>; b <span style="color: #666666">=</span> <span style="color: #666666">0.9</span>
+    w <span style="color: #666666">=</span> <span style="color: #666666">1.5</span>
+    s <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> u: w<span style="color: #666666">**2*</span>u
+    F <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> t: w<span style="color: #666666">**2*</span>u_exact(t)
+    dt <span style="color: #666666">=</span> <span style="color: #666666">0.2</span>
+    T <span style="color: #666666">=</span> <span style="color: #666666">2</span>
+    <span style="color: #408080; font-style: italic">#u, t = solver(I, V, m, b, s, F, dt, T, &#39;linear&#39;)</span>
+    u, t <span style="color: #666666">=</span> solver_bwdamping(I, V, m, b, s, F, dt, T, <span style="color: #BA2121">&#39;linear&#39;</span>)    
+    difference <span style="color: #666666">=</span> np<span style="color: #666666">.</span>abs(u_exact(t) <span style="color: #666666">-</span> u)<span style="color: #666666">.</span>max()
+    <span style="color: #008000; font-weight: bold">print</span> difference
+    tol <span style="color: #666666">=</span> <span style="color: #666666">1E-13</span>
+    <span style="color: #008000; font-weight: bold">assert</span> difference <span style="color: #666666">&lt;</span> tol
+
+    <span style="color: #408080; font-style: italic">#u, t = solver(I, V, m, b, s, F, dt, T, &#39;quadratic&#39;)</span>
+    u, t <span style="color: #666666">=</span> solver_bwdamping(I, V, m, b, s, F, dt, T, <span style="color: #BA2121">&#39;quadratic&#39;</span>)    
+    difference <span style="color: #666666">=</span> np<span style="color: #666666">.</span>abs(u_exact(t) <span style="color: #666666">-</span> u)<span style="color: #666666">.</span>max()
+    <span style="color: #008000; font-weight: bold">print</span> difference
+    <span style="color: #008000; font-weight: bold">assert</span> difference <span style="color: #666666">&lt;</span> tol
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">lhs_eq</span>(t, m, b, s, u, damping<span style="color: #666666">=</span><span style="color: #BA2121">&#39;linear&#39;</span>):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return lhs of differential equation as sympy expression.&quot;&quot;&quot;</span>
+    v <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>diff(u, t)
+    <span style="color: #008000; font-weight: bold">if</span> damping <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;linear&#39;</span>:
+        <span style="color: #008000; font-weight: bold">return</span> m<span style="color: #666666">*</span>sym<span style="color: #666666">.</span>diff(u, t, t) <span style="color: #666666">+</span> b<span style="color: #666666">*</span>v <span style="color: #666666">+</span> s(u)
+    <span style="color: #008000; font-weight: bold">else</span>:
+        <span style="color: #008000; font-weight: bold">return</span> m<span style="color: #666666">*</span>sym<span style="color: #666666">.</span>diff(u, t, t) <span style="color: #666666">+</span> b<span style="color: #666666">*</span>v<span style="color: #666666">*</span>sym<span style="color: #666666">.</span>Abs(v) <span style="color: #666666">+</span> s(u)
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_quadratic</span>():
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Verify a quadratic solution.&quot;&quot;&quot;</span>
+    I <span style="color: #666666">=</span> <span style="color: #666666">1.2</span>; V <span style="color: #666666">=</span> <span style="color: #666666">3</span>; m <span style="color: #666666">=</span> <span style="color: #666666">2</span>; b <span style="color: #666666">=</span> <span style="color: #666666">0.9</span>
+    s <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> u: <span style="color: #666666">4*</span>u
+    t <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>Symbol(<span style="color: #BA2121">&#39;t&#39;</span>)
+    dt <span style="color: #666666">=</span> <span style="color: #666666">0.2</span>
+    T <span style="color: #666666">=</span> <span style="color: #666666">2</span>
+
+    q <span style="color: #666666">=</span> <span style="color: #666666">2</span>  <span style="color: #408080; font-style: italic"># arbitrary constant</span>
+    u_exact <span style="color: #666666">=</span> I <span style="color: #666666">+</span> V<span style="color: #666666">*</span>t <span style="color: #666666">+</span> q<span style="color: #666666">*</span>t<span style="color: #666666">**2</span>
+    F <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>lambdify(t, lhs_eq(t, m, b, s, u_exact, <span style="color: #BA2121">&#39;linear&#39;</span>))
+    u_exact <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>lambdify(t, u_exact, modules<span style="color: #666666">=</span><span style="color: #BA2121">&#39;numpy&#39;</span>)
+    <span style="color: #408080; font-style: italic">#u1, t1 = solver(I, V, m, b, s, F, dt, T, &#39;linear&#39;)</span>
+    u1, t1 <span style="color: #666666">=</span> solver_bwdamping(I, V, m, b, s, F, dt, T, <span style="color: #BA2121">&#39;linear&#39;</span>)
+    diff <span style="color: #666666">=</span> np<span style="color: #666666">.</span>abs(u_exact(t1) <span style="color: #666666">-</span> u1)<span style="color: #666666">.</span>max()
+    <span style="color: #008000; font-weight: bold">print</span> diff
+    tol <span style="color: #666666">=</span> <span style="color: #666666">1E-13</span>
+    <span style="color: #408080; font-style: italic">#assert diff &lt; tol</span>
+
+    <span style="color: #408080; font-style: italic"># In the quadratic damping case, u_exact must be linear</span>
+    <span style="color: #408080; font-style: italic"># in order to exactly recover this solution</span>
+    u_exact <span style="color: #666666">=</span> I <span style="color: #666666">+</span> V<span style="color: #666666">*</span>t
+    F <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>lambdify(t, lhs_eq(t, m, b, s, u_exact, <span style="color: #BA2121">&#39;quadratic&#39;</span>))
+    u_exact <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>lambdify(t, u_exact, modules<span style="color: #666666">=</span><span style="color: #BA2121">&#39;numpy&#39;</span>)
+    <span style="color: #408080; font-style: italic">#u2, t2 = solver(I, V, m, b, s, F, dt, T, &#39;quadratic&#39;)</span>
+    u2, t2 <span style="color: #666666">=</span> solver_bwdamping(I, V, m, b, s, F, dt, T, <span style="color: #BA2121">&#39;quadratic&#39;</span>)
+    diff <span style="color: #666666">=</span> np<span style="color: #666666">.</span>abs(u_exact(t2) <span style="color: #666666">-</span> u2)<span style="color: #666666">.</span>max()
+    <span style="color: #008000; font-weight: bold">print</span> diff
+    <span style="color: #008000; font-weight: bold">assert</span> diff <span style="color: #666666">&lt;</span> tol
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_sinusoidal</span>():
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Verify a numerically exact sinusoidal solution when b=F=0.&quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">math</span> <span style="color: #008000; font-weight: bold">import</span> asin
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">u_exact</span>(t):
+        w_numerical <span style="color: #666666">=</span> <span style="color: #666666">2/</span>dt<span style="color: #666666">*</span>np<span style="color: #666666">.</span>arcsin(w<span style="color: #666666">*</span>dt<span style="color: #666666">/2</span>)
+        <span style="color: #008000; font-weight: bold">return</span> I<span style="color: #666666">*</span>np<span style="color: #666666">.</span>cos(w_numerical<span style="color: #666666">*</span>t)
+
+    I <span style="color: #666666">=</span> <span style="color: #666666">1.2</span>; V <span style="color: #666666">=</span> <span style="color: #666666">0</span>; m <span style="color: #666666">=</span> <span style="color: #666666">2</span>; b <span style="color: #666666">=</span> <span style="color: #666666">0</span>
+    w <span style="color: #666666">=</span> <span style="color: #666666">1.5</span>  <span style="color: #408080; font-style: italic"># fix the frequency</span>
+    s <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> u: m<span style="color: #666666">*</span>w<span style="color: #666666">**2*</span>u
+    F <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> t: <span style="color: #666666">0</span>
+    dt <span style="color: #666666">=</span> <span style="color: #666666">0.2</span>
+    T <span style="color: #666666">=</span> <span style="color: #666666">6</span>
+    <span style="color: #408080; font-style: italic">#u, t = solver(I, V, m, b, s, F, dt, T, &#39;linear&#39;)</span>
+    u, t <span style="color: #666666">=</span> solver_bwdamping(I, V, m, b, s, F, dt, T, <span style="color: #BA2121">&#39;linear&#39;</span>)
+    diff <span style="color: #666666">=</span> np<span style="color: #666666">.</span>abs(u_exact(t) <span style="color: #666666">-</span> u)<span style="color: #666666">.</span>max()
+    <span style="color: #008000; font-weight: bold">print</span> diff
+    tol <span style="color: #666666">=</span> <span style="color: #666666">1E-14</span>
+    <span style="color: #408080; font-style: italic">#assert diff &lt; tol</span>
+
+    <span style="color: #408080; font-style: italic">#u, t = solver(I, V, m, b, s, F, dt, T, &#39;quadratic&#39;)</span>
+    u, t <span style="color: #666666">=</span> solver_bwdamping(I, V, m, b, s, F, dt, T, <span style="color: #BA2121">&#39;quadratic&#39;</span>)
+    <span style="color: #008000; font-weight: bold">print</span> diff
+    diff <span style="color: #666666">=</span> np<span style="color: #666666">.</span>abs(u_exact(t) <span style="color: #666666">-</span> u)<span style="color: #666666">.</span>max()
+    <span style="color: #008000; font-weight: bold">assert</span> diff <span style="color: #666666">&lt;</span> tol
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_mms</span>():
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Use method of manufactured solutions.&quot;&quot;&quot;</span>
+    m <span style="color: #666666">=</span> <span style="color: #666666">4.</span>; b <span style="color: #666666">=</span> <span style="color: #666666">1</span>
+    w <span style="color: #666666">=</span> <span style="color: #666666">1.5</span>
+    t <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>Symbol(<span style="color: #BA2121">&#39;t&#39;</span>)
+    u_exact <span style="color: #666666">=</span> <span style="color: #666666">3*</span>sym<span style="color: #666666">.</span>exp(<span style="color: #666666">-0.2*</span>t)<span style="color: #666666">*</span>sym<span style="color: #666666">.</span>cos(<span style="color: #666666">1.2*</span>t)
+    I <span style="color: #666666">=</span> u_exact<span style="color: #666666">.</span>subs(t, <span style="color: #666666">0</span>)<span style="color: #666666">.</span>evalf()
+    V <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>diff(u_exact, t)<span style="color: #666666">.</span>subs(t, <span style="color: #666666">0</span>)<span style="color: #666666">.</span>evalf()
+    u_exact_py <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>lambdify(t, u_exact, modules<span style="color: #666666">=</span><span style="color: #BA2121">&#39;numpy&#39;</span>)
+    s <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> u: u<span style="color: #666666">**3</span>
+    dt <span style="color: #666666">=</span> <span style="color: #666666">0.2</span>
+    T <span style="color: #666666">=</span> <span style="color: #666666">6</span>
+    errors_linear <span style="color: #666666">=</span> []
+    errors_quadratic <span style="color: #666666">=</span> []
+    <span style="color: #408080; font-style: italic"># Run grid refinements and compute exact error</span>
+    <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">5</span>):
+        F_formula <span style="color: #666666">=</span> lhs_eq(t, m, b, s, u_exact, <span style="color: #BA2121">&#39;linear&#39;</span>)
+        F <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>lambdify(t, F_formula)
+        <span style="color: #408080; font-style: italic">#u1, t1 = solver(I, V, m, b, s, F, dt, T, &#39;linear&#39;)</span>
+        u1, t1 <span style="color: #666666">=</span> solver_bwdamping(I, V, m, b, s, F, dt, T, <span style="color: #BA2121">&#39;linear&#39;</span>)
+        error <span style="color: #666666">=</span> np<span style="color: #666666">.</span>sqrt(np<span style="color: #666666">.</span>sum((u_exact_py(t1) <span style="color: #666666">-</span> u1)<span style="color: #666666">**2</span>)<span style="color: #666666">*</span>dt)
+        errors_linear<span style="color: #666666">.</span>append((dt, error))
+
+        F_formula <span style="color: #666666">=</span> lhs_eq(t, m, b, s, u_exact, <span style="color: #BA2121">&#39;quadratic&#39;</span>)
+        <span style="color: #408080; font-style: italic">#print sym.latex(F_formula, mode=&#39;plain&#39;)</span>
+        F <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>lambdify(t, F_formula)
+        <span style="color: #408080; font-style: italic">#u2, t2 = solver(I, V, m, b, s, F, dt, T, &#39;quadratic&#39;)</span>
+        u2, t2 <span style="color: #666666">=</span> solver_bwdamping(I, V, m, b, s, F, dt, T, <span style="color: #BA2121">&#39;quadratic&#39;</span>)
+        error <span style="color: #666666">=</span> np<span style="color: #666666">.</span>sqrt(np<span style="color: #666666">.</span>sum((u_exact_py(t2) <span style="color: #666666">-</span> u2)<span style="color: #666666">**2</span>)<span style="color: #666666">*</span>dt)
+        errors_quadratic<span style="color: #666666">.</span>append((dt, error))
+        dt <span style="color: #666666">/=</span> <span style="color: #666666">2</span>
+    <span style="color: #408080; font-style: italic"># Estimate convergence rates</span>
+    tol <span style="color: #666666">=</span> <span style="color: #666666">0.05</span>
+    <span style="color: #008000; font-weight: bold">for</span> errors <span style="color: #AA22FF; font-weight: bold">in</span> errors_linear, errors_quadratic:
+        <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>, <span style="color: #008000">len</span>(errors)):
+            dt, error <span style="color: #666666">=</span> errors[i]
+            dt_1, error_1 <span style="color: #666666">=</span> errors[i<span style="color: #666666">-1</span>]
+            r <span style="color: #666666">=</span> np<span style="color: #666666">.</span>log(error<span style="color: #666666">/</span>error_1)<span style="color: #666666">/</span>np<span style="color: #666666">.</span>log(dt<span style="color: #666666">/</span>dt_1)
+            <span style="color: #408080; font-style: italic">#assert abs(r - 2.0) &lt; tol</span>
+        <span style="color: #408080; font-style: italic"># check r for final simulation with (final and) smallest dt</span>
+        <span style="color: #408080; font-style: italic"># note that the method now is 1st order, i.e. r should approach 1.0</span>
+        <span style="color: #008000; font-weight: bold">print</span> r
+        <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">abs</span>(r <span style="color: #666666">-</span> <span style="color: #666666">1.0</span>) <span style="color: #666666">&lt;</span> tol
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">main</span>():
+    <span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">argparse</span>
+    parser <span style="color: #666666">=</span> argparse<span style="color: #666666">.</span>ArgumentParser()
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--I&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=1.0</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--V&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=0.0</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--m&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=1.0</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--b&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=0.0</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--s&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">str</span>, default<span style="color: #666666">=</span><span style="color: #BA2121">&#39;u&#39;</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--F&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">str</span>, default<span style="color: #666666">=</span><span style="color: #BA2121">&#39;0&#39;</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--dt&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=0.05</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--T&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=20</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--window_width&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">float</span>, default<span style="color: #666666">=30.</span>,
+                        help<span style="color: #666666">=</span><span style="color: #BA2121">&#39;Number of periods in a window&#39;</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--damping&#39;</span>, <span style="color: #008000">type</span><span style="color: #666666">=</span><span style="color: #008000">str</span>, default<span style="color: #666666">=</span><span style="color: #BA2121">&#39;linear&#39;</span>)
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--savefig&#39;</span>, action<span style="color: #666666">=</span><span style="color: #BA2121">&#39;store_true&#39;</span>)
+    <span style="color: #408080; font-style: italic"># Hack to allow --SCITOOLS options (scitools.std reads this argument</span>
+    <span style="color: #408080; font-style: italic"># at import)</span>
+    parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&#39;--SCITOOLS_easyviz_backend&#39;</span>, default<span style="color: #666666">=</span><span style="color: #BA2121">&#39;matplotlib&#39;</span>)
+    a <span style="color: #666666">=</span> parser<span style="color: #666666">.</span>parse_args()
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">scitools.std</span> <span style="color: #008000; font-weight: bold">import</span> StringFunction
+    s <span style="color: #666666">=</span> StringFunction(a<span style="color: #666666">.</span>s, independent_variable<span style="color: #666666">=</span><span style="color: #BA2121">&#39;u&#39;</span>)
+    F <span style="color: #666666">=</span> StringFunction(a<span style="color: #666666">.</span>F, independent_variable<span style="color: #666666">=</span><span style="color: #BA2121">&#39;t&#39;</span>)
+    I, V, m, b, dt, T, window_width, savefig, damping <span style="color: #666666">=</span> \
+       a<span style="color: #666666">.</span>I, a<span style="color: #666666">.</span>V, a<span style="color: #666666">.</span>m, a<span style="color: #666666">.</span>b, a<span style="color: #666666">.</span>dt, a<span style="color: #666666">.</span>T, a<span style="color: #666666">.</span>window_width, a<span style="color: #666666">.</span>savefig, \
+       a<span style="color: #666666">.</span>damping
+
+    <span style="color: #408080; font-style: italic"># compute u by both methods and then visualize the difference</span>
+    u, t <span style="color: #666666">=</span> solver(I, V, m, b, s, F, dt, T, damping)
+    u_bw, _ <span style="color: #666666">=</span> solver_bwdamping(I, V, m, b, s, F, dt, T, damping)
+    u_diff <span style="color: #666666">=</span> u <span style="color: #666666">-</span> u_bw
+
+    num_periods <span style="color: #666666">=</span> plot_empirical_freq_and_amplitude(u_diff, t)
+    <span style="color: #008000; font-weight: bold">if</span> num_periods <span style="color: #666666">&lt;=</span> <span style="color: #666666">40</span>:
+        plt<span style="color: #666666">.</span>figure()
+        visualize(u_diff, t)
+    <span style="color: #008000; font-weight: bold">else</span>:
+        visualize_front(u_diff, t, window_width, savefig)
+        visualize_front_ascii(u_diff, t)
+    plt<span style="color: #666666">.</span>show()
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">plot_empirical_freq_and_amplitude</span>(u, t):
+    minima, maxima <span style="color: #666666">=</span> minmax(t, u)
+    p <span style="color: #666666">=</span> periods(maxima)
+    a <span style="color: #666666">=</span> amplitudes(minima, maxima)
+    plt<span style="color: #666666">.</span>figure()
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">math</span> <span style="color: #008000; font-weight: bold">import</span> pi
+    w <span style="color: #666666">=</span> <span style="color: #666666">2*</span>pi<span style="color: #666666">/</span>p    
+    plt<span style="color: #666666">.</span>plot(<span style="color: #008000">range</span>(<span style="color: #008000">len</span>(p)), w, <span style="color: #BA2121">&#39;r-&#39;</span>)
+    plt<span style="color: #666666">.</span>hold(<span style="color: #BA2121">&#39;on&#39;</span>)
+    plt<span style="color: #666666">.</span>plot(<span style="color: #008000">range</span>(<span style="color: #008000">len</span>(a)), a, <span style="color: #BA2121">&#39;b-&#39;</span>)
+    ymax <span style="color: #666666">=</span> <span style="color: #666666">1.1*</span><span style="color: #008000">max</span>(w<span style="color: #666666">.</span>max(), a<span style="color: #666666">.</span>max())
+    ymin <span style="color: #666666">=</span> <span style="color: #666666">0.9*</span><span style="color: #008000">min</span>(w<span style="color: #666666">.</span>min(), a<span style="color: #666666">.</span>min())
+    plt<span style="color: #666666">.</span>axis([<span style="color: #666666">0</span>, <span style="color: #008000">max</span>(<span style="color: #008000">len</span>(p), <span style="color: #008000">len</span>(a)), ymin, ymax])
+    plt<span style="color: #666666">.</span>legend([<span style="color: #BA2121">&#39;estimated frequency&#39;</span>, <span style="color: #BA2121">&#39;estimated amplitude&#39;</span>],
+               loc<span style="color: #666666">=</span><span style="color: #BA2121">&#39;upper right&#39;</span>)
+    <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000">len</span>(maxima)
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">visualize_front</span>(u, t, window_width, savefig<span style="color: #666666">=</span><span style="color: #008000">False</span>):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Visualize u and the exact solution vs t, using a</span>
+<span style="color: #BA2121; font-style: italic">    moving plot window and continuous drawing of the</span>
+<span style="color: #BA2121; font-style: italic">    curves as they evolve in time.</span>
+<span style="color: #BA2121; font-style: italic">    Makes it easy to plot very long time series.</span>
+<span style="color: #BA2121; font-style: italic">    P is the approximate duration of one period.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">scitools.std</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">st</span>
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">scitools.MovingPlotWindow</span> <span style="color: #008000; font-weight: bold">import</span> MovingPlotWindow
+
+    umin <span style="color: #666666">=</span> <span style="color: #666666">1.2*</span>u<span style="color: #666666">.</span>min();  umax <span style="color: #666666">=</span> <span style="color: #666666">-</span>umin
+    plot_manager <span style="color: #666666">=</span> MovingPlotWindow(
+        window_width<span style="color: #666666">=</span>window_width,
+        dt<span style="color: #666666">=</span>t[<span style="color: #666666">1</span>]<span style="color: #666666">-</span>t[<span style="color: #666666">0</span>],
+        yaxis<span style="color: #666666">=</span>[umin, umax],
+        mode<span style="color: #666666">=</span><span style="color: #BA2121">&#39;continuous drawing&#39;</span>)
+    <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>,<span style="color: #008000">len</span>(u)):
+        <span style="color: #008000; font-weight: bold">if</span> plot_manager<span style="color: #666666">.</span>plot(n):
+            s <span style="color: #666666">=</span> plot_manager<span style="color: #666666">.</span>first_index_in_plot
+            st<span style="color: #666666">.</span>plot(t[s:n<span style="color: #666666">+1</span>], u[s:n<span style="color: #666666">+1</span>], <span style="color: #BA2121">&#39;r-1&#39;</span>,
+                    title<span style="color: #666666">=</span><span style="color: #BA2121">&#39;t=</span><span style="color: #BB6688; font-weight: bold">%6.3f</span><span style="color: #BA2121">&#39;</span> <span style="color: #666666">%</span> t[n],
+                    axis<span style="color: #666666">=</span>plot_manager<span style="color: #666666">.</span>axis(),
+                    show<span style="color: #666666">=</span><span style="color: #AA22FF; font-weight: bold">not</span> savefig) <span style="color: #408080; font-style: italic"># drop window if savefig</span>
+            <span style="color: #008000; font-weight: bold">if</span> savefig:
+                <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;t=</span><span style="color: #BB6688; font-weight: bold">%g</span><span style="color: #BA2121">&#39;</span> <span style="color: #666666">%</span> t[n]
+                st<span style="color: #666666">.</span>savefig(<span style="color: #BA2121">&#39;tmp_vib</span><span style="color: #BB6688; font-weight: bold">%04d</span><span style="color: #BA2121">.png&#39;</span> <span style="color: #666666">%</span> n)
+        plot_manager<span style="color: #666666">.</span>update(n)
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">visualize_front_ascii</span>(u, t, fps<span style="color: #666666">=10</span>):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Plot u and the exact solution vs t line by line in a</span>
+<span style="color: #BA2121; font-style: italic">    terminal window (only using ascii characters).</span>
+<span style="color: #BA2121; font-style: italic">    Makes it easy to plot very long time series.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">scitools.avplotter</span> <span style="color: #008000; font-weight: bold">import</span> Plotter
+    <span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">time</span>
+    umin <span style="color: #666666">=</span> <span style="color: #666666">1.2*</span>u<span style="color: #666666">.</span>min();  umax <span style="color: #666666">=</span> <span style="color: #666666">-</span>umin
+
+    p <span style="color: #666666">=</span> Plotter(ymin<span style="color: #666666">=</span>umin, ymax<span style="color: #666666">=</span>umax, width<span style="color: #666666">=60</span>, symbols<span style="color: #666666">=</span><span style="color: #BA2121">&#39;+o&#39;</span>)
+    <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #008000">len</span>(u)):
+        <span style="color: #008000; font-weight: bold">print</span> p<span style="color: #666666">.</span>plot(t[n], u[n]), <span style="color: #BA2121">&#39;</span><span style="color: #BB6688; font-weight: bold">%.2f</span><span style="color: #BA2121">&#39;</span> <span style="color: #666666">%</span> (t[n])
+        time<span style="color: #666666">.</span>sleep(<span style="color: #666666">1/</span><span style="color: #008000">float</span>(fps))
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">minmax</span>(t, u):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Compute all local minima and maxima of the function u(t),</span>
+<span style="color: #BA2121; font-style: italic">    represented by discrete points in the arrays u and t.</span>
+<span style="color: #BA2121; font-style: italic">    Return lists minima and maxima of (t[i],u[i]) extreme points.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    minima <span style="color: #666666">=</span> []; maxima <span style="color: #666666">=</span> []
+    <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>, <span style="color: #008000">len</span>(u)<span style="color: #666666">-1</span>, <span style="color: #666666">1</span>):
+        <span style="color: #008000; font-weight: bold">if</span> u[n<span style="color: #666666">-1</span>] <span style="color: #666666">&gt;</span> u[n] <span style="color: #666666">&lt;</span> u[n<span style="color: #666666">+1</span>]:
+            minima<span style="color: #666666">.</span>append((t[n], u[n]))
+        <span style="color: #008000; font-weight: bold">if</span> u[n<span style="color: #666666">-1</span>] <span style="color: #666666">&lt;</span> u[n] <span style="color: #666666">&gt;</span> u[n<span style="color: #666666">+1</span>]:
+            maxima<span style="color: #666666">.</span>append((t[n], u[n]))
+    <span style="color: #008000; font-weight: bold">return</span> minima, maxima
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">periods</span>(extrema):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Given a list of (t,u) points of the maxima or minima,</span>
+<span style="color: #BA2121; font-style: italic">    return an array of the corresponding local periods.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    p <span style="color: #666666">=</span> [extrema[n][<span style="color: #666666">0</span>] <span style="color: #666666">-</span> extrema[n<span style="color: #666666">-1</span>][<span style="color: #666666">0</span>]
+         <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>, <span style="color: #008000">len</span>(extrema))]
+    <span style="color: #008000; font-weight: bold">return</span> np<span style="color: #666666">.</span>array(p)
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">amplitudes</span>(minima, maxima):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Given a list of (t,u) points of the minima and maxima of</span>
+<span style="color: #BA2121; font-style: italic">    u, return an array of the corresponding local amplitudes.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    <span style="color: #408080; font-style: italic"># Compare first maxima with first minima and so on</span>
+    a <span style="color: #666666">=</span> [(<span style="color: #008000">abs</span>(maxima[n][<span style="color: #666666">1</span>] <span style="color: #666666">-</span> minima[n][<span style="color: #666666">1</span>]))<span style="color: #666666">/2.0</span>
+         <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #008000">min</span>(<span style="color: #008000">len</span>(minima),<span style="color: #008000">len</span>(maxima)))]
+    <span style="color: #008000; font-weight: bold">return</span> np<span style="color: #666666">.</span>array(a)
+
+<span style="color: #008000; font-weight: bold">if</span> __name__ <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;__main__&#39;</span>:
+    main()
+    <span style="color: #408080; font-style: italic">#test_constant()</span>
+    <span style="color: #408080; font-style: italic">#test_sinusoidal()</span>
+    <span style="color: #408080; font-style: italic">#test_mms()</span>
+    <span style="color: #408080; font-style: italic">#test_quadratic()</span>
+</pre></div>
+<p>
+</div></p>
+</div>
+</p>
+
+<p>
+<!-- --- end solution of exercise --- -->
 Filename: <code>vib_gen_bwdamping</code>.
 
 <p>

@@ -1275,6 +1275,11 @@ $s(u)$ and $F(t)$ functions as methods.
 Try to call up as much existing functionality in `vib.py` as possible.
 !ehint
 
+!bsol
+The code:
+@@@CODE exer-vib/vib_class.py
+
+!esol
 
 
 
@@ -1286,6 +1291,27 @@ Show that the difference $[D_t D_tu]^n$ is equal to $[D_t^+D_t^-u]^n$
 and $D_t^-D_t^+u]^n$. That is, instead of applying a centered difference
 twice one can alternatively apply a mixture forward and backward
 differences.
+
+!bsol
+!bt
+\begin{align}
+[D_t^+D_t^-u]^n &= [D_t^+\left(\frac{u^n - u^{n-1}}{\Delta t}\right)]^n \nonumber\\
+                 &= [\left(\frac{u^{n+1} - u^n}{\Delta t}\right) - \left(\frac{u^n - u^{n-1}}{\Delta t}\right)]^n  \nonumber\\
+                 &= \frac{u^{n+1}-2u^n+u^{n-1}}{\Delta t^2} \nonumber\\
+                 &= [D_t D_tu]^n. \nonumber
+\end{align}
+!et
+Similarly, we get that
+!bt
+\begin{align}
+[D_t^-D_t^+u]^n &= [D_t^-\left(\frac{u^{n+1} - u^n}{\Delta t}\right)]^n \nonumber\\
+                 &= [\left(\frac{u^{n+1} - u^n}{\Delta t}\right) - \left(\frac{u^n - u^{n-1}}{\Delta t}\right)]^n  \nonumber\\
+                 &= \frac{u^{n+1}-2u^n+u^{n-1}}{\Delta t^2} \nonumber\\
+                 &= [D_t D_tu]^n. \nonumber
+\end{align}
+!et
+
+!esol
 
 
 ===== Exercise: Use a backward difference for the damping term =====
@@ -1311,6 +1337,92 @@ to compare the original approach with centered difference and the
 new idea launched in this exercise. Perform numerical experiments
 to investigate how much accuracy that is lost by using the backward
 differences.
+
+
+!bsol
+
+The new discretization approach of the linear and quadratic damping terms call for new derivations of the updating formulas (for $u$) in the solver. Since backward difference approximations will be used for the damping term, we may also use this approximation for the initial condition on $u'(0)$ without deteriorating the convergence rate any further. Note that introducing backward difference approximations for the damping term make our computational schemes first order, as opposed to the original second order schemes which used central difference approximations also for the damping terms. The motivation for also using a backward difference approximation for the initial condition on $u'(0)$, is simply that the computational schemes get much simpler.
+
+With linear damping, the new discretized form of the equation reads
+!bt
+\begin{equation}
+m\frac{u^{n+1}-2u^n+u^{n-1}}{\Delta t^2} + b\frac{u^n - u^{n-1}}{\Delta t} + s(u^n) = F^n,
+\nonumber
+\end{equation}
+!et
+which gives us 
+!bt
+\begin{equation}
+u^{n+1} = \left(2-\frac{\Delta t b}{m}\right)u^n + \frac{\Delta t^2}{m}\left(F^n - s(u^n)\right) + \left(\frac{\Delta t b}{m} - 1\right)u^{n-1}.
+\nonumber
+\end{equation}
+!et
+With $n=0$, the updating formula becomes
+!bt
+\begin{equation}
+u^1 = \left(2-\frac{\Delta t b}{m}\right)u^0 + \frac{\Delta t^2}{m}\left(F^0 - s(u^0)\right) + \left(\frac{\Delta t b}{m} - 1\right)u^{-1},
+\nonumber
+\end{equation}
+!et
+which requires some further elaboration because of the unknown $u^{-1}$. We handle this by discretizing the initial condition $u'(0) = V$ by a backward difference approximation as 
+!bt
+\begin{equation}
+\frac{u^0 - u^{-1}}{\Delta t} = V,
+\nonumber
+\end{equation}
+!et
+which implies that
+!bt
+\begin{equation}
+u^{-1} = u^0 - \Delta t V.
+\nonumber
+\end{equation}
+!et
+Inserting this expression for $u^{-1}$ in the updating formula for $u^{n+1}$, and simplifying,
+gives us the following special formula for the first time step:
+!bt
+\begin{equation}
+u^1 = u^0 + \Delta t V + \frac{\Delta t^2}{m}\left(-bV - s(u^0) + F^0\right).
+\nonumber
+\end{equation}
+!et
+Switching to quadratic damping, the new discretized form of the equations becomes
+!bt
+\begin{equation}
+m\frac{u^{n+1}-2u^n+u^{n-1}}{\Delta t^2} + b|\frac{u^n - u^{n-1}}{\Delta t}|\frac{u^n - u^{n-1}}{\Delta t} + s(u^n) = F^n,
+\nonumber
+\end{equation}
+!et
+which leads to
+!bt
+\begin{equation}
+u^{n+1} = 2u^n - u^{n-1} - \frac{b}{m}|u^n - u^{n-1}|(u^n - u^{n-1}) + \frac{\Delta t^2}{m}\left(F^n - s(u^n)\right).
+\nonumber
+\end{equation}
+!et
+With $n=0$, this updating formula becomes
+!bt
+\begin{equation}
+u^1 = 2u^0 - u^{-1} - \frac{b}{m}|u^0 - u^{-1}|(u^0 - u^{-1}) + \frac{\Delta t^2}{m}\left(F^0 - s(u^0)\right).
+\nonumber
+\end{equation}
+!et
+Again, we handle the unknown $u^{-1}$ via the same expression as above, which be derived from a backward difference approximation to the initial condition on the derivative. Inserting this expression for $u^{-1}$ and simplifying, gives the special updating formula for $u^1$ as
+!bt
+\begin{equation}
+u^1 = u^0 + \Delta t V + \frac{\Delta t^2}{m}\left(-b|V|V - s(u^0) + F^0\right).
+\nonumber
+\end{equation}
+!et
+We implement these new computational schemes in a new solver function `solver_bwdamping`, so that the discrete solution for $u$ can be found by both the original and the new solver. The difference between the two different solutions is then visualized in the same way as the original solution in `main`.
+
+The convergence rates computed in `test_mms` demonstrates that our scheme now is a first order scheme, as $r$ is seen to approach 1.0 with decreasing $\Delta t$.
+
+Both solvers reproduce a constant solution exactly (within machine precision), whereas sinusoidal and quadratic solutions differ, as should be expected after comparing the schemes.
+
+@@@CODE exer-vib/vib_gen_bwdamping.py
+
+!esol
 
 
 ===== Exercise: Analysis of the Euler-Cromer scheme =====
