@@ -136,20 +136,19 @@ def viz(
     ):
     """Run solver, store and visualize u at each time level."""
 
-    class plot_u_st:
-        def __init__(self):
-            self.all_u = []
-        def __call__(self, u, x, t, n):
-            """user_action function for solver."""
-            plt.plot(x, u, 'r-',
-                     xlabel='x', ylabel='u',
-                     axis=[0, L, umin, umax],
-                     title='t=%f' % t[n], show=True)
-            # Let the initial condition stay on the screen for 2
-            # seconds, else insert a pause of 0.2 s between each plot
-            time.sleep(2) if t[n] == 0 else time.sleep(0.2)
-            plt.savefig('tmp_%04d.png' % n)  # for movie making        
-            self.all_u.append(u.copy())
+    all_u = []
+    def plot_u_st(u, x, t, n):
+        """user_action function for solver."""
+        plt.plot(x, u, 'r-',
+                 xlabel='x', ylabel='u',
+                 axis=[0, L, umin, umax],
+                 title='t=%f' % t[n], show=True)
+        # Let the initial condition stay on the screen for 2
+        # seconds, else insert a pause of 0.2 s between each plot
+        time.sleep(2) if t[n] == 0 else time.sleep(0.2)
+        #plt.savefig('frame_%04d.png' % n)  # for movie making
+        plt.savefig('tmp_%04d.png' % n)  # for movie making        
+        all_u.append(u.copy()) 
 
     class PlotMatplotlib:
         def __call__(self, u, x, t, n):
@@ -172,7 +171,7 @@ def viz(
         plot_u = PlotMatplotlib()
     elif tool == 'scitools':
         import scitools.std as plt  # scitools.easyviz interface
-        plot_u = plot_u_st()
+        plot_u = plot_u_st
     import time, glob, os
 
     # Clean up old movie frames
@@ -200,7 +199,7 @@ def viz(
         # Make an HTML play for showing the animation in a browser
         plt.movie('tmp_*.png', encoder='html', fps=fps,
                   output_file='movie.html')
-    return cpu, np.array(plot_u.all_u)
+    return cpu, np.array(all_u)
 
 def guitar(C):
     """Triangular wave (pulled guitar string)."""
@@ -237,4 +236,3 @@ if __name__ == '__main__':
         C = 0.85
     print 'Courant number: %.2f' % C
     guitar(C)
-

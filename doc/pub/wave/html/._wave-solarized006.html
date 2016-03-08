@@ -357,11 +357,7 @@ div { text-align: justify; text-justify: inter-word; }
                'wave2D3D:impl:verify',
                'wave2D3D:impl:verify'),
               ('Testing a quadratic solution', 3, None, '___sec100'),
-              ('Using classes to implement a simulator',
-               1,
-               None,
-               '___sec101'),
-              ('Exercises', 1, None, '___sec102'),
+              ('Exercises', 1, None, '___sec101'),
               ('Exercise 15: Check that a solution fulfills the discrete model',
                2,
                'wave:exer:quadratic:2D',
@@ -380,9 +376,9 @@ div { text-align: justify; text-justify: inter-word; }
                'wave:exer:3D:f77:cy:efficiency'),
               ('Applications of wave equations', 1, 'wave:app', 'wave:app'),
               ('Waves on a string', 2, 'wave:app:string', 'wave:app:string'),
-              ('Damping', 3, None, '___sec109'),
-              ('External forcing', 3, None, '___sec110'),
-              ('Modeling the tension via springs', 3, None, '___sec111'),
+              ('Damping', 3, None, '___sec108'),
+              ('External forcing', 3, None, '___sec109'),
+              ('Modeling the tension via springs', 3, None, '___sec110'),
               ('Waves on a membrane',
                2,
                'wave:app:membrane',
@@ -395,7 +391,7 @@ div { text-align: justify; text-justify: inter-word; }
                2,
                'wave:app:acoustic:seismic',
                'wave:app:acoustic:seismic'),
-              ('Anisotropy', 3, None, '___sec115'),
+              ('Anisotropy', 3, None, '___sec114'),
               ('Sound waves in liquids and gases',
                2,
                'wave:app:sound',
@@ -408,9 +404,9 @@ div { text-align: justify; text-justify: inter-word; }
                2,
                'wave:app:sw:2D',
                'wave:app:sw:2D'),
-              ('Wind drag on the surface', 3, None, '___sec119'),
-              ('Bottom drag', 3, None, '___sec120'),
-              ("Effect of the Earth's rotation", 3, None, '___sec121'),
+              ('Wind drag on the surface', 3, None, '___sec118'),
+              ('Bottom drag', 3, None, '___sec119'),
+              ("Effect of the Earth's rotation", 3, None, '___sec120'),
               ('Waves in blood vessels',
                2,
                'wave:app:blood',
@@ -476,7 +472,7 @@ div { text-align: justify; text-justify: inter-word; }
                2,
                'wave:app:exer:anal:damped:wave2D',
                'wave:app:exer:anal:damped:wave2D'),
-              ('References', 1, None, '___sec139')]}
+              ('References', 1, None, '___sec138')]}
 end of tocinfo -->
 
 <body>
@@ -871,136 +867,6 @@ evaluation. This is the case with the computational scheme for
     i = u.shape[<span style="color: #B452CD">0</span>]-<span style="color: #B452CD">1</span>
     u[i,:] = <span style="color: #B452CD">0</span>
     <span style="color: #8B008B; font-weight: bold">return</span> u
-
-<span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">quadratic</span>(Nx, Ny, version):
-    <span style="color: #CD5555">&quot;&quot;&quot;Exact discrete solution of the scheme.&quot;&quot;&quot;</span>
-
-    <span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">exact_solution</span>(x, y, t):
-        <span style="color: #8B008B; font-weight: bold">return</span> x*(Lx - x)*y*(Ly - y)*(<span style="color: #B452CD">1</span> + <span style="color: #B452CD">0.5</span>*t)
-
-    <span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">I</span>(x, y):
-        <span style="color: #8B008B; font-weight: bold">return</span> exact_solution(x, y, <span style="color: #B452CD">0</span>)
-
-    <span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">V</span>(x, y):
-        <span style="color: #8B008B; font-weight: bold">return</span> <span style="color: #B452CD">0.5</span>*exact_solution(x, y, <span style="color: #B452CD">0</span>)
-
-    <span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">f</span>(x, y, t):
-        <span style="color: #8B008B; font-weight: bold">return</span> <span style="color: #B452CD">2</span>*c**<span style="color: #B452CD">2</span>*(<span style="color: #B452CD">1</span> + <span style="color: #B452CD">0.5</span>*t)*(y*(Ly - y) + x*(Lx - x))
-
-    Lx = <span style="color: #B452CD">5</span>;  Ly = <span style="color: #B452CD">2</span>
-    c = <span style="color: #B452CD">1.5</span>
-    dt = -<span style="color: #B452CD">1</span> <span style="color: #228B22"># use longest possible steps</span>
-    T = <span style="color: #B452CD">18</span>
-
-    <span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">assert_no_error</span>(u, x, xv, y, yv, t, n):
-        u_e = exact_solution(xv, yv, t[n])
-        diff = <span style="color: #658b00">abs</span>(u - u_e).max()
-        tol = <span style="color: #B452CD">1E-12</span>
-        msg = <span style="color: #CD5555">&#39;diff=%g, step %d, time=%g&#39;</span> % (diff, n, t[n])
-        <span style="color: #8B008B; font-weight: bold">assert</span> diff &lt; tol, msg
-
-    new_dt, cpu = solver(
-        I, V, f, c, Lx, Ly, Nx, Ny, dt, T,
-        user_action=assert_no_error, version=version)
-    <span style="color: #8B008B; font-weight: bold">return</span> new_dt, cpu
-
-
-<span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">test_quadratic</span>():
-    <span style="color: #228B22"># Test a series of meshes where Nx &gt; Ny and Nx &lt; Ny</span>
-    versions = <span style="color: #CD5555">&#39;scalar&#39;</span>, <span style="color: #CD5555">&#39;vectorized&#39;</span>, <span style="color: #CD5555">&#39;cython&#39;</span>, <span style="color: #CD5555">&#39;f77&#39;</span>, <span style="color: #CD5555">&#39;c_cy&#39;</span>, <span style="color: #CD5555">&#39;c_f2py&#39;</span>
-    <span style="color: #8B008B; font-weight: bold">for</span> Nx <span style="color: #8B008B">in</span> <span style="color: #658b00">range</span>(<span style="color: #B452CD">2</span>, <span style="color: #B452CD">6</span>, <span style="color: #B452CD">2</span>):
-        <span style="color: #8B008B; font-weight: bold">for</span> Ny <span style="color: #8B008B">in</span> <span style="color: #658b00">range</span>(<span style="color: #B452CD">2</span>, <span style="color: #B452CD">6</span>, <span style="color: #B452CD">2</span>):
-            <span style="color: #8B008B; font-weight: bold">for</span> version <span style="color: #8B008B">in</span> versions:
-                <span style="color: #8B008B; font-weight: bold">print</span> <span style="color: #CD5555">&#39;testing&#39;</span>, version, <span style="color: #CD5555">&#39;for %dx%d mesh&#39;</span> % (Nx, Ny)
-                quadratic(Nx, Ny, version)
-
-<span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">run_efficiency</span>(nrefinements=<span style="color: #B452CD">4</span>):
-    <span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">I</span>(x, y):
-        <span style="color: #8B008B; font-weight: bold">return</span> sin(pi*x/Lx)*sin(pi*y/Ly)
-
-    Lx = <span style="color: #B452CD">10</span>;  Ly = <span style="color: #B452CD">10</span>
-    c = <span style="color: #B452CD">1.5</span>
-    T = <span style="color: #B452CD">100</span>
-    versions = [<span style="color: #CD5555">&#39;scalar&#39;</span>, <span style="color: #CD5555">&#39;vectorized&#39;</span>, <span style="color: #CD5555">&#39;cython&#39;</span>, <span style="color: #CD5555">&#39;f77&#39;</span>,
-               <span style="color: #CD5555">&#39;c_f2py&#39;</span>, <span style="color: #CD5555">&#39;c_cy&#39;</span>]
-    <span style="color: #8B008B; font-weight: bold">print</span> <span style="color: #CD5555">&#39; &#39;</span>*<span style="color: #B452CD">15</span>, <span style="color: #CD5555">&#39;&#39;</span>.join([<span style="color: #CD5555">&#39;%-13s&#39;</span> % v <span style="color: #8B008B; font-weight: bold">for</span> v <span style="color: #8B008B">in</span> versions])
-    <span style="color: #8B008B; font-weight: bold">for</span> Nx <span style="color: #8B008B">in</span> <span style="color: #B452CD">15</span>, <span style="color: #B452CD">30</span>, <span style="color: #B452CD">60</span>, <span style="color: #B452CD">120</span>:
-        cpu = {}
-        <span style="color: #8B008B; font-weight: bold">for</span> version <span style="color: #8B008B">in</span> versions:
-            dt, cpu_ = solver(I, <span style="color: #658b00">None</span>, <span style="color: #658b00">None</span>, c, Lx, Ly, Nx, Nx,
-                              -<span style="color: #B452CD">1</span>, T, user_action=<span style="color: #658b00">None</span>,
-                              version=version)
-            cpu[version] = cpu_
-        cpu_min = <span style="color: #658b00">min</span>(<span style="color: #658b00">list</span>(cpu.values()))
-        <span style="color: #8B008B; font-weight: bold">if</span> cpu_min &lt; <span style="color: #B452CD">1E-6</span>:
-            <span style="color: #8B008B; font-weight: bold">print</span> <span style="color: #CD5555">&#39;Ignored %dx%d grid (too small execution time)&#39;</span> \ 
-                  % (Nx, Nx)
-        <span style="color: #8B008B; font-weight: bold">else</span>:
-            cpu = {version: cpu[version]/cpu_min <span style="color: #8B008B; font-weight: bold">for</span> version <span style="color: #8B008B">in</span> cpu}
-            <span style="color: #8B008B; font-weight: bold">print</span> <span style="color: #CD5555">&#39;%-15s&#39;</span> % <span style="color: #CD5555">&#39;%dx%d&#39;</span> % (Nx, Nx),
-            <span style="color: #8B008B; font-weight: bold">print</span> <span style="color: #CD5555">&#39;&#39;</span>.join([<span style="color: #CD5555">&#39;%13.1f&#39;</span> % cpu[version] <span style="color: #8B008B; font-weight: bold">for</span> version <span style="color: #8B008B">in</span> versions])
-
-<span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">gaussian</span>(plot_method=<span style="color: #B452CD">2</span>, version=<span style="color: #CD5555">&#39;vectorized&#39;</span>, save_plot=<span style="color: #658b00">True</span>):
-    <span style="color: #CD5555">&quot;&quot;&quot;</span>
-<span style="color: #CD5555">    Initial Gaussian bell in the middle of the domain.</span>
-<span style="color: #CD5555">    plot_method=1 applies mesh function, =2 means surf, =0 means no plot.</span>
-<span style="color: #CD5555">    &quot;&quot;&quot;</span>
-    <span style="color: #228B22"># Clean up plot files</span>
-    <span style="color: #8B008B; font-weight: bold">for</span> name <span style="color: #8B008B">in</span> glob(<span style="color: #CD5555">&#39;tmp_*.png&#39;</span>):
-        os.remove(name)
-
-    Lx = <span style="color: #B452CD">10</span>
-    Ly = <span style="color: #B452CD">10</span>
-    c = <span style="color: #B452CD">1.0</span>
-
-    <span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">I</span>(x, y):
-        <span style="color: #CD5555">&quot;&quot;&quot;Gaussian peak at (Lx/2, Ly/2).&quot;&quot;&quot;</span>
-        <span style="color: #8B008B; font-weight: bold">return</span> exp(-<span style="color: #B452CD">0.5</span>*(x-Lx/<span style="color: #B452CD">2.0</span>)**<span style="color: #B452CD">2</span> - <span style="color: #B452CD">0.5</span>*(y-Ly/<span style="color: #B452CD">2.0</span>)**<span style="color: #B452CD">2</span>)
-
-    <span style="color: #8B008B; font-weight: bold">if</span> plot_method == <span style="color: #B452CD">3</span>:
-        <span style="color: #8B008B; font-weight: bold">from</span> <span style="color: #008b45; text-decoration: underline">mpl_toolkits.mplot3d</span> <span style="color: #8B008B; font-weight: bold">import</span> axes3d
-        <span style="color: #8B008B; font-weight: bold">import</span> <span style="color: #008b45; text-decoration: underline">matplotlib.pyplot</span> <span style="color: #8B008B; font-weight: bold">as</span> <span style="color: #008b45; text-decoration: underline">plt</span>
-        <span style="color: #8B008B; font-weight: bold">from</span> <span style="color: #008b45; text-decoration: underline">matplotlib</span> <span style="color: #8B008B; font-weight: bold">import</span> cm
-        plt.ion()
-        fig = plt.figure()
-        u_surf = <span style="color: #658b00">None</span>
-
-    <span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">plot_u</span>(u, x, xv, y, yv, t, n):
-        <span style="color: #8B008B; font-weight: bold">if</span> t[n] == <span style="color: #B452CD">0</span>:
-            time.sleep(<span style="color: #B452CD">2</span>)
-        <span style="color: #8B008B; font-weight: bold">if</span> plot_method == <span style="color: #B452CD">1</span>:
-            mesh(x, y, u, title=<span style="color: #CD5555">&#39;t=%g&#39;</span> % t[n], zlim=[-<span style="color: #B452CD">1</span>,<span style="color: #B452CD">1</span>],
-                 caxis=[-<span style="color: #B452CD">1</span>,<span style="color: #B452CD">1</span>])
-        <span style="color: #8B008B; font-weight: bold">elif</span> plot_method == <span style="color: #B452CD">2</span>:
-            surfc(xv, yv, u, title=<span style="color: #CD5555">&#39;t=%g&#39;</span> % t[n], zlim=[-<span style="color: #B452CD">1</span>, <span style="color: #B452CD">1</span>],
-                  colorbar=<span style="color: #658b00">True</span>, colormap=hot(), caxis=[-<span style="color: #B452CD">1</span>,<span style="color: #B452CD">1</span>],
-                  shading=<span style="color: #CD5555">&#39;flat&#39;</span>)
-        <span style="color: #8B008B; font-weight: bold">elif</span> plot_method == <span style="color: #B452CD">3</span>:
-            <span style="color: #8B008B; font-weight: bold">print</span> <span style="color: #CD5555">&#39;Experimental 3D matplotlib...under development...&#39;</span>
-            <span style="color: #228B22">#plt.clf()</span>
-            ax = fig.add_subplot(<span style="color: #B452CD">111</span>, projection=<span style="color: #CD5555">&#39;3d&#39;</span>)
-            u_surf = ax.plot_surface(xv, yv, u, alpha=<span style="color: #B452CD">0.3</span>)
-            <span style="color: #228B22">#ax.contourf(xv, yv, u, zdir=&#39;z&#39;, offset=-100, cmap=cm.coolwarm)</span>
-            <span style="color: #228B22">#ax.set_zlim(-1, 1)</span>
-            <span style="color: #228B22"># Remove old surface before drawing</span>
-            <span style="color: #8B008B; font-weight: bold">if</span> u_surf <span style="color: #8B008B">is</span> <span style="color: #8B008B">not</span> <span style="color: #658b00">None</span>:
-                ax.collections.remove(u_surf)
-            plt.draw()
-            time.sleep(<span style="color: #B452CD">1</span>)
-        <span style="color: #8B008B; font-weight: bold">if</span> plot_method &gt; <span style="color: #B452CD">0</span>:
-            time.sleep(<span style="color: #B452CD">0</span>) <span style="color: #228B22"># pause between frames</span>
-            <span style="color: #8B008B; font-weight: bold">if</span> save_plot:
-                filename = <span style="color: #CD5555">&#39;tmp_%04d.png&#39;</span> % n
-                savefig(filename)  <span style="color: #228B22"># time consuming!</span>
-
-    Nx = <span style="color: #B452CD">40</span>; Ny = <span style="color: #B452CD">40</span>; T = <span style="color: #B452CD">20</span>
-    dt, cpu = solver(I, <span style="color: #658b00">None</span>, <span style="color: #658b00">None</span>, c, Lx, Ly, Nx, Ny, -<span style="color: #B452CD">1</span>, T,
-                     user_action=plot_u, version=version)
-
-
-
-<span style="color: #8B008B; font-weight: bold">if</span> __name__ == <span style="color: #CD5555">&#39;__main__&#39;</span>:
-    test_quadratic()
 </pre></div>
 <p>
 Array slices in 2D are more complicated to understand than those in
@@ -1103,24 +969,7 @@ The <code>test_quadratic</code> function in the
 program implements this verification as a proper test function
 for the pytest and nose frameworks.
 
-<h1 id="___sec101">Using classes to implement a simulator </h1>
-
-<ul>
- <li> Introduce classes <code>Mesh</code>, <code>Function</code>, <code>Problem</code>, <code>Solver</code>, <code>Visualizer</code>,
-   <code>File</code>
-<!-- communicate with compiled code by ensuring that classes work with arrays -->
-<!-- ===== Callbacks to Python from Fortran or C ===== -->
-<!-- 5631 projects: -->
-<!-- Drop f_a, call py from f77 -->
-<!-- Call py with cpdef f from Cython, but hardcode function name -->
-<!-- As above, but transfer function to Cython -->
-<!-- Instant -->
-<!-- test_quadratic for all -->
-<!-- Think of extensions: Neumann with modified stencil or ghost cells, -->
-<!-- variable coefficients, damping, ... --></li>
-</ul>
-
-<h1 id="___sec102">Exercises </h1>
+<h1 id="___sec101">Exercises </h1>
 
 <p>
 <!-- --- begin exercise --- -->

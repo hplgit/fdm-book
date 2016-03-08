@@ -22,11 +22,10 @@ code can add visualization, error computations, etc.
 
 import numpy as np
 
-def solver(I, V, f, c, L, dt, C, T, user_action=None):
+def solver(I, V, f, dx, L, dt, C, T, user_action=None):
     """Solve u_tt=c^2*u_xx + f on (0,L)x(0,T]."""
     Nt = int(round(T/dt))
     t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
-    dx = dt*c/float(C)
     Nx = int(round(L/dx))
     x = np.linspace(0, L, Nx+1)       # Mesh points in space
     C2 = C**2                         # Help variable in the scheme
@@ -82,90 +81,85 @@ def solver(I, V, f, c, L, dt, C, T, user_action=None):
         # Switch variables before next step
         u_2[:] = u_1;  u_1[:] = u
 
-    cpu_time = t0 - time.clock()
+    cpu_time = time.clock() - t0
     return u, x, t, cpu_time
 
-def test_quadratic():
-    """Check that u(x,t)=x(L-x)(1+t/2) is exactly reproduced."""
-
-    def u_exact(x, t):
-        return x*(L-x)*(1 + 0.5*t)
-
-    def I(x):
-        return u_exact(x, 0)
-
-    def V(x):
-        return 0.5*u_exact(x, 0)
-
-    def f(x, t):
-        return 2*(1 + 0.5*t)*c**2
-
-    L = 2.5
-    c = 1.5
-    C = 0.75
-    Nx = 6  # Very coarse mesh for this exact test
-    dt = C*(L/Nx)/c
-    T = 18
-
-    def assert_no_error(u, x, t, n):
-        u_e = u_exact(x, t[n])
-        diff = np.abs(u - u_e).max()
-        tol = 1E-13
-        assert diff < tol
-
-    solver(I, V, f, c, L, dt, C, T,
-           user_action=assert_no_error)
-
-def test_constant():
-    """Check that u(x,t)=Q=0 is exactly reproduced."""
-    u_const = 0  # Require 0 because of the boundary conditions
-    C = 0.75
-    dt = C # Very coarse mesh
-    u, x, t, cpu = solver(I=lambda x:
-                          0, V=0, f=0, c=1.5, L=2.5,
-                          dt=dt, C=C, T=18)
-    tol = 1E-14
-    assert np.abs(u - u_const).max() < tol
-
 def viz(
-    I, V, f, c, L, dt, C, T,  # PDE parameters
+    I, V, f, dx, L, dt, C, T,  # PDE parameters
     umin, umax,               # Interval for u in plots
     animate=True,             # Simulation with animation?
     tool='matplotlib',        # 'matplotlib' or 'scitools'
     solver_function=solver,   # Function with numerical algorithm
     ):
-    """Run solver, store and visualize u at each time level."""
+    """
+    Run solver, store and visualize u at each time level with all C values.
+    """
 
     class plot_u_st:
         def __init__(self):
             self.all_u = []
+            self.all_u_for_all_C = []
         def __call__(self, u, x, t, n):
             """user_action function for solver."""
-            plt.plot(x, u, 'r-',
-                     xlabel='x', ylabel='u',
-                     axis=[0, L, umin, umax],
-                     title='t=%f' % t[n], show=True)
-            # Let the initial condition stay on the screen for 2
-            # seconds, else insert a pause of 0.2 s between each plot
-            time.sleep(2) if t[n] == 0 else time.sleep(0.2)
-            plt.savefig('tmp_%04d.png' % n)  # for movie making        
             self.all_u.append(u.copy())
+            if t[n] == T: # i.e., whole time interval finished for this C
+                self.all_u_for_all_C.append(self.all_u)
+                self.all_u = []     # reset to empty list
+                
+                if len(self.all_u_for_all_C) == len(C):  # all C finished
+                    print 'Finished all C values. Proceed with plots...'
+                    # note: n will here be the last index in t[n]
+                    for n_ in range(0, n+1):      # for each point in time
+                        plt.plot(x, self.all_u_for_all_C[0][n_],
+                                 axis=[0, L, umin, umax],
+                                 title='Solutions for all C at t=%f' % t[n_])
+                        plt.hold('on')
+                        for j in range(1, len(C)):
+                            # build plot at this point in time with each 
+                            # solution from the different C values
+                            plt.plot(x, self.all_u_for_all_C[j][n_],
+                                     axis=[0, L, umin, umax])
+                        plt.xlabel('x'); plt.ylabel('u')
+                        plt.hold('off')
+                        plt.show()
+                        # Let the initial condition stay on the screen for 2
+                        # seconds, else insert a pause of 0.2 s between each plot                        
+                        time.sleep(2) if t[n_] == 0 else time.sleep(0.2)                        
+                        plt.savefig('tmp_%04d.png' % n_)  # for movie making
+                
 
     class PlotMatplotlib:
+        def __init__(self):
+            self.all_u = []
+            self.all_u_for_all_C = []
         def __call__(self, u, x, t, n):
             """user_action function for solver."""
-            if n == 0:
-                plt.ion()
-                self.lines = plt.plot(x, u, 'r-')
-                plt.xlabel('x');  plt.ylabel('u')
-                plt.axis([0, L, umin, umax])
-                plt.legend(['t=%f' % t[n]], loc='lower left')
-            else:
-                self.lines[0].set_ydata(u)
-                plt.legend(['t=%f' % t[n]], loc='lower left')
-                plt.draw()
-            time.sleep(2) if t[n] == 0 else time.sleep(0.2)
-            plt.savefig('tmp_%04d.png' % n)  # for movie making
+            self.all_u.append(u.copy())
+            if t[n] == T: # i.e., whole time interval finished for this C
+                self.all_u_for_all_C.append(self.all_u)
+                self.all_u = []     # reset to empty list
+                
+                if len(self.all_u_for_all_C) == len(C):  # all C finished
+                    print 'Finished all C values. Proceed with plots...'
+                    plt.ion()
+                    # note: n will here be the last index in t[n]
+                    for n_ in range(0, n+1):      # for each point in time
+                        plt.plot(x, self.all_u_for_all_C[0][n_])
+                        plt.axis([0, L, umin, umax])
+                        plt.hold(True)
+                        for j in range(1, len(C)):
+                            # build plot at this point in time with each 
+                            # solution from the different C values
+                            plt.plot(x, self.all_u_for_all_C[j][n_])
+                        plt.axis([0, L, umin, umax])
+                        plt.xlabel('x'); plt.ylabel('u')
+                        plt.title('Solutions for all C at t=%f' % t[n_])
+                        plt.hold(False)
+                        plt.draw()
+                        # Let the initial condition stay on the screen for 2
+                        # seconds, else insert a pause of 0.2 s between each plot                        
+                        time.sleep(2) if t[n_] == 0 else time.sleep(0.2)                        
+                        plt.savefig('tmp_%04d.png' % n_)  # for movie making
 
     if tool == 'matplotlib':
         import matplotlib.pyplot as plt
@@ -181,8 +175,10 @@ def viz(
 
     # Call solver and do the simulaton
     user_action = plot_u if animate else None
-    u, x, t, cpu = solver_function(
-        I, V, f, c, L, dt, C, T, user_action)
+    for C_value in C:
+        print 'C_value --------------------------------- ', C_value
+        u, x, t, cpu = solver_function(
+                     I, V, f, dx, L, dt, C_value, T, user_action)
 
     # Make video files
     fps = 4  # frames per second
@@ -200,7 +196,7 @@ def viz(
         # Make an HTML play for showing the animation in a browser
         plt.movie('tmp_*.png', encoder='html', fps=fps,
                   output_file='movie.html')
-    return cpu, np.array(plot_u.all_u)
+    return cpu
 
 def guitar(C):
     """Triangular wave (pulled guitar string)."""
@@ -216,19 +212,25 @@ def guitar(C):
     T = 2*pi/omega*num_periods
     # Choose dt the same as the stability limit for Nx=50
     dt = L/50./c
+    dx = dt*c/float(C)
+    # Now dt and dx are considered fixed, but we create a list of C values
+    # by reducing the c value above in steps of 10%. This, however, is
+    # the same as lowering C itself in steps of 10%, since C = c*dt/dx.
+    all_C = [C]; 
+    all_C.append(0.9*C);
+    all_C.append(0.8*C);
 
     def I(x):
         return a*x/x0 if x < x0 else a/(L-x0)*(L-x)
 
     umin = -1.2*a;  umax = -umin
-    cpu, all_u = viz(I, 0, 0, c, L, dt, C, T, umin, umax,
+    cpu = viz(I, 0, 0, dx, L, dt, all_C, T, umin, umax,
                  animate=True, tool='scitools')
-    # checking
-    #for e in all_u:
-    #    print e[int(len(all_u[1])/2)]
+    #cpu = viz(I, 0, 0, dx, L, dt, all_C, T, umin, umax,
+    #             animate=True, tool='matplotlib')
+    print 'cpu = ', cpu
 
 if __name__ == '__main__':
-    #test_quadratic()
     import sys
     try:
         C = float(sys.argv[1])
@@ -236,5 +238,5 @@ if __name__ == '__main__':
     except IndexError:
         C = 0.85
     print 'Courant number: %.2f' % C
+    # The list of C values will be generated from this single C value
     guitar(C)
-
