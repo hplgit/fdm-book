@@ -19,7 +19,7 @@ def residual_discrete_eq_step1(u):
     """Return the residual of the discrete eq. at the first
     step with u inserted."""
     half = sym.Rational(1,2)
-    R = u(t+dt) - u(t) - dt*V - \
+    R = u(t+dt) - I - dt*V - \
         half*dt**2*f.subs(t, 0) + half*dt**2*w**2*I
     R = R.subs(t, 0)  # t=0 in the rhs of the first step eq.
     return sym.simplify(R)
@@ -91,8 +91,6 @@ def solver(I, V, f, w, dt, T):
         u[n+1] = 2*u[n] - u[n-1] - dt**2*w**2*u[n] + dt**2*f(t[n])
     return u, t
 
-import nose.tools as nt
-
 def test_quadratic_exact_solution():
     # Transform global symbolic variables to functions and numbers
     # for numerical computations
@@ -101,13 +99,13 @@ def test_quadratic_exact_solution():
     global f, t
     u_e = lambda t: b*t**2 + V*t + I # compute with b, V, I, w as numbers
     f = ode_source_term(u_e)         # fit source term
-    f = sym.lambdify(t, f)            # turn to numerical Python function
+    f = sym.lambdify(t, f)           # turn to numerical Python function
 
     dt = 2./w
     u, t = solver(I=I, V=V, f=f, w=w, dt=dt, T=3)
     u_e = u_e(t)
     error = np.abs(u - u_e).max()
-    nt.assert_almost_equal(error, 0, delta=1E-12)
+    assert error < 1E-12
     print 'Error in computing a quadratic solution:', error
 
 if __name__ == '__main__':
