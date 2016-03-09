@@ -2,21 +2,21 @@ import sympy as sym
 import numpy as np
 
 # The code in vib_undamped_verify_mms.py is here generalized
-# to treat the model m*u'' + f(u') + c*u = F(t), where the 
-# damping term f(u') = 0, b*u' or b*V*abs(V). 
+# to treat the model m*u'' + f(u') + c*u = F(t), where the
+# damping term f(u') = 0, b*u' or b*V*abs(V).
 
 def ode_source_term(u, damping):
     """Return the terms in the ODE that the source term
     must balance, here m*u'' + f(u') + c*u.
     u is a symbolic Python function of t."""
     if damping == 'zero':
-        return m*sym.diff(u(t), t, t) + c*u(t)  
+        return m*sym.diff(u(t), t, t) + c*u(t)
     elif damping == 'linear':
         return m*sym.diff(u(t), t, t) + \
-               b*sym.diff(u(t), t) + c*u(t)    
+               b*sym.diff(u(t), t) + c*u(t)
     else:  # damping is nonlinear
         return m*sym.diff(u(t), t, t) + \
-               b*sym.diff(u(t), t)*abs(sym.diff(u(t), t)) + c*u(t) 
+               b*sym.diff(u(t), t)*abs(sym.diff(u(t), t)) + c*u(t)
 
 def residual_discrete_eq(u, damping):
     """Return the residual of the discrete eq. with u inserted."""
@@ -155,13 +155,13 @@ def test_quadratic_exact_solution(damping):
     global p, V, I, b, c, m
     p, V, I, b, c, m = 2.3, 0.9, 1.2, 2.1, 1.6, 1.3 # i.e., as numbers
     global F, t
-    u_e = lambda t: p*t**2 + V*t + I  
+    u_e = lambda t: p*t**2 + V*t + I
     F = ode_source_term(u_e, damping) # fit source term
     F = sym.lambdify(t, F)            # ...numerical Python function
 
     from math import pi, sqrt
     dt = 2*pi/sqrt(c/m)/10   # 10 steps per period 2*pi/w, w=sqrt(c/m)
-    u, t = solver(I=I, V=V, F=F, b=b, c=c, m=m, dt=dt, 
+    u, t = solver(I=I, V=V, F=F, b=b, c=c, m=m, dt=dt,
                   T=(2*pi/sqrt(c/m))*2, damping=damping)
     u_e = u_e(t)
     error = np.abs(u - u_e).max()
@@ -179,4 +179,3 @@ if __name__ == '__main__':
         quadratic(e)   	# quadratic solution for MMS
         cubic(e)       	# ... and cubic
         test_quadratic_exact_solution(e)
-

@@ -35,6 +35,19 @@ The information at $x=0$ and the initial condition get
 transported in positive $x$ direction
 if $v>0$ through the domain.
 
+The solution of (ref{advec:1D:pde1:u}) in an infinite domain (no condition
+(ref{advec:1D:pde1:U0}) at $x=0$) is
+
+!bt
+\begin{equation}
+u(x,t) = I(x-vt)\tp
+label{advec:1D:pde1:sol}
+\end{equation}
+!et
+This is also the solution we expect if we let $I(x)$ be located in
+the interior of the domain such that $\lim_{x\rightarrow 0,L}I(x)=0$
+and $U_0=0$.
+
 ===== Simplest scheme: forward in time, centered in space =====
 
 === Method ===
@@ -124,7 +137,7 @@ a Fourier component
 The corresponding analytical Fourier component is
 
 !bt
-\[ u = \Aex^n e^{ikx},\quad \Aex = e^{-ivk\Delta t}\tp\]
+\[ u = \Aex^n e^{ikx},\quad \Aex = e^{-ivk\Delta t}=e^{-iCkx}\tp\]
 !et
 In particular, $|\Aex| \leq 1$.
 
@@ -142,19 +155,22 @@ results in
 which implies
 
 !bt
-\[ A = 1 - iC\sin(kx)\tp\]
+\[ A = 1 - iC\sin(k\Delta x)\tp\]
 !et
-The numerical solution features $A^n$, and the magnitude of this complex
-number is $|A|^n = (1 + C^2\sin^2(kx))^{n/2} > 1$. Therefore, the
-amplitude of the numerical solution is increasing in time, whereas the
-exact solution is not. Regardless of $\Delta t$, we get unstable
+The numerical solution features the formula $A^n$. To find out whether
+$A^n$ means growth in time, we rewrite $A$ in polar form: $A=A_re^{i\phi}$,
+for real numbers $A_r$ and $\phi$,
+since we then have $A^n = A_r^ne^{i\phi n}$. The magnitude of $A^n$ is
+$A_r^n$. In our case, $A_r = (1 + C^2\sin^2(kx))^{1/2} > 1$, so
+$A_r^n$ will increase in time, whereas the
+exact solution will not. Regardless of $\Delta t$, we get unstable
 numerical solutions.
 
 ===== Leapfrog in time, centered differences in space =====
 
 === Method ===
 
-Another explicit scheme is to do a leapfrog jump over $2\Delta t$ in
+Another explicit scheme is to do a ``leapfrog'' jump over $2\Delta t$ in
 time and combine it with centeral differences in space:
 
 !bt
@@ -212,16 +228,182 @@ FIGURE: [src-advec/solver_FE_Upw, width=500 frac=0.8] Leapfrog scheme with $\Del
 === Analyis ===
 
 We can perform a Fourier analyis again. Inserting the numerical
-Fourier component in the leapfrog scheme, we get
+Fourier component in the Leapfrog scheme, we get
 
 !bt
-\[ A^2 - iC\sin(kx) A - 1 = 0,\]
+\[ A^2 - i2C\sin(k\Delta x) A - 1 = 0,\]
 !et
 and
 
 !bt
-\[ A = -i\half C\sin(kx) \pm \sqrt{1-C^2\sin^2(kx)}\tp\]
+\[ A = -iC\sin(k\Delta x) \pm \sqrt{1-C^2\sin^2(k\Delta x)}\tp\]
 !et
+Rewriting to plar form, $A=A_re^{i\phi}$, we see that $A_r=1$, so the
+numerical component is not increasing or decreasing in time, which is
+exactly what we want. However, for $C>1$, the square root can become
+complex valued, so stability is obtained only as long as $C\leq 1$.
+
+[hpl: The complete numerical solution? How are the two roots combined?]
+
+We introduce $p=k\Delta x$. The amplification factor now reads
+
+!bt
+\[ A = -iC\sin p \pm \sqrt{1-C^2\sin^2 p},\]
+!et
+and is to be compared to the exact amplification factor
+
+!bt
+\[ \Aex = e^{-ikv\Delta t} = e^{-ikC\Delta x} = e^{-iCp}\tp\]
+Section ref{advec:1D:disprel} compares many numerical amplification factors
+with the exact expression.
+
+
+===== Upwind differences in space =====
+
+idx{upwind difference}
+
+Since the PDE reflects transport of information along with a flow in
+positive $x$ direction $v>0$, it could be natural to go upstream and not
+downstream in a spatial derivative. That is, we approximate
+
+!bt
+\frac{\partial u}{\partial x}(x_i,t_n)\approx [D^-_x u]^n_i = \frac{u^n_{i} - u^n_{i-1}}{\Delta x}\tp\]
+!et
+This is called an *upwind difference*. This spatial approximation does magic to
+the scheme we had with Forward Euler in time and centered difference in space.
+With an upwind difference,
+
+!bt
+\begin{equation} [D^+_t u + vD^-_x u = 0]^n_i,
+label{advec:1D:upwind}
+\end{equation}
+!et
+written out as
+
+!bt
+\[ u^{n+1} = u^n_i - C(u^{n}_{i}-u^{n}_{i-1}),\]
+!et
+gives a robust scheme that is stable if $C\leq 1$.
+As with the Leapfrog scheme, it becomes exact if $C=1$.
+A plot of the solution in case $C=1$ is therefore given in
+Figure ref{advec:1D:case_gaussian:fig:LFCS}.
+
+The amplification factor can be computed using the
+formula (ref{form:exp:fd1:bw}),
+
+!bt
+\[ \frac{A - 1}{\Delta t} + \frac{v}{\Delta x}(1 - e^{-ik\Delta x}) = 0,\]
+!et
+which means
+
+!bt
+\[ A = 1 - C(1 - \cos(p) - i\sin(p))\tp\]
+!et
+For $C<1$ there is, unfortunately,
+non-physical damping of discrete Fourier components. This damping can
+be quite severe.
+
+One can interpret the upwind difference as extra, artificial diffusion
+in the equation. Solving
+
+!bt
+\[ \frac{\partial u}{\partial t} + v\frac{\partial u}{\partial x}
+= \nu\frac{\partial^2 u}{\partial x^2},\]
+!et
+by a forward difference time and centered differences in space,
+
+!bt
+\[ D^+_t u + vD_{2x} u = \nu D_xD_x u]^n_i,\]
+!et
+gives actually the upwind scheme (ref{advec:1D:upwind}) if
+$\nu = v\Delta x/2$. That is, solving the PDE $u_t + vu_x=0$
+by centered differences in space and forward difference in time is
+unsuccessful, but by adding some artificial diffusion $\nu u_{xx}$,
+the method becomes stable.
+
+===== A Crank-Nicolson discretization in time and centered differences in space =====
+
+!bt
+\[ A = \frac{1 - \half i C\sin p}{1 + \half i C\sin p}\tp\]
+!et
+
+===== The Lax-Wendroff method =====
+
+!bt
+\[ A = 1 - iC\sin p - 2C^2\sin^2 (p/2)\tp\]
+!et
+
+===== Analysis of dispersion relations =====
+
+We have developed expressions for $A(C,p)$ in the exact solution
+$u_q^n=A^ne^{ikq\Delta x}$ of the discrete equations. These
+expressions are valuable for investigating the quality of the numerical
+solutions. Note that the Fourier component that solves the original
+PDE problem has no damping and moves with constant velocity $v$. There
+are two basic errors in the numerical Fourier component: there may be
+damping and the wave velocity may depend on $C$ and $p=k\Delta x$.
+
+The shortest wavelength that can be represented is $\lambda = 2\Delta x$.
+The corresponding $k$ is $k=2\pi/\lambda = \pi/Delta x$, so $p=k\Delta x\in
+(0,\pi]$.
+
+Given a complex $A$ as a function of $C$ and $p$, how can we visualize
+it? The two key ingredients in $A$ is the magntude, reflecting damping or
+growth of the wave, and the angle, closely related to the
+velocity of the wave. The Fourier component
+
+!bt
+\[ D^n e^{ik(x-ct)}\]
+!et
+has damping $D$ and wave velocity $c$. Let us express our $A$ in
+polar form, $A = A_re^{i\phi}$, and insert this expression in
+our discrete component $u_q^n = A^ne^{ikq\Delta x} = A^ne^{ikx}$:
+
+!bt
+\[
+u^n_q = A_r^n e^{i\phi n} e^{ikx} = A_r^n e^{i(kx - n\phi)} =
+A_r^ne^{i(k(x - ct))},\]
+!et
+for
+
+!bt
+\[
+c = \frac{\phi}{k\Delta t}\tp
+\]
+!et
+Now,
+
+!bt
+\[ k\Delta t = \frac{Ck\Delta x}{v}=\frac{Cp}{v},\]
+!et
+so
+
+!bt
+\[ c = \frac{\phi v}{Cp}\tp\]
+!et
+An appropriate dimensionless quantity to plot is $c/v$:
+
+!bt
+\[ \frac{c}{v} = \frac{\phi}{Cp}\tp\]
+!et
+
+FIGURE: [fig-advec/disprel_C0_99, width=800 frac=1] Dispersion relations for $C=0.99$. label{advec:1D:disprel:C099}
+
+FIGURE: [fig-advec/disprel_C0_9, width=800 frac=1] Dispersion relations for $C=0.9$. label{advec:1D:disprel:C09}
+
+FIGURE: [fig-advec/disprel_C0_8, width=800 frac=1] Dispersion relations for $C=0.8$. label{advec:1D:disprel:C08}
+
+FIGURE: [fig-advec/disprel_C0_5, width=800 frac=1] Dispersion relations for $C=0.5$. label{advec:1D:disprel:C05}
+
+FIGURE: [fig-advec/disprel_C0_99, width=800 frac=1] Dispersion relations for $C=0.99$. label{advec:1D:disprel:C99}
+
+FIGURE: [fig-advec/disprel_C0_99, width=800 frac=1] Dispersion relations for $C=0.99$. label{advec:1D:disprel:C99}
+
+The total damping after some time $T=n\Delta t$ is reflected by
+$A_r(C,p)^n$. Since normally $A_r<1$, the damping goes like
+$A_r^{1/\Delta t}$ and approaches zero as $\Delta t\rightarrow 0$.
+[hpl: No, how do we explain that reducing $\Delta t$ reduces the
+damping, while keeping $C$ fixed?]
 
 ======= One-dimensional stationary advection-diffusion equation =======
 

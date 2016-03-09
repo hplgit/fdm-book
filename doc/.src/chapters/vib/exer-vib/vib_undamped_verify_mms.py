@@ -19,7 +19,7 @@ def residual_discrete_eq_step1(u):
     """Return the residual of the discrete eq. at the first
     step with u inserted."""
     half = sym.Rational(1,2)
-    R = u(t+dt) - u(t) - dt*V - \
+    R = u(t+dt) - I - dt*V - \
         half*dt**2*f.subs(t, 0) + half*dt**2*w**2*I
     R = R.subs(t, 0)  # t=0 in the rhs of the first step eq.
     return sym.simplify(R)

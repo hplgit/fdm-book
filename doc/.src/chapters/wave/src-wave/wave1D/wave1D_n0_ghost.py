@@ -116,7 +116,7 @@ def solver(I, V, f, c, L, dt, C, T, user_action=None):
     # Important to correct the mathematically wrong u=u_2 above
     # before returning u
     u = u_1
-    cpu_time = t0 - time.clock()
+    cpu_time = time.clock() - t0
     return u[1:-1], x, t, cpu_time
 
 

@@ -202,7 +202,7 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
     # Important to correct the mathematically wrong u=u_2 above
     # before returning u
     u = u_1
-    cpu_time = t0 - time.clock()
+    cpu_time = time.clock() - t0
     return cpu_time, hashed_input
 
 

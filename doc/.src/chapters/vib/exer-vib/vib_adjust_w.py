@@ -64,12 +64,10 @@ def convergence_rates(m, num_periods=8, adjust_w=True):
          for i in range(1, m, 1)]
     return r
 
-import nose.tools as nt
-
 def test_convergence_rates():
     r = convergence_rates(m=5, num_periods=8)
-    # Accept rate to 1 decimal place
-    nt.assert_almost_equal(r[-1], 4.0, places=1)
+    # Accept rough approximation to rate
+    assert abs(r[-1] - 4.0) < 0.1
 
 def main():
     import argparse
