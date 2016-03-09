@@ -96,7 +96,7 @@ def solver(I, V, f, c, L, dt, C, T, user_action=None):
 
     # Wrong assignment u = u_2 must be corrected before return
     u = u_1
-    cpu_time = t0 - time.clock()
+    cpu_time = time.clock() - t0
     return u, x, t, cpu_time
 
 from wave1D_u0 import viz
