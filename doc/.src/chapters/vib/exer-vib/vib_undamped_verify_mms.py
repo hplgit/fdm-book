@@ -61,17 +61,17 @@ def linear():
 
 def quadratic():
     # Extend with quadratic functions
-    b = sym.Symbol('b')  # arbitrary constant in quadratic term
+    q = sym.Symbol('q')  # arbitrary constant in quadratic term
 
     def u_e(t):
-        return b*t**2 + V*t + I
+        return q*t**2 + V*t + I
 
     main(u_e)
 
 def cubic():
-    a, b = sym.symbols('a b')
+    r, q = sym.symbols('r q')
 
-    main(lambda t: a*t**3 + b*t**2 + V*t + I)
+    main(lambda t: r*t**3 + q*t**2 + V*t + I)
 
 
 def solver(I, V, f, w, dt, T):
@@ -91,23 +91,22 @@ def solver(I, V, f, w, dt, T):
         u[n+1] = 2*u[n] - u[n-1] - dt**2*w**2*u[n] + dt**2*f(t[n])
     return u, t
 
-import nose.tools as nt
-
 def test_quadratic_exact_solution():
     # Transform global symbolic variables to functions and numbers
     # for numerical computations
-    global b, V, I, w
-    b, V, I, w = 2.3, 0.9, 1.2, 1.5
+    global p, V, I, w
+    p, V, I, w = 2.3, 0.9, 1.2, 1.5
     global f, t
-    u_e = lambda t: b*t**2 + V*t + I # compute with b, V, I, w as numbers
+    u_e = lambda t: p*t**2 + V*t + I # use p, V, I, w as numbers
     f = ode_source_term(u_e)         # fit source term
-    f = sym.lambdify(t, f)            # turn to numerical Python function
+    f = sym.lambdify(t, f)           # make function numerical
 
     dt = 2./w
     u, t = solver(I=I, V=V, f=f, w=w, dt=dt, T=3)
     u_e = u_e(t)
     error = np.abs(u - u_e).max()
-    nt.assert_almost_equal(error, 0, delta=1E-12)
+    tol = 1E-12
+    assert error < tol
     print 'Error in computing a quadratic solution:', error
 
 if __name__ == '__main__':

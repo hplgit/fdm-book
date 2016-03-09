@@ -5,7 +5,8 @@ from vib_verify_mms import solver
 def u_exact(t, I, V, A, f, c, m):
     '''Found by solving mu'' + cu = F in Wolfram alpha'''
     k_1 = I
-    k_2 = (V - A*2*np.pi*f/(c - 4*np.pi**2*f**2*m))*np.sqrt(m/float(c))
+    k_2 = (V - A*2*np.pi*f/(c - 4*np.pi**2*f**2*m))*\
+                                        np.sqrt(m/float(c))
     return A*np.sin(2*np.pi*f*t)/(c - 4*np.pi**2*f**2*m) + \
            k_2*np.sin(np.sqrt(c/float(m))*t) + \
            k_1*np.cos(np.sqrt(c/float(m))*t)
@@ -55,7 +56,9 @@ def convergence_rates(N_est, solver_function, num_periods=8):
 
 def test_convergence_rates():
 
-    r = convergence_rates(N_est=5, solver_function=solver, num_periods=8)
+    r = convergence_rates(N_est=5, 
+                          solver_function=solver, 
+                          num_periods=8)
     # Accept rate to 1 decimal place
     tol = 0.1
     assert abs(r[-1] - 2.0) < tol

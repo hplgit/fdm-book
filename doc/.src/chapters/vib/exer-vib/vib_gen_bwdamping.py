@@ -6,10 +6,10 @@ def solver_bwdamping(I, V, m, b, s, F, dt, T, damping='linear'):
     """
     Solve m*u'' + f(u') + s(u) = F(t) for t in (0,T],
     u(0)=I and u'(0)=V. All terms except damping is discretized 
-    by a central finite difference method with time step dt. The damping
-    term is discretized by a backward diff. approx., as is the init.cond.
-    u'(0). If damping is 'linear', f(u')=b*u, while if damping is
-    'quadratic', f(u')=b*u'*abs(u').
+    by a central finite difference method with time step dt. 
+    The damping term is discretized by a backward diff. approx., 
+    as is the init.cond. u'(0). If damping is 'linear', f(u')=b*u,
+    while if damping is 'quadratic', f(u')=b*u'*abs(u').
     F(t) and s(u) are Python functions.
     """
     dt = float(dt); b = float(b); m = float(m) # avoid integer div.
@@ -27,11 +27,11 @@ def solver_bwdamping(I, V, m, b, s, F, dt, T, damping='linear'):
                dt**2/m*(-b*V*abs(V) - s(u[0]) + F(t[0]))
     for n in range(1, Nt):
         if damping == 'linear':
-            u[n+1] = (2 - dt*b/m)*u[n] + dt**2/m*(- s(u[n]) + F(t[n])) + \
-                     (dt*b/m - 1)*u[n-1]
+            u[n+1] = (2 - dt*b/m)*u[n] + dt**2/m*(- s(u[n]) + \
+                                F(t[n])) + (dt*b/m - 1)*u[n-1]
         elif damping == 'quadratic':
-            u[n+1] = 2*u[n] - u[n-1] - b/m*abs(u[n] - u[n-1])*(u[n] - u[n-1]) + \
-                     dt**2/m*(-s(u[n]) + F(t[n]))
+            u[n+1] = 2*u[n] - u[n-1] - b/m*abs(u[n] - \
+            u[n-1])*(u[n] - u[n-1]) + dt**2/m*(-s(u[n]) + F(t[n]))
     return u, t
 
 def solver(I, V, m, b, s, F, dt, T, damping='linear'):
@@ -186,7 +186,8 @@ def test_mms():
         F_formula = lhs_eq(t, m, b, s, u_exact, 'linear')
         F = sym.lambdify(t, F_formula)
         #u1, t1 = solver(I, V, m, b, s, F, dt, T, 'linear')
-        u1, t1 = solver_bwdamping(I, V, m, b, s, F, dt, T, 'linear')
+        u1, t1 = solver_bwdamping(I, V, m, b, s, 
+                                  F, dt, T, 'linear')
         error = np.sqrt(np.sum((u_exact_py(t1) - u1)**2)*dt)
         errors_linear.append((dt, error))
 
@@ -194,7 +195,8 @@ def test_mms():
         #print sym.latex(F_formula, mode='plain')
         F = sym.lambdify(t, F_formula)
         #u2, t2 = solver(I, V, m, b, s, F, dt, T, 'quadratic')
-        u2, t2 = solver_bwdamping(I, V, m, b, s, F, dt, T, 'quadratic')
+        u2, t2 = solver_bwdamping(I, V, m, b, s, 
+                                  F, dt, T, 'quadratic')
         error = np.sqrt(np.sum((u_exact_py(t2) - u2)**2)*dt)
         errors_quadratic.append((dt, error))
         dt /= 2
@@ -205,9 +207,9 @@ def test_mms():
             dt, error = errors[i]
             dt_1, error_1 = errors[i-1]
             r = np.log(error/error_1)/np.log(dt/dt_1)
-            #assert abs(r - 2.0) < tol
         # check r for final simulation with (final and) smallest dt
-        # note that the method now is 1st order, i.e. r should approach 1.0
+        # note that the method now is 1st order, i.e. r should 
+        # approach 1.0
         print r
         assert abs(r - 1.0) < tol
 
@@ -226,9 +228,10 @@ def main():
                         help='Number of periods in a window')
     parser.add_argument('--damping', type=str, default='linear')
     parser.add_argument('--savefig', action='store_true')
-    # Hack to allow --SCITOOLS options (scitools.std reads this argument
-    # at import)
-    parser.add_argument('--SCITOOLS_easyviz_backend', default='matplotlib')
+    # Hack to allow --SCITOOLS options 
+    # (scitools.std reads this argument at import)
+    parser.add_argument('--SCITOOLS_easyviz_backend', 
+                        default='matplotlib')
     a = parser.parse_args()
     from scitools.std import StringFunction
     s = StringFunction(a.s, independent_variable='u')

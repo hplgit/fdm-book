@@ -25,7 +25,8 @@ def convergence_rates(m, solver_function, num_periods=8):
         u_e = u_exact(t, I, w)
         E_u = np.sqrt(dt*np.sum((u_e-u)**2))
         E_u_values.append(E_u)
-        Energy = 0.5*((u[2:] - u[:-2])/(2*dt))**2 + 0.5*w**2*u[1:-1]**2
+        Energy = 0.5*((u[2:] - u[:-2])/(2*dt))**2 + \
+                                    0.5*w**2*u[1:-1]**2
         E_Energy = Energy - Energy_const
         E_Energy_norm = np.abs(E_Energy).max()
         E_Energy_values.append(E_Energy_norm)        
@@ -41,7 +42,9 @@ def convergence_rates(m, solver_function, num_periods=8):
     return r_u, r_E
 
 def test_convergence_rates():
-    r_u, r_E = convergence_rates(m=5, solver_function=solver, num_periods=8)
+    r_u, r_E = convergence_rates(m=5, 
+                                 solver_function=solver, 
+                                 num_periods=8)
     # Accept rate to 1 decimal place
     tol = 0.1
     assert abs(r_u[-1] - 2.0) < tol
@@ -56,8 +59,10 @@ def main(solver_function=solver):
     parser.add_argument('--dt', type=float, default=0.05)
     parser.add_argument('--num_periods', type=int, default=5)
     parser.add_argument('--savefig', action='store_true')
-    # Hack to allow --SCITOOLS options (read when importing scitools.std)
-    parser.add_argument('--SCITOOLS_easyviz_backend', default='matplotlib')
+    # Hack to allow --SCITOOLS options 
+    # (read when importing scitools.std)
+    parser.add_argument('--SCITOOLS_easyviz_backend', 
+                        default='matplotlib')
     a = parser.parse_args()
     I, w, dt, num_periods, savefig = \
        a.I, a.w, a.dt, a.num_periods, a.savefig

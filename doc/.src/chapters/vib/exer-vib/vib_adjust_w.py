@@ -79,10 +79,13 @@ def main():
     parser.add_argument('--w', type=float, default=2*pi)
     parser.add_argument('--dt', type=float, default=0.05)
     parser.add_argument('--num_periods', type=int, default=5)
-    # Hack to allow --SCITOOLS options (read when importing scitools.std)
-    parser.add_argument('--SCITOOLS_easyviz_backend', default='matplotlib')
+    # Hack to allow --SCITOOLS options 
+    # (read when importing scitools.std)
+    parser.add_argument('--SCITOOLS_easyviz_backend', 
+                        default='matplotlib')
     a = parser.parse_args()
-    adjust_w, I, w, dt, num_periods = a.adjust_w, a.I, a.w, a.dt, a.num_periods
+    adjust_w, I, w, dt, num_periods = \
+            a.adjust_w, a.I, a.w, a.dt, a.num_periods
     adjust_w = True if adjust_w == 'yes' else False
 
     P = 2*pi/w  # one period

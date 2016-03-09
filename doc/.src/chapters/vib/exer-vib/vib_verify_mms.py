@@ -148,8 +148,6 @@ def solver(I, V, F, b, c, m, dt, T, damping):
                      abs(u[n]-u[n-1])+dt**2*(F(t[n])-c*u[n]))
     return u, t
 
-import nose.tools as nt
-
 def test_quadratic_exact_solution(damping):
     # Transform global symbolic variables to functions and numbers
     # for numerical computations
@@ -167,7 +165,8 @@ def test_quadratic_exact_solution(damping):
                   T=(2*pi/sqrt(c/m))*2, damping=damping)
     u_e = u_e(t)
     error = np.abs(u - u_e).max()
-    nt.assert_almost_equal(error, 0, delta=1E-12)
+    tol = 1E-12
+    assert error < tol    
     print 'Error in computing a quadratic solution:', error
 
 if __name__ == '__main__':
