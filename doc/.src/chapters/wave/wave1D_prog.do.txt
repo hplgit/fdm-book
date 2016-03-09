@@ -964,6 +964,13 @@ Why does one of these constructions fail to store the solution correctly?
 Let the `viz` function return the `all_u` list
 converted to a two-dimensional `numpy` array.
 
+!bsol
+We have to explicitly use a copy of u, i.e. as `all_u.append(u.copy())`, otherwise we just get a reference to `u`, which goes on changing with the computations.
+
+@@@CODE exer-wave/wave1D_u0_s_store.py
+
+!esol
+
 ===== Exercise: Use a class for the user action function =====
 label{wave:exer:store:list:class}
 file=wave1D_u0_s2c
@@ -976,14 +983,21 @@ choice). The class versions avoid that the user action function
 depends on parameters defined outside the function (such as `all_u`
 in Exercise ref{wave:exer:store:list}).
 
+!bsol
+Using a class, we get
+
+@@@CODE exer-wave/wave1D_u0_s2c.py
+
+!esol
+
+
 ===== Exercise: Compare several Courant numbers in one movie =====
 label{wave:exer:multiple:C}
 file=wave_numerics_comparison
 
 The goal of this exercise is to make movies where several curves,
 corresponding to different Courant numbers, are visualized.
-Import the `solver` function from the `wave1D_u0_s` movie
-in a new file `wave_compare.py`. Reimplement the `viz` function
+Start out with a copy of `wave1D_u0_s2c.py`. Use what you need and make the required modifications. Reimplement the `viz` function
 such that it can take a list of `C` values as argument
 and create a movie with solutions corresponding to the given `C`
 values. The `plot_u` function must be changed to store the solution
@@ -997,6 +1011,13 @@ The challenge in such a visualization is to ensure that the curves in
 one plot correspond to the same time point. The easiest remedy is to
 keep the time and space resolution constant and change the wave
 velocity $c$ to change the Courant number.
+
+!bsol
+Choosing to use constant time and space resolutions, i.e. just changing `c`, we get
+
+@@@CODE exer-wave/wave_numerics_comparison.py
+
+!esol
 
 ===== Project: Calculus with 1D mesh functions =====
 label{wave:exer:mesh1D:calculus}
@@ -1014,11 +1035,21 @@ at the end points. Implement a scalar version of
 the computation in a Python function and write an associated unit test
 for the linear case $f(x)=4x-2.5$ where the discrete derivative should
 be exact.
+
+!bsol
+See code below.
+!esol
+
 !esubex
 
 !bsubex
 Vectorize the implementation of the discrete derivative.
 Extend the unit test to check the validity of the implementation.
+
+!bsol
+See code below.
+!esol
+
 !esubex
 
 !bsubex
@@ -1044,6 +1075,37 @@ $F_i$ for $i=0,\ldots,N_x$.
 For a unit test one can use the fact that the above defined
 discrete integral of a linear
 function (say $f(x)=4x-2.5$) is exact.
+
+!bsol
+We know that the difference $F_{i+1} - F_i$ must amount to the area
+of a trapezoid, which is exactly what $\half(f_i + f_{i+1})\Delta x$ is.
+To show the relation above, we may start with the Trapezoidal rule:
+
+!bt
+\begin{equation}
+F_{i+1} = \Delta x \left[\frac{1}{2}f(x_0) + \sum_{j=1}^{n-1}f(x_j) + \frac{1}{2}f(x_n) \right] \thinspace . \nonumber
+\end{equation}
+!et
+Since $n = i+1$, and since the final term in the sum may be separated out from the sum and split in two, this may be written as
+!bt
+\begin{equation}
+F_{i+1} = \Delta x \left[\frac{1}{2}f(x_0) + \sum_{j=1}^{i-1}f(x_j) + \frac{1}{2}f(x_i) + \frac{1}{2}f(x_i) + \frac{1}{2}f(x_{i+1}) \right] \thinspace . \nonumber
+\end{equation}
+!et
+This may further be written as
+!bt
+\begin{equation}
+F_{i+1} = \Delta x \left[\frac{1}{2}f(x_0) + \sum_{j=1}^{i-1}f(x_j) + \frac{1}{2}f(x_i)\right] + \Delta x \left[\frac{1}{2}f(x_i) + \frac{1}{2}f(x_{i+1}) \right] \thinspace . \nonumber
+\end{equation}
+!et
+Finally, this gives
+!bt
+\[ F_{i+1} = F_i + \half(f_i + f_{i+1})\Delta x\tp\]
+!et
+
+See code below for implementation.
+!esol
+
 !esubex
 
 !bsubex
@@ -1056,6 +1118,11 @@ Make an array with each element of the sum and use the "cumsum"
 (`numpy.cumsum`) operation to compute the accumulative sum:
 `numpy.cumsum([1,3,5])` is `[1,4,9]`.
 !ehint
+
+!bsol
+See code below.
+!esol
+
 !esubex
 
 !bsubex
@@ -1072,4 +1139,20 @@ f = np.exp(x)                    # mesh function
 df = calc.differentiate(f, x)    # discrete derivative
 F = calc.integrate(f, x)         # discrete anti-derivative
 !ec
+
+!bsol
+See code below.
+!esol
+
 !esubex
+
+
+!bsol
+The final version of the code reads
+
+@@@CODE exer-wave/mesh_calculus_1D.py
+
+!esol
+
+
+
