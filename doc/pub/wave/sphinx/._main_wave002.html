@@ -1082,9 +1082,8 @@ function (such as <tt class="docutils literal"><span class="pre">all_u</span></t
 <div class="section" id="exercise-4-compare-several-courant-numbers-in-one-movie">
 <span id="wave-exer-multiple-c"></span><h2>Exercise 4: Compare several Courant numbers in one movie<a class="headerlink" href="#exercise-4-compare-several-courant-numbers-in-one-movie" title="Permalink to this headline">¶</a></h2>
 <p>The goal of this exercise is to make movies where several curves,
-corresponding to different Courant numbers, are visualized.  Start out
-with a copy of the <tt class="docutils literal"><span class="pre">wave1D_u0_s2c.py</span></tt> made in <a class="reference internal" href="#wave-exer-store-list-class"><em>Exercise 3: Use a class for the user action function</em></a>. Use what you need and make the
-required modifications. Reimplement the <tt class="docutils literal"><span class="pre">viz</span></tt> function such that it
+corresponding to different Courant numbers, are visualized. Write a
+program that resembles <tt class="docutils literal"><span class="pre">wave1D_u0_s2c.py</span></tt> in <a class="reference internal" href="#wave-exer-store-list-class"><em>Exercise 3: Use a class for the user action function</em></a>, but with a <tt class="docutils literal"><span class="pre">viz</span></tt> function that
 can take a list of <tt class="docutils literal"><span class="pre">C</span></tt> values as argument and create a movie with
 solutions corresponding to the given <tt class="docutils literal"><span class="pre">C</span></tt> values. The <tt class="docutils literal"><span class="pre">plot_u</span></tt> function
 must be changed to store the solution in an array (see <a class="reference internal" href="#wave-exer-store-list"><em>Exercise 2: Add storage of solution in a user action function</em></a> or <a class="reference internal" href="#wave-exer-store-list-class"><em>Exercise 3: Use a class for the user action function</em></a> for
@@ -1094,7 +1093,8 @@ the spatial solution curves in one figure and store it in a file.</p>
 <p>The challenge in such a visualization is to ensure that the curves in
 one plot correspond to the same time point. The easiest remedy is to
 keep the time resolution constant and change the space resolution
-to change the Courant number.</p>
+to change the Courant number. Note that each spatial grid is needed for
+the final plotting, so it is an option to store those grids too.</p>
 <p>Filename: <tt class="docutils literal"><span class="pre">wave_numerics_comparison</span></tt>.</p>
 </div>
 <div class="section" id="project-5-calculus-with-1d-mesh-functions">
@@ -1174,9 +1174,9 @@ The final version of the code reads</p>
         <span class="n">Nx</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>     <span class="c"># number of spatial steps</span>
         <span class="n">num_dfdx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
         <span class="c"># Compute approximate derivatives at end-points first</span>
-        <span class="n">num_dfdx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span><span class="o">/</span><span class="n">dx</span>          <span class="c"># use F. diff. approx.</span>
-        <span class="n">num_dfdx</span><span class="p">[</span><span class="n">Nx</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">Nx</span><span class="p">])</span> <span class="o">-</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">Nx</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span><span class="o">/</span><span class="n">dx</span>     <span class="c"># use B. diff. approx.</span>
-        <span class="c">#...proceed with approximate derivatives for inner mesh points</span>
+        <span class="n">num_dfdx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span><span class="o">/</span><span class="n">dx</span>          <span class="c"># FD approx.</span>
+        <span class="n">num_dfdx</span><span class="p">[</span><span class="n">Nx</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">Nx</span><span class="p">])</span> <span class="o">-</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">Nx</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span><span class="o">/</span><span class="n">dx</span>     <span class="c"># BD approx.</span>
+        <span class="c"># proceed with approximate derivatives for inner mesh points</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vectorized</span><span class="p">:</span>
             <span class="n">num_dfdx</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span> <span class="o">-</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]))</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">dx</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>   <span class="c"># scalar version</span>

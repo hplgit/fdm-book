@@ -22,14 +22,15 @@ code can add visualization, error computations, etc.
 
 import numpy as np
 
-def solver(I, V, f, dx, L, dt, C, T, user_action=None):
+def solver(I, V, f, c, L, dt, C, T, user_action=None):
     """Solve u_tt=c^2*u_xx + f on (0,L)x(0,T]."""
     Nt = int(round(T/dt))
     t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
+    dx = c*dt/C
     Nx = int(round(L/dx))
-    x = np.linspace(0, L, Nx+1)       # Mesh points in space
-    C2 = C**2                         # Help variable in the scheme
-    # Make sure dx and dt are compatible with x and t
+    x = np.linspace(0, L, Nx+1)     # Mesh points in space
+    C2 = C**2                       # Help variable in the scheme
+    # Recompute to make sure dx and dt are compatible with x and t
     dx = x[1] - x[0]
     dt = t[1] - t[0]
 
@@ -85,7 +86,7 @@ def solver(I, V, f, dx, L, dt, C, T, user_action=None):
     return u, x, t, cpu_time
 
 def viz(
-    I, V, f, dx, L, dt, C, T,  # PDE parameters
+    I, V, f, c, L, dt, C, T,  # PDE parameters
     umin, umax,               # Interval for u in plots
     animate=True,             # Simulation with animation?
     tool='matplotlib',        # 'matplotlib' or 'scitools'
@@ -94,15 +95,17 @@ def viz(
     """
     Run solver, store and viz. u at each time level with all C values.
     """
-
+    
     class PlotUst:
         def __init__(self):
             self.all_u = []
             self.all_u_for_all_C = []
+            self.x_mesh = []   # need each mesh for final plots
         def __call__(self, u, x, t, n):
             """user_action function for solver."""
             self.all_u.append(u.copy())
             if t[n] == T: # i.e., whole time interv. done for this C
+                self.x_mesh.append(x)
                 self.all_u_for_all_C.append(self.all_u)
                 self.all_u = []     # reset to empty list
                 
@@ -110,22 +113,25 @@ def viz(
                     print 'Finished all C. Proceed with plots...'
                     # note: n will here be the last index in t[n]
                     for n_ in range(0, n+1):      # for each tn
-                        plt.plot(x, self.all_u_for_all_C[0][n_],
+                        plt.plot(self.x_mesh[0], 
+                                 self.all_u_for_all_C[0][n_],
                                  axis=[0, L, umin, umax],
                                  title='Solutions for all \
                                         C at t=%f' % t[n_])
                         plt.hold('on')
+                        
                         for j in range(1, len(C)):
                             # build plot at this tn with each 
                             # sol. from the different C values
-                            plt.plot(x, self.all_u_for_all_C[j][n_],
+                            plt.plot(self.x_mesh[j], 
+                                     self.all_u_for_all_C[j][n_],
                                      axis=[0, L, umin, umax])
                         plt.xlabel('x'); plt.ylabel('u')
                         plt.hold('off')
                         plt.show()
-                        # Let the init. cond. stay on the screen for 2
-                        # seconds, else insert a pause of 0.2 s between 
-                        # each plot                        
+                        # Let the init. cond. stay on the screen for
+                        # 2 sec, else insert a pause of 0.2 s  
+                        # between each plot                        
                         time.sleep(2) if t[n_] == 0 else \
                                                     time.sleep(0.2)                        
                         plt.savefig('tmp_%04d.png' % n_)  # for movie
@@ -160,9 +166,9 @@ def viz(
                                    C at t=%f' % t[n_])
                         plt.hold(False)
                         plt.draw()
-                        # Let the init. cond. stay on the screen for 2
-                        # seconds, else insert a pause of 0.2 s between 
-                        # each plot                        
+                        # Let the init. cond. stay on the screen for
+                        # 2 sec, else insert a pause of 0.2 s  
+                        # between each plot                        
                         time.sleep(2) if t[n_] == 0 else \
                                                     time.sleep(0.2)                        
                         plt.savefig('tmp_%04d.png' % n_)  # for movie
@@ -184,7 +190,7 @@ def viz(
     for C_value in C:
         print 'C_value --------------------------------- ', C_value
         u, x, t, cpu = solver_function(
-                     I, V, f, dx, L, dt, C_value, T, user_action)
+                     I, V, f, c, L, dt, C_value, T, user_action)
 
     # Make video files
     fps = 4  # frames per second
@@ -213,26 +219,26 @@ def guitar(C):
     wavelength = 2*L
     c = freq*wavelength
     from math import pi
-    omega = 2*pi*freq
+    w = 2*pi*freq
     num_periods = 1
-    T = 2*pi/omega*num_periods
+    T = 2*pi/w*num_periods
     # Choose dt the same as the stability limit for Nx=50
     dt = L/50./c
     dx = dt*c/float(C)
-    # Now dt and dx are considered fixed and a list of C 
-    # values is made by reducing the C value above in 
-    # steps of 10%. 
-    all_C = [C]; 
-    all_C.append(0.9*C);
-    all_C.append(0.8*C);
+    # Now dt is considered fixed and a list of C 
+    # values is made by reducing increasing the dx value 
+    # in steps of 10%. 
+    all_C = [C]
+    all_C.append(c*dt/(1.1*dx))
+    all_C.append(c*dt/(1.2*dx))
 
     def I(x):
         return a*x/x0 if x < x0 else a/(L-x0)*(L-x)
 
     umin = -1.2*a;  umax = -umin
-    cpu = viz(I, 0, 0, dx, L, dt, all_C, T, umin, umax,
+    cpu = viz(I, 0, 0, c, L, dt, all_C, T, umin, umax,
                  animate=True, tool='scitools')
-    #cpu = viz(I, 0, 0, dx, L, dt, all_C, T, umin, umax,
+    #cpu = viz(I, 0, 0, c, L, dt, all_C, T, umin, umax,
     #             animate=True, tool='matplotlib')
     print 'cpu = ', cpu
 

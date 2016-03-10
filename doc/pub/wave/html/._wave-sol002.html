@@ -2739,9 +2739,8 @@ Filename: <code>wave1D_u0_s2c</code>.
 
 <p>
 The goal of this exercise is to make movies where several curves,
-corresponding to different Courant numbers, are visualized.  Start out
-with a copy of the <code>wave1D_u0_s2c.py</code> made in <a href="#wave:exer:store:list:class">Exercise 3: Use a class for the user action function</a>. Use what you need and make the
-required modifications. Reimplement the <code>viz</code> function such that it
+corresponding to different Courant numbers, are visualized. Write a
+program that resembles <code>wave1D_u0_s2c.py</code> in <a href="#wave:exer:store:list:class">Exercise 3: Use a class for the user action function</a>, but with a <code>viz</code> function that 
 can take a list of <code>C</code> values as argument and create a movie with
 solutions corresponding to the given <code>C</code> values. The <code>plot_u</code> function
 must be changed to store the solution in an array (see <a href="#wave:exer:store:list">Exercise 2: Add storage of solution in a user action function</a> or <a href="#wave:exer:store:list:class">Exercise 3: Use a class for the user action function</a> for
@@ -2753,7 +2752,8 @@ the spatial solution curves in one figure and store it in a file.
 The challenge in such a visualization is to ensure that the curves in
 one plot correspond to the same time point. The easiest remedy is to
 keep the time resolution constant and change the space resolution
-to change the Courant number.
+to change the Courant number. Note that each spatial grid is needed for
+the final plotting, so it is an option to store those grids too.
 
 <p>
 <!-- --- begin solution of exercise --- -->
@@ -2766,7 +2766,7 @@ to change the Courant number.
 <p><div class="collapse" id="exer_4_1">
 
 <p>
-Choosing to use constant time and space resolutions, i.e. just changing <code>c</code>, we get
+Modifying the code to store all solutions for each \( C \) value and also each corresponding spatial grid (needed for final plotting), we get
 
 <p>
 
@@ -2795,14 +2795,15 @@ Choosing to use constant time and space resolutions, i.e. just changing <code>c<
 
 <span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
 
-<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solver</span>(I, V, f, dx, L, dt, C, T, user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>):
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solver</span>(I, V, f, c, L, dt, C, T, user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>):
     <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Solve u_tt=c^2*u_xx + f on (0,L)x(0,T].&quot;&quot;&quot;</span>
     Nt <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(T<span style="color: #666666">/</span>dt))
     t <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, Nt<span style="color: #666666">*</span>dt, Nt<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># Mesh points in time</span>
+    dx <span style="color: #666666">=</span> c<span style="color: #666666">*</span>dt<span style="color: #666666">/</span>C
     Nx <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(L<span style="color: #666666">/</span>dx))
-    x <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, L, Nx<span style="color: #666666">+1</span>)       <span style="color: #408080; font-style: italic"># Mesh points in space</span>
-    C2 <span style="color: #666666">=</span> C<span style="color: #666666">**2</span>                         <span style="color: #408080; font-style: italic"># Help variable in the scheme</span>
-    <span style="color: #408080; font-style: italic"># Make sure dx and dt are compatible with x and t</span>
+    x <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, L, Nx<span style="color: #666666">+1</span>)     <span style="color: #408080; font-style: italic"># Mesh points in space</span>
+    C2 <span style="color: #666666">=</span> C<span style="color: #666666">**2</span>                       <span style="color: #408080; font-style: italic"># Help variable in the scheme</span>
+    <span style="color: #408080; font-style: italic"># Recompute to make sure dx and dt are compatible with x and t</span>
     dx <span style="color: #666666">=</span> x[<span style="color: #666666">1</span>] <span style="color: #666666">-</span> x[<span style="color: #666666">0</span>]
     dt <span style="color: #666666">=</span> t[<span style="color: #666666">1</span>] <span style="color: #666666">-</span> t[<span style="color: #666666">0</span>]
 
@@ -2858,7 +2859,7 @@ Choosing to use constant time and space resolutions, i.e. just changing <code>c<
     <span style="color: #008000; font-weight: bold">return</span> u, x, t, cpu_time
 
 <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">viz</span>(
-    I, V, f, dx, L, dt, C, T,  <span style="color: #408080; font-style: italic"># PDE parameters</span>
+    I, V, f, c, L, dt, C, T,  <span style="color: #408080; font-style: italic"># PDE parameters</span>
     umin, umax,               <span style="color: #408080; font-style: italic"># Interval for u in plots</span>
     animate<span style="color: #666666">=</span><span style="color: #008000">True</span>,             <span style="color: #408080; font-style: italic"># Simulation with animation?</span>
     tool<span style="color: #666666">=</span><span style="color: #BA2121">&#39;matplotlib&#39;</span>,        <span style="color: #408080; font-style: italic"># &#39;matplotlib&#39; or &#39;scitools&#39;</span>
@@ -2867,15 +2868,17 @@ Choosing to use constant time and space resolutions, i.e. just changing <code>c<
     <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
 <span style="color: #BA2121; font-style: italic">    Run solver, store and viz. u at each time level with all C values.</span>
 <span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
-
+    
     <span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">PlotUst</span>:
         <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>):
             <span style="color: #008000">self</span><span style="color: #666666">.</span>all_u <span style="color: #666666">=</span> []
             <span style="color: #008000">self</span><span style="color: #666666">.</span>all_u_for_all_C <span style="color: #666666">=</span> []
+            <span style="color: #008000">self</span><span style="color: #666666">.</span>x_mesh <span style="color: #666666">=</span> []   <span style="color: #408080; font-style: italic"># need each mesh for final plots</span>
         <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__call__</span>(<span style="color: #008000">self</span>, u, x, t, n):
             <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;user_action function for solver.&quot;&quot;&quot;</span>
             <span style="color: #008000">self</span><span style="color: #666666">.</span>all_u<span style="color: #666666">.</span>append(u<span style="color: #666666">.</span>copy())
             <span style="color: #008000; font-weight: bold">if</span> t[n] <span style="color: #666666">==</span> T: <span style="color: #408080; font-style: italic"># i.e., whole time interv. done for this C</span>
+                <span style="color: #008000">self</span><span style="color: #666666">.</span>x_mesh<span style="color: #666666">.</span>append(x)
                 <span style="color: #008000">self</span><span style="color: #666666">.</span>all_u_for_all_C<span style="color: #666666">.</span>append(<span style="color: #008000">self</span><span style="color: #666666">.</span>all_u)
                 <span style="color: #008000">self</span><span style="color: #666666">.</span>all_u <span style="color: #666666">=</span> []     <span style="color: #408080; font-style: italic"># reset to empty list</span>
                 
@@ -2883,22 +2886,25 @@ Choosing to use constant time and space resolutions, i.e. just changing <code>c<
                     <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Finished all C. Proceed with plots...&#39;</span>
                     <span style="color: #408080; font-style: italic"># note: n will here be the last index in t[n]</span>
                     <span style="color: #008000; font-weight: bold">for</span> n_ <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, n<span style="color: #666666">+1</span>):      <span style="color: #408080; font-style: italic"># for each tn</span>
-                        plt<span style="color: #666666">.</span>plot(x, <span style="color: #008000">self</span><span style="color: #666666">.</span>all_u_for_all_C[<span style="color: #666666">0</span>][n_],
+                        plt<span style="color: #666666">.</span>plot(<span style="color: #008000">self</span><span style="color: #666666">.</span>x_mesh[<span style="color: #666666">0</span>], 
+                                 <span style="color: #008000">self</span><span style="color: #666666">.</span>all_u_for_all_C[<span style="color: #666666">0</span>][n_],
                                  axis<span style="color: #666666">=</span>[<span style="color: #666666">0</span>, L, umin, umax],
                                  title<span style="color: #666666">=</span><span style="color: #BA2121">&#39;Solutions for all </span><span style="color: #BB6622; font-weight: bold">\</span>
 <span style="color: #BA2121">                                        C at t=</span><span style="color: #BB6688; font-weight: bold">%f</span><span style="color: #BA2121">&#39;</span> <span style="color: #666666">%</span> t[n_])
                         plt<span style="color: #666666">.</span>hold(<span style="color: #BA2121">&#39;on&#39;</span>)
+                        
                         <span style="color: #008000; font-weight: bold">for</span> j <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>, <span style="color: #008000">len</span>(C)):
                             <span style="color: #408080; font-style: italic"># build plot at this tn with each </span>
                             <span style="color: #408080; font-style: italic"># sol. from the different C values</span>
-                            plt<span style="color: #666666">.</span>plot(x, <span style="color: #008000">self</span><span style="color: #666666">.</span>all_u_for_all_C[j][n_],
+                            plt<span style="color: #666666">.</span>plot(<span style="color: #008000">self</span><span style="color: #666666">.</span>x_mesh[j], 
+                                     <span style="color: #008000">self</span><span style="color: #666666">.</span>all_u_for_all_C[j][n_],
                                      axis<span style="color: #666666">=</span>[<span style="color: #666666">0</span>, L, umin, umax])
                         plt<span style="color: #666666">.</span>xlabel(<span style="color: #BA2121">&#39;x&#39;</span>); plt<span style="color: #666666">.</span>ylabel(<span style="color: #BA2121">&#39;u&#39;</span>)
                         plt<span style="color: #666666">.</span>hold(<span style="color: #BA2121">&#39;off&#39;</span>)
                         plt<span style="color: #666666">.</span>show()
-                        <span style="color: #408080; font-style: italic"># Let the init. cond. stay on the screen for 2</span>
-                        <span style="color: #408080; font-style: italic"># seconds, else insert a pause of 0.2 s between </span>
-                        <span style="color: #408080; font-style: italic"># each plot                        </span>
+                        <span style="color: #408080; font-style: italic"># Let the init. cond. stay on the screen for</span>
+                        <span style="color: #408080; font-style: italic"># 2 sec, else insert a pause of 0.2 s  </span>
+                        <span style="color: #408080; font-style: italic"># between each plot                        </span>
                         time<span style="color: #666666">.</span>sleep(<span style="color: #666666">2</span>) <span style="color: #008000; font-weight: bold">if</span> t[n_] <span style="color: #666666">==</span> <span style="color: #666666">0</span> <span style="color: #008000; font-weight: bold">else</span> \
                                                     time<span style="color: #666666">.</span>sleep(<span style="color: #666666">0.2</span>)                        
                         plt<span style="color: #666666">.</span>savefig(<span style="color: #BA2121">&#39;tmp_</span><span style="color: #BB6688; font-weight: bold">%04d</span><span style="color: #BA2121">.png&#39;</span> <span style="color: #666666">%</span> n_)  <span style="color: #408080; font-style: italic"># for movie</span>
@@ -2933,9 +2939,9 @@ Choosing to use constant time and space resolutions, i.e. just changing <code>c<
 <span style="color: #BA2121">                                   C at t=</span><span style="color: #BB6688; font-weight: bold">%f</span><span style="color: #BA2121">&#39;</span> <span style="color: #666666">%</span> t[n_])
                         plt<span style="color: #666666">.</span>hold(<span style="color: #008000">False</span>)
                         plt<span style="color: #666666">.</span>draw()
-                        <span style="color: #408080; font-style: italic"># Let the init. cond. stay on the screen for 2</span>
-                        <span style="color: #408080; font-style: italic"># seconds, else insert a pause of 0.2 s between </span>
-                        <span style="color: #408080; font-style: italic"># each plot                        </span>
+                        <span style="color: #408080; font-style: italic"># Let the init. cond. stay on the screen for</span>
+                        <span style="color: #408080; font-style: italic"># 2 sec, else insert a pause of 0.2 s  </span>
+                        <span style="color: #408080; font-style: italic"># between each plot                        </span>
                         time<span style="color: #666666">.</span>sleep(<span style="color: #666666">2</span>) <span style="color: #008000; font-weight: bold">if</span> t[n_] <span style="color: #666666">==</span> <span style="color: #666666">0</span> <span style="color: #008000; font-weight: bold">else</span> \
                                                     time<span style="color: #666666">.</span>sleep(<span style="color: #666666">0.2</span>)                        
                         plt<span style="color: #666666">.</span>savefig(<span style="color: #BA2121">&#39;tmp_</span><span style="color: #BB6688; font-weight: bold">%04d</span><span style="color: #BA2121">.png&#39;</span> <span style="color: #666666">%</span> n_)  <span style="color: #408080; font-style: italic"># for movie</span>
@@ -2957,7 +2963,7 @@ Choosing to use constant time and space resolutions, i.e. just changing <code>c<
     <span style="color: #008000; font-weight: bold">for</span> C_value <span style="color: #AA22FF; font-weight: bold">in</span> C:
         <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;C_value --------------------------------- &#39;</span>, C_value
         u, x, t, cpu <span style="color: #666666">=</span> solver_function(
-                     I, V, f, dx, L, dt, C_value, T, user_action)
+                     I, V, f, c, L, dt, C_value, T, user_action)
 
     <span style="color: #408080; font-style: italic"># Make video files</span>
     fps <span style="color: #666666">=</span> <span style="color: #666666">4</span>  <span style="color: #408080; font-style: italic"># frames per second</span>
@@ -2992,20 +2998,20 @@ Choosing to use constant time and space resolutions, i.e. just changing <code>c<
     <span style="color: #408080; font-style: italic"># Choose dt the same as the stability limit for Nx=50</span>
     dt <span style="color: #666666">=</span> L<span style="color: #666666">/50./</span>c
     dx <span style="color: #666666">=</span> dt<span style="color: #666666">*</span>c<span style="color: #666666">/</span><span style="color: #008000">float</span>(C)
-    <span style="color: #408080; font-style: italic"># Now dt and dx are considered fixed and a list of C </span>
-    <span style="color: #408080; font-style: italic"># values is made by reducing the C value above in </span>
-    <span style="color: #408080; font-style: italic"># steps of 10%. </span>
-    all_C <span style="color: #666666">=</span> [C]; 
-    all_C<span style="color: #666666">.</span>append(<span style="color: #666666">0.9*</span>C);
-    all_C<span style="color: #666666">.</span>append(<span style="color: #666666">0.8*</span>C);
+    <span style="color: #408080; font-style: italic"># Now dt is considered fixed and a list of C </span>
+    <span style="color: #408080; font-style: italic"># values is made by reducing increasing the dx value </span>
+    <span style="color: #408080; font-style: italic"># in steps of 10%. </span>
+    all_C <span style="color: #666666">=</span> [C]
+    all_C<span style="color: #666666">.</span>append(c<span style="color: #666666">*</span>dt<span style="color: #666666">/</span>(<span style="color: #666666">1.1*</span>dx))
+    all_C<span style="color: #666666">.</span>append(c<span style="color: #666666">*</span>dt<span style="color: #666666">/</span>(<span style="color: #666666">1.2*</span>dx))
 
     <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">I</span>(x):
         <span style="color: #008000; font-weight: bold">return</span> a<span style="color: #666666">*</span>x<span style="color: #666666">/</span>x0 <span style="color: #008000; font-weight: bold">if</span> x <span style="color: #666666">&lt;</span> x0 <span style="color: #008000; font-weight: bold">else</span> a<span style="color: #666666">/</span>(L<span style="color: #666666">-</span>x0)<span style="color: #666666">*</span>(L<span style="color: #666666">-</span>x)
 
     umin <span style="color: #666666">=</span> <span style="color: #666666">-1.2*</span>a;  umax <span style="color: #666666">=</span> <span style="color: #666666">-</span>umin
-    cpu <span style="color: #666666">=</span> viz(I, <span style="color: #666666">0</span>, <span style="color: #666666">0</span>, dx, L, dt, all_C, T, umin, umax,
+    cpu <span style="color: #666666">=</span> viz(I, <span style="color: #666666">0</span>, <span style="color: #666666">0</span>, c, L, dt, all_C, T, umin, umax,
                  animate<span style="color: #666666">=</span><span style="color: #008000">True</span>, tool<span style="color: #666666">=</span><span style="color: #BA2121">&#39;scitools&#39;</span>)
-    <span style="color: #408080; font-style: italic">#cpu = viz(I, 0, 0, dx, L, dt, all_C, T, umin, umax,</span>
+    <span style="color: #408080; font-style: italic">#cpu = viz(I, 0, 0, c, L, dt, all_C, T, umin, umax,</span>
     <span style="color: #408080; font-style: italic">#             animate=True, tool=&#39;matplotlib&#39;)</span>
     <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;cpu = &#39;</span>, cpu
 
@@ -3294,9 +3300,9 @@ The final version of the code reads
         Nx <span style="color: #666666">=</span> <span style="color: #008000">len</span>(x) <span style="color: #666666">-</span> <span style="color: #666666">1</span>     <span style="color: #408080; font-style: italic"># number of spatial steps</span>
         num_dfdx <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nx<span style="color: #666666">+1</span>)
         <span style="color: #408080; font-style: italic"># Compute approximate derivatives at end-points first</span>
-        num_dfdx[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> (f(x[<span style="color: #666666">1</span>]) <span style="color: #666666">-</span> f(x[<span style="color: #666666">0</span>]))<span style="color: #666666">/</span>dx          <span style="color: #408080; font-style: italic"># use F. diff. approx.</span>
-        num_dfdx[Nx] <span style="color: #666666">=</span> (f(x[Nx]) <span style="color: #666666">-</span> f(x[Nx<span style="color: #666666">-1</span>]))<span style="color: #666666">/</span>dx     <span style="color: #408080; font-style: italic"># use B. diff. approx.</span>
-        <span style="color: #408080; font-style: italic">#...proceed with approximate derivatives for inner mesh points</span>
+        num_dfdx[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> (f(x[<span style="color: #666666">1</span>]) <span style="color: #666666">-</span> f(x[<span style="color: #666666">0</span>]))<span style="color: #666666">/</span>dx          <span style="color: #408080; font-style: italic"># FD approx.</span>
+        num_dfdx[Nx] <span style="color: #666666">=</span> (f(x[Nx]) <span style="color: #666666">-</span> f(x[Nx<span style="color: #666666">-1</span>]))<span style="color: #666666">/</span>dx     <span style="color: #408080; font-style: italic"># BD approx.</span>
+        <span style="color: #408080; font-style: italic"># proceed with approximate derivatives for inner mesh points</span>
         <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>vectorized:
             num_dfdx[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>] <span style="color: #666666">=</span> (f(x[<span style="color: #666666">2</span>:]) <span style="color: #666666">-</span> f(x[:<span style="color: #666666">-2</span>]))<span style="color: #666666">/</span>(<span style="color: #666666">2*</span>dx)
         <span style="color: #008000; font-weight: bold">else</span>:   <span style="color: #408080; font-style: italic"># scalar version</span>

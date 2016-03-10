@@ -82,7 +82,7 @@ def solver(I, V, f, c, L, dt, C, T, user_action=None):
         # Switch variables before next step
         u_2[:] = u_1;  u_1[:] = u
 
-    cpu_time = time.clock() - t0
+    cpu_time = t0 - time.clock()
     return u, x, t, cpu_time
 
 def test_quadratic():
@@ -210,9 +210,9 @@ def guitar(C):
     wavelength = 2*L
     c = freq*wavelength
     from math import pi
-    omega = 2*pi*freq
+    w = 2*pi*freq
     num_periods = 1
-    T = 2*pi/omega*num_periods
+    T = 2*pi/w*num_periods
     # Choose dt the same as the stability limit for Nx=50
     dt = L/50./c
 

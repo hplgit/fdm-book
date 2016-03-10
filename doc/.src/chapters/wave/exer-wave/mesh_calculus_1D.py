@@ -17,9 +17,9 @@ class MeshCalculus:
         Nx = len(x) - 1     # number of spatial steps
         num_dfdx = np.zeros(Nx+1)
         # Compute approximate derivatives at end-points first
-        num_dfdx[0] = (f(x[1]) - f(x[0]))/dx          # use F. diff. approx.
-        num_dfdx[Nx] = (f(x[Nx]) - f(x[Nx-1]))/dx     # use B. diff. approx.
-        #...proceed with approximate derivatives for inner mesh points
+        num_dfdx[0] = (f(x[1]) - f(x[0]))/dx          # FD approx.
+        num_dfdx[Nx] = (f(x[Nx]) - f(x[Nx-1]))/dx     # BD approx.
+        # proceed with approximate derivatives for inner mesh points
         if self.vectorized:
             num_dfdx[1:-1] = (f(x[2:]) - f(x[:-2]))/(2*dx)
         else:   # scalar version
