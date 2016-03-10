@@ -135,8 +135,14 @@ A first attempt at a solver function is listed below.
                 # Switch variables before next step
                 u_2[:] = u_1;  u_1[:] = u
         
-            cpu_time = t0 - time.clock()
+            cpu_time = time.clock() - t0
             return u, x, t, cpu_time
+
+A remark on the computation of ``dx`` and ``dt`` is probably necessary.
+Although we give ``dt`` and compute ``dx`` via ``C`` and ``c``, the resulting
+``t`` and ``x`` meshes do not necessarily correspond exactly to these values
+because of rounding errors. To explicitly ensure that ``dx`` and ``dt``
+correspond to the cell sizes in ``x`` and ``t``, we recompute the values.
 
 .. Too trivial here:
 
@@ -148,7 +154,7 @@ A first attempt at a solver function is listed below.
 
 .. the PDE problem :ref:`(17) <Eq:wave:pde2>`-:ref:`(21) <Eq:wave:pde2:bc:L>`
 
-.. if :math:`I(x)=Q`, :math:`V=0`, :math:`u(0,t)=u(L,t)=Q`, and :math:`f=0`
+.. if :math:`I(x)=0`, :math:`V=0`, :math:`u(0,t)=u(L,t)=0`, and :math:`f=0`
 
 .. _wave:pde1:impl:verify:quadratic:
 
@@ -1208,10 +1214,14 @@ in space is :math:`\lambda = 2\pi /k` and the period in time is :math:`P=2\pi/\o
 Use these expressions to find the wave length in space and period in
 time of :math:`{u_{\small\mbox{e}}}` above.
 
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
 **b)**
-Import the ``solver`` function ``wave1D_u0.py`` into a new file
+Import the ``solver`` function from ``wave1D_u0.py`` into a new file
 where the ``viz`` function is reimplemented such that it
 plots either the numerical *and* the exact solution, *or* the error.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
 
 **c)**
 Make animations where you illustrate how the error
@@ -1236,6 +1246,8 @@ while 20-30 periods are needed to show significant differences between
 the curves for the numerical and exact solution.
 
 .. --- end hint in exercise ---
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
 
 Filename: ``wave_standing``.
 
@@ -1285,13 +1297,12 @@ Filename: ``wave1D_u0_s_store``.
 Exercise 3: Use a class for the user action function
 ----------------------------------------------------
 
-Redo :ref:`wave:exer:store:list` using a class for the
-user action function. That is, define a class ``Action`` where
-the ``all_u`` list is an attribute, and implement the user action
-function as a method (the special method ``__call__`` is a natural
-choice). The class versions avoid that the user action function
-depends on parameters defined outside the function (such as ``all_u``
-in :ref:`wave:exer:store:list`).
+Redo :ref:`wave:exer:store:list` using a class for the user
+action function. Let the ``all_u`` list be an attribute in this class
+and implement the user action function as a method (the special method
+``__call__`` is a natural choice). The class versions avoid that the
+user action function depends on parameters defined outside the
+function (such as ``all_u`` in :ref:`wave:exer:store:list`).
 
 .. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
 
@@ -1307,21 +1318,20 @@ Exercise 4: Compare several Courant numbers in one movie
 --------------------------------------------------------
 
 The goal of this exercise is to make movies where several curves,
-corresponding to different Courant numbers, are visualized.
-Start out with a copy of ``wave1D_u0_s2c.py``. Use what you need and make the required modifications. Reimplement the ``viz`` function
-such that it can take a list of ``C`` values as argument
-and create a movie with solutions corresponding to the given ``C``
-values. The ``plot_u`` function must be changed to store the solution
-in an array (see :ref:`wave:exer:store:list` or
-:ref:`wave:exer:store:list:class` for details), ``solver`` must be
-computed for each value of the Courant number, and finally
-one must run through each time step and plot all the spatial
-solution curves in one figure and store it in a file.
+corresponding to different Courant numbers, are visualized.  Start out
+with a copy of the ``wave1D_u0_s2c.py`` made in :ref:`wave:exer:store:list:class`. Use what you need and make the
+required modifications. Reimplement the ``viz`` function such that it
+can take a list of ``C`` values as argument and create a movie with
+solutions corresponding to the given ``C`` values. The ``plot_u`` function
+must be changed to store the solution in an array (see :ref:`wave:exer:store:list` or :ref:`wave:exer:store:list:class` for
+details), ``solver`` must be computed for each value of the Courant
+number, and finally one must run through each time step and plot all
+the spatial solution curves in one figure and store it in a file.
 
 The challenge in such a visualization is to ensure that the curves in
 one plot correspond to the same time point. The easiest remedy is to
-keep the time and space resolution constant and change the wave
-velocity :math:`c` to change the Courant number.
+keep the time resolution constant and change the space resolution
+to change the Courant number.
 
 .. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
 

@@ -5,7 +5,7 @@ Simplest possible implementation.
 
 The key function is::
 
-  u, x, t, cpu = (I, V, f, c, L, dt, C, T, user_action)
+  u, x, t, cpu = solver(I, V, f, c, L, dt, C, T, user_action)
 
 which solves the wave equation u_tt = c**2*u_xx on (0,L) with u=0
 on x=0,L, for t in (0,T].  Initial conditions: u=I(x), u_t=V(x).
@@ -82,7 +82,7 @@ def solver(I, V, f, c, L, dt, C, T, user_action=None):
         # Switch variables before next step
         u_2[:] = u_1;  u_1[:] = u
 
-    cpu_time = t0 - time.clock()
+    cpu_time = time.clock() - t0
     return u, x, t, cpu_time
 
 def test_quadratic():

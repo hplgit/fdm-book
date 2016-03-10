@@ -136,7 +136,7 @@ def viz(
     ):
     """Run solver, store and visualize u at each time level."""
 
-    class plot_u_st:
+    class PlotUst:
         def __init__(self):
             self.all_u = []
         def __call__(self, u, x, t, n):
@@ -172,7 +172,7 @@ def viz(
         plot_u = PlotMatplotlib()
     elif tool == 'scitools':
         import scitools.std as plt  # scitools.easyviz interface
-        plot_u = plot_u_st()
+        plot_u = PlotUst()
     import time, glob, os
 
     # Clean up old movie frames

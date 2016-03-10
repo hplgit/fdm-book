@@ -92,40 +92,43 @@ def viz(
     solver_function=solver,   # Function with numerical algorithm
     ):
     """
-    Run solver, store and visualize u at each time level with all C values.
+    Run solver, store and viz. u at each time level with all C values.
     """
 
-    class plot_u_st:
+    class PlotUst:
         def __init__(self):
             self.all_u = []
             self.all_u_for_all_C = []
         def __call__(self, u, x, t, n):
             """user_action function for solver."""
             self.all_u.append(u.copy())
-            if t[n] == T: # i.e., whole time interval finished for this C
+            if t[n] == T: # i.e., whole time interv. done for this C
                 self.all_u_for_all_C.append(self.all_u)
                 self.all_u = []     # reset to empty list
                 
-                if len(self.all_u_for_all_C) == len(C):  # all C finished
-                    print 'Finished all C values. Proceed with plots...'
+                if len(self.all_u_for_all_C) == len(C):  # all C done
+                    print 'Finished all C. Proceed with plots...'
                     # note: n will here be the last index in t[n]
-                    for n_ in range(0, n+1):      # for each point in time
+                    for n_ in range(0, n+1):      # for each tn
                         plt.plot(x, self.all_u_for_all_C[0][n_],
                                  axis=[0, L, umin, umax],
-                                 title='Solutions for all C at t=%f' % t[n_])
+                                 title='Solutions for all \
+                                        C at t=%f' % t[n_])
                         plt.hold('on')
                         for j in range(1, len(C)):
-                            # build plot at this point in time with each 
-                            # solution from the different C values
+                            # build plot at this tn with each 
+                            # sol. from the different C values
                             plt.plot(x, self.all_u_for_all_C[j][n_],
                                      axis=[0, L, umin, umax])
                         plt.xlabel('x'); plt.ylabel('u')
                         plt.hold('off')
                         plt.show()
-                        # Let the initial condition stay on the screen for 2
-                        # seconds, else insert a pause of 0.2 s between each plot                        
-                        time.sleep(2) if t[n_] == 0 else time.sleep(0.2)                        
-                        plt.savefig('tmp_%04d.png' % n_)  # for movie making
+                        # Let the init. cond. stay on the screen for 2
+                        # seconds, else insert a pause of 0.2 s between 
+                        # each plot                        
+                        time.sleep(2) if t[n_] == 0 else \
+                                                    time.sleep(0.2)                        
+                        plt.savefig('tmp_%04d.png' % n_)  # for movie
                 
 
     class PlotMatplotlib:
@@ -135,38 +138,41 @@ def viz(
         def __call__(self, u, x, t, n):
             """user_action function for solver."""
             self.all_u.append(u.copy())
-            if t[n] == T: # i.e., whole time interval finished for this C
+            if t[n] == T: # i.e., whole time interv. done for this C
                 self.all_u_for_all_C.append(self.all_u)
                 self.all_u = []     # reset to empty list
                 
-                if len(self.all_u_for_all_C) == len(C):  # all C finished
-                    print 'Finished all C values. Proceed with plots...'
+                if len(self.all_u_for_all_C) == len(C):  # all C done
+                    print 'Finished all C. Proceed with plots...'
                     plt.ion()
                     # note: n will here be the last index in t[n]
-                    for n_ in range(0, n+1):      # for each point in time
+                    for n_ in range(0, n+1):      # for each tn
                         plt.plot(x, self.all_u_for_all_C[0][n_])
                         plt.axis([0, L, umin, umax])
                         plt.hold(True)
                         for j in range(1, len(C)):
-                            # build plot at this point in time with each 
-                            # solution from the different C values
+                            # build plot at this tn with each 
+                            # sol. from the different C values
                             plt.plot(x, self.all_u_for_all_C[j][n_])
                         plt.axis([0, L, umin, umax])
                         plt.xlabel('x'); plt.ylabel('u')
-                        plt.title('Solutions for all C at t=%f' % t[n_])
+                        plt.title('Solutions for all \
+                                   C at t=%f' % t[n_])
                         plt.hold(False)
                         plt.draw()
-                        # Let the initial condition stay on the screen for 2
-                        # seconds, else insert a pause of 0.2 s between each plot                        
-                        time.sleep(2) if t[n_] == 0 else time.sleep(0.2)                        
-                        plt.savefig('tmp_%04d.png' % n_)  # for movie making
+                        # Let the init. cond. stay on the screen for 2
+                        # seconds, else insert a pause of 0.2 s between 
+                        # each plot                        
+                        time.sleep(2) if t[n_] == 0 else \
+                                                    time.sleep(0.2)                        
+                        plt.savefig('tmp_%04d.png' % n_)  # for movie
 
     if tool == 'matplotlib':
         import matplotlib.pyplot as plt
         plot_u = PlotMatplotlib()
     elif tool == 'scitools':
         import scitools.std as plt  # scitools.easyviz interface
-        plot_u = plot_u_st()
+        plot_u = PlotUst()
     import time, glob, os
 
     # Clean up old movie frames
@@ -213,9 +219,9 @@ def guitar(C):
     # Choose dt the same as the stability limit for Nx=50
     dt = L/50./c
     dx = dt*c/float(C)
-    # Now dt and dx are considered fixed, but we create a list of C values
-    # by reducing the c value above in steps of 10%. This, however, is
-    # the same as lowering C itself in steps of 10%, since C = c*dt/dx.
+    # Now dt and dx are considered fixed and a list of C 
+    # values is made by reducing the C value above in 
+    # steps of 10%. 
     all_C = [C]; 
     all_C.append(0.9*C);
     all_C.append(0.8*C);
@@ -238,5 +244,5 @@ if __name__ == '__main__':
     except IndexError:
         C = 0.85
     print 'Courant number: %.2f' % C
-    # The list of C values will be generated from this single C value
+    # The list of C values will be generated from this C value
     guitar(C)
