@@ -1355,7 +1355,7 @@ $$
 This is the most frequent form of a wave
 equation with variable wave velocity,
 but other forms also appear, see the section <a href="._wave-sol007.html#wave:app:string">Waves on a string</a>
-and equation <a href="._wave-sol007.html#mjx-eqn-125">(125)</a>.
+and equation <a href="._wave-sol007.html#mjx-eqn-145">(145)</a>.
 
 <p>
 As usual, we sample <a href="#mjx-eqn-42">(42)</a> at a mesh point,
@@ -2227,7 +2227,7 @@ Consider the wave equation with damping <a href="#mjx-eqn-61">(61)</a>.
 The goal is to find an exact solution to a wave problem with damping and zero source term.
 A starting point is the standing wave solution from
 <a href="._wave-sol002.html#wave:exer:standingwave">Exercise 1: Simulate a standing wave</a>. It becomes necessary to
-include a damping term \( e^{-ct} \) and also have both a sine and cosine
+include a damping term \( e^{-\beta t} \) and also have both a sine and cosine
 component in time:
 
 $$ \uex(x,t) =  e^{-\beta t}
@@ -2258,8 +2258,7 @@ Mathematical model:
 $$
 \begin{equation*}
 \frac{\partial^2 u}{\partial t^2} + b\frac{\partial u}{\partial t} =
-c^2\frac{\partial^2 u}{\partial x^2}
- + f(x,t),
+c^2\frac{\partial^2 u}{\partial x^2},
 \nonumber
 \end{equation*}
 $$
@@ -2318,6 +2317,40 @@ for \( A \) prescribed.
 <p>
 Using \( t = 0 \) in the expression for \( u_e \) gives us the initial condition as
 $$ I(x) = A sin kx$$
+
+<p>
+Summarizing, the PDE problem can then be states as
+
+$$
+\begin{align}
+\frac{\partial^2 u}{\partial t^2} + b\frac{\partial u}{\partial t} &=
+c^2 \frac{\partial^2 u}{\partial x^2}, \quad &x\in (0,L),\ t\in (0,T]
+\nonumber\\ 
+u(x,0) &= I(x), \quad &x\in [0,L]
+\nonumber\\ 
+\frac{\partial}{\partial t}u(x,0) &= 0, \quad &x\in [0,L]
+\nonumber\\ 
+u(0,t) & = 0, \quad  &t\in (0,T]
+\nonumber\\ 
+u(L,t) & = 0, \quad  &t\in (0,T]
+\nonumber
+\end{align}
+$$
+
+where constants \( c \), \( A \), \( b \) and \( k \), as well as \( I(x) \), are prescribed.
+
+<p>
+The solution to the problem is then given as
+
+$$ \uex(x,t) =  e^{-\beta t}
+\sin kx \left( A\cos\omega t
++ B\sin\omega t\right)
+\tp
+$$
+
+with \( k=m\pi/L \) for arbitrary integer \( m \), \( \beta = \frac{b}{2} \), 
+\( \omega = \sqrt{c^2k^2 - \frac{b^2}{4}} \), \( B = \frac{b}{2\sqrt{c^2k^2 - \frac{b^2}{4}}} A \)
+and \( I(x) = A sin kx \).
 
 <p>
 </div></p>
@@ -2382,13 +2415,83 @@ Symmetry of a function about \( x=x_0 \) means that
 <!-- --- end hint in exercise --- -->
 
 <p>
+<!-- --- begin solution of exercise --- -->
+
+<p>
+<a class="glyphicon glyphicon-hand-right showdetails" data-toggle="collapse"
+ data-target="#exer_7_2" style="font-size: 80%;"></a>
+<b>Solution.</b>
+<div class="collapse-group">
+<p><div class="collapse" id="exer_7_2">
+
+<p>
+A symmetric \( u \) around \( x=0 \) means that \( u(-x,t)=u(x,t) \).
+Let \( x_0=0 \) and \( x=x_0+h \). Then we can use a <em>centered</em> finite difference
+definition of the derivative:
+
+$$ \frac{\partial}{\partial x}u(x_0,t) =
+\lim_{h\rightarrow 0}\frac{u(x_0+h,t)- u(x_0-h)}{2h} =
+\lim_{h\rightarrow 0}\frac{u(h,t)- u(-h,t)}{2h} = 0,$$
+
+since \( u(h,t)=u(-h,t) \) for any \( h \). Symmetry around a point \( x=x_0 \)
+therefore always implies \( u_x(x_0,t)=0 \).
+
+<p>
+</div></p>
+</div>
+</p>
+
+<p>
+<!-- --- end solution of exercise --- -->
+
+<p>
 <b>b)</b>
 Perform simulations of the complete wave problem
 on \( [-L,L] \). Thereafter, utilize the
 symmetry of the solution and run a simulation
 in half of the domain \( [0,L] \), using a boundary condition
-at \( x=0 \). Compare the two solutions and
-make sure that they are the same.
+at \( x=0 \). Compare plots from the two solutions and
+confirm that they are the same.
+
+<p>
+<!-- --- begin solution of exercise --- -->
+
+<p>
+<a class="glyphicon glyphicon-hand-right showdetails" data-toggle="collapse"
+ data-target="#exer_7_3" style="font-size: 80%;"></a>
+<b>Solution.</b>
+<div class="collapse-group">
+<p><div class="collapse" id="exer_7_3">
+
+<p>
+We can utilize the <code>wave1D_dn.py</code> code which allows Dirichlet and
+Neumann conditions. The <code>solver</code> and <code>viz</code> functions must take \( x_0 \)
+and \( x_L \) as parameters instead of just \( L \) such that we can solve the
+wave equation in \( [x_0, x_L] \). The we can call up <code>solver</code> for the two
+problems on \( [-L,L] \) and \( [0,L] \) with boundary conditions
+\( u(-L,t)=u(L,t)=0 \) and \( u_x(0,t)=u(L,t)=0 \), respectively.
+
+<p>
+The original <code>wave1D_dn.py</code> code makes a movie by playing all the
+<code>.png</code> files in a browser.  It can then be wise to let the <code>viz</code>
+function create a movie directory and place all the frames and HTML
+player file in that directory.  Alternatively, one can just make
+some ordinary movie file (Ogg, WebM, MP4, Flash) with <code>avconv</code> or
+<code>ffmpeg</code> and give it a name. It is a point that the name is
+transferred to <code>viz</code> so it is easy to call <code>viz</code> twice and get two
+separate movie files or movie directories.
+
+<p>
+The plots produced by the code (below) shows that the solutions indeed
+are the same.
+
+<p>
+</div></p>
+</div>
+</p>
+
+<p>
+<!-- --- end solution of exercise --- -->
 
 <p>
 <b>c)</b>
@@ -2396,6 +2499,398 @@ Prove the symmetry property of the solution
 by setting up the complete initial-boundary value problem
 and showing that if \( u(x,t) \) is a solution, then also \( u(-x,t) \)
 is a solution.
+
+<p>
+<!-- --- begin solution of exercise --- -->
+
+<p>
+<a class="glyphicon glyphicon-hand-right showdetails" data-toggle="collapse"
+ data-target="#exer_7_4" style="font-size: 80%;"></a>
+<b>Solution.</b>
+<div class="collapse-group">
+<p><div class="collapse" id="exer_7_4">
+
+<p>
+The plan in this proof is to introduce \( v(x,t)=u(-x,t) \)
+and show that \( v \) fulfills the same
+initial-boundary value problem as \( u \). If the problem has a unique
+solution, then \( v=u \). Or, in other words, the solution is
+symmetric: \( u(-x,t)=u(x,t) \).
+
+<p>
+We can work with a general initial-boundary value problem on the form
+
+$$
+\begin{align}
+u_tt(x,t) &= c^2u_{xx}(x,t) + f(x,t)
+\tag{69}\\ 
+u(x,0) &= I(x)
+\tag{70}\\ 
+u_t(x,0) &= V(x)
+\tag{71}\\ 
+u(-L,0) &= 0
+\tag{72}\\ 
+u(L,0) &= 0
+\tag{73}
+\end{align}
+$$
+
+Introduce a new coordinate \( \bar x = -x \). We have that
+
+$$ \frac{\partial^2 u}{\partial x^2} = \frac{\partial}{\partial x}
+\left(
+\frac{\partial u}{\partial\bar x}
+\frac{\partial\bar x}{\partial x}
+\right)
+= \frac{\partial}{\partial x}
+\left(
+\frac{\partial u}{\partial\bar x} (-1)\right)
+= (-1)^2 \frac{\partial^2 u}{\partial \bar x^2}
+$$
+
+The derivatives in time are unchanged.
+
+<p>
+Substituting \( x \) by \( -\bar x \) leads to
+
+$$
+\begin{align}
+u_{tt}(-\bar x,t) &= c^2u_{\bar x\bar x}(-\bar x,t) + f(-\bar x,t)
+\tag{74}\\ 
+u(-\bar x,0) &= I(-\bar x)
+\tag{75}\\ 
+u_t(-\bar x,0) &= V(-\bar x)
+\tag{76}\\ 
+u(L,0) &= 0
+\tag{77}\\ 
+u(-L,0) &= 0
+\tag{78}
+\end{align}
+$$
+
+Now, dropping the bars and introducing \( v(x,t)=u(-x,t) \), we find that
+
+$$
+\begin{align}
+v_{tt}(x,t) &= c^2v_{xx}(x,t) + f(-x,t)
+\tag{79}\\ 
+v(x,0) &= I(-x)
+\tag{80}\\ 
+v_t(x ,0) &= V(-x)
+\tag{81}\\ 
+v(-L,0) &= 0
+\tag{82}\\ 
+v(L,0) &= 0
+\tag{83}
+\end{align}
+$$
+
+<em>Provided that \( I \), \( f \), and \( V \) are all symmetric</em> around \( x=0 \)
+such that \( I(x)=I(-x) \), \( V(x)=V(-x) \), and \( f(x,t)=f(-x,t) \), we
+can express the initial-boundary value problem as
+
+$$
+\begin{align}
+v_{tt}(x,t) &= c^2v_{xx}(x,t) + f(x,t)
+\tag{84}\\ 
+v(x,0) &= I(x)
+\tag{85}\\ 
+v_t(x ,0) &= V(x)
+\tag{86}\\ 
+v(-L,0) &= 0
+\tag{87}\\ 
+v(L,0) &= 0
+\tag{88}
+\end{align}
+$$
+
+This is the same problem as the one that \( u \) fulfills. If the solution
+is unique, which can be proven, then \( v=u \), and \( u(-x,t)=u(x,t) \).
+
+<p>
+To summarize, the necessary conditions for symmetry are that
+
+<ul>
+  <li> all involved functions \( I \), \( V \), and \( f \) must be symmetric, and</li>
+  <li> the boundary conditions are symmetric in the sense that they
+    can be flipped (the condition at \( x=-L \) can be applied
+    at \( x=L \) and vice versa).</li>
+</ul>
+
+</div></p>
+</div>
+</p>
+
+<p>
+<!-- --- end solution of exercise --- -->
+
+<p>
+<b>d)</b>
+If the code works correctly, the solution \( u(x,t) = x(L-x)(1+\frac{t}{2}) \) 
+should be reproduced exactly. Write a test function <code>test_quadratic</code> that 
+checks whether this is the case. Simulate for \( x \) in \( [0, \frac{L}{2}] \) with
+a symmetry condition at the end \( x = \frac{L}{2} \).
+
+<p>
+<!-- --- begin solution of exercise --- -->
+
+<p>
+<a class="glyphicon glyphicon-hand-right showdetails" data-toggle="collapse"
+ data-target="#exer_7_5" style="font-size: 80%;"></a>
+<b>Solution.</b>
+<div class="collapse-group">
+<p><div class="collapse" id="exer_7_5">
+
+<p>
+Running the code below, shows that the test case indeed is reproduced exactly.
+
+<p>
+
+<!-- code=python (!bc pypro) typeset with pygments style "default" -->
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #408080; font-style: italic">#!/usr/bin/env python</span>
+<span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">scitools.std</span> <span style="color: #008000; font-weight: bold">import</span> <span style="color: #666666">*</span>
+
+<span style="color: #408080; font-style: italic"># Add an x0 coordinate for solving the wave equation on [x0, xL]</span>
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solver</span>(I, V, f, c, U_0, U_L, x0, xL, Nx, C, T,
+           user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>, version<span style="color: #666666">=</span><span style="color: #BA2121">&#39;scalar&#39;</span>):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Solve u_tt=c^2*u_xx + f on (0,L)x(0,T].</span>
+<span style="color: #BA2121; font-style: italic">    u(0,t)=U_0(t) or du/dn=0 (U_0=None), u(L,t)=U_L(t) or </span>
+<span style="color: #BA2121; font-style: italic">    du/dn=0 (u_L=None).</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    x <span style="color: #666666">=</span> linspace(x0, xL, Nx<span style="color: #666666">+1</span>)       <span style="color: #408080; font-style: italic"># Mesh points in space</span>
+    dx <span style="color: #666666">=</span> x[<span style="color: #666666">1</span>] <span style="color: #666666">-</span> x[<span style="color: #666666">0</span>]
+    dt <span style="color: #666666">=</span> C<span style="color: #666666">*</span>dx<span style="color: #666666">/</span>c
+    Nt <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(T<span style="color: #666666">/</span>dt))
+    t <span style="color: #666666">=</span> linspace(<span style="color: #666666">0</span>, Nt<span style="color: #666666">*</span>dt, Nt<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># Mesh points in time</span>
+    C2 <span style="color: #666666">=</span> C<span style="color: #666666">**2</span>; dt2 <span style="color: #666666">=</span> dt<span style="color: #666666">*</span>dt         <span style="color: #408080; font-style: italic"># Help variables in the scheme</span>
+
+    <span style="color: #408080; font-style: italic"># Wrap user-given f, V, U_0, U_L</span>
+    <span style="color: #008000; font-weight: bold">if</span> f <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #008000">None</span> <span style="color: #AA22FF; font-weight: bold">or</span> f <span style="color: #666666">==</span> <span style="color: #666666">0</span>:
+        f <span style="color: #666666">=</span> (<span style="color: #008000; font-weight: bold">lambda</span> x, t: <span style="color: #666666">0</span>) <span style="color: #008000; font-weight: bold">if</span> version <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;scalar&#39;</span> <span style="color: #008000; font-weight: bold">else</span> \
+            <span style="color: #008000; font-weight: bold">lambda</span> x, t: zeros(x<span style="color: #666666">.</span>shape)
+    <span style="color: #008000; font-weight: bold">if</span> V <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #008000">None</span> <span style="color: #AA22FF; font-weight: bold">or</span> V <span style="color: #666666">==</span> <span style="color: #666666">0</span>:
+        V <span style="color: #666666">=</span> (<span style="color: #008000; font-weight: bold">lambda</span> x: <span style="color: #666666">0</span>) <span style="color: #008000; font-weight: bold">if</span> version <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;scalar&#39;</span> <span style="color: #008000; font-weight: bold">else</span> \
+            <span style="color: #008000; font-weight: bold">lambda</span> x: zeros(x<span style="color: #666666">.</span>shape)
+    <span style="color: #008000; font-weight: bold">if</span> U_0 <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000">None</span>:
+        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">isinstance</span>(U_0, (<span style="color: #008000">float</span>,<span style="color: #008000">int</span>)) <span style="color: #AA22FF; font-weight: bold">and</span> U_0 <span style="color: #666666">==</span> <span style="color: #666666">0</span>:
+            U_0 <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> t: <span style="color: #666666">0</span>
+    <span style="color: #008000; font-weight: bold">if</span> U_L <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000">None</span>:
+        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">isinstance</span>(U_L, (<span style="color: #008000">float</span>,<span style="color: #008000">int</span>)) <span style="color: #AA22FF; font-weight: bold">and</span> U_L <span style="color: #666666">==</span> <span style="color: #666666">0</span>:
+            U_L <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> t: <span style="color: #666666">0</span>
+
+    u   <span style="color: #666666">=</span> zeros(Nx<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># Solution array at new time level</span>
+    u_1 <span style="color: #666666">=</span> zeros(Nx<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># Solution at 1 time level back</span>
+    u_2 <span style="color: #666666">=</span> zeros(Nx<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># Solution at 2 time levels back</span>
+
+    Ix <span style="color: #666666">=</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, Nx<span style="color: #666666">+1</span>)
+    It <span style="color: #666666">=</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, Nt<span style="color: #666666">+1</span>)
+
+    <span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">time</span>;  t0 <span style="color: #666666">=</span> time<span style="color: #666666">.</span>clock()  <span style="color: #408080; font-style: italic"># CPU time measurement</span>
+
+    <span style="color: #408080; font-style: italic"># Load initial condition into u_1</span>
+    <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> Ix:
+        u_1[i] <span style="color: #666666">=</span> I(x[i])
+
+    <span style="color: #008000; font-weight: bold">if</span> user_action <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000">None</span>:
+        user_action(u_1, x, t, <span style="color: #666666">0</span>)
+
+    <span style="color: #408080; font-style: italic"># Special formula for the first step</span>
+    <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> Ix[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>]:
+        u[i] <span style="color: #666666">=</span> u_1[i] <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>V(x[i]) <span style="color: #666666">+</span> \
+               <span style="color: #666666">0.5*</span>C2<span style="color: #666666">*</span>(u_1[i<span style="color: #666666">-1</span>] <span style="color: #666666">-</span> <span style="color: #666666">2*</span>u_1[i] <span style="color: #666666">+</span> u_1[i<span style="color: #666666">+1</span>]) <span style="color: #666666">+</span> \
+               <span style="color: #666666">0.5*</span>dt2<span style="color: #666666">*</span>f(x[i], t[<span style="color: #666666">0</span>])
+
+    i <span style="color: #666666">=</span> Ix[<span style="color: #666666">0</span>]
+    <span style="color: #008000; font-weight: bold">if</span> U_0 <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #008000">None</span>:
+        <span style="color: #408080; font-style: italic"># Set boundary values du/dn = 0</span>
+        <span style="color: #408080; font-style: italic"># x=0: i-1 -&gt; i+1 since u[i-1]=u[i+1]</span>
+        <span style="color: #408080; font-style: italic"># x=L: i+1 -&gt; i-1 since u[i+1]=u[i-1])</span>
+        ip1 <span style="color: #666666">=</span> i<span style="color: #666666">+1</span>
+        im1 <span style="color: #666666">=</span> ip1  <span style="color: #408080; font-style: italic"># i-1 -&gt; i+1</span>
+        u[i] <span style="color: #666666">=</span> u_1[i] <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>V(x[i]) <span style="color: #666666">+</span> \
+               <span style="color: #666666">0.5*</span>C2<span style="color: #666666">*</span>(u_1[im1] <span style="color: #666666">-</span> <span style="color: #666666">2*</span>u_1[i] <span style="color: #666666">+</span> u_1[ip1]) <span style="color: #666666">+</span> \
+               <span style="color: #666666">0.5*</span>dt2<span style="color: #666666">*</span>f(x[i], t[<span style="color: #666666">0</span>])
+    <span style="color: #008000; font-weight: bold">else</span>:
+        u[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> U_0(dt)
+
+    i <span style="color: #666666">=</span> Ix[<span style="color: #666666">-1</span>]
+    <span style="color: #008000; font-weight: bold">if</span> U_L <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #008000">None</span>:
+        im1 <span style="color: #666666">=</span> i<span style="color: #666666">-1</span>
+        ip1 <span style="color: #666666">=</span> im1  <span style="color: #408080; font-style: italic"># i+1 -&gt; i-1</span>
+        u[i] <span style="color: #666666">=</span> u_1[i] <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>V(x[i]) <span style="color: #666666">+</span> \
+               <span style="color: #666666">0.5*</span>C2<span style="color: #666666">*</span>(u_1[im1] <span style="color: #666666">-</span> <span style="color: #666666">2*</span>u_1[i] <span style="color: #666666">+</span> u_1[ip1]) <span style="color: #666666">+</span> \
+               <span style="color: #666666">0.5*</span>dt2<span style="color: #666666">*</span>f(x[i], t[<span style="color: #666666">0</span>])
+    <span style="color: #008000; font-weight: bold">else</span>:
+        u[i] <span style="color: #666666">=</span> U_L(dt)
+
+    <span style="color: #008000; font-weight: bold">if</span> user_action <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000">None</span>:
+        user_action(u, x, t, <span style="color: #666666">1</span>)
+
+    <span style="color: #408080; font-style: italic"># Update data structures for next step</span>
+    u_2[:], u_1[:] <span style="color: #666666">=</span> u_1, u
+
+    <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> It[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>]:
+        <span style="color: #408080; font-style: italic"># Update all inner points</span>
+        <span style="color: #008000; font-weight: bold">if</span> version <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;scalar&#39;</span>:
+            <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> Ix[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>]:
+                u[i] <span style="color: #666666">=</span> <span style="color: #666666">-</span> u_2[i] <span style="color: #666666">+</span> <span style="color: #666666">2*</span>u_1[i] <span style="color: #666666">+</span> \
+                       C2<span style="color: #666666">*</span>(u_1[i<span style="color: #666666">-1</span>] <span style="color: #666666">-</span> <span style="color: #666666">2*</span>u_1[i] <span style="color: #666666">+</span> u_1[i<span style="color: #666666">+1</span>]) <span style="color: #666666">+</span> \
+                       dt2<span style="color: #666666">*</span>f(x[i], t[n])
+
+        <span style="color: #008000; font-weight: bold">elif</span> version <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;vectorized&#39;</span>:
+            u[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>] <span style="color: #666666">=</span> <span style="color: #666666">-</span> u_2[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>] <span style="color: #666666">+</span> <span style="color: #666666">2*</span>u_1[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>] <span style="color: #666666">+</span> \
+                      C2<span style="color: #666666">*</span>(u_1[<span style="color: #666666">0</span>:<span style="color: #666666">-2</span>] <span style="color: #666666">-</span> <span style="color: #666666">2*</span>u_1[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>] <span style="color: #666666">+</span> u_1[<span style="color: #666666">2</span>:]) <span style="color: #666666">+</span> \
+                      dt2<span style="color: #666666">*</span>f(x[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>], t[n])
+        <span style="color: #008000; font-weight: bold">else</span>:
+            <span style="color: #008000; font-weight: bold">raise</span> <span style="color: #D2413A; font-weight: bold">ValueError</span>(<span style="color: #BA2121">&#39;version=</span><span style="color: #BB6688; font-weight: bold">%s</span><span style="color: #BA2121">&#39;</span> <span style="color: #666666">%</span> version)
+
+        <span style="color: #408080; font-style: italic"># Insert boundary conditions</span>
+        i <span style="color: #666666">=</span> Ix[<span style="color: #666666">0</span>]
+        <span style="color: #008000; font-weight: bold">if</span> U_0 <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #008000">None</span>:
+            <span style="color: #408080; font-style: italic"># Set boundary values</span>
+            <span style="color: #408080; font-style: italic"># x=0: i-1 -&gt; i+1 since u[i-1]=u[i+1] when du/dn=0</span>
+            <span style="color: #408080; font-style: italic"># x=L: i+1 -&gt; i-1 since u[i+1]=u[i-1] when du/dn=0</span>
+            ip1 <span style="color: #666666">=</span> i<span style="color: #666666">+1</span>
+            im1 <span style="color: #666666">=</span> ip1
+            u[i] <span style="color: #666666">=</span> <span style="color: #666666">-</span> u_2[i] <span style="color: #666666">+</span> <span style="color: #666666">2*</span>u_1[i] <span style="color: #666666">+</span> \
+                   C2<span style="color: #666666">*</span>(u_1[im1] <span style="color: #666666">-</span> <span style="color: #666666">2*</span>u_1[i] <span style="color: #666666">+</span> u_1[ip1]) <span style="color: #666666">+</span> \
+                   dt2<span style="color: #666666">*</span>f(x[i], t[n])
+        <span style="color: #008000; font-weight: bold">else</span>:
+            u[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> U_0(t[n<span style="color: #666666">+1</span>])
+
+        i <span style="color: #666666">=</span> Ix[<span style="color: #666666">-1</span>]
+        <span style="color: #008000; font-weight: bold">if</span> U_L <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #008000">None</span>:
+            im1 <span style="color: #666666">=</span> i<span style="color: #666666">-1</span>
+            ip1 <span style="color: #666666">=</span> im1
+            u[i] <span style="color: #666666">=</span> <span style="color: #666666">-</span> u_2[i] <span style="color: #666666">+</span> <span style="color: #666666">2*</span>u_1[i] <span style="color: #666666">+</span> \
+                   C2<span style="color: #666666">*</span>(u_1[im1] <span style="color: #666666">-</span> <span style="color: #666666">2*</span>u_1[i] <span style="color: #666666">+</span> u_1[ip1]) <span style="color: #666666">+</span> \
+                   dt2<span style="color: #666666">*</span>f(x[i], t[n])
+        <span style="color: #008000; font-weight: bold">else</span>:
+            u[i] <span style="color: #666666">=</span> U_L(t[n<span style="color: #666666">+1</span>])
+
+        <span style="color: #008000; font-weight: bold">if</span> user_action <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000">None</span>:
+            <span style="color: #008000; font-weight: bold">if</span> user_action(u, x, t, n<span style="color: #666666">+1</span>):
+                <span style="color: #008000; font-weight: bold">break</span>
+
+        <span style="color: #408080; font-style: italic"># Update data structures for next step</span>
+        u_2[:], u_1[:] <span style="color: #666666">=</span> u_1, u
+
+    cpu_time <span style="color: #666666">=</span> time<span style="color: #666666">.</span>clock() <span style="color: #666666">-</span> t0
+    <span style="color: #008000; font-weight: bold">return</span> u, x, t, cpu_time
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">viz</span>(I, V, f, c, U_0, U_L, x0, xL, Nx, C, T, umin, umax,
+        version<span style="color: #666666">=</span><span style="color: #BA2121">&#39;scalar&#39;</span>, animate<span style="color: #666666">=</span><span style="color: #008000">True</span>,
+        movie_dir<span style="color: #666666">=</span><span style="color: #BA2121">&#39;tmp&#39;</span>):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Run solver and visualize u at each time level.&quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">scitools.std</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">plt</span><span style="color: #666666">,</span> <span style="color: #0000FF; font-weight: bold">time</span><span style="color: #666666">,</span> <span style="color: #0000FF; font-weight: bold">glob</span><span style="color: #666666">,</span> <span style="color: #0000FF; font-weight: bold">os</span><span style="color: #666666">,</span> <span style="color: #0000FF; font-weight: bold">shutil</span>
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">plot_u</span>(u, x, t, n):
+        <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;user_action function for solver.&quot;&quot;&quot;</span>
+        plt<span style="color: #666666">.</span>plot(x, u, <span style="color: #BA2121">&#39;r-&#39;</span>,
+                 xlabel<span style="color: #666666">=</span><span style="color: #BA2121">&#39;x&#39;</span>, ylabel<span style="color: #666666">=</span><span style="color: #BA2121">&#39;u&#39;</span>,
+                 axis<span style="color: #666666">=</span>[x0, xL, umin, umax],
+                 title<span style="color: #666666">=</span><span style="color: #BA2121">&#39;t=</span><span style="color: #BB6688; font-weight: bold">%f</span><span style="color: #BA2121">&#39;</span> <span style="color: #666666">%</span> t[n])
+        <span style="color: #408080; font-style: italic"># Let the initial condition stay on the screen for 2</span>
+        <span style="color: #408080; font-style: italic"># seconds, else insert a pause of 0.2 s between each plot</span>
+        time<span style="color: #666666">.</span>sleep(<span style="color: #666666">2</span>) <span style="color: #008000; font-weight: bold">if</span> t[n] <span style="color: #666666">==</span> <span style="color: #666666">0</span> <span style="color: #008000; font-weight: bold">else</span> time<span style="color: #666666">.</span>sleep(<span style="color: #666666">0.2</span>)
+        plt<span style="color: #666666">.</span>savefig(<span style="color: #BA2121">&#39;frame_</span><span style="color: #BB6688; font-weight: bold">%04d</span><span style="color: #BA2121">.png&#39;</span> <span style="color: #666666">%</span> n)  <span style="color: #408080; font-style: italic"># for movie making</span>
+
+    <span style="color: #408080; font-style: italic"># Clean up old movie frames</span>
+    <span style="color: #008000; font-weight: bold">for</span> filename <span style="color: #AA22FF; font-weight: bold">in</span> glob<span style="color: #666666">.</span>glob(<span style="color: #BA2121">&#39;frame_*.png&#39;</span>):
+        os<span style="color: #666666">.</span>remove(filename)
+
+    user_action <span style="color: #666666">=</span> plot_u <span style="color: #008000; font-weight: bold">if</span> animate <span style="color: #008000; font-weight: bold">else</span> <span style="color: #008000">None</span>
+    u, x, t, cpu <span style="color: #666666">=</span> solver(I, V, f, c, U_0, U_L, x0, xL, Nx, C, T,
+                          user_action, version)
+    <span style="color: #008000; font-weight: bold">if</span> animate:
+        <span style="color: #408080; font-style: italic"># Make a directory with the frames</span>
+        <span style="color: #008000; font-weight: bold">if</span> os<span style="color: #666666">.</span>path<span style="color: #666666">.</span>isdir(movie_dir):
+            shutil<span style="color: #666666">.</span>rmtree(movie_dir)
+        os<span style="color: #666666">.</span>mkdir(movie_dir)
+        <span style="color: #408080; font-style: italic"># Move all frame_*.png files to this subdirectory</span>
+        <span style="color: #008000; font-weight: bold">for</span> filename <span style="color: #AA22FF; font-weight: bold">in</span> glob<span style="color: #666666">.</span>glob(<span style="color: #BA2121">&#39;frame_*.png&#39;</span>):
+            os<span style="color: #666666">.</span>rename(filename, 
+                      os<span style="color: #666666">.</span>path<span style="color: #666666">.</span>join(os<span style="color: #666666">.</span>getcwd(), movie_dir, filename))
+        os<span style="color: #666666">.</span>chdir(movie_dir)           
+        plt<span style="color: #666666">.</span>movie(<span style="color: #BA2121">&#39;frame_*.png&#39;</span>, encoder<span style="color: #666666">=</span><span style="color: #BA2121">&#39;html&#39;</span>, fps<span style="color: #666666">=4</span>,
+                  output_file<span style="color: #666666">=</span><span style="color: #BA2121">&#39;movie.html&#39;</span>)
+        os<span style="color: #666666">.</span>chdir(os<span style="color: #666666">.</span>pardir)
+        <span style="color: #408080; font-style: italic"># Invoke movie.html in a browser to steer the movie</span>
+
+    <span style="color: #008000; font-weight: bold">return</span> cpu
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_quadratic</span>():
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Check that the scalar and vectorized versions work for</span>
+<span style="color: #BA2121; font-style: italic">    a quadratic u(x,t)=x(L-x)(1+t/2) that is exactly reproduced.</span>
+<span style="color: #BA2121; font-style: italic">    We simulate in [0, L/2] and apply a symmetry condition</span>
+<span style="color: #BA2121; font-style: italic">    at the end x=L/2.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    exact_solution <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> x, t: x<span style="color: #666666">*</span>(L<span style="color: #666666">-</span>x)<span style="color: #666666">*</span>(<span style="color: #666666">1+0.5*</span>t)
+    I <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> x: exact_solution(x, <span style="color: #666666">0</span>)
+    V <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> x: <span style="color: #666666">0.5*</span>exact_solution(x, <span style="color: #666666">0</span>)
+    f <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> x, t: <span style="color: #666666">2*</span>(<span style="color: #666666">1+0.5*</span>t)<span style="color: #666666">*</span>c<span style="color: #666666">**2</span>
+    U_0 <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> t: exact_solution(<span style="color: #666666">0</span>, t)
+    U_L <span style="color: #666666">=</span> <span style="color: #008000">None</span>
+    L <span style="color: #666666">=</span> <span style="color: #666666">2.5</span>
+    c <span style="color: #666666">=</span> <span style="color: #666666">1.5</span>
+    Nx <span style="color: #666666">=</span> <span style="color: #666666">3</span>  <span style="color: #408080; font-style: italic"># very coarse mesh</span>
+    C <span style="color: #666666">=</span> <span style="color: #666666">1</span>
+    T <span style="color: #666666">=</span> <span style="color: #666666">18</span>  <span style="color: #408080; font-style: italic"># long time integration</span>
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">assert_no_error</span>(u, x, t, n):
+        u_e <span style="color: #666666">=</span> exact_solution(x, t[n])
+        diff <span style="color: #666666">=</span> <span style="color: #008000">abs</span>(u <span style="color: #666666">-</span> u_e)<span style="color: #666666">.</span>max()
+        <span style="color: #408080; font-style: italic">#print diff</span>
+        tol <span style="color: #666666">=</span> <span style="color: #666666">1E-13</span>
+        <span style="color: #008000; font-weight: bold">assert</span> diff <span style="color: #666666">&lt;</span> tol
+        
+    solver(I, V, f, c, U_0, U_L, <span style="color: #666666">0</span>, L<span style="color: #666666">/2</span>, Nx, C, T,
+           user_action<span style="color: #666666">=</span>assert_no_error, version<span style="color: #666666">=</span><span style="color: #BA2121">&#39;scalar&#39;</span>)
+    solver(I, V, f, c, U_0, U_L, <span style="color: #666666">0</span>, L<span style="color: #666666">/2</span>, Nx, C, T,
+           user_action<span style="color: #666666">=</span>assert_no_error, version<span style="color: #666666">=</span><span style="color: #BA2121">&#39;vectorized&#39;</span>)
+
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">plug</span>(C<span style="color: #666666">=1</span>, Nx<span style="color: #666666">=50</span>, animate<span style="color: #666666">=</span><span style="color: #008000">True</span>, version<span style="color: #666666">=</span><span style="color: #BA2121">&#39;scalar&#39;</span>, T<span style="color: #666666">=2</span>):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Plug profile as initial condition.&quot;&quot;&quot;</span>
+    L <span style="color: #666666">=</span> <span style="color: #666666">1.</span>
+    c <span style="color: #666666">=</span> <span style="color: #666666">1</span>
+    V<span style="color: #666666">=0</span>
+    f<span style="color: #666666">=0</span>
+    U_L<span style="color: #666666">=0</span>   
+    delta <span style="color: #666666">=</span> <span style="color: #666666">0.1</span>
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">I</span>(x):
+        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">abs</span>(x) <span style="color: #666666">&gt;</span> delta:
+            <span style="color: #008000; font-weight: bold">return</span> <span style="color: #666666">0</span>
+        <span style="color: #008000; font-weight: bold">else</span>:
+            <span style="color: #008000; font-weight: bold">return</span> <span style="color: #666666">1</span>
+
+    U_0 <span style="color: #666666">=</span> <span style="color: #666666">0</span>
+    <span style="color: #408080; font-style: italic"># Solution on [-L,L]</span>
+    cpu <span style="color: #666666">=</span> viz(I, V, f, c, U_0, U_L, <span style="color: #666666">-</span>L, L, <span style="color: #666666">2*</span>Nx, C, T,
+              umin<span style="color: #666666">=-1.1</span>, umax<span style="color: #666666">=1.1</span>, version<span style="color: #666666">=</span>version, animate<span style="color: #666666">=</span>animate,
+              movie_dir<span style="color: #666666">=</span><span style="color: #BA2121">&#39;full&#39;</span>)
+
+    U_0 <span style="color: #666666">=</span> <span style="color: #008000">None</span>
+    <span style="color: #408080; font-style: italic"># Solution on [0,L]</span>
+    cpu <span style="color: #666666">=</span> viz(I, V, f, c, U_0, U_L, <span style="color: #666666">0</span>, L, Nx, C, T,
+              umin<span style="color: #666666">=-1.1</span>, umax<span style="color: #666666">=1.1</span>, version<span style="color: #666666">=</span>version, animate<span style="color: #666666">=</span>animate,
+              movie_dir<span style="color: #666666">=</span><span style="color: #BA2121">&#39;half&#39;</span>)
+
+<span style="color: #008000; font-weight: bold">if</span> __name__ <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;__main__&#39;</span>:
+    plug()
+    test_quadratic()
+</pre></div>
+<p>
+</div></p>
+</div>
+</p>
+
+<p>
+<!-- --- end solution of exercise --- -->
 
 <p>
 Filename: <code>wave1D_symmetric</code>.
@@ -2472,17 +2967,17 @@ following condition, called a <em>radiation condition</em> or
 $$
 \begin{equation}
 \frac{\partial u}{\partial t} + c\frac{\partial u}{\partial x} = 0\tp
-\tag{69}
+\tag{89}
 \end{equation}
 $$
 
 The parameter \( c \) is the wave velocity.
 
 <p>
-Show that <a href="#mjx-eqn-69">(69)</a> accepts
+Show that <a href="#mjx-eqn-89">(89)</a> accepts
 a solution \( u = g_R(x-ct) \) (right-going wave),
 but not \( u = g_L(x+ct) \) (left-going wave). This means
-that <a href="#mjx-eqn-69">(69)</a> will allow any
+that <a href="#mjx-eqn-89">(89)</a> will allow any
 right-going wave \( g_R(x-ct) \) to pass through the boundary undisturbed.
 
 <p>
@@ -2492,21 +2987,21 @@ through \( x=0 \) is
 $$
 \begin{equation}
 \frac{\partial u}{\partial t} - c\frac{\partial u}{\partial x} = 0\tp
-\tag{70}
+\tag{90}
 \end{equation}
 $$
 
 <p>
 <b>a)</b>
 A natural idea for discretizing
-the condition <a href="#mjx-eqn-69">(69)</a>
+the condition <a href="#mjx-eqn-89">(89)</a>
 at the spatial end point \( i=N_x \) is to apply
 centered differences in time and space:
 
 $$
 \begin{equation}
 [D_{2t}u + cD_{2x}u =0]^n_{i},\quad i=N_x\tp
-\tag{71}
+\tag{91}
 \end{equation}
 $$
 
@@ -2526,7 +3021,7 @@ at \( x=L \) can be based on an explicit discretization
 $$
 \begin{equation}
 [D^+_tu + cD_x^- u = 0]_i^n,\quad i=N_x\tp
-\tag{72}
+\tag{92}
 \end{equation}
 $$
 
@@ -2538,7 +3033,7 @@ first order.
 <p>
 Implement this scheme for a wave equation
 \( u_{tt}=c^2u_{xx} \) in a domain \( [0,L] \),
-where you have \( u_x=0 \) at \( x=0 \), the condition <a href="#mjx-eqn-69">(69)</a>
+where you have \( u_x=0 \) at \( x=0 \), the condition <a href="#mjx-eqn-89">(89)</a>
 at \( x=L \), and an initial disturbance in the middle
 of the domain, e.g., a plug profile like
 
@@ -2588,7 +3083,7 @@ as
 $$
 \begin{equation}
 [D^+_tu - cD_x^+ u = 0]_i^n,\quad i=0,
-\tag{73}
+\tag{93}
 \end{equation}
 $$
 
@@ -2617,7 +3112,7 @@ In 2D and 3D it is difficult to compute the correct wave velocity
 normal to the boundary, which is needed in generalizations of
 the open boundary conditions in higher dimensions. Test the effect
 of having a slightly wrong wave velocity in
-<a href="#mjx-eqn-72">(72)</a>.
+<a href="#mjx-eqn-92">(92)</a>.
 Make movies to illustrate what happens.
 
 <p>
@@ -2629,7 +3124,7 @@ Filename: <code>wave1D_open_BC</code>.
 <h3 id="___sec73">Remarks </h3>
 
 <p>
-The condition <a href="#mjx-eqn-69">(69)</a>
+The condition <a href="#mjx-eqn-89">(89)</a>
 works perfectly in 1D when \( c \) is known. In 2D and 3D, however, the
 condition reads \( u_t + c_x u_x + c_y u_y=0 \), where \( c_x \) and
 \( c_y \) are the wave speeds in the \( x \) and \( y \) directions. Estimating
@@ -2805,7 +3300,7 @@ $$
 \begin{equation}
 [D_{2x}u]^n_i = u_{x}(x_i,t_n) + \frac{1}{6}u_{xxx}(x_i,t_n)\Delta x^2
 + \Oof{\Delta x^4}\tp
-\tag{74}
+\tag{94}
 \end{equation}
 $$
 

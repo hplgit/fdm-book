@@ -1238,7 +1238,7 @@ Consider the wave equation with damping (ref{wave:pde3}).
 The goal is to find an exact solution to a wave problem with damping and zero source term.
 A starting point is the standing wave solution from
 Exercise ref{wave:exer:standingwave}. It becomes necessary to
-include a damping term $e^{-ct}$ and also have both a sine and cosine
+include a damping term $e^{-\beta t}$ and also have both a sine and cosine
 component in time:
 
 !bt
@@ -1261,8 +1261,7 @@ Mathematical model:
 !bt
 \begin{equation}
 \frac{\partial^2 u}{\partial t^2} + b\frac{\partial u}{\partial t} =
-c^2\frac{\partial^2 u}{\partial x^2}
- + f(x,t),
+c^2\frac{\partial^2 u}{\partial x^2},
 \nonumber
 \end{equation}
 !et
@@ -1324,6 +1323,38 @@ Using $t = 0$ in the expression for $u_e$ gives us the initial condition as
 \[ I(x) = A sin kx\]
 !et
 
+Summarizing, the PDE problem can then be states as
+
+!bt
+\begin{align}
+\frac{\partial^2 u}{\partial t^2} + b\frac{\partial u}{\partial t} &=
+c^2 \frac{\partial^2 u}{\partial x^2}, \quad &x\in (0,L),\ t\in (0,T]
+\nonumber\\
+u(x,0) &= I(x), \quad &x\in [0,L]
+\nonumber\\
+\frac{\partial}{\partial t}u(x,0) &= 0, \quad &x\in [0,L]
+\nonumber\\
+u(0,t) & = 0, \quad  &t\in (0,T]
+\nonumber\\
+u(L,t) & = 0, \quad  &t\in (0,T]
+\nonumber
+\end{align}
+!et
+where constants $c$, $A$, $b$ and $k$, as well as $I(x)$, are prescribed.
+
+The solution to the problem is then given as
+
+!bt
+\[ \uex(x,t) =  e^{-\beta t}
+\sin kx \left( A\cos\omega t
++ B\sin\omega t\right)
+\tp
+\]
+!et
+with $k=m\pi/L$ for arbitrary integer $m$, $\beta = \frac{b}{2}$, 
+$\omega = \sqrt{c^2k^2 - \frac{b^2}{4}}$, $B = \frac{b}{2\sqrt{c^2k^2 - \frac{b^2}{4}}} A$
+and $I(x) = A sin kx$.
+
 !esol
 
 
@@ -1357,6 +1388,21 @@ Symmetry of a function about $x=x_0$ means that
 $f(x_0+h) = f(x_0-h)$.
 !ehint
 
+!bsol
+A symmetric $u$ around $x=0$ means that $u(-x,t)=u(x,t)$.
+Let $x_0=0$ and $x=x_0+h$. Then we can use a *centered* finite difference
+definition of the derivative:
+
+!bt
+\[ \frac{\partial}{\partial x}u(x_0,t) =
+\lim_{h\rightarrow 0}\frac{u(x_0+h,t)- u(x_0-h)}{2h} =
+\lim_{h\rightarrow 0}\frac{u(h,t)- u(-h,t)}{2h} = 0,\]
+!et
+since $u(h,t)=u(-h,t)$ for any $h$. Symmetry around a point $x=x_0$
+therefore always implies $u_x(x_0,t)=0$.
+
+!esol
+
 !esubex
 
 !bsubex
@@ -1364,8 +1410,30 @@ Perform simulations of the complete wave problem
 on $[-L,L]$. Thereafter, utilize the
 symmetry of the solution and run a simulation
 in half of the domain $[0,L]$, using a boundary condition
-at $x=0$. Compare the two solutions and
-make sure that they are the same.
+at $x=0$. Compare plots from the two solutions and
+confirm that they are the same.
+
+!bsol
+We can utilize the `wave1D_dn.py` code which allows Dirichlet and
+Neumann conditions. The `solver` and `viz` functions must take $x_0$
+and $x_L$ as parameters instead of just $L$ such that we can solve the
+wave equation in $[x_0, x_L]$. The we can call up `solver` for the two
+problems on $[-L,L]$ and $[0,L]$ with boundary conditions
+$u(-L,t)=u(L,t)=0$ and $u_x(0,t)=u(L,t)=0$, respectively.
+
+The original `wave1D_dn.py` code makes a movie by playing all the
+`.png` files in a browser.  It can then be wise to let the `viz`
+function create a movie directory and place all the frames and HTML
+player file in that directory.  Alternatively, one can just make
+some ordinary movie file (Ogg, WebM, MP4, Flash) with `avconv` or
+`ffmpeg` and give it a name. It is a point that the name is
+transferred to `viz` so it is easy to call `viz` twice and get two
+separate movie files or movie directories.
+
+The plots produced by the code (below) shows that the solutions indeed
+are the same.
+!esol
+
 !esubex
 
 !bsubex
@@ -1373,6 +1441,101 @@ Prove the symmetry property of the solution
 by setting up the complete initial-boundary value problem
 and showing that if $u(x,t)$ is a solution, then also $u(-x,t)$
 is a solution.
+
+!bsol
+The plan in this proof is to introduce $v(x,t)=u(-x,t)$
+and show that $v$ fulfills the same
+initial-boundary value problem as $u$. If the problem has a unique
+solution, then $v=u$. Or, in other words, the solution is
+symmetric: $u(-x,t)=u(x,t)$.
+
+We can work with a general initial-boundary value problem on the form
+
+!bt
+\begin{align}
+u_tt(x,t) &= c^2u_{xx}(x,t) + f(x,t)\\
+u(x,0) &= I(x)\\
+u_t(x,0) &= V(x)\\
+u(-L,0) &= 0\\
+u(L,0) &= 0
+\end{align}
+!et
+Introduce a new coordinate $\bar x = -x$. We have that
+
+!bt
+\[ \frac{\partial^2 u}{\partial x^2} = \frac{\partial}{\partial x}
+\left(
+\frac{\partial u}{\partial\bar x}
+\frac{\partial\bar x}{\partial x}
+\right)
+= \frac{\partial}{\partial x}
+\left(
+\frac{\partial u}{\partial\bar x} (-1)\right)
+= (-1)^2 \frac{\partial^2 u}{\partial \bar x^2}
+\]
+!et
+The derivatives in time are unchanged.
+
+Substituting $x$ by $-\bar x$ leads to
+
+!bt
+\begin{align}
+u_{tt}(-\bar x,t) &= c^2u_{\bar x\bar x}(-\bar x,t) + f(-\bar x,t)\\
+u(-\bar x,0) &= I(-\bar x)\\
+u_t(-\bar x,0) &= V(-\bar x)\\
+u(L,0) &= 0\\
+u(-L,0) &= 0
+\end{align}
+!et
+Now, dropping the bars and introducing $v(x,t)=u(-x,t)$, we find that
+
+!bt
+\begin{align}
+v_{tt}(x,t) &= c^2v_{xx}(x,t) + f(-x,t)\\
+v(x,0) &= I(-x)\\
+v_t(x ,0) &= V(-x)\\
+v(-L,0) &= 0\\
+v(L,0) &= 0
+\end{align}
+!et
+*Provided that $I$, $f$, and $V$ are all symmetric* around $x=0$
+such that $I(x)=I(-x)$, $V(x)=V(-x)$, and $f(x,t)=f(-x,t)$, we
+can express the initial-boundary value problem as
+
+!bt
+\begin{align}
+v_{tt}(x,t) &= c^2v_{xx}(x,t) + f(x,t)\\
+v(x,0) &= I(x)\\
+v_t(x ,0) &= V(x)\\
+v(-L,0) &= 0\\
+v(L,0) &= 0
+\end{align}
+!et
+This is the same problem as the one that $u$ fulfills. If the solution
+is unique, which can be proven, then $v=u$, and $u(-x,t)=u(x,t)$.
+
+To summarize, the necessary conditions for symmetry are that
+
+  * all involved functions $I$, $V$, and $f$ must be symmetric, and
+  * the boundary conditions are symmetric in the sense that they
+    can be flipped (the condition at $x=-L$ can be applied
+    at $x=L$ and vice versa).
+!esol
+
+!esubex
+
+!bsubex
+If the code works correctly, the solution $u(x,t) = x(L-x)(1+\frac{t}{2})$ 
+should be reproduced exactly. Write a test function `test_quadratic` that 
+checks whether this is the case. Simulate for $x$ in $[0, \frac{L}{2}]$ with
+a symmetry condition at the end $x = \frac{L}{2}$.
+
+!bsol
+Running the code below, shows that the test case indeed is reproduced exactly.
+
+@@@CODE exer-wave/wave1D_symmetric.py
+
+!esol
 !esubex
 
 
