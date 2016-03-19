@@ -672,16 +672,23 @@ A first attempt at a solver function is listed below.
         <span style="color: #228B22"># Switch variables before next step</span>
         u_2[:] = u_1;  u_1[:] = u
 
-    cpu_time = t0 - time.clock()
+    cpu_time = time.clock() - t0
     <span style="color: #8B008B; font-weight: bold">return</span> u, x, t, cpu_time
 </pre></div>
+<p>
+A remark on the computation of <code>dx</code> and <code>dt</code> is probably necessary.
+Although we give <code>dt</code> and compute <code>dx</code> via <code>C</code> and <code>c</code>, the resulting
+<code>t</code> and <code>x</code> meshes do not necessarily correspond exactly to these values
+because of rounding errors. To explicitly ensure that <code>dx</code> and <code>dt</code>
+correspond to the cell sizes in <code>x</code> and <code>t</code>, we recompute the values.
+
 <p>
 <!-- Too trivial here: -->
 <!-- Checking that a solution \( u^n_i \) stays constant throughout some -->
 <!-- time steps is often of considerable help in tracking down bugs -->
 <!-- in an implementation. A constant solution \( \uex = Q \) fulfills -->
 <!-- the PDE problem <a href="._wave-solarized001.html#mjx-eqn-17">(17)</a>-<a href="._wave-solarized001.html#mjx-eqn-21">(21)</a> -->
-<!-- if \( I(x)=Q \), \( V=0 \), \( u(0,t)=u(L,t)=Q \), and \( f=0 \) -->
+<!-- if \( I(x)=0 \), \( V=0 \), \( u(0,t)=u(L,t)=0 \), and \( f=0 \) -->
 
 <h2 id="wave:pde1:impl:verify:quadratic">Verification: exact quadratic solution</h2>
 
@@ -1771,11 +1778,17 @@ Use these expressions to find the wave length in space and period in
 time of \( \uex \) above.
 
 <p>
+<!-- removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+ -->
+<p>
 <b>b)</b>
-Import the <code>solver</code> function <code>wave1D_u0.py</code> into a new file
+Import the <code>solver</code> function from <code>wave1D_u0.py</code> into a new file
 where the <code>viz</code> function is reimplemented such that it
 plots either the numerical <em>and</em> the exact solution, <em>or</em> the error.
 
+<p>
+<!-- removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+ -->
 <p>
 <b>c)</b>
 Make animations where you illustrate how the error
@@ -1807,6 +1820,9 @@ the curves for the numerical and exact solution.
 <p>
 <!-- --- end hint in exercise --- -->
 
+<p>
+<!-- removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+ -->
 <p>
 Filename: <code>wave_standing</code>.
 
@@ -1857,13 +1873,12 @@ converted to a two-dimensional <code>numpy</code> array.
 <h2 id="wave:exer:store:list:class">Exercise 3: Use a class for the user action function</h2>
 
 <p>
-Redo <a href="#wave:exer:store:list">Exercise 2: Add storage of solution in a user action function</a> using a class for the
-user action function. That is, define a class <code>Action</code> where
-the <code>all_u</code> list is an attribute, and implement the user action
-function as a method (the special method <code>__call__</code> is a natural
-choice). The class versions avoid that the user action function
-depends on parameters defined outside the function (such as <code>all_u</code>
-in <a href="#wave:exer:store:list">Exercise 2: Add storage of solution in a user action function</a>).
+Redo <a href="#wave:exer:store:list">Exercise 2: Add storage of solution in a user action function</a> using a class for the user
+action function. Let the <code>all_u</code> list be an attribute in this class
+and implement the user action function as a method (the special method
+<code>__call__</code> is a natural choice). The class versions avoid that the
+user action function depends on parameters defined outside the
+function (such as <code>all_u</code> in <a href="#wave:exer:store:list">Exercise 2: Add storage of solution in a user action function</a>).
 
 <p>
 <!-- removed !bsol ... !esol environment (because of the command-line option --without_solutions)
@@ -1879,22 +1894,21 @@ in <a href="#wave:exer:store:list">Exercise 2: Add storage of solution in a user
 
 <p>
 The goal of this exercise is to make movies where several curves,
-corresponding to different Courant numbers, are visualized.
-Start out with a copy of <code>wave1D_u0_s2c.py</code>. Use what you need and make the required modifications. Reimplement the <code>viz</code> function
-such that it can take a list of <code>C</code> values as argument
-and create a movie with solutions corresponding to the given <code>C</code>
-values. The <code>plot_u</code> function must be changed to store the solution
-in an array (see <a href="#wave:exer:store:list">Exercise 2: Add storage of solution in a user action function</a> or
-<a href="#wave:exer:store:list:class">Exercise 3: Use a class for the user action function</a> for details), <code>solver</code> must be
-computed for each value of the Courant number, and finally
-one must run through each time step and plot all the spatial
-solution curves in one figure and store it in a file.
+corresponding to different Courant numbers, are visualized. Write a
+program that resembles <code>wave1D_u0_s2c.py</code> in <a href="#wave:exer:store:list:class">Exercise 3: Use a class for the user action function</a>, but with a <code>viz</code> function that 
+can take a list of <code>C</code> values as argument and create a movie with
+solutions corresponding to the given <code>C</code> values. The <code>plot_u</code> function
+must be changed to store the solution in an array (see <a href="#wave:exer:store:list">Exercise 2: Add storage of solution in a user action function</a> or <a href="#wave:exer:store:list:class">Exercise 3: Use a class for the user action function</a> for
+details), <code>solver</code> must be computed for each value of the Courant
+number, and finally one must run through each time step and plot all
+the spatial solution curves in one figure and store it in a file.
 
 <p>
 The challenge in such a visualization is to ensure that the curves in
 one plot correspond to the same time point. The easiest remedy is to
-keep the time and space resolution constant and change the wave
-velocity \( c \) to change the Courant number.
+keep the time resolution constant and change the space resolution
+to change the Courant number. Note that each spatial grid is needed for
+the final plotting, so it is an option to store those grids too.
 
 <p>
 <!-- removed !bsol ... !esol environment (because of the command-line option --without_solutions)

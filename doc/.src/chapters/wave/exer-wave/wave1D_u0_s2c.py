@@ -136,7 +136,7 @@ def viz(
     ):
     """Run solver, store and visualize u at each time level."""
 
-    class plot_u_st:
+    class PlotUst:
         def __init__(self):
             self.all_u = []
         def __call__(self, u, x, t, n):
@@ -172,7 +172,7 @@ def viz(
         plot_u = PlotMatplotlib()
     elif tool == 'scitools':
         import scitools.std as plt  # scitools.easyviz interface
-        plot_u = plot_u_st()
+        plot_u = PlotUst()
     import time, glob, os
 
     # Clean up old movie frames
@@ -211,9 +211,9 @@ def guitar(C):
     wavelength = 2*L
     c = freq*wavelength
     from math import pi
-    omega = 2*pi*freq
+    w = 2*pi*freq
     num_periods = 1
-    T = 2*pi/omega*num_periods
+    T = 2*pi/w*num_periods
     # Choose dt the same as the stability limit for Nx=50
     dt = L/50./c
 

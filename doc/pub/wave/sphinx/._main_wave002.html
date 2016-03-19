@@ -173,10 +173,15 @@ callback functions.</p>
         <span class="c"># Switch variables before next step</span>
         <span class="n">u_2</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">u_1</span><span class="p">;</span>  <span class="n">u_1</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">u</span>
 
-    <span class="n">cpu_time</span> <span class="o">=</span> <span class="n">t0</span> <span class="o">-</span> <span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+    <span class="n">cpu_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
     <span class="k">return</span> <span class="n">u</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">cpu_time</span>
 </pre></div>
 </div>
+<p>A remark on the computation of <tt class="docutils literal"><span class="pre">dx</span></tt> and <tt class="docutils literal"><span class="pre">dt</span></tt> is probably necessary.
+Although we give <tt class="docutils literal"><span class="pre">dt</span></tt> and compute <tt class="docutils literal"><span class="pre">dx</span></tt> via <tt class="docutils literal"><span class="pre">C</span></tt> and <tt class="docutils literal"><span class="pre">c</span></tt>, the resulting
+<tt class="docutils literal"><span class="pre">t</span></tt> and <tt class="docutils literal"><span class="pre">x</span></tt> meshes do not necessarily correspond exactly to these values
+because of rounding errors. To explicitly ensure that <tt class="docutils literal"><span class="pre">dx</span></tt> and <tt class="docutils literal"><span class="pre">dt</span></tt>
+correspond to the cell sizes in <tt class="docutils literal"><span class="pre">x</span></tt> and <tt class="docutils literal"><span class="pre">t</span></tt>, we recompute the values.</p>
 </div>
 <div class="section" id="verification-exact-quadratic-solution">
 <span id="wave-pde1-impl-verify-quadratic"></span><h2>Verification: exact quadratic solution<a class="headerlink" href="#verification-exact-quadratic-solution" title="Permalink to this headline">¶</a></h2>
@@ -1022,7 +1027,7 @@ in space is <span class="math">\(\lambda = 2\pi /k\)</span> and the period in ti
 Use these expressions to find the wave length in space and period in
 time of <span class="math">\({u_{\small\mbox{e}}}\)</span> above.</p>
 <p><strong>b)</strong>
-Import the <tt class="docutils literal"><span class="pre">solver</span></tt> function <tt class="docutils literal"><span class="pre">wave1D_u0.py</span></tt> into a new file
+Import the <tt class="docutils literal"><span class="pre">solver</span></tt> function from <tt class="docutils literal"><span class="pre">wave1D_u0.py</span></tt> into a new file
 where the <tt class="docutils literal"><span class="pre">viz</span></tt> function is reimplemented such that it
 plots either the numerical <em>and</em> the exact solution, <em>or</em> the error.</p>
 <p><strong>c)</strong>
@@ -1066,32 +1071,30 @@ converted to a two-dimensional <tt class="docutils literal"><span class="pre">nu
 </div>
 <div class="section" id="exercise-3-use-a-class-for-the-user-action-function">
 <span id="wave-exer-store-list-class"></span><h2>Exercise 3: Use a class for the user action function<a class="headerlink" href="#exercise-3-use-a-class-for-the-user-action-function" title="Permalink to this headline">¶</a></h2>
-<p>Redo <a class="reference internal" href="#wave-exer-store-list"><em>Exercise 2: Add storage of solution in a user action function</em></a> using a class for the
-user action function. That is, define a class <tt class="docutils literal"><span class="pre">Action</span></tt> where
-the <tt class="docutils literal"><span class="pre">all_u</span></tt> list is an attribute, and implement the user action
-function as a method (the special method <tt class="docutils literal"><span class="pre">__call__</span></tt> is a natural
-choice). The class versions avoid that the user action function
-depends on parameters defined outside the function (such as <tt class="docutils literal"><span class="pre">all_u</span></tt>
-in <a class="reference internal" href="#wave-exer-store-list"><em>Exercise 2: Add storage of solution in a user action function</em></a>).</p>
+<p>Redo <a class="reference internal" href="#wave-exer-store-list"><em>Exercise 2: Add storage of solution in a user action function</em></a> using a class for the user
+action function. Let the <tt class="docutils literal"><span class="pre">all_u</span></tt> list be an attribute in this class
+and implement the user action function as a method (the special method
+<tt class="docutils literal"><span class="pre">__call__</span></tt> is a natural choice). The class versions avoid that the
+user action function depends on parameters defined outside the
+function (such as <tt class="docutils literal"><span class="pre">all_u</span></tt> in <a class="reference internal" href="#wave-exer-store-list"><em>Exercise 2: Add storage of solution in a user action function</em></a>).</p>
 <p>Filename: <tt class="docutils literal"><span class="pre">wave1D_u0_s2c</span></tt>.</p>
 </div>
 <div class="section" id="exercise-4-compare-several-courant-numbers-in-one-movie">
 <span id="wave-exer-multiple-c"></span><h2>Exercise 4: Compare several Courant numbers in one movie<a class="headerlink" href="#exercise-4-compare-several-courant-numbers-in-one-movie" title="Permalink to this headline">¶</a></h2>
 <p>The goal of this exercise is to make movies where several curves,
-corresponding to different Courant numbers, are visualized.
-Start out with a copy of <tt class="docutils literal"><span class="pre">wave1D_u0_s2c.py</span></tt>. Use what you need and make the required modifications. Reimplement the <tt class="docutils literal"><span class="pre">viz</span></tt> function
-such that it can take a list of <tt class="docutils literal"><span class="pre">C</span></tt> values as argument
-and create a movie with solutions corresponding to the given <tt class="docutils literal"><span class="pre">C</span></tt>
-values. The <tt class="docutils literal"><span class="pre">plot_u</span></tt> function must be changed to store the solution
-in an array (see <a class="reference internal" href="#wave-exer-store-list"><em>Exercise 2: Add storage of solution in a user action function</em></a> or
-<a class="reference internal" href="#wave-exer-store-list-class"><em>Exercise 3: Use a class for the user action function</em></a> for details), <tt class="docutils literal"><span class="pre">solver</span></tt> must be
-computed for each value of the Courant number, and finally
-one must run through each time step and plot all the spatial
-solution curves in one figure and store it in a file.</p>
+corresponding to different Courant numbers, are visualized. Write a
+program that resembles <tt class="docutils literal"><span class="pre">wave1D_u0_s2c.py</span></tt> in <a class="reference internal" href="#wave-exer-store-list-class"><em>Exercise 3: Use a class for the user action function</em></a>, but with a <tt class="docutils literal"><span class="pre">viz</span></tt> function that
+can take a list of <tt class="docutils literal"><span class="pre">C</span></tt> values as argument and create a movie with
+solutions corresponding to the given <tt class="docutils literal"><span class="pre">C</span></tt> values. The <tt class="docutils literal"><span class="pre">plot_u</span></tt> function
+must be changed to store the solution in an array (see <a class="reference internal" href="#wave-exer-store-list"><em>Exercise 2: Add storage of solution in a user action function</em></a> or <a class="reference internal" href="#wave-exer-store-list-class"><em>Exercise 3: Use a class for the user action function</em></a> for
+details), <tt class="docutils literal"><span class="pre">solver</span></tt> must be computed for each value of the Courant
+number, and finally one must run through each time step and plot all
+the spatial solution curves in one figure and store it in a file.</p>
 <p>The challenge in such a visualization is to ensure that the curves in
 one plot correspond to the same time point. The easiest remedy is to
-keep the time and space resolution constant and change the wave
-velocity <span class="math">\(c\)</span> to change the Courant number.</p>
+keep the time resolution constant and change the space resolution
+to change the Courant number. Note that each spatial grid is needed for
+the final plotting, so it is an option to store those grids too.</p>
 <p>Filename: <tt class="docutils literal"><span class="pre">wave_numerics_comparison</span></tt>.</p>
 </div>
 <div class="section" id="project-5-calculus-with-1d-mesh-functions">
@@ -1171,9 +1174,9 @@ The final version of the code reads</p>
         <span class="n">Nx</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>     <span class="c"># number of spatial steps</span>
         <span class="n">num_dfdx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
         <span class="c"># Compute approximate derivatives at end-points first</span>
-        <span class="n">num_dfdx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span><span class="o">/</span><span class="n">dx</span>          <span class="c"># use F. diff. approx.</span>
-        <span class="n">num_dfdx</span><span class="p">[</span><span class="n">Nx</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">Nx</span><span class="p">])</span> <span class="o">-</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">Nx</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span><span class="o">/</span><span class="n">dx</span>     <span class="c"># use B. diff. approx.</span>
-        <span class="c">#...proceed with approximate derivatives for inner mesh points</span>
+        <span class="n">num_dfdx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span><span class="o">/</span><span class="n">dx</span>          <span class="c"># FD approx.</span>
+        <span class="n">num_dfdx</span><span class="p">[</span><span class="n">Nx</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">Nx</span><span class="p">])</span> <span class="o">-</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">Nx</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span><span class="o">/</span><span class="n">dx</span>     <span class="c"># BD approx.</span>
+        <span class="c"># proceed with approximate derivatives for inner mesh points</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vectorized</span><span class="p">:</span>
             <span class="n">num_dfdx</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span> <span class="o">-</span> <span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]))</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">dx</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>   <span class="c"># scalar version</span>

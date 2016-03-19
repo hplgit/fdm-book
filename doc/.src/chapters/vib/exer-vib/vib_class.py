@@ -7,7 +7,8 @@ from vib import solver as vib_solver
 from vib import visualize as vib_visualize
 from vib import visualize_front as vib_visualize_front
 from vib import visualize_front_ascii as vib_visualize_front_ascii
-from vib import plot_empirical_freq_and_amplitude as vib_plot_empirical_freq_and_amplitude
+from vib import plot_empirical_freq_and_amplitude as \
+                            vib_plot_empirical_freq_and_amplitude
 
 class Vibration:
     '''
@@ -15,11 +16,12 @@ class Vibration:
     u(0)=I and u'(0)=V. The problem is solved
     by a central finite difference method with time step dt.
     If damping is 'linear', f(u')=b*u, while if damping is
-    'quadratic', f(u')=b*u'*abs(u'). Zero damping is achieved with b=0.
-    F(t) and s(u) are Python functions.
+    'quadratic', f(u')=b*u'*abs(u'). Zero damping is achieved
+    with b=0. F(t) and s(u) are Python functions.
     '''
     def __init__(self, I=1, V=0, m=1, b=0, damping='linear'):
-        self.I = I; self.V = V; self.m = m; self.b=b; self.damping = damping
+        self.I = I; self.V = V; self.m = m; self.b=b; 
+        self.damping = damping
     def s(self, u):
         return u
     def F(self, t):
@@ -35,8 +37,10 @@ class Free_vibrations(Vibration):
 
 class Forced_vibrations(Vibration):
     '''F(t)! = 0'''
-    def __init__(self, F, s=None, I=1, V=0, m=1, b=0, damping='linear'):
-        Vibration.__init__(self, I=I, V=V, m=m, b=b, damping=damping)
+    def __init__(self, F, s=None, I=1, V=0, m=1, b=0, 
+                 damping='linear'):
+        Vibration.__init__(self, I=I, V=V, m=m, b=b, 
+                           damping=damping)
         if s != None:
             self.s = s
         self.F = F
@@ -68,9 +72,10 @@ class Visualizer:
 
 def main():
     # Note: the reading of parameter values would better be done 
-    # from each relevant class, i.e. class Problem should read I, V, etc.,
-    # while class Solver should read dt and T, and so on. Consult, e.g., 
-    # Langtangen: "A Primer on Scientific Programming", App E.
+    # from each relevant class, i.e. class Problem should read I, V,
+    #  etc., while class Solver should read dt and T, and so on. 
+    # Consult, e.g., Langtangen: "A Primer on Scientific Programming", 
+    # App E.
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--I', type=float, default=1.0)
@@ -85,9 +90,10 @@ def main():
                         help='Number of periods in a window')
     parser.add_argument('--damping', type=str, default='linear')
     parser.add_argument('--savefig', action='store_true')
-    # Hack to allow --SCITOOLS options (scitools.std reads this argument
-    # at import)
-    parser.add_argument('--SCITOOLS_easyviz_backend', default='matplotlib')
+    # Hack to allow --SCITOOLS options 
+    # (scitools.std reads this argument at import)
+    parser.add_argument('--SCITOOLS_easyviz_backend', 
+                        default='matplotlib')
     a = parser.parse_args()
     
     from scitools.std import StringFunction
@@ -101,13 +107,15 @@ def main():
         problem = Free_vibrations(s=s, I=a.I, V=a.V, m=a.m, b=a.b, 
                                   damping=a.damping)
     else:   # forced vibrations
-        problem = Forced_vibrations(lambda t: np.sin(t), s=s, I=a.I, V=a.V, 
+        problem = Forced_vibrations(lambda t: np.sin(t), 
+                                    s=s, I=a.I, V=a.V, 
                                     m=a.m, b=a.b, damping=a.damping)
             
     solver = Solver(dt=a.dt, T=a.T) 
     solver.solve(problem)      
             
-    visualizer = Visualizer(problem, solver, a.window_width, a.savefig)
+    visualizer = Visualizer(problem, solver, 
+                            a.window_width, a.savefig)
     visualizer.visualize()
 
 if __name__ == '__main__':

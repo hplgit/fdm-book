@@ -1,13 +1,14 @@
 import numpy as np
 import scitools.std as plt
 
-def solve_and_store(filename, I, V, m, b, s, F, dt, T, damping='linear'):
+def solve_and_store(filename, I, V, m, b, s, 
+                    F, dt, T, damping='linear'):
     """
-    Solve m*u'' + f(u') + s(u) = F(t) for t in (0,T], u(0)=I and u'(0)=V,
-    by a central finite difference method with time step dt.
+    Solve m*u'' + f(u') + s(u) = F(t) for t in (0,T], u(0)=I and 
+    u'(0)=V, by a central finite difference method with time step dt.
     If damping is 'linear', f(u')=b*u, while if damping is
-    'quadratic', f(u')=b*u'*abs(u'). F(t) and s(u) are Python functions.
-    The solution is written to file (filename).
+    'quadratic', f(u')=b*u'*abs(u'). F(t) and s(u) are Python 
+    functions. The solution is written to file (filename).
     Naming convention: we use the name u for the new solution to be 
     computed, u_1 for the solution one time step prior to that and u_2
     for the solution two time steps prior to that.
@@ -69,9 +70,10 @@ def main():
                         help='Number of periods in a window')
     parser.add_argument('--damping', type=str, default='linear')
     parser.add_argument('--savefig', action='store_true')
-    # Hack to allow --SCITOOLS options (scitools.std reads this argument
-    # at import)
-    parser.add_argument('--SCITOOLS_easyviz_backend', default='matplotlib')
+    # Hack to allow --SCITOOLS options 
+    # (scitools.std reads this argument at import)
+    parser.add_argument('--SCITOOLS_easyviz_backend', 
+                        default='matplotlib')
     a = parser.parse_args()
     from scitools.std import StringFunction
     s = StringFunction(a.s, independent_variable='u')
@@ -81,7 +83,8 @@ def main():
        a.damping
 
     filename = 'vibration_sim.dat'
-    u_min, u_max = solve_and_store(filename, I, V, m, b, s, F, dt, T, damping)
+    u_min, u_max = solve_and_store(filename, I, V, m, b, s, 
+                                   F, dt, T, damping)
 
     read_and_plot(filename, u_min, u_max)
 

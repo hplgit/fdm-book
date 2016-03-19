@@ -165,7 +165,8 @@ def test_quadratic_exact_solution(damping):
                   T=(2*pi/sqrt(c/m))*2, damping=damping)
     u_e = u_e(t)
     error = np.abs(u - u_e).max()
-    assert error < 1E-12
+    tol = 1E-12
+    assert error < tol    
     print 'Error in computing a quadratic solution:', error
 
 if __name__ == '__main__':
