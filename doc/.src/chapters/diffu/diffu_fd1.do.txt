@@ -37,7 +37,7 @@ This stationary limit of the diffusion equation is called
 the *Laplace* equation and arises in a very wide range of applications
 throughout the sciences.
 
-It is possible to solve for $u(x,t)$ using a explicit scheme, as we do
+It is possible to solve for $u(x,t)$ using an explicit scheme, as we do
 in Section ref{diffu:pde1:FEsec}, but the time step restrictions soon
 become much less favorable than for an explicit scheme for the wave
 equation. And of more importance, since the solution $u$ of the
@@ -207,16 +207,17 @@ The computational algorithm then becomes
     o set the boundary values
       $u^{n+1}_i=0$ for $i=0$ and $i=N_x$
 
-The algorithm is compactly fully specified in Python:
+The algorithm is compactly and fully specified in Python:
 
 !bc pycod
-x = linspace(0, L, Nx+1)    # mesh points in space
+import numpy as np
+x = np.linspace(0, L, Nx+1)    # mesh points in space
 dx = x[1] - x[0]
-t = linspace(0, T, Nt+1)    # mesh points in time
+t = np.linspace(0, T, Nt+1)    # mesh points in time
 dt = t[1] - t[0]
 F = a*dt/dx**2
-u   = zeros(Nx+1)           # unknown u at new time level
-u_1 = zeros(Nx+1)           # u at the previous time level
+u   = np.zeros(Nx+1)           # unknown u at new time level
+u_1 = np.zeros(Nx+1)           # u at the previous time level
 
 # Set initial condition u(x,0) = I(x)
 for i in range(0, Nx+1):
@@ -452,7 +453,7 @@ technique cannot be used and solutions must be stored in files.
 
 [hpl: Better to show the scalable file solution here?]
 
-Our experiments employs a time step $\Delta t = 0.0002$ and
+Our experiments employ a time step $\Delta t = 0.0002$ and
 simulate for $t\in [0,0.1]$. First we try the highest value of
 $F$: $F=0.5$. This resolution corresponds to
 $N_x=50$. A possible terminal command is
@@ -555,7 +556,7 @@ which written out reads
 label{diffu:pde1:step3bBE}
 \end{equation}
 !et
-Now we assume $u^{n-1}_i$ is computed, but all quantities at the "new"
+Now we assume $u^{n-1}_i$ is already computed, but all quantities at the ``new''
 time level $n$ are unknown. This time it is not possible to solve
 with respect to $u_i^{n}$ because this value couples to its neighbors
 in space, $u^n_{i-1}$ and $u^n_{i+1}$, which are also unknown.
@@ -659,7 +660,7 @@ A_{0,0} & A_{0,1} & 0
 &\cdots &
 \cdots & \cdots & \cdots &
 \cdots & 0 \\
-A_{1,0} & A_{1,1} & 0 & \ddots &   & &  & &  \vdots \\
+A_{1,0} & A_{1,1} & A_{1,2} & \ddots &   & &  & &  \vdots \\
 0 & A_{2,1} & A_{2,2} & A_{2,3} &
 \ddots & &  &  & \vdots \\
 \vdots & \ddots &  & \ddots & \ddots & 0 &  & & \vdots \\
@@ -682,8 +683,9 @@ A_{i,i} &= 1+ 2F\\
 A_{i,i+1} &= -F
 \end{align}
 !et
-for the equations for internal points, $i=1,\ldots,N_x-1$. The equations
-for the boundary points correspond to
+for the equations for internal points, $i=1,\ldots,N_x-1$. The first and last
+equation correspond to the boundary condition, where we know the solution,
+and therefore we must have
 
 !bt
 \begin{align}
@@ -724,15 +726,15 @@ This leads to the following computational algorithm, here sketched
 with Python code:
 
 !bc pycod
-x = linspace(0, L, Nx+1)   # mesh points in space
+x = np.linspace(0, L, Nx+1)   # mesh points in space
 dx = x[1] - x[0]
-t = linspace(0, T, N+1)    # mesh points in time
-u   = zeros(Nx+1)          # unknown u at new time level
-u_1 = zeros(Nx+1)          # u at the previous time level
+t = np.linspace(0, T, N+1)    # mesh points in time
+u   = np.zeros(Nx+1)          # unknown u at new time level
+u_1 = np.zeros(Nx+1)          # u at the previous time level
 
 # Data structures for the linear system
-A = zeros((Nx+1, Nx+1))
-b = zeros(Nx+1)
+A = np.zeros((Nx+1, Nx+1))
+b = np.zeros(Nx+1)
 
 for i in range(1, Nx):
     A[i,i-1] = -F
@@ -783,10 +785,10 @@ can store only the main diagonal and the upper and lower diagonals.
 
 !bc pycod
 # Representation of sparse matrix and right-hand side
-main  = zeros(Nx+1)
-lower = zeros(Nx-1)
-upper = zeros(Nx-1)
-b     = zeros(Nx+1)
+main  = np.zeros(Nx+1)
+lower = np.zeros(Nx)
+upper = np.zeros(Nx)
+b     = np.zeros(Nx+1)
 
 # Precompute sparse matrix
 main[:] = 1 + 2*F
@@ -832,7 +834,7 @@ label{diffu:pde1:CN}
 The idea in the Crank-Nicolson scheme is to apply centered
 differences in space and time, combined with an average in time.
 We demand the PDE to be fulfilled at the spatial mesh points, but
-in between the points in the time mesh:
+midway between the points in the time mesh:
 
 !bt
 \[
@@ -853,7 +855,7 @@ On the right-hand side we get an expression
 \[ \frac{1}{\Delta x^2}\left(u^{n+\half}_{i-1} - 2u^{n+\half}_i + u^{n+\half}_{i+1}\right) + f_i^{n+\half}\tp\]
 !et
 This expression is problematic since $u^{n+\half}_i$ is not one of
-the unknown we compute. A possibility is to replace $u^{n+\half}_i$
+the unknowns we compute. A possibility is to replace $u^{n+\half}_i$
 by an arithmetic average:
 
 !bt
@@ -918,7 +920,7 @@ b_i &= u^{n-1}_i + \half(f_i^n + f_i^{n+1}),\quad i=1,\ldots,N_x-1,\\
 b_{N_x} &= 0 \tp  \end{align}
 !et
 
-===== The $\theta$ rule =====
+===== The unifying $\theta$ rule =====
 label{diffu:pde1:theta}
 
 For the equation
@@ -1005,20 +1007,20 @@ FIGURE: [fig-diffu/plug_CN_F10, width=800 frac=1] Crank-Nicolson scheme for $F=1
 
 ===== The Laplace and Poisson equation =====
 
-The Laplace equation, $\nabla^2 u = 0$, or the Poisson equation,
+The Laplace equation, $\nabla^2 u = 0$, and the Poisson equation,
 $-\nabla^2 u = f$, occur in numerous applications throughout science and
 engineering. In 1D these equations read
 $u''(x)=0$ and $-u''(x)=f(x)$, respectively.
 We can solve 1D variants of the Laplace equations with the listed
 software, because we can interpret $u_{xx}=0$ as the limiting solution
-of $u_t = \dfc u_{xx}$ when $u$ reach a steady state limit where
+of $u_t = \dfc u_{xx}$ when $u$ reaches a steady state limit where
 $u_t\rightarrow 0$.
 Similarly, Poisson's equation $-u_{xx}=f$ arises from solving
-$u_t = u_{xx} + f$ and letting $t\rightarrow$ so $u_t\rightarrow 0$.
+$u_t = u_{xx} + f$ and letting $t\rightarrow\infty$ so $u_t\rightarrow 0$.
 
 Technically in a program, we can simulate $t\rightarrow\infty$
 by just taking one large time step:
-$\Delta t\rightarrow\infty$. In the limit the Backward Euler
+$\Delta t\rightarrow\infty$. In the limit, the Backward Euler
 scheme gives
 
 !bt
@@ -1034,7 +1036,7 @@ With the Forward Euler scheme we must do the time stepping since $\Delta t >
 \Delta x^2/\dfc$
 is illegal and leads to instability.
 We may interpret this time stepping
-as solving the equation system from $-u_{xx}=f$ by iterating on a time
+as solving the equation system from $-u_{xx}=f$ by iterating on a
 pseudo time variable.
 
 [hpl: Better to say the last sentence when we treat iterative methods.]
