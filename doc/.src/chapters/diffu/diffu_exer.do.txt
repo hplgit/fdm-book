@@ -76,8 +76,8 @@ energy of the system. A mathematical tradition has introduced the
 notion *energy* in this context.
 
 The estimate (ref{diffu:exer:estimates:p1:result}) says that the
-"size of $u$" never exceeds that of the initial condition, or
-more equivalently, that the area under the $u$ curve decreases
+``size of $u$'' never exceeds that of the initial condition,
+or more precisely, it says that the area under the $u$ curve decreases
 with time.
 
 To show (ref{diffu:exer:estimates:p1:result}), multiply the PDE
@@ -414,8 +414,153 @@ MOVIE: [https://github.com/hplgit/fdm-book/raw/master/doc/pub/book/html/mov-diff
 
 
 ===== Exercise: Oscillating and pulsating flow in tubes =====
+label{diffu:exer:bloodflow}
+file=axyiymm_flow
 
-===== Exercise: Radial heat conduction out of offshore pipelines =====
+We consider flow in a straight tube with radius $R$ and straight walls.
+The flow is driven by a pressure gradient $\beta(t)$. The effect of
+gravity can be neglected. The mathematical problem reads
+
+!bt
+\begin{align}
+\varrho\frac{\partial u}{\partial t} &=
+\mu\frac{1}{r}\frac{\partial}{\partial r}\left(
+r\frac{\partial u}{\partial r}\right) + \beta(t),\quad
+& r\in [0,R],\ t\in (0,T],\\
+u(r,0) &= 0,\quad & r\in [0,R],\\
+u(R,0) &= 0,\quad & t\in (0,T],\\
+\frac{\partial u}{\partial r}(0,t) &= 0,\quad & t\in (0,T].
+\end{align}
+!et
+We consider two models for $\beta(t)$. One plain, sinusoidal oscillation:
+
+!bt
+\begin{equation}
+\beta = A\sin(\omega t),
+\end{equation}
+!et
+and one with periodic pulses,
+
+!bt
+\begin{equation}
+\beta = A\sin^{16}(\omega t),
+\end{equation}
+!et
+Note that both models can be written as $\beta = A\sin^m(\omega t)$, with
+$m=1$ and $m=16$, respectively.
+
+!bsubex
+Scale the mathematical model, using the viscous time scale $\varrho R^2/\mu$.
+
+!bsol
+We can introduce
+
+!bt
+\[ \bar r = \frac{r}{R}, \quad \bar t = \frac{t}{\varrho R^2/\mu},\quad u = \frac{u}{u_c}\tp\]
+!et
+Inserted in the PDE, we get
+
+!bt
+\[ \frac{\partial\bar u}{\partial\bar t} =
+\frac{1}{\bar r}\frac{\partial}{\partial\bar r}\left(
+\bar r\frac{\partial\bar u}{\partial\bar r}\right) +
+\frac{R^2 A}{u_c \mu}\sin^m (\alpha\bar t)
+\]
+!et
+where $\alpha$ is a dimensionless number
+
+!bt
+\[  \alpha = \frac{\omega\varrho R^2}{\mu} = \frac{\varrho R^2/\mu}{1/\omega},
+\]
+!et
+reflecting the ratio of the viscous diffusion time scale and the
+time scale of the oscillating pressure gradient.
+We may choose $u_c$ such that the coefficient in the pressure gradient
+term equals unity:
+
+!bt
+\[ u_c = \frac{R^2 A}{\mu}\tp\]
+!et
+The governing PDE, dropping the bars, then reads
+
+!bt
+\[ \frac{\partial u}{\partial t} =
+\frac{1}{r}\frac{\partial}{\partial r}\left(
+r\frac{\partial u}{\partial r}\right) +
+\sin^m (\alpha\bar t),\quad r\in (0,1),\ t\in (0,T]\tp
+\]
+!et
+!esol
+!esubex
+
+!bsubex
+Implement the scaled model from a), using the unifying $\theta$ scheme
+in time and centered differences in space.
+
+!bsol
+We need to take into account extensions below: a coefficient in front of
+the viscous term, and an extra source term.
+!esol
+!esubex
+
+!bsubex
+Verify the implementation in b) using a manufactured solution that is
+quadratic in $r$ and linear in $t$. Make a corresponding test function.
+
+!bhint
+You need to include an extra source term
+in the equation to allow for such tests. Let the spatial variation be
+$1-r^2$ such that the boundary condition is fulfilled.
+!ehint
+!esubex
+
+!bsubex
+Make animations for $m=1,16$ and $\alpha=1,0.1$. Choose $T$ such that
+the motion has reached a steady state (non-visible changes from period to
+period in $u$).
+!esubex
+
+!bsubex
+For $\alpha\gg 1$, the scaling in a) is not good, because the
+characteristic time for changes (due to the pressure) is much smaller
+than the viscous diffusion time scale ($\alpha$ becomes large).
+We should in this case base
+the short time scale on $1/\omega$. Scale the model again, and
+make an animation for $m=1,16$ and $\alpha = 10$.
+
+!bsol
+Now the governing PDE becomes
+
+!bt
+\[ \frac{\partial u}{\partial t} =
+\alpha^{-1}\frac{1}{r}\frac{\partial}{\partial r}\left(
+r\frac{\partial u}{\partial r}\right) +
+\sin^m t,\quad r\in (0,1),\ t\in (0,T]\tp
+\]
+!et
+In this case,
+
+!bt
+\[ u_c = \frac{A}{\varrho\omega}\tp\]
+!et
+We see that for $\alpha\gg 1$, we can neglect the viscous term, and we
+basically have a balance between the acceleration and the driving pressure
+gradient:
+
+!bt
+\[\frac{\partial u}{\partial t} = \sin^m t\tp\]
+!et
+[hpl: This may be a great challenge numerically, since we have a plug
+independent of r that oscillates back and forth. CN is probably very
+unstable. Can make a point out of this. Try $\alpha=1$ and increase
+gently.]
+
+!esol
+
+!esubex
+
+
+#===== Exercise: Radial heat conduction out of offshore pipelines =====
 
 # Easy to make something out of the ideas/5620/apps/offshore... mekit
 # paper where one has a multi-walled radial heat conduction equation.

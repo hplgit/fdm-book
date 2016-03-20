@@ -1,932 +1,1149 @@
 .. !split
 
-.. _wave:app:exer:
+.. _wave:app:
 
-Exercises          (4)
-======================
+Applications of wave equations
+==============================
 
-.. --- begin exercise ---
+This section presents a range of wave equation models
+for different physical phenomena. Although many wave motion problems
+in physics can be modeled by the standard linear wave equation, or a similar
+formulation with a system of first-order equations, there are some
+exceptions. Perhaps the most important is water waves: these are modeled by
+the Laplace equation with time-dependent boundary conditions at
+the water surface (long water waves, however, can be approximated
+by a standard wave equation, see the section :ref:`wave:app:sw:2D`).
+Quantum mechanical waves constitute another example where the waves
+are governed by the
+Schrodinger
+equation, i.e., not by a standard wave equation.
+Many wave phenomena also need to take nonlinear effects into account
+when the wave amplitude is significant. Shock waves in the air is
+a primary example.
 
-.. _wave:app:exer:string:discont:
+The derivations in the following are very brief. Those with a firm
+background in continuum mechanics will probably have enough
+knowledge to fill in the details, while other readers will hopefully
+get some impression of the physics and approximations involved when
+establishing wave equation models.
 
-Exercise 36: Simulate waves on a non-homogeneous string
--------------------------------------------------------
+.. _wave:app:string:
 
-Simulate waves on a string that consists of two materials with
-different density. The tension in the string is constant, but the
-density has a jump at the middle of the string.  Experiment with
-different sizes of the jump and produce animations that visualize the
-effect of the jump on the wave motion.
+Waves on a string
+-----------------
 
-.. --- begin hint in exercise ---
+.. _wave:app:string:fig:
 
-**Hint.**
-According to the section :ref:`wave:app:string`,
-the density enters the mathematical model as :math:`\varrho` in
-:math:`\varrho u_{tt} = Tu_{xx}`, where :math:`T` is the string tension. Modify, e.g., the
-``wave1D_u0v.py`` code to incorporate the tension and two density values.
-Make a mesh function ``rho`` with density values at each spatial mesh point.
-A value for the tension may be 150 N. Corresponding density values can
-be computed from the wave velocity estimations in the ``guitar`` function
-in the ``wave1D_u0v.py`` file.
-
-.. --- end hint in exercise ---
-
-Filename: ``wave1D_u0_sv_discont``.
-
-.. --- end exercise ---
-
-.. --- begin exercise ---
-
-.. _wave:app:exer:string:damping:
-
-Exercise 37: Simulate damped waves on a string
-----------------------------------------------
-
-Formulate a mathematical model for damped waves on a string.
-Use data from the section :ref:`wave:pde1:guitar:data`, and
-tune the damping parameter so that the string is very close to
-the rest state after 15 s. Make a movie of the wave motion.
-Filename: ``wave1D_u0_sv_damping``.
-
-.. --- end exercise ---
-
-.. --- begin exercise ---
-
-.. _wave:app:exer:rod:
-
-Exercise 38: Simulate elastic waves in a rod
---------------------------------------------
-
-A hammer hits the end of an elastic rod. The exercise is to simulate
-the resulting wave motion using the model :ref:`(208) <Eq:wave:app:elastic:rod:eq>`
-from the section :ref:`wave:app:elastic:rod`. Let the rod have length
-:math:`L` and let the boundary :math:`x=L` be stress free so that :math:`\sigma_{xx}=0`,
-implying that :math:`\partial u/\partial x=0`. The left end :math:`x=0` is
-subject to a strong stress pulse (the hammer), modeled as
-
-.. math::
-         \sigma_{xx}(t) = \left\lbrace\begin{array}{ll}
-        S,& 0 < t \leq t_s,\\ 
-        0, & t > t_s
-        \end{array}\right.
-        
-
-The corresponding condition on :math:`u` becomes :math:`u_x= S/E`
-for :math:`t\leq t_s` and zero afterwards (recall that
-:math:`\sigma_{xx} = Eu_x`). This is a non-homogeneous
-Neumann condition, and you will need to approximate this condition
-and combine it with the scheme (the ideas and manipulations follow
-closely the handling of a non-zero initial condition
-:math:`u_t=V` in wave PDEs or the corresponding
-second-order ODEs for vibrations).
-Filename: ``wave_rod``.
-
-.. --- end exercise ---
-
-.. --- begin exercise ---
-
-.. _wave:app:exer:spherical:
-
-Exercise 39: Simulate spherical waves
--------------------------------------
-
-Implement a model for spherically symmetric waves using the method
-described in the section :ref:`wave:app:spherical`. The boundary condition
-at :math:`r=0` must be :math:`\partial u/\partial r=0`, while the condition at
-:math:`r=R` can either be :math:`u=0` or a radiation condition as described
-in :ref:`wave:app:exer:radiationBC`. The :math:`u=0` condition is
-sufficient if :math:`R` is so large that the amplitude of the spherical
-wave has become insignificant. Make movie(s) of the case where the source
-term is located around :math:`r=0` and sends out pulses
-
-.. math::
-         f(r,t) = \left\lbrace\begin{array}{ll}
-        Q\exp{(-\frac{r^2}{2\Delta r^2})}\sin\omega t,& \sin\omega t\geq 0\\ 
-        0, & \sin\omega t < 0
-        \end{array}\right.
-        
-
-Here, :math:`Q` and :math:`\omega` are constants to be chosen.
-
-.. --- begin hint in exercise ---
-
-**Hint.**
-Use the program ``wave1D_u0v.py`` as a starting point. Let ``solver``
-compute the :math:`v` function and then set :math:`u=v/r`. However,
-:math:`u=v/r` for :math:`r=0` requires special treatment. One possibility is
-to compute ``u[1:] = v[1:]/r[1:]`` and then set ``u[0]=u[1]``. The latter
-makes it evident that :math:`\partial u/\partial r = 0` in a plot.
-
-.. --- end hint in exercise ---
-
-Filename: ``wave1D_spherical``.
-
-.. --- end exercise ---
-
-.. --- begin exercise ---
-
-.. _wave:app:exer:tsunami1D:hill:
-
-Problem 40: Earthquake-generated tsunami over a subsea hill
------------------------------------------------------------
-
-A subsea earthquake leads to an immediate lift of the water surface, see
-Figure :ref:`wave:app:fig:1D:tsunami:flat`.  The lifted water surface
-splits into two
-tsunamis, one traveling to the right and one to the left, as depicted
-in Figure :ref:`wave:app:fig:1D:tsunami:2waves`.  Since tsunamis are
-normally very long waves, compared to the depth, with a small
-amplitude, compared to the wave length, the wave equation model
-described in the section :ref:`wave:app:sw:2D` is relevant:
-
-.. math::
-         \eta_{tt} = (gH(x)\eta_x)_x,
-
-where :math:`g` is the acceleration of gravity, and :math:`H(x)` is the still water depth.
-
-.. _wave:app:fig:1D:tsunami:flat:
-
-.. figure:: earthquake_tsunami_flat.png
+.. figure:: wave_on_string.png
    :width: 800
 
-   *Sketch of initial water surface due to a subsea earthquake*
+   *Discrete string model with point masses connected by elastic strings*
 
-.. _wave:app:fig:1D:tsunami:2waves:
+Figure :ref:`wave:app:string:fig` shows a model we may use to derive
+the equation for waves on a string. The string is modeled as a
+set of discrete point masses (at mesh points) with
+elastic strings in between. The string has a large constant tension :math:`T`.
+We let the mass at mesh point :math:`x_i` be :math:`m_i`. The displacement of
+this mass point in the :math:`y` direction is denoted by :math:`u_i(t)`.
 
-.. figure:: earthquake_tsunami_2waves.png
-   :width: 800
+The motion of mass :math:`m_i` is governed by Newton's second law of motion.
+The position of the mass at time :math:`t` is :math:`x_i\boldsymbol{i} + u_i(t)\boldsymbol{j}`, where
+:math:`\boldsymbol{i}` and :math:`\boldsymbol{j}` are unit vectors in the :math:`x` and :math:`y` direction, respectively.
+The acceleration is then :math:`u_i''(t)\boldsymbol{j}`. Two forces are acting
+on the mass as indicated in Figure :ref:`wave:app:string:fig`.
+The force :math:`\boldsymbol{T}^{-}` acting toward the point :math:`x_{i-1}` can be decomposed
+as
 
-   *An initial surface elevation is split into two waves*
+.. math::
+         \boldsymbol{T}^{-} = -T\sin\phi\boldsymbol{i} -T\cos\phi\boldsymbol{j}, 
 
-To simulate the right-going tsunami, we can impose
-a symmetry boundary at :math:`x=0`: :math:`\partial\eta\ \partial x =0`.
-We then simulate the wave motion
-in :math:`[0,L]`. Unless the ocean ends at :math:`x=L`, the waves should travel
-undisturbed through the boundary :math:`x=L`. A radiation condition
-as explained in :ref:`wave:app:exer:radiationBC` can be
-used for this purpose. Alternatively, one can just stop the simulations
-before the wave hits the boundary at :math:`x=L`. In that case it does not
-matter what kind of boundary condition we use
-at :math:`x=L`. Imposing :math:`\eta =0` and stopping the simulations when
-:math:`|\eta_i^n| > \epsilon`, :math:`i=N_x-1`, is a possibility (:math:`\epsilon` is a
-small parameter).
+where :math:`\phi` is the angle between the force and the
+line :math:`x=x_i`. Let :math:`\Delta u_i = u_i - u_{i-1}` and let
+:math:`\Delta s_i = \sqrt{\Delta u_i^2 + (x_i - x_{i-1})^2}`
+be the distance from mass :math:`m_{i-1}` to mass :math:`m_i`.
+It is seen that :math:`\cos\phi = \Delta u_i/\Delta s_i` and :math:`\sin\phi =
+(x_{i}-x_{i-1})/\Delta s` or :math:`\Delta x/\Delta s_i` if we
+introduce a constant mesh spacing :math:`\Delta x = x_i - x_{i-1}`.
+The force can then be written
 
-The shape of the initial surface can be taken as a
-Gaussian function,
+.. math::
+         \boldsymbol{T}^{-} = -T\frac{\Delta x}{\Delta s_i}\boldsymbol{i} - T\frac{\Delta u_i}{\Delta s_i}\boldsymbol{j}
+        {\thinspace .}
+        
 
-.. _Eq:_auto88:
+The force :math:`\boldsymbol{T}^{+}` acting toward :math:`x_{i+1}` can be calculated in a similar way:
+
+.. math::
+         \boldsymbol{T}^{+} = T\frac{\Delta x}{\Delta s_{i+1}}\boldsymbol{i} +
+                    T\frac{\Delta u_{i+1}}{\Delta s_{i+1}}\boldsymbol{j}
+        {\thinspace .}
+        
+
+Newton's second law becomes
+
+.. math::
+         m_iu_i''(t)\boldsymbol{j} = \boldsymbol{T}^{+} + \boldsymbol{T}^{-},
+
+which gives the component equations
+
+.. _Eq:wave:app:string:hcomp:
+
+.. math::
+
+    \tag{238}
+    T\frac{\Delta x}{\Delta s_i} = T\frac{\Delta x}{\Delta s_{i+1}},
+        
+        
+
+.. _Eq:wave:app:string:vcomp:
+
+.. math::
+
+    \tag{239}
+    m_iu_i''(t) = T\frac{\Delta u_{i+1}}{\Delta s_{i+1}} -
+                       T\frac{\Delta u_i}{\Delta s_i}
+        
+        {\thinspace .}
+        
+
+A basic reasonable assumption for a string
+is small displacements :math:`u_i` and small
+displacement gradients :math:`\Delta u_i/\Delta x`. For small :math:`g=\Delta u_i/\Delta x`
+we have that
+
+.. math::
+         \Delta s_i = \sqrt{\Delta u_i^2 + \Delta x^2} = \Delta x\sqrt{1 + g^2}
+        + \Delta x (1 + {\frac{1}{2}}g^2 + {\cal O}(g^4) \approx \Delta x
+        {\thinspace .}
+        
+
+Equation :ref:`(238) <Eq:wave:app:string:hcomp>` is then simply the identity :math:`T=T`, while
+:ref:`(239) <Eq:wave:app:string:vcomp>` can be written as
+
+.. math::
+        
+        m_iu_i''(t) = T\frac{\Delta u_{i+1}}{\Delta x} - T\frac{\Delta u_i}{\Delta x},
+        
+
+which upon division by :math:`\Delta x` and introducing the density
+:math:`\varrho_i = m_i/\Delta x` becomes
+
+.. _Eq:wave:app:string:model0:
+
+.. math::
+
+    \tag{240}
+    \varrho_i u_i''(t) = T\frac{1}{\Delta x^2}
+        \left( u_{i+1} - 2u_i + u_{i-1}\right)
+        
+        {\thinspace .}
+        
+
+We can now choose to approximate :math:`u_i''` by a finite difference in time
+and get the discretized wave equation,
+
+.. _Eq:_auto94:
+
+.. math::
+
+    \tag{241}
+    \varrho_i \frac{1}{\Delta t^2}
+        \left(u^{n+1}_i - 2u^n_i - u^{n-1}_i\right) =
+        T\frac{1}{\Delta x^2}
+        \left( u_{i+1} - 2u_i + u_{i-1}\right){\thinspace .}
+        
+        
+
+On the other hand, we may go to the continuum limit :math:`\Delta x\rightarrow 0` and
+replace :math:`u_i(t)` by :math:`u(x,t)`, :math:`\varrho_i` by :math:`\varrho(x)`, and
+recognize that the right-hand side of :ref:`(240) <Eq:wave:app:string:model0>`
+approaches :math:`\partial^2 u/\partial x^2` as :math:`\Delta x\rightarrow 0`.
+We end up with the continuous model for waves on a string:
+
+.. _Eq:wave:app:string:model1:
+
+.. math::
+
+    \tag{242}
+    \varrho\frac{\partial^2 u}{\partial t^2} = T\frac{\partial^2 u}{\partial x^2}
+        
+        {\thinspace .}
+        
+
+Note that the density :math:`\varrho` may change along the string, while the
+tension :math:`T` is a constant. With variable wave velocity :math:`c(x) = \sqrt{T/\varrho(x)}` we can write the wave equation in the more standard form
+
+.. _Eq:wave:app:string:model2:
+
+.. math::
+
+    \tag{243}
+    \frac{\partial^2 u}{\partial t^2} = c^2(x)\frac{\partial^2 u}{\partial x^2}
+        
+        {\thinspace .}
+        
+
+Because of the way :math:`\varrho` enters the equations, the variable wave
+velocity does *not* appear inside the derivatives as in many other
+versions of the wave equation. However, most strings of interest have
+constant :math:`\varrho`.
+
+The end points of a string are fixed so that the displacement
+:math:`u` is zero. The boundary conditions are therefore :math:`u=0`.
+
+Damping
+~~~~~~~
+
+Air resistance and non-elastic effects in the string will contribute
+to reduce the amplitudes of the waves so that the motion dies out
+after some time. This damping effect can be modeled by a term
+:math:`bu_t` on the left-hand side of the equation
+
+.. _Eq:wave:app:string:model1:damping:
+
+.. math::
+
+    \tag{244}
+    \varrho\frac{\partial^2 u}{\partial t^2}
+        + b\frac{\partial u}{\partial t}  =  T\frac{\partial^2 u}{\partial x^2}
+        
+        {\thinspace .}
+        
+
+The parameter :math:`b\geq 0` is small for most wave phenomena, but the
+damping effect may become significant in long time simulations.
+
+External forcing
+~~~~~~~~~~~~~~~~
+
+It is easy to include an external force acting on the string.
+Say we have a vertical force :math:`\tilde f_i\boldsymbol{j}` acting on mass :math:`m_i`.
+This force affects the vertical component of Newton's law
+and gives rise to an extra term :math:`\tilde f(x,t)` on the right-hand side of
+:ref:`(242) <Eq:wave:app:string:model1>`. In the model
+:ref:`(243) <Eq:wave:app:string:model2>` we would add a term
+:math:`f(x,t) = \tilde f(x,y)/\varrho(x)`.
+
+Modeling the tension via springs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We assumed, in the derivation above, that the tension in the string, :math:`T`,
+was constant. It is easy to check this assumption by modeling the
+string segments between the masses as standard springs, where the
+force (tension :math:`T`) is proportional to the elongation of the spring segment.
+Let :math:`k` be the spring constant, and set :math:`T_i=k\Delta \ell` for the
+tension in the spring segment between :math:`x_{i-1}` and :math:`x_i`, where
+:math:`\Delta\ell` is the elongation of this segment from the tension-free state.
+A basic feature of a string is that it has high tension in the
+equilibrium position :math:`u=0`. Let the string segment have an elongation
+:math:`\Delta\ell_0` in the equilibrium position. After deformation of the
+string, the elongation is :math:`\Delta \ell = \Delta \ell_0 + \Delta s_i`:
+:math:`T_i = k(\Delta \ell_0 + \Delta s_i)\approx k(\Delta \ell_0 + \Delta x)`.
+This shows that :math:`T_i` is independent of :math:`i`. Moreover, the extra
+approximate elongation :math:`\Delta x` is very small compared to :math:`\Delta\ell_0`,
+so we may well set :math:`T_i = T = k\Delta\ell_0`. This means that
+the tension is completely dominated by the initial tension determined
+by the tuning of the string. The additional deformations of the
+spring during the vibrations do not introduce significant changes in the
+tension.
+
+.. _wave:app:membrane:
+
+Waves on a membrane
+-------------------
+
+[**hpl 9**: Must write the memberane model. Easiest to use Navier.]
+
+.. _wave:app:elastic:rod:
+
+Elastic waves in a rod
+----------------------
+
+Consider an elastic rod subject to a hammer impact at the end.
+This experiment will give rise to an elastic deformation pulse that travels
+through the rod. A mathematical model for longitudinal waves along
+an elastic rod starts with the general equation for deformations
+and stresses in an elastic medium,
+
+.. _Eq:wave:app:elastic:rod:eqmotion:
+
+.. math::
+
+    \tag{245}
+    \varrho\boldsymbol{u}_{tt} = \nabla\cdot\boldsymbol{\sigma} + \varrho\boldsymbol{f},
+        
+        
+
+where :math:`\varrho` is the density, :math:`\boldsymbol{u}` the displacement field, :math:`\boldsymbol{\sigma}` the
+stress tensor, and :math:`\boldsymbol{f}` body forces. The latter has normally no impact
+on elastic waves.
+
+For stationary deformation of an elastic rod, one has that
+:math:`\sigma_{xx} = Eu_x`, with all other
+stress components being zero.
+The parameter :math:`E` is known as Young's modulus.
+Moreover, we set :math:`\boldsymbol{u} = u(x,t)\boldsymbol{i}` and neglect the radial contraction
+and expansion (where Poisson's ratio is the important parameter).
+Assuming that this simple stress and deformation field
+is a good approximation, :ref:`(245) <Eq:wave:app:elastic:rod:eqmotion>` simplifies
+to
+
+.. _Eq:wave:app:elastic:rod:eq:
+
+.. math::
+
+    \tag{246}
+    \varrho\frac{\partial^2 u}{\partial t^2} = \frac{\partial}{\partial x}
+        \left( E\frac{\partial u}{\partial x}\right)
+        
+        {\thinspace .}
+        
+
+The associated boundary conditions are :math:`u` or :math:`\sigma_{xx}=Eu_x` known,
+typically
+:math:`u=0` for a fixed end and :math:`\sigma_{xx}=0` for a free end.
+
+.. _wave:app:acoustic:seismic:
+
+The acoustic model for seismic waves
+------------------------------------
+
+Seismic waves are used to infer properties of subsurface
+geological structures. The physical model is a heterogeneous
+elastic medium where sound is propagated by small elastic
+vibrations. The general mathematical model for deformations
+in an elastic medium is based on Newton's second law,
+
+.. _Eq:wave:app:acoustic:seismic:eqmotion:
+
+.. math::
+
+    \tag{247}
+    \varrho\boldsymbol{u}_{tt} = \nabla\cdot\boldsymbol{\sigma} + \varrho\boldsymbol{f},
+        
+        
+
+and a constitutive law relating :math:`\boldsymbol{\sigma}` to :math:`\boldsymbol{u}`, often Hooke's
+generalized law,
+
+.. _Eq:wave:app:acoustic:seismic:Hooke:
+
+.. math::
+
+    \tag{248}
+    \boldsymbol{\sigma} = K\nabla\cdot\boldsymbol{u}\, \boldsymbol{I}  + G(\nabla\boldsymbol{u} + (\nabla\boldsymbol{u})^T - \frac{2}{3}\nabla\cdot\boldsymbol{u}\, \boldsymbol{I})
+        
+        {\thinspace .}
+        
+
+Here, :math:`\boldsymbol{u}` is the displacement field, :math:`\boldsymbol{\sigma}` is the stress tensor,
+:math:`\boldsymbol{I}` is the identity tensor,
+:math:`\varrho` is the medium's density, :math:`\boldsymbol{f}` are body forces (such as gravity),
+:math:`K` is the medium's bulk modulus and :math:`G` is the shear modulus.
+All these quantities may vary in space, while :math:`\boldsymbol{u}` and :math:`\boldsymbol{\sigma}` will
+also show significant variation in time during wave motion.
+
+The acoustic approximation to elastic waves arises from a basic
+assumption that the second term in Hooke's law, representing the
+deformations that give rise to shear stresses, can be neglected.
+This assumption can be interpreted as approximating the geological
+medium by a fluid.
+Neglecting also the body forces :math:`\boldsymbol{f}`,
+:ref:`(247) <Eq:wave:app:acoustic:seismic:eqmotion>` becomes
+
+.. _Eq:wave:app:acoustic:seismic:eqmotion2:
 
 .. math::
 
     \tag{249}
-    I(x;I_0,I_a,I_m,I_s) =
-        I_0 + I_a\exp{\left(-\left(\frac{x-I_m}{I_s}\right)^2\right)},
+    \varrho\boldsymbol{u}_{tt} = \nabla (K\nabla\cdot\boldsymbol{u} )
         
         
 
-with :math:`I_m=0` reflecting the location of the peak of :math:`I(x)` and
-:math:`I_s` being a measure of the width of the function :math:`I(x)`
-(:math:`I_s` is :math:`\sqrt{2}` times the standard deviation of the familiar
-normal distribution curve).
+Introducing :math:`p` as a pressure via
 
-Now we extend the problem with a hill at the sea
-bottom, see Figure :ref:`wave:app:fig:1D:tsunami:hill`. The wave speed
-:math:`c=\sqrt{gH(x)} = \sqrt{g(H_0-B(x))}` will then be reduced in the
-shallow water above the hill.
-
-.. _wave:app:fig:1D:tsunami:hill:
-
-.. figure:: earthquake_tsunami_hill.png
-   :width: 800
-
-   *Sketch of an earthquake-generated tsunami passing over a subsea hill*
-
-One possible form of the
-hill is a Gaussian function,
-
-.. _Eq:wave:app:exer:tsunami1D:hill:Gauss:
+.. _Eq:wave:app:acoustic:seismic:eqmotion3:
 
 .. math::
 
     \tag{250}
-    B(x;B_0,B_a,B_m,B_s) =
-        B_0 + B_a\exp{\left(-\left(\frac{x-B_m}{B_s}\right)^2\right)},
+    p=-K\nabla\cdot\boldsymbol{u},
         
         
 
-but many other shapes are also possible, e.g., a "cosine hat" where
+and dividing :ref:`(249) <Eq:wave:app:acoustic:seismic:eqmotion2>` by :math:`\varrho`,
+we get
 
-.. _Eq:wave:app:exer:tsunami1D:hill:cohat:
+.. _Eq:_auto95:
 
 .. math::
 
     \tag{251}
-    B(x; B_0, B_a, B_m, B_s) = B_0 + B_a\cos{\left( \pi\frac{x-B_m}{2B_s}\right)},
+    \boldsymbol{u}_{tt} = -\frac{1}{\varrho}\nabla p
+        {\thinspace .}
         
         
 
-when :math:`x\in [B_m - B_s, B_m + B_s]` while :math:`B=B_0` outside this
-interval.
+Taking the divergence of this equation, using :math:`\nabla\cdot\boldsymbol{u} = -p/K`
+from :ref:`(250) <Eq:wave:app:acoustic:seismic:eqmotion3>`,
+gives the *acoustic approximation to elastic waves*:
 
-Also an abrupt construction may be tried:
-
-.. _Eq:wave:app:exer:tsunami1D:hill:box:
+.. _Eq:wave:app:acoustic:seismic:accoustic1:
 
 .. math::
 
     \tag{252}
-    B(x; B_0, B_a, B_m, B_s) = B_0 + B_a,
+    p_{tt} = K\nabla\cdot\left(\frac{1}{\varrho}\nabla p\right)
+        {\thinspace .}
         
         
 
-for :math:`x\in [B_m - B_s, B_m + B_s]` while :math:`B=B_0` outside this
-interval.
+This is a standard, linear wave equation with variable coefficients.
+It is common to add a source term :math:`s(x,y,z,t)`
+to model the generation of sound waves:
 
-The `wave1D_dn_vc.py <http://tinyurl.com/nm5587k/wave/wave1D/wave1D_dn_vc.py>`__
-program can be used as starting point for the implementation.
-Visualize both the bottom topography and the
-water surface elevation in
-the same plot.
-Allow for a flexible choice of bottom shape:
-:ref:`(250) <Eq:wave:app:exer:tsunami1D:hill:Gauss>`,
-:ref:`(251) <Eq:wave:app:exer:tsunami1D:hill:cohat>`,
-:ref:`(252) <Eq:wave:app:exer:tsunami1D:hill:box>`, or :math:`B(x)=B_0` (flat).
-
-The purpose of this problem is to explore the quality of the numerical
-solution :math:`\eta^n_i` for different shapes of the bottom obstruction.
-The "cosine hat" and the box-shaped hills have abrupt changes in the
-derivative of :math:`H(x)` and are more likely to generate numerical noise
-than the smooth Gaussian shape of the hill. Investigate if this is true.
-Filename: ``tsunami1D_hill``.
-
-.. --- end exercise ---
-
-.. --- begin exercise ---
-
-.. _wave:app:exer:tsunami2D:hill:
-
-Problem 41: Earthquake-generated tsunami over a 3D hill
--------------------------------------------------------
-
-This problem extends :ref:`wave:app:exer:tsunami1D:hill`
-to a three-dimensional wave phenomenon, governed by the 2D PDE
-:ref:`(233) <Eq:wave:app:sw:2D:eta:2ndoeq>`. We assume that the earthquake
-arise from a fault along the line :math:`x=0` in the :math:`xy`-plane so that
-the initial lift of the surface can be taken as :math:`I(x)` in
-:ref:`wave:app:exer:tsunami1D:hill`. That is, a plane wave is
-propagating to the right, but will experience bending because of
-the bottom.
-
-The bottom shape is now a function of :math:`x` and :math:`y`.
-An "elliptic" Gaussian function in two dimensions, with its peak
-at :math:`(B_{mx}, B_{my})`, generalizes
-:ref:`(250) <Eq:wave:app:exer:tsunami1D:hill:Gauss>`:
-
-.. _Eq:wave:app:exer:tsunami2D:hill:Gauss:
+.. _Eq:wave:app:acoustic:seismic:accoustic:
 
 .. math::
 
     \tag{253}
-    B(x;B_0,B_a,B_{mx}, B_{my} ,B_s, b) =
-        B_0 + B_a\exp{\left(-\left(\frac{x-B_{mx}}{B_s}\right)^2
-        -\left(\frac{y-B_{my}}{bB_s}\right)^2\right)},
+    p_{tt} = K\nabla\cdot\left(\frac{1}{\varrho}\nabla p\right) + s
+        {\thinspace .}
         
         
 
-where :math:`b` is a scaling parameter: :math:`b=1` gives a circular Gaussian
-function with circular contour lines, while :math:`b\neq 1` gives an elliptic
-shape with elliptic contour lines.
+A common additional approximation of :ref:`(253) <Eq:wave:app:acoustic:seismic:accoustic>`
+is based on using the chain rule on the right-hand side,
 
-The "cosine hat" :ref:`(251) <Eq:wave:app:exer:tsunami1D:hill:cohat>` can also be
-generalized to
+.. math::
+        
+        K\nabla\cdot\left(\frac{1}{\varrho}\nabla p\right)
+        = \frac{K}{\varrho}\nabla^2 p + K\nabla\left(\frac{1}{\varrho}\right)\cdot
+        \nabla p \approx \frac{K}{\varrho}\nabla^2 p,
+        
 
-.. _Eq:wave:app:exer:tsunami2D:hill:cohat:
+under the assumption that
+the relative spatial gradient :math:`\nabla\varrho^{-1}
+= -\varrho^{-2}\nabla\varrho` is small. This approximation results
+in the simplified equation
+
+.. _Eq:wave:app:acoustic:seismic:accoustic1:const:
 
 .. math::
 
     \tag{254}
-    B(x; B_0, B_a, B_{mx}, B_{my}, B_s) =
-        B_0 + B_a\cos{\left( \pi\frac{x-B_{mx}}{2B_s}\right)}
-        \cos{\left( \pi\frac{y-B_{my}}{2B_s}\right)},
+    p_{tt} = \frac{K}{\varrho}\nabla^2 p + s
+        {\thinspace .}
         
         
 
-when :math:`0 \leq \sqrt{x^2+y^2} \leq B_s` and :math:`B=B_0` outside this circle.
+The acoustic approximations to seismic waves are used for sound
+waves in the ground, and the Earth's surface is then a boundary
+where :math:`p` equals the atmospheric pressure :math:`p_0` such that the
+boundary condition becomes :math:`p=p_0`.
 
-A box-shaped obstacle means that
+Anisotropy
+~~~~~~~~~~
 
-.. _Eq:wave:app:exer:tsunami2D:hill:box:
+Quite often in geological materials, the effective wave velocity
+:math:`c=\sqrt{K/\varrho}` is different in different spatial directions
+because geological layers are compacted, and often twisted, in such a
+way that the properties in the horizontal and vertical direction
+differ. With :math:`z` as the vertical coordinate, we can introduce a
+vertical wave velocity :math:`c_z` and a horizontal wave velocity :math:`c_h`, and
+generalize :ref:`(254) <Eq:wave:app:acoustic:seismic:accoustic1:const>` to
+
+.. _Eq:wave:app:acoustic:seismic:accoustic1a:
 
 .. math::
 
     \tag{255}
-    B(x; B_0, B_a, B_m, B_s, b) = B_0 + B_a
-        
-        
-
-for :math:`x` and :math:`y` inside a rectangle
-
-.. math::
-         B_{mx}-B_s \leq  x \leq B_{mx} + B_s,\quad
-        B_{my}-bB_s \leq  y \leq B_{my} + bB_s,
-        
-
-and :math:`B=B_0` outside this rectangle.
-The :math:`b` parameter controls the rectangular shape of the cross section of
-the box.
-
-Note that the initial condition and the listed bottom shapes are
-symmetric around the line :math:`y=B_{my}`. We therefore expect the surface
-elevation also to be symmetric with respect to this line.  This means
-that we can halve the computational domain by working with
-:math:`[0,L_x]\times [0, B_{my}]`. Along the upper boundary, :math:`y=B_{my}`, we
-must impose the symmetry condition :math:`\partial \eta/\partial n=0`.  Such
-a symmetry condition (:math:`-\eta_x=0`) is also needed at the :math:`x=0`
-boundary because the initial condition has a symmetry here. At the
-lower boundary :math:`y=0` we also set a Neumann condition (which becomes
-:math:`-\eta_y=0`).  The wave motion is to be simulated until the wave hits
-the reflecting boundaries where :math:`\partial\eta/\partial n =\eta_x =0`
-(one can also set :math:`\eta =0` - the particular condition does not matter
-as long as the simulation is stopped before the wave is influenced
-by the boundary condition).
-
-Visualize the surface elevation.  Investigate how different hill shapes,
-different sizes of the water gap above the hill, and different
-resolutions :math:`\Delta x = \Delta y = h` and :math:`\Delta t` influence
-the numerical quality of the solution.
-Filename: ``tsunami2D_hill``.
-
-.. --- end exercise ---
-
-.. --- begin exercise ---
-
-.. _wave:app:exer:tsunami:hill:viz:matplotlib:
-
-Problem 42: Investigate Matplotlib for visualization
-----------------------------------------------------
-
-Play with native Matplotlib code for visualizing 2D
-solutions of the wave equation with variable wave velocity.
-See if there
-are effective ways to visualize both the solution and the wave
-velocity.
-Filename: ``tsunami2D_hill_mpl``.
-
-.. --- end exercise ---
-
-.. --- begin exercise ---
-
-.. _wave:app:exer:tsunami:hill:viz:packages:
-
-Problem 43: Investigate visualization packages
-----------------------------------------------
-
-Create some fancy 3D visualization of the water waves *and* the subsea hill
-in :ref:`wave:app:exer:tsunami2D:hill`.
-Try to make the hill transparent. Possible visualization tools are
-`Mayavi <http://code.enthought.com/projects/mayavi/>`__,
-`Paraview <http://www.paraview.org/>`__, and
-`OpenDX <http://www.opendx.org/>`__.
-Filename: ``tsunami2D_hill_viz``.
-
-.. --- end exercise ---
-
-.. --- begin exercise ---
-
-.. _wave:app:exer:tsunami2D:hill:compiled:
-
-Problem 44: Implement loops in compiled languages
--------------------------------------------------
-
-Extend the program from :ref:`wave:app:exer:tsunami2D:hill` such
-that the loops over mesh points, inside the time loop, are
-implemented in compiled languages.
-Consider implementations in
-Cython, Fortran via ``f2py``, C via Cython, C via ``f2py``, C/C++ via Instant,
-and C/C++ via ``scipy.weave``.
-Perform efficiency experiments to investigate the relative performance
-of the various implementations. It is often advantageous to normalize
-CPU times by the fastest method on a given mesh.
-Filename: ``tsunami2D_hill_compiled``.
-
-.. --- end exercise ---
-
-.. --- begin exercise ---
-
-.. _wave:app:exer:seismic2D:
-
-Exercise 45: Simulate seismic waves in 2D
------------------------------------------
-
-The goal of this exercise is to simulate seismic waves using the
-PDE model :ref:`(217) <Eq:wave:app:acoustic:seismic:accoustic1a>` in a
-2D :math:`xz` domain with geological layers.
-Introduce :math:`m` horizontal layers of thickness :math:`h_i`, :math:`i=0,\ldots,m-1`.
-Inside layer number :math:`i` we have a vertical wave velocity :math:`c_{z,i}`
-and a horizontal wave velocity :math:`c_{h,i}`. Make a program
-for simulating such 2D waves. Test it on a case with 3 layers where
-
-.. math::
-         c_{z,0}=c_{z,1}=c_{z,2},\quad c_{h,0}=c_{h,2},\quad c_{h,1} \ll c_{h,0}
+    p_{tt} = c_z^2 p_{zz} + c_h^2 (p_{xx} + p_{yy}) + s
         {\thinspace .}
         
+        
 
-Let :math:`s` be a localized point source at the middle of the Earth's surface
-(the upper boundary)
-and investigate how the resulting wave travels through the medium.
-The source can be a localized Gaussian peak that oscillates in
-time for some time interval.
-Place the boundaries far enough from the expanding wave so that the
-boundary conditions do not disturb the wave. Then the type of
-boundary condition does not matter, except that we physically need
-to have :math:`p=p_0`, where :math:`p_0` is the atmospheric pressure,
-at the upper boundary.
-Filename: ``seismic2D``.
+.. _wave:app:sound:
 
-.. --- end exercise ---
+Sound waves in liquids and gases
+--------------------------------
 
-.. --- begin exercise ---
+Sound waves arise from pressure and density variations in fluids.
+The starting point of modeling sound waves is the basic
+equations for a compressible fluid where we omit viscous (frictional)
+forces, body forces (gravity, for instance), and temperature effects:
 
-.. _wave:app:exer:acoustics:
-
-Project 46: Model 3D acoustic waves in a room
----------------------------------------------
-
-The equation for sound waves in air is derived in the section :ref:`wave:app:sound`
-and reads
-
-.. math::
-         p_{tt} = c^2\nabla^2 p,
-
-where :math:`p(x,y,z,t)` is the pressure and :math:`c`
-is the speed of sound, taken as 340 m/s.
-
-.. air at a room temperature 20 C, :math:`p_0` is reference pressure in the
-
-.. air, typically 1 atm (approximately :math:`10^5` Pa), and :math:`\varrho_0` is
-
-.. the density of air, taken as :math:`1.225\mbox{ kg/m}^3`.
-
-However, sound is absorbed in the air due to relaxation of molecules
-in the gas. A model for simple relaxation, valid for gases consisting
-only of one type of molecules, is a term :math:`c^2\tau_s\nabla^2 p_t` in
-the PDE, where :math:`\tau_s` is the relaxation time. If we generate sound
-from, e.g., a loudspeaker in the room, this sound source must also
-be added to the governing equation.
-
-The PDE with the mentioned type of damping and source then becomes
-
-.. _Eq:_auto89:
+.. _Eq:wave:app:sound:cont:
 
 .. math::
 
     \tag{256}
-    p_tt = c^2\nabla^p + c^2\tau_s\nabla^2 p_t + f,
+    \varrho_t + \nabla\cdot (\varrho \boldsymbol{u}) = 0,
         
         
 
-where :math:`f(x,y,z,t)` is the source term.
-
-The walls can absorb some sound. A possible model is to have a "wall layer"
-(thicker than the physical wall)
-outside the room where :math:`c` is changed such that some of the wave energy
-is reflected and some is absorbed in the wall. The absorption of
-energy can be taken care of by adding a damping term :math:`bp_t` in
-the equation:
-
-.. _Eq:_auto90:
+.. _Eq:wave:app:sound:Euler:
 
 .. math::
 
     \tag{257}
-    p_tt + bp_t = c^2\nabla^p + c^2\tau_s\nabla^2 p_t + f{\thinspace .}
+    \varrho \boldsymbol{u}_{t} + \varrho \boldsymbol{u}\cdot\nabla\boldsymbol{u} = -\nabla p,
         
         
 
-Typically, :math:`b=0` in the room and :math:`b>0` in the wall. A discontinuity in :math:`b`
-or :math:`c` will give rise to reflections. It can be wise to use a constant
-:math:`c` in the wall to control reflections because of the discontinuity between
-:math:`c` in the air and in the wall, while :math:`b` is gradually increased
-as we go into the wall to avoid reflections because of rapid changes in :math:`b`.
-At the outer boundary of the wall the condition :math:`p=0` or :math:`\partial p/\partial n=0` can be imposed. The waves should anyway be approximately dampened
-to :math:`p=0` this far out in the wall layer.
-
-There are two strategies for discretizing the :math:`\nabla^2 p_t` term: using
-a center difference between times :math:`n+1` and :math:`n-1` (if the equation is
-sampled at level :math:`n`), or use a one-sided difference based on levels :math:`n`
-and :math:`n-1`. The latter has the advantage of not leading to any equation system,
-while the former is second-order accurate as the scheme for the
-simple wave equation :math:`p_tt = c^2\nabla^2 p`. To avoid an equation system,
-go for the one-sided difference such that the overall scheme becomes
-explicit and only of first order in time.
-
-Develop a 3D solver for the specified PDE and introduce a wall layer.
-Test the solver with the method of manufactured solutions. Make some
-demonstrations where the wall reflects and absorbs the waves (reflection
-because of discontinuity in :math:`b` and absorption because of growing :math:`b`).
-Experiment with the impact of the :math:`\tau_s` parameter.
-Filename: ``acoustics``.
-
-.. --- end exercise ---
-
-.. --- begin exercise ---
-
-.. _wave:app:exer:advec1D:
-
-Project 47: Solve a 1D transport equation
------------------------------------------
-
-We shall study the wave equation
-
-.. _Eq:wave:app:exer:advec1D:ueq:
+.. _Eq:wave:app:sound:prho:
 
 .. math::
 
     \tag{258}
-    u_t + cu_x = 0,\quad x\in (0,L],\ t\in (0, T],
+    \varrho = \varrho (p)
+        {\thinspace .}
         
         
 
-with initial condition
+These equations are often referred to as the Euler equations for the motion
+of a fluid. The parameters involved are the density :math:`\varrho`,
+the velocity :math:`\boldsymbol{u}`,
+and the pressure :math:`p`. Equation :ref:`(257) <Eq:wave:app:sound:Euler>` reflects
+mass balance, :ref:`(256) <Eq:wave:app:sound:cont>` is Newton's second law for
+a fluid, with frictional and body forces omitted, and
+:ref:`(258) <Eq:wave:app:sound:prho>` is a constitutive law relating
+density to pressure by thermodynamic considerations.
+A typical model
+for :ref:`(258) <Eq:wave:app:sound:prho>` is the so-called `isentropic relation <http://en.wikipedia.org/wiki/Isentropic_process>`__, valid for
+adiabatic processes where there is no heat transfer:
 
-.. _Eq:_auto91:
+.. _Eq:wave:app:sound:prho:formula:
 
 .. math::
 
     \tag{259}
-    u(x,0) = I(x),\quad x\in [0,L],
+    \varrho = \varrho_0\left(\frac{p}{p_0}\right)^{1/\gamma}
+        {\thinspace .}
         
         
 
-and *one* periodic boundary condition
+Here, :math:`p_0` and :math:`\varrho_0` are reference values for :math:`p` and :math:`\varrho` when the fluid is at rest, and
+:math:`\gamma` is the ratio of specific heat at constant pressure and
+constant volume (:math:`\gamma = 5/3` for air).
 
-.. _Eq:_auto92:
+The key approximation in a mathematical model for sound waves is to
+assume that these waves are small perturbations to the density, pressure,
+and velocity. We therefore write
+
+.. math::
+        
+        p &= p_0 + \hat p,\\ 
+        \varrho &= \varrho_0 + \hat\varrho,\\ 
+        \boldsymbol{u} &= \hat\boldsymbol{u},
+        
+
+where we have decomposed the fields in a constant
+equilibrium value, corresponding
+to :math:`\boldsymbol{u}=0`, and a small perturbation marked with a hat symbol.
+By inserting these decompositions in :ref:`(256) <Eq:wave:app:sound:cont>` and
+:ref:`(257) <Eq:wave:app:sound:Euler>`, neglecting all product terms of small
+perturbations and/or their derivatives, and dropping the hat symbols,
+one gets the following linearized PDE system for the small perturbations in
+density, pressure, and velocity:
+
+.. _Eq:_auto96:
 
 .. math::
 
     \tag{260}
-    u(0,t) = u(L,t)
-        {\thinspace .}
+    \varrho_t + \varrho_0\nabla\cdot\boldsymbol{u} = 0,
         
         
 
-This boundary condition means that what goes out of the domain at :math:`x=L`
-comes in at :math:`x=0`. Roughly speaking,
-we need only one boundary condition because of
-the spatial derivative is of first order only.
-
-**Physical interpretation.**
-The parameter :math:`c` can be constant or variable, :math:`c=c(x)`. The
-equation :ref:`(258) <Eq:wave:app:exer:advec1D:ueq>` arises in *transport*
-problems where a quantity :math:`u`, which could be temperature or
-concentration of some contaminant, is transported with the velocity
-:math:`c` of a fluid. In addition to the transport imposed by "travelling with
-the fluid", :math:`u` may also be transported by diffusion (such as
-heat conduction or Fickian diffusion), but we have in
-the model :math:`u_t + cu_x` assumed that diffusion effects are negligible,
-which they often are.
-
-**a)**
-Show that under the assumption of :math:`a=\hbox{const}`,
-
-.. _Eq:wave:app:exer:advec1D:uexact:
+.. _Eq:_auto97:
 
 .. math::
 
     \tag{261}
-    u(x,t) = I(x - ct)
+    \varrho_0\boldsymbol{u}_t = -\nabla p
+        {\thinspace .}
         
         
 
-fulfills the PDE as well as the initial and boundary condition
-(provided :math:`I(0)=I(L)`).
+Now we can eliminate :math:`\varrho_t` by differentiating the relation :math:`\varrho(p)`,
 
-A widely used numerical scheme for :ref:`(258) <Eq:wave:app:exer:advec1D:ueq>`
-applies a forward difference in time and a backward difference in
-space when :math:`c>0`:
+.. math::
+         \varrho_t = \varrho_0 \frac{1}{\gamma}\left(\frac{p}{p_0}\right)^{1/\gamma-1}
+        \frac{1}{p_0}p_t = \frac{\varrho_0}{\gamma p_0}
+        \left(\frac{p}{p_0}\right)^{1/\gamma-1}p_t
+        {\thinspace .}
+        
 
-.. _Eq:wave:app:exer:advec1D:u:upwind:
+The product term :math:`p^{1/\gamma -1}p_t` can be linearized as
+:math:`p_0^{1/\gamma -1}p_t`, resulting in
+
+.. math::
+         \varrho_t \approx \frac{\varrho_0}{\gamma p_0} p_t
+        {\thinspace .}  
+
+We then get
+
+.. _Eq:wave:app:sound:cont:pert:
 
 .. math::
 
     \tag{262}
-    [D_t^+ u + cD_x^-u = 0]_i^n
+    p_t + \gamma p_0\nabla\cdot\boldsymbol{u} = 0,
         
-        {\thinspace .}
         
 
-For :math:`c<0` we use a forward difference in space: :math:`[cD_x^+u]_i^n`.
-
-**b)**
-Set up a computational algorithm and implement it in a function.
-Assume :math:`a` is constant and positive.
-
-**c)**
-Test implementation by using the remarkable property that
-the numerical solution is exact at the mesh points if
-:math:`\Delta t = c^{-1}\Delta x`.
-
-**d)**
-Make a movie comparing the numerical and exact solution for the
-following two choices of initial conditions:
-
-.. _Eq:wave:app:exer:advec1D:I:sin:
+.. _Eq:wave:app:sound:Euler:pert:
 
 .. math::
 
     \tag{263}
-    I(x) = \left\lbrack\sin\left(\pi\frac{x}{L}\right)\right\rbrack^{2n}
+    \boldsymbol{u}_t = -\frac{1}{\varrho_0}\nabla p,
         
+        {\thinspace .}
         
 
-where :math:`n` is an integer, typically :math:`n=5`,
-and
+Taking the divergence of :ref:`(263) <Eq:wave:app:sound:Euler:pert>` and
+differentiating :ref:`(262) <Eq:wave:app:sound:cont:pert>` with respect to time
+gives the possibility to easily eliminate :math:`\nabla\cdot\boldsymbol{u}_t` and
+arrive at a standard, linear wave equation for :math:`p`:
 
-.. _Eq:wave:app:exer:advec1D:I:gauss:
+.. _Eq:_auto98:
 
 .. math::
 
     \tag{264}
-    I(x) = \exp{\left( -\frac{(x-L/2)^2}{2\sigma2}\right)} {\thinspace .}
+    p_{tt} = c^2\nabla^2 p,
         
         
 
-Choose :math:`\Delta t = c^{-1}\Delta x, 0.9c^{-1}\Delta x, 0.5c^{-1}\Delta x`.
+where :math:`c = \sqrt{\gamma p_0/\varrho_0}` is the speed of sound in the fluid.
 
-**e)**
-The performance of the suggested numerical scheme can be investigated
-by analyzing the numerical dispersion relation.
-Analytically, we have that the *Fourier component*
+.. Challenge: have p_0(z) and varrho_0(z) and gravity - perhaps exercise?
 
-.. math::
-         u(x,t) = e^{i(kx-\omega t)},
+.. _wave:app:spherical:
 
-is a solution of the PDE if :math:`\omega = kc`. This is the *analytical
-dispersion relation*. A complete solution of the PDE can be built by
-adding up such Fourier components with different amplitudes, where the
-initial condition :math:`I` determines the amplitudes. The solution :math:`u` is
-then represented by a Fourier series.
+Spherical waves
+---------------
 
-A similar discrete Fourier component at :math:`(x_p,t_n)` is
+Spherically symmetric three-dimensional
+waves propagate in the radial direction :math:`r` only so that
+:math:`u = u(r,t)`. The fully three-dimensional wave equation
 
 .. math::
-         u_p^q = e^{i(kp\Delta x -\tilde\omega n\Delta t)},
+         \frac{\partial^2u}{\partial t^2}=\nabla\cdot (c^2\nabla u) + f 
 
-where in general :math:`\tilde\omega` is a function of :math:`k`, :math:`\Delta t`, and
-:math:`\Delta x`, and differs from the exact :math:`\omega =kc`.
+then reduces to the spherically symmetric wave equation
 
-Insert the discrete Fourier component in the numerical scheme and
-derive an expression for :math:`\tilde\omega`, i.e.,
-the discrete dispersion relation. Show in particular that if
-the :math:`\Delta t/(c\Delta x)=1`, the discrete solution coincides with the
-exact solution at the mesh points, regardless of the mesh resolution (!).
-Show that if the stability condition
-
-.. math::
-         \frac{\Delta t}{c\Delta x}\leq 1,
-
-the discrete Fourier component cannot grow (i.e., :math:`\tilde\omega` is real).
-
-**f)**
-Write a test for your implementation where you try to use information
-from the numerical dispersion relation.
-
-We shall hereafter assume that :math:`=c(x)>0`.
-
-**g)**
-Set up a computational algorithm for the variable
-coefficient case and implement it in a function.
-Make a test that the function works for constant :math:`a`.
-
-**h)**
-It can be shown that
-for an observer moving with velocity :math:`c(x)`, :math:`u` is constant.
-This can be used to derive an exact solution when :math:`a` varies
-with :math:`x`. Show first that
-
-.. _Eq:wave:app:exer:advec1D:u:avar:sol:
+.. _Eq:_auto99:
 
 .. math::
 
     \tag{265}
-    u(x,t) = f(C(x) - t),
+    \frac{\partial^2u}{\partial t^2}=\frac{1}{r^2}\frac{\partial}{\partial r}
+        \left(c^2(r)r^2\frac{\partial u}{\partial r}\right)
+        + f(r,t),\quad r\in (0,R),\ t>0
+        {\thinspace .}
         
         
 
-where
+One can easily show
+that the function :math:`v(r,t) = ru(r,t)` fulfills a standard wave equation
+in Cartesian coordinates if :math:`c` is constant. To this end, insert :math:`u=v/r` in
 
 .. math::
-         C'(x) = \frac{1}{c(x)},
+         \frac{1}{r^2}\frac{\partial}{\partial r}
+        \left(c^2(r)r^2\frac{\partial u}{\partial r}\right) 
 
-is a solution of :ref:`(258) <Eq:wave:app:exer:advec1D:ueq>` for any
-differentiable function :math:`f`.
-
-.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
-
-**i)**
-Use the initial condition to show that an exact solution is
+to obtain
 
 .. math::
-         u(x,t) = I(C^{-1}(C(x)-t)),
+         r\left(\frac{d c^2}{dr}\frac{\partial v}{\partial r} +
+        c^2\frac{\partial^2 v}{\partial r^2}\right) - \frac{d c^2}{dr}v
+        {\thinspace .}
+        
 
-with :math:`C^{-1}` being the inverse function of :math:`C = \int c^{1}dx`.
-Since :math:`C(x)` is an integral :math:`\int_0^x (1/c)dx`,
-:math:`C(x)` is monotonically increasing and there exists hence an
-inverse function :math:`C^{-1}` with values in :math:`[0,L]`.
+The two terms in the parenthesis can be combined to
 
-.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+.. math::
+         r\frac{\partial}{\partial r}\left( c^2\frac{\partial v}{\partial r}\right),
+        
 
-To compute :ref:`(265) <Eq:wave:app:exer:advec1D:u:avar:sol>` we need to integrate
-:math:`1/c` to obtain :math:`C` and then compute the inverse of :math:`C`.
+which is recognized as the variable-coefficient Laplace operator in
+one Cartesian coordinate. The spherically symmetric wave equation in
+terms of :math:`v(r,t)` now becomes
 
-The inverse function computation can be easily done if we first think
-discretely. Say we have some function :math:`y=g(x)` and seeks its inverse.
-Plotting :math:`(x_i,y_i)`, where :math:`y_i=g(x_i)` for some mesh points :math:`x_i`,
-displays :math:`g` as a function of :math:`x`.
-The inverse function is simply :math:`x` as a function of :math:`g`, i.e., the
-curve with points :math:`(y_i,x_i)`. We can therefore quickly compute points
-at the curve of the inverse function. One way of extending these
-points to a continuous function is to assume a linear variation
-(known as linear interpolation)
-between the points (which actually means to draw straight lines between
-the points, exactly as done by a plotting program).
-
-The function ``wrap2callable`` in ``scitools.std`` can take a set of points
-and return a continuous function that corresponds to linear
-variation between the points. The computation of the inverse of a
-function :math:`g` on :math:`[0,L]` can then be done by
-
-.. code-block:: python
-
-        def inverse(g, domain, resolution=101):
-            x = linspace(domain[0], domain[L], resolution)
-            y = g(x)
-            from scitools.std import wrap2callable
-            g_inverse = wrap2callable((y, x))
-            return g_inverse
-
-To compute :math:`C(x)` we need to integrate :math:`1/c`, which can be done by
-a Trapezoidal rule. Suppose we have computed :math:`C(x_i)` and need
-to compute :math:`C(x_{i+1})`. Using the Trapezoidal rule with :math:`m` subintervals
-over the integration domain :math:`[x_i,x_{i+1}]` gives
-
-.. _Eq:wave:app:exer:advec1D:C:recursion:
+.. _Eq:_auto100:
 
 .. math::
 
     \tag{266}
-    C(x_{i+1}) = C(x_i) + \int_{x_i}^{x_{i+1}} \frac{dx}{c}
-        \approx h\left(
-        \frac{1}{2}\frac{1}{c(x_i)} + \frac{1}{2}\frac{1}{c(x_{i+1})}
-        + \sum_{j=1}^{m-1} \frac{1}{c(x_i + jh)}\right),
+    \frac{\partial^2v}{\partial t^2}=
+        \frac{\partial}{\partial r}
+        \left(c^2(r)\frac{\partial v}{\partial r}\right)
+        -\frac{1}{r}\frac{d c^2}{dr}v + rf(r,t),\quad r\in (0,R),\ t>0
+        {\thinspace .}
         
         
 
-where :math:`h=(x_{i+1}-x_i)/m` is the length of the subintervals used
-for the integral over :math:`[x_i,x_{i+1}]`.
-We observe that :ref:`(266) <Eq:wave:app:exer:advec1D:C:recursion>` is a
-*difference equation* which we can solve by repeatedly
-applying :ref:`(266) <Eq:wave:app:exer:advec1D:C:recursion>` for
-:math:`i=0,1,\ldots,N_x-1` if a mesh :math:`x_0,x_,\ldots,x_{N_x}` is prescribed.
-Note that :math:`C(0)=0`.
+In the case of constant wave velocity :math:`c`, this equation reduces to
+the wave equation in a single Cartesian coordinate called :math:`r`:
 
-**j)**
-Implement a function for computing :math:`C(x_i)` and one for computing
-:math:`C^{-1}(x)` for any :math:`x`. Use these two functions for computing
-the exact solution :math:`I(C^{-1}(C(x)-t))`.
-End up with a function ``u_exact_variable_c(x, n, c, I)`` that returns
-the value of :math:`I(C^{-1}(C(x)-t_n))`.
-
-**k)**
-Make movies showing a comparison of the numerical and exact solutions
-for the two initial conditions
-:ref:`(263) <Eq:wave:app:exer:advec1D:I:sin>` and :ref:`(264) <Eq:wave:app:exer:advec1D:I:gauss>`.
-Choose :math:`\Delta t = \Delta x /\max_{0,L} c(x)`
-and the velocity of the medium as
-
-1. :math:`c(x) = 1 + \epsilon\sin(k\pi x/L)`, :math:`\epsilon <1`,
-
-2. :math:`c(x) = 1 + I(x)`, where :math:`I` is given by
-   :ref:`(263) <Eq:wave:app:exer:advec1D:I:sin>` or :ref:`(264) <Eq:wave:app:exer:advec1D:I:gauss>`.
-
-The PDE :math:`u_t + cu_x=0` expresses that the initial condition :math:`I(x)`
-is transported with velocity :math:`c(x)`.
-
-Filename: ``advec1D``.
-
-.. --- end exercise ---
-
-.. --- begin exercise ---
-
-.. _wave:app:exer:anal:damped:wave1D:
-
-Problem 48: General analytical solution of a 1D damped wave equation
---------------------------------------------------------------------
-
-We consider an initial-boundary value problem for the damped wave equation:
-
-.. math::
-        
-        u_{tt} +bu_t &= c^2 u_{xx}, \quad &x\in (0,L),\ t\in (0,T]\\ 
-        u(0,t) &= 0,\\ 
-        u(L,t) &=0,\\ 
-        u(x, 0) &= I(x),\\ 
-        u_t(x, 0) &= V(x){\thinspace .}
-        
-
-Here, :math:`b\geq 0` and :math:`c` are given constants. The aim is to derive a general
-analytical solution of this problem. Familiarity with the method of
-separation of variables for solving PDEs will be assumed.
-
-**a)**
-Seek a solution on the form :math:`u(x,t)=X(x)T(t)`. Insert this solution in
-the PDE and show that it leads to two differential equations for :math:`X` and :math:`T`:
-
-.. math::
-         T'' + bT' + \lambda T = 0,\quad c^2 X'' +\lambda X = 0, 
-
-with :math:`X(0)=X(L)=0` as boundary conditions, and :math:`\lambda` as a constant
-to be determined.
-
-**b)**
-Show that :math:`X(x)` is on the form
-
-.. math::
-         X_n(x) = C_n\sin kx,\quad k = \frac{n\pi}{L},\quad n=1,2,\ldots
-
-where :math:`C_n` is an arbitrary constant.
-
-.. lambda = k**2
-
-**c)**
-Under the assumption that :math:`(b/2)^2 < k^2`, show that :math:`T(t)` is on
-the form
-
-.. math::
-         T_n(t) = e^{-{\frac{1}{2}}bt}(a_n\cos\omega t + b_n\sin\omega t),
-        \quad\omega = \sqrt{k^2 - \frac{1}{4}b^2},\quad n=1,2,\ldots 
-
-The complete solution is then
-
-.. math::
-         u(x,t) = \sum_{n=1}^\infty \sin kx e^{-{\frac{1}{2}}bt}(
-        A_n\cos\omega t + B_n\sin\omega t),
-
-where the constants :math:`A_n` and :math:`B_n` must be computed from the initial
-conditions.
-
-**d)**
-Derive a formula for :math:`A_n` from :math:`u(x,0)=I(x)` and developing :math:`I(x)` as a sine
-Fourier series on :math:`[0,L]`.
-
-**e)**
-Derive a formula for :math:`B_n` from :math:`u_t(x,0)=V(x)` and developing :math:`V(x)` as
-a sine Fourier series on :math:`[0,L]`.
-
-**f)**
-Calculate :math:`A_n` and :math:`B_n` from vibrations of a string where :math:`V(x)=0` and
-
-.. _Eq:_auto93:
+.. _Eq:wave:app:rsymm:Cart:
 
 .. math::
 
     \tag{267}
-    I(x) = \left\lbrace
-        \begin{array}{ll}
-        ax/x_0, & x < x_0,\\ 
-        a(L-x)/(L-x_0), & \hbox{otherwise}
-        \end{array}\right.
+    \frac{\partial^2v}{\partial t^2}=
+        c^2 \frac{\partial^2 v}{\partial r^2}
+        + rf(r,t),\quad r\in (0,R),\ t>0
+        {\thinspace .}
         
         
 
-**g)**
-Implement the series for :math:`u(x,t)` in a function ``u_series(x, t, tol=1E-10)``,
-where ``tol`` is a tolerance for truncating the series. Simply sum
-the terms until :math:`|a_n|` and :math:`|b_b|` both are less than ``tol``.
+That is, any program for solving the one-dimensional wave equation
+in a Cartesian coordinate system can be used to
+solve :ref:`(267) <Eq:wave:app:rsymm:Cart>`, provided the source term is
+multiplied by the coordinate, and that we divide the Cartesian mesh
+solution by :math:`r` to get the spherically symmetric solution.
+Moreover, if :math:`r=0` is included in the
+domain, spherical symmetry demands that :math:`\partial u/\partial r=0` at
+:math:`r=0`, which means that
 
-**h)**
-What will change in the derivation of the analytical solution if we
-have :math:`u_x(0,t)=u_x(L,t)=0` as boundary conditions?
-And how will you solve the problem with :math:`u(0,t)=0` and :math:`u_x(L,t)=0`?
+.. math::
+         \frac{\partial u}{\partial r} = \frac{1}{r^2}\left(
+        r\frac{\partial v}{\partial r} - v\right) = 0,\quad r=0,
+        
 
-.. sin goes to cos, k changes as cos(kL)=0
+implying :math:`v(0,t)=0` as a necessary condition. For practical applications,
+we exclude :math:`r=0` from the domain and assume that some boundary
+condition is assigned at :math:`r=\epsilon`, for some :math:`\epsilon >0`.
 
-Filename: ``damped_wave1D``.
+.. _wave:app:sw:2D:
 
-.. --- end exercise ---
+The linear shallow water equations
+----------------------------------
 
-.. --- begin exercise ---
+The next example considers water waves whose wavelengths are much
+larger than the depth and whose wave amplitudes are small. This class
+of waves may be generated by catastrophic geophysical events, such as
+earthquakes at the sea bottom, landslides moving into water, or
+underwater slides (or a combination, as earthquakes frequently release
+avalanches of masses). For example, a subsea earthquake will normally
+have an extension of many kilometers but lift the water only a few
+meters. The wave length will have a size dictated by the earthquake
+area, which is much lager than the water depth, and compared to this
+wave length, an amplitude of a few meters is very small.
+The water is essentially a thin film, and mathematically we can average
+the problem in the vertical direction and approximate the 3D
+wave phenomenon by 2D PDEs. Instead of a moving water domain in three
+space dimensions, we get a horizontal 2D domain with an unknown function
+for the surface elevation and the water depth as a variable coefficient
+in the PDEs.
 
-.. _wave:app:exer:anal:damped:wave2D:
+Let :math:`\eta(x,y,t)` be the elevation of
+the water surface, :math:`H(x,y)` the water depth corresponding to a flat
+surface (:math:`\eta =0`), :math:`u(x,y,t)` and :math:`v(x,y,t)` the
+depth-averaged horizontal velocities of the water. Mass and momentum
+balance of the water volume give rise to the PDEs involving these
+quantities:
 
-Problem 49: General analytical solution of a 2D damped wave equation
---------------------------------------------------------------------
+.. _Eq:wave:app:sw:2D:eeq:
 
-Carry out :ref:`wave:app:exer:anal:damped:wave1D` in the 2D
-case: :math:`u_{tt}+bu_t = c^2(u_{xx}+u_{yy})`, where :math:`(x,y)\in (0,L_x)\times
-(0,L_y)`. Assume a solution on the form :math:`u(x,y,t)=X(x)Y(y)T(t)`.
-Filename: ``damped_wave2D``.
+.. math::
 
-.. --- end exercise ---
+    \tag{268}
+    \eta_t = - (Hu)_x - (Hv)_x
+        
+        
+
+.. _Eq:wave:app:sw:2D:ueq:
+
+.. math::
+
+    \tag{269}
+    u_t = -g\eta_x,
+        
+        
+
+.. _Eq:wave:app:sw:2D:veq:
+
+.. math::
+
+    \tag{270}
+    v_t = -g\eta_y,
+        
+        
+
+where :math:`g` is the acceleration of gravity. Equation :ref:`(268) <Eq:wave:app:sw:2D:eeq>`
+corresponds to mass balance while the other two are derived from momentum
+balance (Newton's second law).
+
+The initial conditions associated with
+:ref:`(268) <Eq:wave:app:sw:2D:eeq>`-:ref:`(270) <Eq:wave:app:sw:2D:veq>` are :math:`\eta`, :math:`u`,
+and :math:`v` prescribed at :math:`t=0`. A common condition is to have some water
+elevation :math:`\eta =I(x,y)` and assume that the surface is at rest:
+:math:`u=v=0`. A subsea earthquake usually means a sufficiently rapid motion
+of the bottom and the water volume to say that the bottom
+deformation is mirrored at the water surface as an initial lift :math:`I(x,y)`
+and that :math:`u=v=0`.
+
+Boundary conditions may be :math:`\eta` prescribed for incoming, known
+waves, or zero normal velocity at reflecting boundaries (steep
+mountains, for instance): :math:`un_x + vn_y =0`, where :math:`(n_x,n_y)` is the
+outward unit normal to the boundary.  More sophisticated boundary
+conditions are needed when waves run up at the shore, and at open
+boundaries where we want the waves to leave the computational domain
+undisturbed.
+
+Equations :ref:`(268) <Eq:wave:app:sw:2D:eeq>`, :ref:`(269) <Eq:wave:app:sw:2D:ueq>`, and
+:ref:`(270) <Eq:wave:app:sw:2D:veq>` can be transformed to a standard, linear
+wave equation. First, multiply :ref:`(269) <Eq:wave:app:sw:2D:ueq>` and
+:ref:`(270) <Eq:wave:app:sw:2D:veq>` by :math:`H`, differentiate :ref:`(269) <Eq:wave:app:sw:2D:ueq>`)
+with respect to :math:`x` and :ref:`(270) <Eq:wave:app:sw:2D:veq>` with respect to :math:`y`.
+Second, differentiate :ref:`(268) <Eq:wave:app:sw:2D:eeq>` with respect to :math:`t`
+and use that :math:`(Hu)_{xt}=(Hu_t)_x` and :math:`(Hv)_{yt}=(Hv_t)_y` when :math:`H`
+is independent of :math:`t`. Third, eliminate :math:`(Hu_t)_x` and :math:`(Hv_t)_y`
+with the aid of the other two differentiated equations. These manipulations
+result in a standard, linear wave equation for :math:`\eta`:
+
+.. _Eq:wave:app:sw:2D:eta:2ndoeq:
+
+.. math::
+
+    \tag{271}
+    \eta_{tt} = (gH\eta_x)_x + (gH\eta_y)_y = \nabla\cdot (gH\nabla\eta)
+        
+        {\thinspace .}
+        
+
+In the case we have an initial non-flat water surface at rest, the
+initial conditions become :math:`\eta =I(x,y)` and :math:`\eta_t=0`.
+The latter follows from :ref:`(268) <Eq:wave:app:sw:2D:eeq>` if :math:`u=v=0`, or
+simply from the fact that the vertical velocity of the surface
+is :math:`\eta_t`, which is zero for a surface at rest.
+
+The system :ref:`(268) <Eq:wave:app:sw:2D:eeq>`-:ref:`(270) <Eq:wave:app:sw:2D:veq>`
+can be extended to handle a time-varying bottom topography, which is
+relevant for modeling long waves generated by underwater slides.
+In such cases the water depth function :math:`H` is also a function of :math:`t`,
+due to the moving slide,
+and one must add a time-derivative term :math:`H_t` to the left-hand side
+of :ref:`(268) <Eq:wave:app:sw:2D:eeq>`. A moving bottom is best described by
+introducing :math:`z=H_0` as the still-water level, :math:`z=B(x,y,t)` as
+the time- and space-varying bottom topography, so that :math:`H=H_0-B(x,y,t)`.
+In the elimination of :math:`u` and :math:`v` one may assume that the dependence of
+:math:`H` on :math:`t` can be neglected in the terms :math:`(Hu)_{xt}` and :math:`(Hv)_{yt}`.
+We then end up with a source term in :ref:`(271) <Eq:wave:app:sw:2D:eta:2ndoeq>`,
+because of the moving (accelerating) bottom:
+
+.. _Eq:wave:app:sw:2D:eta:2ndoeq:Ht:
+
+.. math::
+
+    \tag{272}
+    \eta_{tt} = \nabla\cdot(gH\nabla\eta) + B_{tt}
+        
+        {\thinspace .}
+        
+
+The reduction of :ref:`(272) <Eq:wave:app:sw:2D:eta:2ndoeq:Ht>` to 1D, for long waves
+in a straight channel, or for approximately plane waves in the ocean, is
+trivial by assuming no change in :math:`y` direction (:math:`\partial/\partial y=0`):
+
+.. _Eq:wave:app:sw:1D:eta:2ndoeq:Ht:
+
+.. math::
+
+    \tag{273}
+    \eta_{tt} = (gH\eta_x)_x + B_{tt}
+        
+        {\thinspace .}
+        
+
+Wind drag on the surface
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Surface waves are influenced by the drag of the wind, and if the
+wind velocity some meters above the surface is :math:`(U,V)`,
+the wind drag gives contributions
+:math:`C_V\sqrt{U^2+V^2}U` and :math:`C_V\sqrt{U^2+V^2}V` to
+:ref:`(269) <Eq:wave:app:sw:2D:ueq>` and :ref:`(270) <Eq:wave:app:sw:2D:veq>`, respectively,
+on the right-hand sides.
+
+Bottom drag
+~~~~~~~~~~~
+
+The waves will experience a drag from the bottom, often roughly modeled
+by a term similar to the wind drag:
+:math:`C_B\sqrt{u^2+v^2}u` on the right-hand side of :ref:`(269) <Eq:wave:app:sw:2D:ueq>` and
+:math:`C_B\sqrt{u^2+v^2}v` on the right-hand side of :ref:`(270) <Eq:wave:app:sw:2D:veq>`.
+Note that in this case the PDEs :ref:`(269) <Eq:wave:app:sw:2D:ueq>` and
+:ref:`(270) <Eq:wave:app:sw:2D:veq>` become nonlinear and the elimination of :math:`u` and :math:`v`
+to arrive at a 2nd-order wave equation for :math:`\eta` is not possible anymore.
+
+Effect of the Earth's rotation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Long geophysical waves will often be affected by the rotation of the
+Earth because of the Coriolis force. This force gives rise to a
+term :math:`fv` on the right-hand side of :ref:`(269) <Eq:wave:app:sw:2D:ueq>` and
+:math:`-fu` on the right-hand side of :ref:`(270) <Eq:wave:app:sw:2D:veq>`.
+Also in this case one cannot eliminate :math:`u` and :math:`v` to work with a single
+equation for :math:`\eta`. The Coriolis parameter is :math:`f=2\Omega\sin\phi`,
+where :math:`\Omega` is the angular velocity of the earth and :math:`\phi` is
+the latitude.
+
+.. _wave:app:blood:
+
+Waves in blood vessels
+----------------------
+
+The flow of blood in our bodies is basically fluid flow in
+a network of pipes. Unlike rigid pipes, the walls in the
+blood vessels are elastic and will increase their diameter when the
+pressure rises. The elastic forces will then push the wall back
+and accelerate the fluid. This interaction between the flow of blood
+and the deformation of the vessel wall results in waves traveling along
+our blood vessels.
+
+A model for one-dimensional waves along blood vessels can be derived
+from averaging the fluid flow over the cross section of the blood
+vessels. Let :math:`x` be a coordinate along the blood vessel and assume
+that all cross sections are circular, though with different radii :math:`R(x,t)`.
+The main quantities to compute is the cross section
+area :math:`A(x,t)`, the averaged pressure :math:`P(x,t)`, and the total volume
+flux :math:`Q(x,t)`.
+The area of this cross section
+is
+
+.. _Eq:_auto101:
+
+.. math::
+
+    \tag{274}
+    A(x,t) = 2\pi\int_{0}^{R(x,t)} rdr,
+        
+        
+
+Let :math:`v_x(x,t)` be the velocity of blood averaged over
+the cross section at point :math:`x`. The volume flux,
+being the total volume of blood passing a cross section per time unit,
+becomes
+
+.. _Eq:_auto102:
+
+.. math::
+
+    \tag{275}
+    Q(x,t) = A(x,t)v_x(x,t)
+        \thinspace
+        
+        
+
+Mass balance and Newton's second law lead to the PDEs
+
+.. _Eq:wave:app:blood:cont:
+
+.. math::
+
+    \tag{276}
+    \frac{\partial A}{\partial t} + \frac{\partial Q}{\partial x} = 0,
+        
+        
+
+.. _Eq:wave:app:blood:mom:
+
+.. math::
+
+    \tag{277}
+    \frac{\partial Q}{\partial t} +
+        \frac{\gamma+2}{\gamma + 1}
+        \frac{\partial}{\partial x}\left(\frac{Q^2}{A}\right)
+        + \frac{A}{\varrho}\frac{\partial P}{\partial x}
+        = -2\pi (\gamma + 2)\frac{\mu}{\varrho}\frac{Q}{A},
+        
+        
+
+where :math:`\gamma` is a parameter related to the velocity profile,
+:math:`\varrho` is the density of blood, and :math:`\mu` is the dynamic viscosity
+of blood.
+
+We have three unknowns :math:`A`, :math:`Q`, and :math:`P`, and two equations
+:ref:`(276) <Eq:wave:app:blood:cont>` and :ref:`(277) <Eq:wave:app:blood:mom>`.
+A third equation is needed to relate the flow to
+the deformations of the wall. A common form for this equation is
+
+.. _Eq:wave:app:blood:const:
+
+.. math::
+
+    \tag{278}
+    \frac{\partial P}{\partial t} + \frac{1}{C}
+        \frac{\partial Q}{\partial x} =0,
+        
+        
+
+where :math:`C` is the compliance of the wall, given by the constitutive
+relation
+
+.. _Eq:_auto103:
+
+.. math::
+
+    \tag{279}
+    C = \frac{\partial A}{\partial P} + \frac{\partial A}{\partial t},
+        
+        
+
+which requires a relationship between :math:`A` and :math:`P`. One common model
+is to view the vessel wall, locally, as a thin elastic tube subject to an
+internal pressure. This gives the relation
+
+.. math::
+         P=P_0 + \frac{\pi h E}{(1-\nu^2)A_0}(\sqrt{A} - \sqrt{A_0}),
+        
+
+where :math:`P_0` and :math:`A_0` are corresponding reference values when the
+wall is not deformed, :math:`h` is the
+thickness of the wall, and :math:`E` and :math:`\nu` are Young's modulus and
+Poisson's ratio of the elastic material in the wall.
+The derivative becomes
+
+.. _Eq:_auto104:
+
+.. math::
+
+    \tag{280}
+    C = \frac{\partial A}{\partial P} =
+        \frac{2(1-\nu^2)A_0}{\pi h E}\sqrt{A_0} +
+        2\left(\frac{(1-\nu^2)A_0}{\pi h E}\right)^2(P-P_0)
+        {\thinspace .}
+        
+        
+
+Another (nonlinear) deformation model of the wall, which has a better
+fit with experiments, is
+
+.. math::
+         P = P_0\exp{(\beta (A/A_0 - 1))},
+
+where :math:`\beta` is some parameter to be estimated. This law leads to
+
+.. _Eq:_auto105:
+
+.. math::
+
+    \tag{281}
+    C = \frac{\partial A}{\partial P} = \frac{A_0}{\beta P}
+        {\thinspace .}
+        
+        
+
+**Reduction to the standard wave equation.**
+It is not uncommon to neglect the viscous term on the right-hand side of
+:ref:`(277) <Eq:wave:app:blood:mom>` and also the quadratic term
+with :math:`Q^2` on the left-hand side. The reduced equations
+:ref:`(277) <Eq:wave:app:blood:mom>`
+and :ref:`(278) <Eq:wave:app:blood:const>` form a first-order
+linear wave equation system:
+
+.. _Eq:_auto106:
+
+.. math::
+
+    \tag{282}
+    C\frac{\partial P}{\partial t} = - \frac{\partial Q}{\partial x},
+        
+        
+
+.. _Eq:_auto107:
+
+.. math::
+
+    \tag{283}
+    \frac{\partial Q}{\partial t}
+        = - \frac{A}{\varrho}\frac{\partial P}{\partial x}
+        {\thinspace .}
+        
+        
+
+These can be combined into standard 1D wave PDE by differentiating
+the first equation with respect :math:`t` and the second with respect to :math:`x`,
+
+.. math::
+         \frac{\partial}{\partial t}\left( C\frac{\partial P}{\partial t}
+        \right) = \frac{\partial}{\partial x}\left(
+        \frac{A}{\varrho}\frac{\partial P}{\partial x}\right),
+
+which can be approximated by
+
+.. _Eq:_auto108:
+
+.. math::
+
+    \tag{284}
+    \frac{\partial^2 Q}{\partial t^2} = c^2\frac{\partial^2 Q}{\partial x^2},\quad
+        c = \sqrt{\frac{A}{\varrho C}},
+        
+        
+
+where the :math:`A` and :math:`C` in the expression for :math:`c` are taken as constant
+reference values.
+
+.. _wave:app:light:
+
+Electromagnetic waves
+---------------------
+
+Light and radio waves are governed by standard wave equations arising
+from Maxwell's general equations. When there are no charges and
+no currents, as in a vacuum, Maxwell's equations take the form
+
+.. math::
+        
+        \nabla\cdot\pmb{E} &= 0,\\ 
+        \nabla\cdot\pmb{B} &= 0,\\ 
+        \nabla\times\pmb{E} &= -\frac{\partial\pmb{B}}{\partial t},\\ 
+        \nabla\times\pmb{B} &= \mu_0\epsilon_0\frac{\partial\pmb{E}}{\partial t},
+        
+
+where :math:`\epsilon_0=8.854187817620\cdot 10^{-12}` (F/m)
+is the permittivity of free space, also known as the
+electric constant, and :math:`\mu_0=1.2566370614\cdot 10^{-6}` (H/m)
+is the permeability of free space,
+also known as the magnetic constant.
+Taking the curl of the two last equations and using the
+mathematical identity
+
+.. math::
+         \nabla\times (\nabla\times \pmb{E}) = \nabla(\nabla \cdot \pmb{E})
+        - \nabla^2\pmb{E} = - \nabla^2\pmb{E}\hbox{ when }\nabla\cdot\pmb{E}=0,
+        
+
+gives the wave equation governing the electric and magnetic field:
+
+.. _Eq:_auto109:
+
+.. math::
+
+    \tag{285}
+    \frac{\partial^2\pmb{E}}{\partial t^2} =
+        c^2\nabla^2\pmb{E},
+        
+        
+
+.. _Eq:_auto110:
+
+.. math::
+
+    \tag{286}
+    \frac{\partial^2\pmb{B}}{\partial t^2} =
+        c^2\nabla^2\pmb{B},
+        
+        
+
+with :math:`c=1/\sqrt{\mu_0\epsilon_0}` as the velocity of light.
+Each component of :math:`\pmb{E}` and :math:`\pmb{B}` fulfills a wave equation
+and can hence be solved independently.
 

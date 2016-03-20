@@ -51,14 +51,14 @@ doconce replace 'newcommand{\I}' 'renewcommand{\I}' newcommands_keep.tex
 # TASKS: generate book with solutions, also in the html version
 # Make pdfnup with two-pages per sheet
 
-opt1="CHAPTER=$CHAPTER BOOK=$BOOK APPENDIX=$APPENDIX $encoding"
+opt1="CHAPTER=$CHAPTER BOOK=$BOOK APPENDIX=$APPENDIX DOCUMENT=book $encoding FEM_BOOK=False"
 opt2="--without_solutions --without_answers"
 opt2=
 devices="screen paper"
 
 function compile {
     options="$@"
-system doconce format pdflatex $name $opt1 --device=$device --exercise_numbering=chapter   --latex_style=Springer_T4 --latex_title_layout=titlepage --latex_list_of_exercises=loe --latex_admon=mdfbox --latex_admon_color=1,1,1 --latex_table_format=left --latex_admon_title_no_period --latex_no_program_footnotelink --latex_copyright=titlepages "--latex_code_style=default:lst[style=blue1_bluegreen]@pypro:lst[style=blue1bar_bluegreen]@dat:lst[style=gray]@sys:vrb[frame=lines,label=\\fbox{{\tiny Terminal}},framesep=2.5mm,framerule=0.7pt,fontsize=\fontsize{9pt}{9pt}]" $options
+system doconce format pdflatex $name $opt1 --exercise_numbering=chapter   --latex_style=Springer_T4 --latex_title_layout=titlepage --latex_list_of_exercises=loe --latex_admon=mdfbox --latex_admon_color=1,1,1 --latex_table_format=left --latex_admon_title_no_period --latex_no_program_footnotelink --latex_copyright=titlepages "--latex_code_style=default:lst[style=blue1_bluegreen]@pypro:lst[style=blue1bar_bluegreen]@dat:lst[style=gray]@sys:vrb[frame=lines,label=\\fbox{{\tiny Terminal}},framesep=2.5mm,framerule=0.7pt,fontsize=\fontsize{9pt}{9pt}]" $options
 
 # Auto edits
 # With t4/svmono linewidth has some too large value before \mymainmatter

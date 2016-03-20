@@ -1,2306 +1,1672 @@
 .. !split
 
-.. _ch:wave:
+.. mech systems: horizontal, vertical/hanging
 
-Wave equations
-%%%%%%%%%%%%%%
+.. box with mu*M*g*v/|v| friction force, treat nonlinearity with geometric mean
 
-A very wide range of physical processes lead to wave motion, where
-signals are propagated through a medium in space and time, normally
-with little or no permanent movement of the medium itself.
-The shape of the signals may undergo changes as they travel through
-matter, but usually not so much that the signals cannot be recognized
-at some later point in space and time.
-Many types of wave motion can be described by the equation
-:math:`u_{tt}=\nabla\cdot (c^2\nabla u) + f`, which we will solve
-in the forthcoming text by finite difference methods.
+.. pendulum
 
-.. _wave:string:
+.. elastic pendulum
 
-Simulation of waves on a string
-===============================
+.. bouncing ball (just move text from exercise)
 
-.. index::
-   single: waves; on a string
+.. bumpy road
 
-.. index::
-   single: wave equation; 1D
+.. moored ship
 
-We begin our study of wave equations by simulating one-dimensional
-waves on a string, say on a guitar or violin.
-Let the string in the deformed state
-coincide with the interval
-:math:`[0,L]` on the :math:`x` axis, and let :math:`u(x,t)` be the displacement at
-time :math:`t` in the :math:`y` direction of a point initially at :math:`x`.
-The displacement function :math:`u` is governed by the mathematical model
+.. electrical circuits, see ode2.p.tex
 
-.. _Eq:wave:pde1:
+.. 0D blood flow?
+
+.. waves: 1D blood flow
+
+.. general particle laws and velocity verlet, make exercises
+
+.. see `<http://en.wikipedia.org/wiki/Velocity_Verlet>`_
+
+.. _vib:app:
+
+Applications of vibration models
+================================
+
+The following text derives some of the most well-known physical problems
+that lead to
+second-order ODE models of the type addressed in this book.
+We consider a simple spring-mass system; thereafter extended with
+nonlinear spring, damping, and external excitation; a spring-mass system
+with sliding friction; a simple and a physical (classical) pendulum;
+and an elastic pendulum.
+
+.. _vib:app:mass_spring:
+
+Oscillating mass attached to a spring
+-------------------------------------
+
+.. _vib:app:mass_spring:fig:
+
+.. figure:: oscillator_spring.png
+   :width: 500
+
+   *Simple oscillating mass*
+
+The most fundamental mechanical vibration system is depicted in Figure
+:ref:`vib:app:mass_spring:fig`. A body with mass :math:`m` is attached to a
+spring and can move horizontally without friction (in the wheels). The
+position of the body is given by the vector :math:`\boldsymbol{r}(t) = u(t)\boldsymbol{i}`, where
+:math:`\boldsymbol{i}` is a unit vector in :math:`x` direction.
+There is
+only one force acting on the body: a spring force :math:`\boldsymbol{F}_s =-ku\boldsymbol{i}`, where
+:math:`k` is a constant. The point :math:`x=0`, where :math:`u=0`, must therefore
+correspond to the body's position
+where the spring is neither extended nor compressed, so the force
+vanishes.
+
+The basic physical principle that governs the motion of the body is
+Newton's second law of motion: :math:`\boldsymbol{F}=m\boldsymbol{a}`, where
+:math:`\boldsymbol{F}` is the sum of forces on the body, :math:`m` is its mass, and :math:`\boldsymbol{a}=\ddot\boldsymbol{r}`
+is the acceleration. We use the dot for differentiation with respect
+to time, which is
+usual in mechanics. Newton's second law simplifies here
+to :math:`-\boldsymbol{F}_s=m\ddot u\boldsymbol{i}`, which translates to
 
 .. math::
+         -ku = m\ddot u{\thinspace .}
 
-    \tag{81}
-    \frac{\partial^2 u}{\partial t^2} =
-        c^2 \frac{\partial^2 u}{\partial x^2}, \quad x\in (0,L),\ t\in (0,T]
-        
-        
+Two initial conditions are needed: :math:`u(0)=I`, :math:`\dot u(0)=V`.
+The ODE problem is normally written as
 
-.. _Eq:wave:pde1:ic:u:
+.. _Eq:vib:app:mass_spring:eqx:
 
 .. math::
 
     \tag{82}
-    u(x,0) = I(x), \quad x\in [0,L]
+    m\ddot u + ku = 0,\quad u(0)=I,\ \dot u(0)=V{\thinspace .}
         
         
 
-.. _Eq:wave:pde1:ic:ut:
+It is
+not uncommon to divide by :math:`m`
+and introduce the frequency :math:`\omega = \sqrt{k/m}`:
+
+.. _Eq:vib:app:mass_spring:equ:
 
 .. math::
 
     \tag{83}
-    \frac{\partial}{\partial t}u(x,0) = 0, \quad x\in [0,L]
+    \ddot u + \omega^2 u = 0,\quad u(0)=I,\  \dot u(0)=V{\thinspace .}
         
         
 
-.. _Eq:wave:pde1:bc:0:
+This is the model problem in the first part of this chapter, with the
+small difference that we write the time derivative of :math:`u` with a dot
+above, while we used :math:`u^{\prime}` and :math:`u^{\prime\prime}` in previous
+parts of the book.
+
+.. index:: DOF (degree of freedom)
+
+Since only one scalar mathematical quantity, :math:`u(t)`, describes the
+complete motion, we say that the mechanical system has one degree of freedom
+(DOF).
+
+Scaling          (1)
+~~~~~~~~~~~~~~~~~~~~
+
+For numerical simulations it is very convenient to scale :ref:`(83) <Eq:vib:app:mass_spring:equ>` and thereby get rid of the problem of finding relevant values
+for all the parameters :math:`m`, :math:`k`, :math:`I`, and :math:`V`.
+Since the amplitude of the oscillations are dictated by :math:`I` and :math:`V`
+(or more precisely, :math:`V/\omega`), we scale :math:`u` by :math:`I` (or :math:`V/omega` if
+:math:`I=0`):
+
+.. math::
+         \bar u = \frac{u}{I},\quad \bar t = \frac{t}{t_c}{\thinspace .}
+
+The time scale :math:`t_c` is normally chosen as the inverse period :math:`2\pi/\omega` or
+angular frequency :math:`1/\omega`, most often as :math:`t_c=1/\omega`.
+Inserting the dimensionless quantities :math:`\bar u` and :math:`\bar t` in
+:ref:`(83) <Eq:vib:app:mass_spring:equ>` results in the scaled problem
+
+.. math::
+         \frac{d^2\bar u}{d\bar t^2} + \bar u = 0,\quad \bar u(0)=1,\ \frac{\bar u}{\bar t}(0)=\beta = \frac{V}{I\omega},
+
+where :math:`\beta` is a dimensionless number. Any motion that starts from rest
+(:math:`V=0`) is free of parameters in the scaled model!
+
+The physics
+~~~~~~~~~~~
+
+The typical physics of the system in Figure :ref:`vib:app:mass_spring:fig` can
+be described as follows.
+Initially, we displace the body to some position :math:`I`, say at rest
+(:math:`V=0`). After releasing the body, the spring, which is extended, will
+act with a force :math:`-kI\boldsymbol{i}` and pull the body to the left. This force
+causes an acceleration and therefore increases velocity. The body passes
+the point :math:`x=0`, where :math:`u=0`,
+and the spring will then be compressed and act with a
+force :math:`kx\boldsymbol{i}` against the motion and cause retardation. At some point,
+the motion stops and the velocity is zero, before the spring force
+:math:`kx\boldsymbol{i}` accelerates the body in positive direction. The result is that
+the body accelerates back and forth. As long as there is no friction
+forces to damp the motion, the oscillations will continue forever.
+
+.. _vib:app:mass_gen:
+
+General mechanical vibrating system
+-----------------------------------
+
+.. _vib:app:mass_gen:fig:
+
+.. figure:: oscillator_general.png
+   :width: 500
+
+   *General oscillating system*
+
+The mechanical system in Figure :ref:`vib:app:mass_spring:fig` can easily be
+extended to the more general system in Figure :ref:`vib:app:mass_gen:fig`,
+where the body is attached to a spring and a dashpot, and also subject
+to an environmental force :math:`F(t)\boldsymbol{i}`. The system has still only one
+degree of freedom since the body can only move back and forth parallel to
+the :math:`x` axis. The spring force was linear, :math:`\boldsymbol{F}_s=-ku\boldsymbol{i}`,
+in the section :ref:`vib:app:mass_spring`, but in more general cases it can
+depend nonlinearly on the position. We therefore set :math:`\boldsymbol{F}_s=s(u)\boldsymbol{i}`.
+The dashpot, which acts
+as a damper, results in a force :math:`\boldsymbol{F}_d` that depends on the body's
+velocity :math:`\dot u` and that always acts against the motion.
+The mathematical model of the force is written :math:`\boldsymbol{F}_d =f(\dot u)\boldsymbol{i}`.
+A positive :math:`\dot u` must result in a force acting in the positive :math:`x`
+direction.
+Finally, we have the external environmental force :math:`\boldsymbol{F}_e = F(t)\boldsymbol{i}`.
+
+Newton's second law of motion now involves three forces:
+
+.. math::
+         F(t)\boldsymbol{i} + f(\dot u)ii - s(u)\boldsymbol{i} = m\ddot u \boldsymbol{i}{\thinspace .}
+
+The common mathematical form of the ODE problem is
+
+.. _Eq:vib:app:mass_gen:equ:
 
 .. math::
 
     \tag{84}
-    u(0,t)  = 0, \quad  t\in (0,T]
+    m\ddot u + f(\dot u) + s(u) = F(t),\quad u(0)=I,\ \dot u(0)=V{\thinspace .}
         
         
 
-.. _Eq:wave:pde1:bc:L:
+This is the generalized problem treated in the last part of the
+present chapter, but with prime denoting the derivative instead of the dot.
+
+The most common models for the spring and dashpot are linear: :math:`f(\dot u)
+=b\dot u` with a constant :math:`b\geq 0`, and :math:`s(u)=ku` for a constant :math:`k`.
+
+Scaling          (2)
+~~~~~~~~~~~~~~~~~~~~
+
+A specific scaling requires specific choices of :math:`f`, :math:`s`, and :math:`F`.
+Suppose we have
+
+.. math::
+         f(\dot u) = b|\dot u|\dot u,\quad s(u)=ku,\quad F(t)=A\sin(\phi t){\thinspace .}
+
+We introduce dimensionless variables as usual, :math:`\bar u = u/u_c` and
+:math:`\bar t = t/t_c`. The scale :math:`u_c` depends both on the initial conditions
+and :math:`F`, but as time grows, the effect of the initial conditions die out
+and :math:`F` will drive the motion. Inserting :math:`\bar u` and :math:`\bar t` in the
+ODE gives
+
+.. math::
+         m\frac{u_c}{t_c^2}\frac{d^2\bar u}{d\bar t^2}
+        + b\frac{u_c^2}{t_c^2}\left\vert\frac{d\bar u}{d\bar t}\right\vert
+        \frac{d\bar u}{d\bar t} + ku_c\bar u = A\sin(\phi t_c\bar t){\thinspace .}
+
+We divide by :math:`u_c/t_c^2` and demand the coefficients of the
+:math:`\bar u` and the forcing term from :math:`F(t)` to have unit coefficients.
+This leads to the scales
+
+.. math::
+         t_c = \sqrt{\frac{m}{k}},\quad u_c = \frac{A}{k}{\thinspace .}
+
+The scaled ODE becomes
+
+.. _Eq:vib:app:mass_gen:scaled:
 
 .. math::
 
     \tag{85}
-    u(L,t)  = 0, \quad  t\in (0,T]
+    \frac{d^2\bar u}{d\bar t^2}
+        + 2\beta\left\vert\frac{d\bar u}{d\bar t}\right\vert
+        \frac{d\bar u}{d\bar t} + \bar u = \sin(\gamma\bar t),
         
         
 
-The constant :math:`c` and the function :math:`I(x)` must be prescribed.
+where there are two dimensionless numbers:
 
-Equation :ref:`(81) <Eq:wave:pde1>` is known as the one-dimensional
-*wave equation*. Since this PDE contains a second-order derivative
-in time, we need *two initial conditions*. The condition
-:ref:`(82) <Eq:wave:pde1:ic:u>` specifies
-the initial shape of the string, :math:`I(x)`, and
-:ref:`(83) <Eq:wave:pde1:ic:ut>` expresses that the initial velocity of the
-string is zero. In addition, PDEs need *boundary conditions*, give here as
-:ref:`(84) <Eq:wave:pde1:bc:0>` and :ref:`(85) <Eq:wave:pde1:bc:L>`. These two
-conditions specify that
-the string is fixed at the ends, i.e., that the displacement :math:`u` is zero.
+.. math::
+         \beta = \frac{Ab}{2mk},\quad\gamma =\phi\sqrt{\frac{m}{k}}{\thinspace .}
 
-The solution :math:`u(x,t)` varies in space and time and describes waves that
-move with velocity :math:`c` to the left and right.
+The :math:`\beta` number measures the size of the damping term (relative to unity)
+and is assumed to be small, basically because :math:`b` is small. The :math:`\phi`
+number is the ratio of the time scale of free vibrations and the time scale
+of the forcing.
+The scaled initial conditions have two other dimensionless numbers
+as values:
+
+.. math::
+         \bar u(0) = \frac{Ik}{A},\quad \frac{d\bar u}{d\bar t}=\frac{t_c}{u_c}V = \frac{V}{A}\sqrt{mk}{\thinspace .}
+
+.. _vib:app:mass_sliding:
+
+A sliding mass attached to a spring
+-----------------------------------
+
+Consider a variant of the oscillating body in the section :ref:`vib:app:mass_spring`
+and Figure :ref:`vib:app:mass_spring:fig`: the body rests on a flat
+surface, and there is sliding friction between the body and the surface.
+Figure :ref:`vib:app:mass_sliding:fig` depicts the problem.
+
+.. _vib:app:mass_sliding:fig:
+
+.. figure:: oscillator_sliding.png
+   :width: 500
+
+   *Sketch of a body sliding on a surface*
+
+The body is attached to a spring with spring force :math:`-s(u)\boldsymbol{i}`.
+The friction force is proportional to the normal force on the surface,
+:math:`-mg\boldsymbol{j}`, and given by :math:`-f(\dot u)\boldsymbol{i}`, where
+
+.. math::
+         f(\dot u) = \left\lbrace\begin{array}{ll}
+        -\mu mg,& \dot u < 0,\\ 
+        \mu mg, & \dot u > 0,\\ 
+        0,      & \dot u=0
+        \end{array}\right.
+
+Here, :math:`\mu` is a friction coefficient. With the signum function
+
+.. math::
+         \mbox{sign(x)} = \left\lbrace\begin{array}{ll}
+        -1,& x < 0,\\ 
+        1, & x > 0,\\ 
+        0, & x=0
+        \end{array}\right.
+
+we can simply write :math:`f(\dot u) = \mu mg\,\hbox{sign}(\dot u)`
+(the sign function is implemented by ``numpy.sign``).
+
+The equation of motion becomes
+
+.. _Eq:vib:app:mass_sliding:equ:
+
+.. math::
+
+    \tag{86}
+    m\ddot u + \mu mg\hbox{sign}(\dot u) + s(u) = 0,\quad u(0)=I,\ \dot u(0)=V{\thinspace .}
+        
+        
+
+.. _vib:app:washmach:
+
+A jumping washing machine
+-------------------------
+
+A washing machine is placed on four springs with efficient dampers.
+If the machine contains just a few clothes, the circular motion of
+the machine induces a sinusoidal external force and the machine will
+jump up and down if the frequency of the external force is close to
+the natural frequency of the machine and its spring-damper system.
+
+[**hpl 6**: Not finished. This is a good example on resonance.]
+
+.. _vib:app:pendulum:
+
+Motion of a pendulum
+--------------------
+
+Simple pendulum
+~~~~~~~~~~~~~~~
+
+A classical problem in mechanics is the motion of a pendulum. We first
+consider a `simple pendulum <https://en.wikipedia.org/wiki/Pendulum>`__ (sometimes also called a
+mathematical pendulum): a small body of mass :math:`m` is
+attached to a massless wire and can oscillate back and forth in the
+gravity field. Figure :ref:`vib:app:pendulum:fig_problem` shows a sketch
+of the problem.
+
+.. _vib:app:pendulum:fig_problem:
+
+.. figure:: pendulum_problem.png
+   :width: 300
+
+   *Sketch of a simple pendulum*
+
+The motion is governed by Newton's 2nd law, so we need to find
+expressions for the forces and the acceleration. Three forces on the
+body are considered: an unknown force :math:`S` from the wire, the gravity
+force :math:`mg`, and an air resistance force, :math:`\frac{1}{2}C_D\varrho A|v|v`,
+hereafter called the drag force, directed against the velocity
+of the body. Here, :math:`C_D` is a drag coefficient, :math:`\varrho` is the
+density of air, :math:`A` is the cross section area of the body, and :math:`v` is
+the magnitude of the velocity.
+
+We introduce a coordinate system with polar coordinates and unit
+vectors :math:`{\boldsymbol{i}_r}` and :math:`\boldsymbol{i}_{\theta}` as shown in Figure
+:ref:`vib:app:pendulum:fig_forces`.  The position of the center of mass
+of the body is
+
+.. math::
+         \boldsymbol{r}(t) = x_0\boldsymbol{i} + y_0\boldsymbol{j} + L{\boldsymbol{i}_r},
+
+where :math:`\boldsymbol{i}` and :math:`\boldsymbol{j}` are unit vectors in the corresponding Cartesian
+coordinate system in the :math:`x` and :math:`y` directions, respectively. We have
+that :math:`{\boldsymbol{i}_r} = \cos\theta\boldsymbol{i} +\sin\theta\boldsymbol{j}`.
+
+.. _vib:app:pendulum:fig_forces:
+
+.. figure:: pendulum_forces.png
+   :width: 500
+
+   *Forces acting on a simple pendulum*
+
+The forces are now expressed as follows.
+
+ * Wire force: :math:`-S{\boldsymbol{i}_r}`
+
+ * Gravity force: :math:`-mg\boldsymbol{j} = mg(-\sin\theta\,\boldsymbol{i}_{\theta} + \cos\theta\,{\boldsymbol{i}_r})`
+
+ * Drag force: :math:`-\frac{1}{2}C_D\varrho A |v|v\,\boldsymbol{i}_{\theta}`
+
+Since a positive velocity means movement in the direction of :math:`\boldsymbol{i}_{\theta}`,
+the drag force must be directed along :math:`-\boldsymbol{i}_{\theta}` so it works against the
+motion.
+
+The velocity of the body is found from :math:`\boldsymbol{r}`:
+
+.. math::
+         \boldsymbol{v}(t) = \dot\boldsymbol{r} (t) = \frac{d}{d\theta}(x_0\boldsymbol{i} + y_0\boldsymbol{j} + L{\boldsymbol{i}_r})\frac{d\theta}{dt} = L\dot\theta\boldsymbol{i}_{\theta},
+
+since :math:`\frac{d}{d\theta}{\boldsymbol{i}_r} = \boldsymbol{i}_{\theta}`. It follows that :math:`v=|\boldsymbol{v}|=L\dot\theta`.
+The acceleration is
+
+.. math::
+         \boldsymbol{a}(t) = \dot\boldsymbol{v}(r) = \frac{d}{dt}(L\dot\theta\boldsymbol{i}_{\theta})
+        = L\ddot\theta\boldsymbol{i}_{\theta} + L\dot\theta\frac{d\boldsymbol{i}_{\theta}}{d\theta}\dot\theta =
+        = L\ddot\theta\boldsymbol{i}_{\theta} - L\dot\theta^2{\boldsymbol{i}_r},
+
+since :math:`\frac{d}{d\theta}\boldsymbol{i}_{\theta} = -{\boldsymbol{i}_r}`.
+
+Newton's 2nd law of motion becomes
+
+.. math::
+         -S{\boldsymbol{i}_r} + mg(-\sin\theta\,\boldsymbol{i}_{\theta} + \cos\theta\,{\boldsymbol{i}_r}) -
+        \frac{1}{2}C_D\varrho AL^2|\dot\theta|\dot\theta\,\boldsymbol{i}_{\theta}
+        = mL\ddot\theta\dot\theta\,\boldsymbol{i}_{\theta} - L\dot\theta^2{\boldsymbol{i}_r},
+
+leading to two component equations
+
+.. _Eq:vib:app:pendulum:ir:
+
+.. math::
+
+    \tag{87}
+    -S + mg\cos\theta = -L\dot\theta^2,
+        
+        
+
+.. _Eq:vib:app:pendulum:ith:
+
+.. math::
+
+    \tag{88}
+    -mg\sin\theta - \frac{1}{2}C_D\varrho AL^2|\dot\theta|\dot\theta
+        = mL\ddot\theta{\thinspace .}
+        
+        
+
+From :ref:`(87) <Eq:vib:app:pendulum:ir>` we get an expression for
+:math:`S=mg\cos\theta + L\dot\theta^2`, and from :ref:`(88) <Eq:vib:app:pendulum:ith>`
+we get a differential equation for the angle :math:`\theta(t)`. This latter
+equation is ordered as
+
+.. _Eq:vib:app:pendulum:thetaeq:
+
+.. math::
+
+    \tag{89}
+    m\ddot\theta + \frac{1}{2}C_D\varrho AL|\dot\theta|\dot\theta
+        + \frac{mg}{L}\sin\theta = 0{\thinspace .}
+        
+        
+
+Two initial conditions are needed: :math:`\theta=\Theta` and :math:`\dot\theta = \Omega`.
+Normally, the pendulum motion is started from rest, which means :math:`\Omega =0`.
+
+Equation :ref:`(89) <Eq:vib:app:pendulum:thetaeq>` fits the general model
+used in :ref:`(59) <Eq:vib:ode2>` in the section :ref:`vib:model2` if we define
+:math:`u=\theta`, :math:`f(u^{\prime}) = \frac{1}{2}C_D\varrho AL|\dot u|\dot u`,
+:math:`s(u) = L^{-1}mg\sin u`, and :math:`F=0`.
+If the body is a sphere with radius :math:`R`, we can take :math:`C_D=0.4` and :math:`A=\pi R^2`.
+:ref:`vib:exer:pendulum_simple` asks you to scale the equations
+and carry out specific simulations with this model.
+
+Physical pendulum
+~~~~~~~~~~~~~~~~~
+
+The motion of a compound or physical pendulum where the wire is a rod with
+mass, can be modeled very similarly. The governing equation is
+:math:`I\boldsymbol{a} = \boldsymbol{T}` where :math:`I` is the moment of inertia of the entire body about
+the point :math:`(x_0,y_0)`, and :math:`\boldsymbol{T}` is the sum of moments of the forces
+with respect to :math:`(x_0,y_0)`. The vector equation reads
+
+.. math::
+         \boldsymbol{r}\times(-S{\boldsymbol{i}_r} + mg(-\sin\theta\boldsymbol{i}_{\theta} + \cos\theta{\boldsymbol{i}_r}) -
+        \frac{1}{2}C_D\varrho AL^2|\dot\theta|\dot\theta\boldsymbol{i}_{\theta})
+        = I(L\ddot\theta\dot\theta\boldsymbol{i}_{\theta} - L\dot\theta^2{\boldsymbol{i}_r}){\thinspace .}
+
+The component equation in :math:`\boldsymbol{i}_{\theta}` direction gives the equation of motion
+for :math:`\theta(t)`:
+
+.. _Eq:vib:app:pendulum:thetaeq_physical:
+
+.. math::
+
+    \tag{90}
+    I\ddot\theta + \frac{1}{2}C_D\varrho AL^3|\dot\theta|\dot\theta
+        + mgL\sin\theta = 0{\thinspace .}
+        
+        
+
+.. _vib:app:pendulum_bodydia:
+
+Dynamic free body diagram during pendulum motion
+------------------------------------------------
+
+Usually one plots the mathematical quantities as functions of time to
+visualize the solution of ODE models.  :ref:`vib:exer:pendulum_simple` asks you to do this for the motion of a
+pendulum in the previous section.  However, sometimes it is more
+instructive to look at other types of visualizations. For example, we
+have the pendulum and the free body diagram in Figures
+:ref:`vib:app:pendulum:fig_problem` and
+:ref:`vib:app:pendulum:fig_forces`. We may think of these figures as
+animations in time instead. Especially the free body diagram will show both the
+motion of the pendulum *and* the size of the forces during the motion.
+The present section exemplifies how to make such a dynamic body
+diagram.
 
 .. raw:: html
         
         <div>
         <video  loop controls width='640' height='365' preload='none'>
-            <source src='mov-wave/guitar_C0.8/movie.webm' type='video/webm; codecs="vp8, vorbis"'>
-            <source src='mov-wave/guitar_C0.8/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+            <source src='https://github.com/hplgit/pysketcher/raw/master/doc/pub/tutorial/mov-tut/pendulum/movie.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+            <source src='https://github.com/hplgit/pysketcher/raw/master/doc/pub/tutorial/mov-tut/pendulum/movie.webm' type='video/webm; codecs="vp8, vorbis"'>
+            <source src='https://github.com/hplgit/pysketcher/raw/master/doc/pub/tutorial/mov-tut/pendulum/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
         </video>
         </div>
-        <p><em>Example of waves on a string.</em></p>
+        <p><em>The drag force is magnified 5 times!</em></p>
         
-        <!-- Issue warning if only .ogg or .webm movie in a Safari browser -->
+        <!-- Issue warning if in a Safari browser -->
         <script language="javascript">
         if (!!(window.safari)) {
           document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
         </script>
         
 
-Sometimes we will use a more compact notation for the partial derivatives
-to save space:
+Dynamic physical sketches, coupled to the numerical solution of
+differential equations, requires a program to produce a sketch for
+the situation at each time level.
+`Pysketcher <https://github.com/hplgit/pysketcher>`__ is such a tool.
+In fact (and not surprising!) Figures :ref:`vib:app:pendulum:fig_problem` and
+:ref:`vib:app:pendulum:fig_forces` were drawn using Pysketcher.
+The details of the drawings are explained in the
+`Pysketcher tutorial <http://hplgit.github.io/pysketcher/doc/web/index.html>`__.
+Here, we outline how this type of sketch can be used to create an animated
+free body diagram during the motion of a pendulum.
+
+Pysketcher is actually a layer of useful abstractions on top of
+standard plotting packages. This means that we in fact apply Matplotlib
+to make the animated free body diagram, but instead of dealing with a wealth
+of detailed Matplotlib commands, we can express the drawing in terms of
+more high-level objects, e.g., objects for the wire, angle :math:`\theta`,
+body with mass :math:`m`, arrows for forces, etc. When the position of these
+objects are given through variables, we can just couple those variables
+to the dynamic solution of our ODE and thereby make a unique drawing
+for each :math:`\theta` value in a simulation.
+
+Writing the solver
+~~~~~~~~~~~~~~~~~~
+
+Let us start with the most familiar part of the current problem:
+writing the solver function. We use Odespy for this purpose.
+We also work with dimensionless equations. Since :math:`\theta` can be
+viewed as dimensionless, we only need to introduce a dimensionless time,
+here taken as :math:`\bar t = t/\sqrt{L/g}`.
+The resulting dimensionless mathematical model for :math:`\theta`,
+the dimensionless angular velocity :math:`\omega`, the
+dimensionless wire force :math:`\bar S`, and the dimensionless
+drag force :math:`\bar D` is then
+
+.. _Eq:vib:app:pendulum_bodydia:eqth:
+
+.. math::
+
+    \tag{91}
+    \frac{d\omega}{d\bar t} = - \alpha|\omega|\omega - \sin\theta,
+        
+        
+
+.. _Eq:vib:app:pendulum_bodydia:eqomega:
+
+.. math::
+
+    \tag{92}
+    \frac{d\theta}{d\bar t} = \omega,
+        
+        
+
+.. _Eq:vib:app:pendulum_bodydia:eqS:
+
+.. math::
+
+    \tag{93}
+    \bar S = \omega^2 + \cos\theta,
+        
+        
+
+.. _Eq:vib:app:pendulum_bodydia:eqD:
+
+.. math::
+
+    \tag{94}
+    \bar D = -\alpha |\omega|\omega,
+        
+        
+
+with
+
+.. math::
+         \alpha = \frac{C_D\varrho\pi R^2L}{2m}{\thinspace .}
+
+as a dimensionless parameter expressing the ratio of the drag force and
+the gravity force.
+
+.. :ref:`vib:exer:pendulum_simple` asks you to carry out the details of
+
+.. the scaling.
+
+A suitable function for computing
+:ref:`(91) <Eq:vib:app:pendulum_bodydia:eqth>`-:ref:`(94) <Eq:vib:app:pendulum_bodydia:eqD>`
+is listed below.
+
+.. code-block:: python
+
+        def simulate(alpha, Theta, dt, T):
+            import odespy
+        
+            def f(u, t, alpha):
+                omega, theta = u
+                return [-alpha*omega*abs(omega) - sin(theta),
+                        omega]
+        
+            import numpy as np
+            Nt = int(round(T/float(dt)))
+            t = np.linspace(0, Nt*dt, Nt+1)
+            solver = odespy.RK4(f, f_args=[alpha])
+            solver.set_initial_condition([0, Theta])
+            u, t = solver.solve(
+                t, terminate=lambda u, t, n: abs(u[n,1]) < 1E-3)
+            omega = u[:,0]
+            theta = u[:,1]
+            S = omega**2 + np.cos(theta)
+            drag = -alpha*np.abs(omega)*omega
+            return t, theta, omega, S, drag
+
+Drawing the free body diagram
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``sketch`` function below applies Pysketcher objects to build
+a diagram like that in Figure :ref:`vib:app:pendulum:fig_forces`,
+except that we have removed the rotation point :math:`(x_0,y_0)` and
+the unit vectors in polar coordinates as these objects are not
+important for an animated free body diagram.
+
+.. code-block:: python
+
+        import sys
+        try:
+            from pysketcher import *
+        except ImportError:
+            print 'Pysketcher must be installed from'
+            print 'https://github.com/hplgit/pysketcher'
+            sys.exit(1)
+        
+        # Overall dimensions of sketch
+        H = 15.
+        W = 17.
+        
+        drawing_tool.set_coordinate_system(
+            xmin=0, xmax=W, ymin=0, ymax=H,
+            axis=False)
+        
+        def sketch(theta, S, mg, drag, t, time_level):
+            """
+            Draw pendulum sketch with body forces at a time level
+            corresponding to time t. The drag force is in
+            drag[time_level], the force in the wire is S[time_level],
+            the angle is theta[time_level].
+            """
+            import math
+            a = math.degrees(theta[time_level])  # angle in degrees
+            L = 0.4*H         # Length of pendulum
+            P = (W/2, 0.8*H)  # Fixed rotation point
+        
+            mass_pt = path.geometric_features()['end']
+            rod = Line(P, mass_pt)
+        
+            mass = Circle(center=mass_pt, radius=L/20.)
+            mass.set_filled_curves(color='blue')
+            rod_vec = rod.geometric_features()['end'] - \ 
+                      rod.geometric_features()['start']
+            unit_rod_vec = unit_vec(rod_vec)
+            mass_symbol = Text('$m$', mass_pt + L/10*unit_rod_vec)
+        
+            rod_start = rod.geometric_features()['start']  # Point P
+            vertical = Line(rod_start, rod_start + point(0,-L/3))
+        
+            def set_dashed_thin_blackline(*objects):
+                """Set linestyle of objects to dashed, black, width=1."""
+                for obj in objects:
+                    obj.set_linestyle('dashed')
+                    obj.set_linecolor('black')
+                    obj.set_linewidth(1)
+        
+            set_dashed_thin_blackline(vertical)
+            set_dashed_thin_blackline(rod)
+            angle = Arc_wText(r'$\theta$', rod_start, L/6, -90, a,
+                              text_spacing=1/30.)
+        
+            magnitude = 1.2*L/2   # length of a unit force in figure
+            force = mg[time_level]  # constant (scaled eq: about 1)
+            force *= magnitude
+            mg_force  = Force(mass_pt, mass_pt + force*point(0,-1),
+                              '', text_pos='end')
+            force = S[time_level]
+            force *= magnitude
+            rod_force = Force(mass_pt, mass_pt - force*unit_vec(rod_vec),
+                              '', text_pos='end',
+                              text_spacing=(0.03, 0.01))
+            force = drag[time_level]
+            force *= magnitude
+            air_force = Force(mass_pt, mass_pt -
+                              force*unit_vec((rod_vec[1], -rod_vec[0])),
+                              '', text_pos='end',
+                              text_spacing=(0.04,0.005))
+        
+            body_diagram = Composition(
+                {'mg': mg_force, 'S': rod_force, 'air': air_force,
+                 'rod': rod, 'body': mass
+                 'vertical': vertical, 'theta': angle,})
+        
+            body_diagram.draw(verbose=0)
+            drawing_tool.savefig('tmp_%04d.png' % time_level, crop=False)
+            # (No cropping: otherwise movies will be very strange!)
+
+Making the animated free body diagram
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It now remains to couple the ``simulate`` and ``sketch`` functions.
+We first run ``simulate``:
+
+.. code-block:: python
+
+        from math import pi, radians, degrees
+        import numpy as np
+        alpha = 0.4
+        period = 2*pi   # Use small theta approximation
+        T = 12*period   # Simulate for 12 periods
+        dt = period/40  # 40 time steps per period
+        a = 70          # Initial amplitude in degrees
+        Theta = radians(a)
+        
+        t, theta, omega, S, drag = simulate(alpha, Theta, dt, T)
+
+The next step is to run through the time levels in the simulation and
+make a sketch at each level:
+
+.. code-block:: python
+
+        for time_level, t_ in enumerate(t):
+            sketch(theta, S, mg, drag, t_, time_level)
+
+The individual sketches are (by the ``sketch`` function) saved in files
+with names ``tmp_%04d.png``. These can be combined to videos using
+(e.g.) ``ffmpeg``. A complete function ``animate`` for running the
+simulation and creating video files is
+listed below.
+
+.. code-block:: python
+
+        def animate():
+            # Clean up old plot files
+            import os, glob
+            for filename in glob.glob('tmp_*.png') + glob.glob('movie.*'):
+                os.remove(filename)
+            # Solve problem
+            from math import pi, radians, degrees
+            import numpy as np
+            alpha = 0.4
+            period = 2*pi   # Use small theta approximation
+            T = 12*period   # Simulate for 12 periods
+            dt = period/40  # 40 time steps per period
+            a = 70          # Initial amplitude in degrees
+            Theta = radians(a)
+        
+            t, theta, omega, S, drag = simulate(alpha, Theta, dt, T)
+        
+            # Visualize drag force 5 times as large
+            drag *= 5
+            mg = np.ones(S.size)  # Gravity force (needed in sketch)
+        
+            # Draw animation
+            import time
+            for time_level, t_ in enumerate(t):
+                sketch(theta, S, mg, drag, t_, time_level)
+                time.sleep(0.2)  # Pause between each frame on the screen
+        
+            # Make videos
+            prog = 'ffmpeg'
+            filename = 'tmp_%04d.png'
+            fps = 6
+            codecs = {'flv': 'flv', 'mp4': 'libx264',
+                      'webm': 'libvpx', 'ogg': 'libtheora'}
+            for ext in codecs:
+                lib = codecs[ext]
+                cmd = '%(prog)s -i %(filename)s -r %(fps)s ' % vars()
+                cmd += '-vcodec %(lib)s movie.%(ext)s' % vars()
+                print(cmd)
+                os.system(cmd)
+
+.. _vib:app:pendulum_elastic:
+
+Motion of an elastic pendulum
+-----------------------------
+
+Consider a pendulum as in Figure :ref:`vib:app:pendulum:fig_problem`, but
+this time the wire is elastic. The length of the wire when it is not
+stretched is :math:`L_0`, while :math:`L(t)` is the stretched
+length at time :math:`t` during the motion.
+
+Stretching the elastic wire a distance :math:`\Delta L` gives rise to a
+spring force :math:`k\Delta L` in the opposite direction of the
+stretching. Let :math:`\boldsymbol{n}` be a unit normal vector along the wire
+from the point :math:`\boldsymbol{r}_0=(x_0,y_0)` and in the direction of :math:`\boldsymbol{i}_{\theta}`, see
+Figure :ref:`vib:app:pendulum:fig_forces` for definition of :math:`(x_0,y_0)`
+and :math:`\boldsymbol{i}_{\theta}`. Obviously, we have :math:`\boldsymbol{n}=\boldsymbol{i}_{\theta}`, but in this modeling
+of an elastic pendulum we do not need polar coordinates.  Instead, it
+is more straightforward to develop the equation in Cartesian
+coordinates.
+
+A mathematical expression for :math:`\boldsymbol{n}` is
+
+.. math::
+         \boldsymbol{n} = \frac{\boldsymbol{r}-\boldsymbol{r}_0}{L(t)},
+
+where :math:`L(t)=||\boldsymbol{r}-\boldsymbol{r}_0||` is the current length of the elastic wire.
+The position vector :math:`\boldsymbol{r}` in Cartesian coordinates reads
+:math:`\boldsymbol{r}(t) = x(t)\boldsymbol{i} + y(t)\boldsymbol{j}`, where :math:`\boldsymbol{i}` and :math:`\boldsymbol{j}` are unit vectors
+in the :math:`x` and :math:`y` directions, respectively.
+It is convenient to introduce the Cartesian components :math:`n_x` and :math:`n_y`
+of the normal vector:
+
+.. math::
+         \boldsymbol{n} = \frac{\boldsymbol{r}-\boldsymbol{r}_0}{L(t)} = \frac{x(t)-x_0}{L(t)}\boldsymbol{i} + \frac{y(t)-y_0}{L(t)}\boldsymbol{j} = n_x\boldsymbol{i} + n_y\boldsymbol{j}{\thinspace .}
+
+The stretch :math:`\Delta L` in the wire is
+
+.. math::
+         \Delta t = L(t) - L_0{\thinspace .}
+
+The force in the wire is then :math:`-S\boldsymbol{n}=-k\Delta L\boldsymbol{n}`.
+
+The other forces are the gravity and the air resistance, just
+as in Figure :ref:`vib:app:pendulum:fig_forces`. The main difference
+is that we have a *model* for :math:`S` in terms of the motion (as soon as
+we have expressed :math:`\Delta L` by :math:`\boldsymbol{r}`). For simplicity, we drop
+the air resistance term (but :ref:`vib:exer:pendulum_elastic_drag`
+asks you to include it).
+
+Newton's second law of motion applied to the body now results in
+
+.. _Eq:vib:app:pendulum_elastic:eq1:
+
+.. math::
+
+    \tag{95}
+    m\ddot\boldsymbol{r} = -k(L-L_0)\boldsymbol{n} - mg\boldsymbol{j}
+        
+        
+
+The two components of
+:ref:`(95) <Eq:vib:app:pendulum_elastic:eq1>` are
 
 .. _Eq:_auto27:
 
 .. math::
 
-    \tag{86}
-    u_t = \frac{\partial u}{\partial t}, \quad
-        u_{tt} = \frac{\partial^2 u}{\partial t^2},
+    \tag{96}
+    \ddot x = -\frac{k}{m}(L-L_0)n_x,
         
         
 
-and similar expressions
-for derivatives with respect to other variables. Then the
-wave equation can be written compactly as :math:`u_{tt} = c^2u_{xx}`.
+.. _Eq:vib:app:pendulum_elastic:eq2a:
 
-.. index::
-   single: wave equation; 1D, finite difference method
+.. math::
 
-The PDE problem :ref:`(81) <Eq:wave:pde1>`-:ref:`(85) <Eq:wave:pde1:bc:L>` will now be
-discretized in space and time by a finite difference method.
+    \tag{97}
+    .. _Eq:vib:app:pendulum_elastic:eq2b:
 
-.. index::
-   single: mesh; finite differences
+.. math::
 
-.. _wave:string:mesh:
+    \tag{98}
+    \ddot y = - \frac{k}{m}(L-L_0)n_y - g
+        {\thinspace .}
+        
 
-Discretizing the domain
+Remarks about an elastic vs a non-elastic pendulum
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Note that the derivation of the ODEs for an elastic pendulum is more
+straightforward than for a classical, non-elastic pendulum,
+since we avoid the details
+with polar coordinates, but instead work with Newton's second law
+directly in Cartesian coordinates. The reason why we can do this is that
+the elastic pendulum undergoes a general two-dimensional motion where
+all the forces are known or expressed as functions of :math:`x(t)` and :math:`y(t)`,
+such that we get two ordinary differential equations.
+The motion of the non-elastic pendulum, on the other hand, is constrained:
+the body has to move along a circular path, and the force :math:`S` in the
+wire is unknown.
+
+The non-elastic pendulum therefore leads to
+a *differential-algebraic* equation, i.e., ODEs for :math:`x(t)` and :math:`y(t)`
+combined with an extra constraint :math:`(x-x_0)^2 + (y-y_0)^2 = L^2`
+ensuring that the motion takes place along a circular path.
+The extra constraint (equation) is compensated by an extra unknown force
+:math:`-S\boldsymbol{n}`. Differential-algebraic equations are normally hard
+to solve, especially with pen and paper.
+Fortunately, for the non-elastic pendulum we can do a
+trick: in polar coordinates the unknown force :math:`S` appears only in the
+radial component of Newton's second law, while the unknown
+degree of freedom for describing the motion, the angle :math:`\theta(t)`,
+is completely governed by the asimuthal component. This allows us to
+decouple the unknowns :math:`S` and :math:`\theta`. But this is a kind of trick and
+not a widely applicable method. With an elastic pendulum we use straightforward
+reasoning with Newton's 2nd law and arrive at a standard ODE problem that
+(after scaling) is easy solve on a computer.
+
+Initial conditions
+~~~~~~~~~~~~~~~~~~
+
+What is the initial position of the body? We imagine that first the
+pendulum hangs in equilibrium in its vertical position, and then it is
+displaced an angle :math:`\Theta`. The equilibrium position is governed
+by the ODEs with the accelerations set to zero.
+The :math:`x` component leads to :math:`x(t)=x_0`, while the :math:`y` component gives
+
+.. math::
+         0 = - \frac{k}{m}(L-L_0)n_y - g = \frac{k}{m}(L(0)-L_0) - g\quad\Rightarrow\quad
+        L(0) = L_0 + mg/k,
+
+since :math:`n_y=-11` in this position. The corresponding :math:`y` value is then
+from :math:`n_y=-1`:
+
+.. math::
+         y(t) = y_0 - L(0) = y_0 - (L_0 + mg/k){\thinspace .}
+
+Let us now choose :math:`(x_0,y_0)` such that the body is at the origin
+in the equilibrium position:
+
+.. math::
+         x_0 =0,\quad y_0 = L_0 + mg/k{\thinspace .}
+
+Displacing the body an angle :math:`\Theta` to the right leads to the
+initial position
+
+.. math::
+         x(0)=(L_0+mg/k)\sin\Theta,\quad y(0)=(L_0+mg/k)(1-\cos\Theta){\thinspace .}
+
+The initial velocities can be set to zero: :math:`x'(0)=y'(0)=0`.
+
+The complete ODE problem
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+We can summarize all the equations as follows:
+
+.. math::
+        
+        \ddot x &= -\frac{k}{m}(L-L_0)n_x,
+        \\ 
+        \ddot y &= -\frac{k}{m}(L-L_0)n_y - g,
+        \\ 
+        L &= \sqrt{(x-x_0)^2 + (y-y_0)^2},
+        \\ 
+        n_x &= \frac{x-x_0}{L},
+        \\ 
+        n_y &= \frac{y-y_0}{L},
+        \\ 
+        x(0) &= (L_0+mg/k)\sin\Theta,
+        \\ 
+        x'(0) &= 0,
+        \\ 
+        y(0) & =(L_0+mg/k)(1-\cos\Theta),
+        \\ 
+        y'(0) &= 0{\thinspace .}
+        
+
+We insert :math:`n_x` and :math:`n_y`  in the ODEs:
+
+.. _Eq:vib:app:pendulum_elastic:x:
+
+.. math::
+
+    \tag{99}
+    \ddot x = -\frac{k}{m}\left(1 -\frac{L_0}{L}\right)(x-x_0),
+        
+        
+
+.. _Eq:vib:app:pendulum_elastic:y:
+
+.. math::
+
+    \tag{100}
+    \ddot y = -\frac{k}{m}\left(1 -\frac{L_0}{L}\right)(y-y_0) - g,
+        
+        
+
+.. _Eq:vib:app:pendulum_elastic:L:
+
+.. math::
+
+    \tag{101}
+    L = \sqrt{(x-x_0)^2 + (y-y_0)^2},
+        
+        
+
+.. _Eq:vib:app:pendulum_elastic:x0:
+
+.. math::
+
+    \tag{102}
+    x(0) = (L_0+mg/k)\sin\Theta,
+        
+        
+
+.. _Eq:vib:app:pendulum_elastic:vx0:
+
+.. math::
+
+    \tag{103}
+    x'(0) = 0,
+        
+        
+
+.. _Eq:vib:app:pendulum_elastic:y0:
+
+.. math::
+
+    \tag{104}
+    y(0)  =(L_0+mg/k)(1-\cos\Theta),
+        
+        
+
+.. _Eq:vib:app:pendulum_elastic:vy0:
+
+.. math::
+
+    \tag{105}
+    y'(0) = 0{\thinspace .}
+        
+        
+
+Scaling          (3)
+~~~~~~~~~~~~~~~~~~~~
+
+The elastic pendulum model can be used to study both an elastic pendulum
+and a classic, non-elastic pendulum. The latter problem is obtained
+by letting :math:`k\rightarrow\infty`. Unfortunately,
+a serious problem with the ODEs
+:ref:`(99) <Eq:vib:app:pendulum_elastic:x>`-:ref:`(100) <Eq:vib:app:pendulum_elastic:y>` is that for large :math:`k`, we have a very large factor :math:`k/m` multiplied by a
+very small number :math:`1-L_0/L`, since for large :math:`k`, :math:`L\approx L_0` (very
+small deformations of the wire). The product is subject to
+significant round-off errors for many relevant physical values of
+the parameters. To circumvent the problem, we introduce a scaling. This
+will also remove physical parameters from the problem such that we end
+up with only one dimensionless parameter,
+closely related to the elasticity of the wire. Simulations can then be
+done by setting just this dimensionless parameter.
+
+The characteristic length can be taken such that in equilibrium, the
+scaled length is unity, i.e., the characteristic length is :math:`L_0+mg/k`:
+
+.. math::
+         \bar x = \frac{x}{L_0+mg/k},\quad \bar y = \frac{y}{L_0+mg/k}{\thinspace .}
+
+We must then also work with the scaled length :math:`\bar L = L/(L_0+mg/k)`.
+
+Introducing :math:`\bar t=t/t_c`, where :math:`t_c` is a characteristic time we
+have to decide upon later, one gets
+
+.. math::
+        
+        \frac{d^2\bar x}{d\bar t^2} &=
+        -t_c^2\frac{k}{m}\left(1 -\frac{L_0}{L_0+mg/k}\frac{1}{\bar L}\right)\bar x,\\ 
+        \frac{d^2\bar y}{d\bar t^2} &=
+        -t_c^2\frac{k}{m}\left(1 -\frac{L_0}{L_0+mg/k}\frac{1}{\bar L}\right)(\bar y-1)
+        -t_c^2\frac{g}{L_0 + mg/k},\\ 
+        \bar L &= \sqrt{\bar x^2 + (\bar y-1)^2},\\ 
+        \bar x(0) &= \sin\Theta,\\ 
+        \bar x'(0) &= 0,\\ 
+        \bar y(0) & = 1 - \cos\Theta,\\ 
+        \bar y'(0) &= 0{\thinspace .}
+        
+
+For a non-elastic pendulum with small angles, we know that the
+frequency of the oscillations are :math:`\omega = \sqrt{L/g}`. It is therefore
+natural to choose a similar expression here, either the length in
+the equilibrium position,
+
+.. math::
+         t_c^2 = \frac{L_0+mg/k}{g}{\thinspace .}
+
+or simply the unstretched length,
+
+.. math::
+         t_c^2 = \frac{L_0}{g}{\thinspace .}
+
+These quantities are not very different (since the elastic model
+is valid only for quite small elongations), so we take the latter as it is
+the simplest one.
+
+The ODEs become
+
+.. math::
+        
+        \frac{d^2\bar x}{d\bar t^2} &=
+        -\frac{L_0k}{mg}\left(1 -\frac{L_0}{L_0+mg/k}\frac{1}{\bar L}\right)\bar x,\\ 
+        \frac{d^2\bar y}{d\bar t^2} &=
+        -\frac{L_0k}{mg}\left(1 -\frac{L_0}{L_0+mg/k}\frac{1}{\bar L}\right)(\bar y-1)
+        -\frac{L_0}{L_0 + mg/k},\\ 
+        \bar L &= \sqrt{\bar x^2 + (\bar y-1)^2}{\thinspace .}
+        
+
+We can now identify a dimensionless number
+
+.. math::
+         \beta = \frac{L_0}{L_0 + mg/k} = \frac{1}{1+\frac{mg}{L_0k}},
+
+which is the ratio of the unstretched length and the
+stretched length in equilibrium. The non-elastic pendulum will have
+:math:`\beta =1` (:math:`k\rightarrow\infty`).
+With :math:`\beta` the ODEs read
+
+.. _Eq:vib:app:pendulum_elastic:x:s:
+
+.. math::
+
+    \tag{106}
+    \frac{d^2\bar x}{d\bar t^2} =
+        -\frac{\beta}{1-\beta}\left(1- \frac{\beta}{\bar L}\right)\bar x,
+        
+        
+
+.. _Eq:vib:app:pendulum_elastic:y:s:
+
+.. math::
+
+    \tag{107}
+    \frac{d^2\bar y}{d\bar t^2} =
+        -\frac{\beta}{1-\beta}\left(1- \frac{\beta}{\bar L}\right)(\bar y-1)
+        -\beta,
+        
+        
+
+.. _Eq:vib:app:pendulum_elastic:L:s:
+
+.. math::
+
+    \tag{108}
+    \bar L = \sqrt{\bar x^2 + (\bar y-1)^2},
+        
+        
+
+.. _Eq:vib:app:pendulum_elastic:x0:s:
+
+.. math::
+
+    \tag{109}
+    \bar x(0) = (1+\epsilon)\sin\Theta,
+        
+        
+
+.. _Eq:vib:app:pendulum_elastic:vx0:s:
+
+.. math::
+
+    \tag{110}
+    \frac{d\bar x}{d\bar t}(0) = 0,
+        
+        
+
+.. _Eq:vib:app:pendulum_elastic:y0:s:
+
+.. math::
+
+    \tag{111}
+    \bar y(0) = 1 - (1+\epsilon)\cos\Theta,
+        
+        
+
+.. _Eq:vib:app:pendulum_elastic:vy0:s:
+
+.. math::
+
+    \tag{112}
+    \frac{d\bar y}{d\bar t}(0) = 0,
+        
+        
+
+We have here added a parameter :math:`\epsilon`, which is an additional
+downward stretch of the wire at :math:`t=0`. This parameter makes it possible
+to do a desired test: vertical oscillations of the pendulum. Without
+:math:`\epsilon`, starting the motion from :math:`(0,0)` with zero velocity will
+result in :math:`x=y=0` for all times (also a good test!), but with
+an initial stretch so the body's position is :math:`(0,\epsilon)`, we
+will have oscillatory vertical motion with amplitude :math:`\epsilon` (see
+:ref:`vib:exer:pendulum_elastic`).
+
+Remark on the non-elastic limit
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We immediately see that as :math:`k\rightarrow\infty` (i.e., we obtain a non-elastic
+pendulum), :math:`\beta\rightarrow 1`, :math:`\bar L\rightarrow 1`, and we have
+very small values :math:`1-\beta\bar L^{-1}` divided by very small values
+:math:`1-\beta` in the ODEs. However, it turns out that we can set :math:`\beta`
+very close to one and obtain a path of the body that within the visual
+accuracy of a plot does not show any elastic oscillations.
+(Should the division of very small values become a problem, one can
+study the limit by L'Hospital's rule:
+
+.. math::
+         \lim_{\beta\rightarrow 1}\frac{1 - \beta \bar L^{-1}}{1-\beta}
+        = \frac{1}{\bar L},
+
+and use the limit :math:`\bar L^{-1}` in the ODEs for :math:`\beta` values very
+close to 1.)
+
+.. _vib:app:bumpy:
+
+Vehicle on a bumpy road
 -----------------------
 
-The temporal domain :math:`[0,T]` is represented by a finite number of mesh points
+.. _vib:app:bumpy:fig:sketch:
+
+.. figure:: bumpy_sketch.png
+   :width: 400
+
+   *Sketch of one-wheel vehicle on a bumpy road*
+
+We consider a very simplistic vehicle, on one wheel, rolling along a
+bumpy road. The oscillatory nature of the road will induce an external
+forcing on the spring system in the vehicle and cause vibrations.
+Figure :ref:`vib:app:bumpy:fig:sketch` outlines the situation.
+
+To derive the equation that governs the motion, we must first establish
+the position vector of the black mass at the top of the spring.
+Suppose the spring has length :math:`L` without any elongation or compression,
+suppose the radius of the wheel is :math:`R`, and suppose the height of the
+black mass at the top is :math:`H`. With the aid of the :math:`\boldsymbol{r}_0` vector
+in Figure :ref:`vib:app:bumpy:fig:sketch`, the position :math:`\boldsymbol{r}` of
+the center point of the mass is
 
 .. _Eq:_auto28:
 
 .. math::
 
-    \tag{87}
-    0 = t_0 < t_1 < t_2 < \cdots < t_{N_t-1} < t_{N_t} = T {\thinspace .}   
+    \tag{113}
+    \boldsymbol{r} = \boldsymbol{r}_0 + 2R\boldsymbol{j} + L\boldsymbol{j} + u\boldsymbol{j} + \frac{1}{2} H\boldsymbol{j},\ 
+        
         
 
-Similarly, the spatial domain :math:`[0,L]` is replaced by a set of mesh points
+where :math:`u` is the elongation or compression in the spring according to
+the (unknown and to be computed) vertical displacement :math:`u` relative to the
+road. If the vehicle travels
+with constant horizontal velocity :math:`v` and :math:`h(x)` is the shape of the
+road, then the vector :math:`\boldsymbol{r}_0` is
+
+.. math::
+         \boldsymbol{r}_0 = vt\boldsymbol{i} + h(vt)\boldsymbol{j},
+
+if the motion starts from :math:`x=0` at time :math:`t=0`.
+
+The forces on the mass is the gravity, the spring force, and an optional
+damping force that is proportional to the vertical velocity :math:`\dot u`. Newton's
+second law of motion then tells that
+
+.. math::
+         m\ddot\boldsymbol{r} = -mg\boldsymbol{j} - s(u) - b\dot u\boldsymbol{j}{\thinspace .}
+
+This leads to
+
+.. math::
+        
+        m\ddot u = - s(u) - b\dot u - mg -mh''(vt)v^2
+        
+
+To simplify a little bit, we omit the gravity force :math:`mg` in comparison with
+the other terms. Introducing :math:`u'` for :math:`\dot u` then gives a standard
+damped, vibration equation with external forcing:
 
 .. _Eq:_auto29:
 
 .. math::
 
-    \tag{88}
-    0 = x_0 < x_1 < x_2 < \cdots < x_{N_x-1} < x_{N_x} = L {\thinspace .}   
+    \tag{114}
+    mu'' + bu' + s(u) =  -mh''(vt)v^2{\thinspace .}
+        
         
 
-One may view the mesh as two-dimensional in the :math:`x,t` plane, consisting
-of points :math:`(x_i, t_n)`, with :math:`i=0,\ldots,N_x` and :math:`n=0,\ldots,N_t`.
+Since the road is normally known just as a set of array values, :math:`h''` must
+be computed by finite differences. Let :math:`\Delta x` be the spacing between
+measured values :math:`h_i= h(i\Delta x)` on the road. The discrete second-order
+derivative :math:`h''` reads
 
-Uniform meshes
-~~~~~~~~~~~~~~
+.. math::
+         q_i = \frac{h_{i-1} - 2h_i + h_{i+1}}{\Delta x^2}, \quad i=1,\ldots,N_x-1{\thinspace .}
 
-For uniformly distributed mesh points we can introduce the constant
-mesh spacings :math:`\Delta t` and :math:`\Delta x`. We have that
+We may for maximum simplicity set
+the end points as :math:`q_0=q_1` and :math:`q_{N_x}=q_{N_x-1}`.
+The term :math:`-mh''(vt)v^2` corresponds to a force with discrete time values
+
+.. math::
+         F^n = -mq_n v^2,\quad \Delta t = v^{-1}\Delta x{\thinspace .}
+
+This force can be directly used in a numerical model
+
+.. math::
+         [mD_tD_t u + bD_{2t} u + s(u) = F]^n{\thinspace .}
+
+Software for computing :math:`u` and also making an animated sketch of
+the motion like we did in the section :ref:`vib:app:pendulum_bodydia`
+is found in a separate project on the web:
+`<https://github.com/hplgit/bumpy>`_. You may start looking at the
+`tutorial <http://hplgit.github.io/bumpy/doc/pub/bumpy.html>`__.
+
+.. _vib:app:bouncing_ball:
+
+Bouncing ball
+-------------
+
+A bouncing ball is a ball in free vertically fall until it impacts the
+ground, but during the impact, some kinetic energy is lost, and a new
+motion upwards with reduced velocity starts. After the motion is retarded,
+a new free fall starts, and the process is repeated. At some point the
+velocity close to the ground is so small that the ball is considered
+to be finally at rest.
+
+The motion of the ball falling in air is governed by Newton's second
+law :math:`F=ma`, where :math:`a` is the acceleration of the body, :math:`m` is the mass,
+and :math:`F` is the sum of all forces. Here, we neglect the air resistance
+so that gravity :math:`-mg` is the only force. The height of the ball is
+denoted by :math:`h` and :math:`v` is the velocity. The relations between :math:`h`, :math:`v`, and
+:math:`a`,
+
+.. math::
+         h'(t)= v(t),\quad v'(t) = a(t),
+
+combined with Newton's second law gives the ODE model
+
+.. _Eq:vib:app:bouncing:ball:h2eq:
+
+.. math::
+
+    \tag{115}
+    h^{\prime\prime}(t) = -g,
+        
+        
+
+or expressed alternatively as a system of first-order equations:
+
+.. _Eq:vib:app:bouncing:ball:veq:
+
+.. math::
+
+    \tag{116}
+    v'(t) = -g,
+         
+        
+
+.. _Eq:vib:app:bouncing:ball:heq:
+
+.. math::
+
+    \tag{117}
+    h'(t) = v(t){\thinspace .}
+        
+        
+
+These equations govern the motion as long as the ball is away from
+the ground by a small distance :math:`\epsilon_h > 0`. When :math:`h<\epsilon_h`,
+we have two cases.
+
+1. The ball impacts the ground, recognized by a sufficiently large negative
+   velocity (:math:`v<-\epsilon_v`). The velocity then changes sign and is
+   reduced by a factor :math:`C_R`, known as the `coefficient of restitution <http://en.wikipedia.org/wiki/Coefficient_of_restitution>`__.
+   For plotting purposes, one may set :math:`h=0`.
+
+2. The motion stops, recognized by a sufficiently small velocity
+   (:math:`|v|<\epsilon_v`) close to the ground.
+
+Electric circuits
+-----------------
+
+Although the term "mechanical vibrations" is used in the present
+book, we must mention that the same type of equations arise
+when modeling electric circuits.
+The current :math:`I(t)` in a
+circuit with an inductor with inductance :math:`L`, a capacitor with
+capacitance :math:`C`, and overall resistance :math:`R`, is governed by
 
 .. _Eq:_auto30:
 
 .. math::
 
-    \tag{89}
-    x_i = i\Delta x,\ i=0,\ldots,N_x,\quad
-        t_n = n\Delta t,\ n=0,\ldots,N_t{\thinspace .}
+    \tag{118}
+    \ddot I + \frac{R}{L}\dot I + \frac{1}{LC}I = \dot V(t),
         
         
 
-We also have that :math:`\Delta x = x_i-x_{i-1}`, :math:`i=1,\ldots,N_x`, and
-:math:`\Delta t = t_n - t_{n-1}`, :math:`n=1,\ldots,N_t`. Figure :ref:`wave:pde1:fig:mesh`
-displays a mesh in the :math:`x,t` plane with :math:`N_t=5`, :math:`N_x=5`, and constant
-mesh spacings.
-
-.. _wave:string:numerical:sol:
-
-The discrete solution
----------------------
-
-.. index::
-   single: stencil; 1D wave equation
-
-.. index:: mesh function
-
-The solution :math:`u(x,t)` is sought at the mesh points. We introduce
-the mesh function :math:`u_i^n`, which approximates the exact
-solution at the
-mesh point :math:`(x_i,t_n)` for :math:`i=0,\ldots,N_x` and :math:`n=0,\ldots,N_t`.
-Using the finite difference method, we shall
-develop algebraic equations for computing the mesh function.
-
-.. _wave:string:samplingPDE:
-
-Fulfilling the equation at the mesh points
-------------------------------------------
-
-In the finite difference method, we relax
-the condition that :ref:`(81) <Eq:wave:pde1>` holds at all points in
-the space-time domain :math:`(0,L)\times (0,T]` to the requirement that the PDE is
-fulfilled at the *interior* mesh points only:
-
-.. _Eq:wave:pde1:step2:
-
-.. math::
-
-    \tag{90}
-    \frac{\partial^2}{\partial t^2} u(x_i, t_n) =
-        c^2\frac{\partial^2}{\partial x^2} u(x_i, t_n),
-        
-        
-
-for :math:`i=1,\ldots,N_x-1` and :math:`n=1,\ldots,N_t-1`. For :math:`n=0` we have
-the initial conditions :math:`u=I(x)` and :math:`u_t=0`,
-and at the boundaries :math:`i=0,N_x` we
-have the boundary condition :math:`u=0`.
-
-.. _wave:string:fd:
-
-Replacing derivatives by finite differences
--------------------------------------------
-
-The second-order derivatives can be replaced by central
-differences. The most widely used difference approximation of
-the second-order derivative is
-
-.. math::
-         \frac{\partial^2}{\partial t^2}u(x_i,t_n)\approx
-        \frac{u_i^{n+1} - 2u_i^n + u^{n-1}_i}{\Delta t^2}{\thinspace .}
-
-It is convenient to introduce the finite difference operator notation
-
-.. math::
-         [D_tD_t u]^n_i = \frac{u_i^{n+1} - 2u_i^n + u^{n-1}_i}{\Delta t^2}{\thinspace .}
-
-A similar approximation of the second-order derivative in the :math:`x`
-direction reads
-
-.. math::
-         \frac{\partial^2}{\partial x^2}u(x_i,t_n)\approx
-        \frac{u_{i+1}^{n} - 2u_i^n + u^{n}_{i-1}}{\Delta x^2} = [D_xD_x u]^n_i
-        {\thinspace .}
-        
-
-Algebraic version of the PDE
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We can now replace the derivatives in :ref:`(90) <Eq:wave:pde1:step2>`
-and get
-
-.. _Eq:wave:pde1:step3b:
-
-.. math::
-
-    \tag{91}
-    \frac{u_i^{n+1} - 2u_i^n + u^{n-1}_i}{\Delta t^2} =
-        c^2\frac{u_{i+1}^{n} - 2u_i^n + u^{n}_{i-1}}{\Delta x^2},
-        
-        
-
-or written more compactly using the operator notation:
-
-.. _Eq:wave:pde1:step3a:
-
-.. math::
-
-    \tag{92}
-    [D_tD_t u = c^2 D_xD_x]^{n}_i
-        {\thinspace .}
-        
-        
-
-Interpretation of the equation as a stencil
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-A typical feature of :ref:`(91) <Eq:wave:pde1:step3b>` is that it involves
-:math:`u` values from neighboring points only:
-:math:`u_i^{n+1}`, :math:`u^n_{i\pm 1}`, :math:`u^n_i`, and :math:`u^{n-1}_i`.
-The circles in Figure
-:ref:`wave:pde1:fig:mesh` illustrate such neighboring mesh points that
-contributes to an algebraic equation. In this
-particular case, we have sampled the PDE at the point :math:`(2,2)`
-and constructed :ref:`(91) <Eq:wave:pde1:step3b>`, which then
-involves a coupling of :math:`u_2^1`, :math:`u_1^2`, :math:`u_2^2`, :math:`u_3^2`, and :math:`u_2^3`.
-The term *stencil* is often used about the algebraic equation
-at a mesh point, and the geometry of a typical stencil is
-illustrated in Figure :ref:`wave:pde1:fig:mesh`. One also often refers
-to the algebraic equations as *discrete equations*,
-*(finite) difference equations* or a *finite difference
-scheme*.
-
-.. _wave:pde1:fig:mesh:
-
-.. figure:: stencil_n_interior.png
-   :width: 500
-
-   *Mesh in space and time. The circles show points connected in a finite difference equation*
-
-Algebraic version of the initial conditions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We also need to replace the derivative in the initial condition
-:ref:`(83) <Eq:wave:pde1:ic:ut>` by a finite difference approximation.
-A centered difference of the type
-
-.. math::
-        
-        \frac{\partial}{\partial t} u(x_i,t_n)\approx
-        \frac{u^1_i - u^{-1}_i}{2\Delta t} = [D_{2t} u]^0_i,
-        
-
-seems appropriate. In operator notation the initial condition is
-written as
-
-.. math::
-         [D_{2t} u]^n_i = 0,\quad n=0 {\thinspace .}  
-
-Writing out this equation and ordering the terms give
-
-.. _Eq:wave:pde1:step3c:
-
-.. math::
-
-    \tag{93}
-    u^{n-1}_i=u^{n+1}_i,\quad i=0,\ldots,N_x,\ n=0{\thinspace .}
-        
-        
-
-The other initial condition can be computed by
-
-.. math::
-         u_i^0 = I(x_i),\quad i=0,\ldots,N_x{\thinspace .}
-
-.. _wave:string:alg:
-
-Formulating a recursive algorithm
----------------------------------
-
-We assume that :math:`u^n_i` and
-:math:`u^{n-1}_i` are already computed for :math:`i=0,\ldots,N_x`.
-The only unknown quantity in :ref:`(91) <Eq:wave:pde1:step3b>` is
-therefore :math:`u^{n+1}_i`, which we can solve for:
-
-.. _Eq:wave:pde1:step4:
-
-.. math::
-
-    \tag{94}
-    u^{n+1}_i = -u^{n-1}_i + 2u^n_i + C^2
-        \left(u^{n}_{i+1}-2u^{n}_{i} + u^{n}_{i-1}\right),
-        
-        
-
-where we have introduced the parameter
-
-.. _Eq:_auto31:
-
-.. math::
-
-    \tag{95}
-    C = c\frac{\Delta t}{\Delta x},
-        
-        
-
-known as the *Courant number*.
-
-
-.. admonition:: :math:`C` is the key parameter in the discrete wave equation
-
-   We see that the
-   discrete version of the PDE features only one parameter, :math:`C`,
-   which is therefore the key parameter that governs the
-   quality of the numerical solution (see the section :ref:`wave:pde1:analysis`
-   for details). Both the primary
-   physical parameter :math:`c` and the numerical parameters :math:`\Delta x` and :math:`\Delta t`
-   are lumped together in :math:`C`. Note that :math:`C` is a dimensionless
-   parameter.
-
-
-
-
-Given that :math:`u^{n-1}_i` and :math:`u^n_i` are computed for :math:`i=0,\ldots,N_x`,
-we find new values at the next time level by applying the formula
-:ref:`(94) <Eq:wave:pde1:step4>` for :math:`i=1,\ldots,N_x-1`. Figure
-:ref:`wave:pde1:fig:mesh` illustrates the points that are used to
-compute :math:`u^3_2`. For the boundary points, :math:`i=0` and :math:`i=N_x`, we apply
-the boundary conditions :math:`u_i^{n+1}=0`.
-
-A problem with :ref:`(94) <Eq:wave:pde1:step4>` arises when :math:`n=0` since the
-formula for :math:`u^1_i` involves :math:`u^{-1}_i`, which is an undefined
-quantity outside the time mesh (and the time domain). However, we can
-use the initial condition :ref:`(93) <Eq:wave:pde1:step3c>` in combination with
-:ref:`(94) <Eq:wave:pde1:step4>` when :math:`n=0` to eliminate :math:`u^{-1}_i` and
-arrive at a special formula for :math:`u_i^1`:
-
-.. _Eq:wave:pde1:step4:1:
-
-.. math::
-
-    \tag{96}
-    u_i^1 = u^0_i - \frac{1}{2}
-        C^2\left(u^{0}_{i+1}-2u^{0}_{i} + u^{0}_{i-1}\right)
-        {\thinspace .}
-        
-        
-
-Figure :ref:`wave:pde1:fig:stencil:u1` illustrates how :ref:`(96) <Eq:wave:pde1:step4:1>`
-connects four instead of five points: :math:`u^1_2`, :math:`u_1^0`, :math:`u_2^0`, and :math:`u_3^0`.
-
-.. _wave:pde1:fig:stencil:u1:
-
-.. figure:: stencil_n0_interior.png
-   :width: 500
-
-   *Modified stencil for the first time step*
-
-We can now summarize the computational algorithm:
-
-1. Compute :math:`u^0_i=I(x_i)` for :math:`i=0,\ldots,N_x`
-
-2. Compute :math:`u^1_i` by :ref:`(96) <Eq:wave:pde1:step4:1>` and set :math:`u_i^1=0`
-   for the boundary points :math:`i=0` and :math:`i=N_x`, for :math:`n=1,2,\ldots,N-1`,
-
-3. For each time level :math:`n=1,2,\ldots,N_t-1`
-
-  1. apply :ref:`(94) <Eq:wave:pde1:step4>` to find :math:`u^{n+1}_i` for :math:`i=1,\ldots,N_x-1`
-
-  2. set :math:`u^{n+1}_i=0` for the boundary points :math:`i=0`, :math:`i=N_x`.
-
-The algorithm essentially consists of moving
-a finite difference stencil through all the mesh points, which can be
-seen as an animation in a `web page <http://tinyurl.com/opdfafk/pub/mov-wave/wave1D_PDE_Dirichlet_stencil_gpl/index.html>`__
-or a `movie file <http://tinyurl.com/opdfafk/pub/mov-wave/wave1D_PDE_Dirichlet_stencil_gpl/movie.ogg>`__.
-
-.. _wave:string:impl:
-
-Sketch of an implementation
----------------------------
-
-In a Python implementation of this algorithm, we use the array
-elements ``u[i]`` to store :math:`u^{n+1}_i`, ``u_1[i]`` to store :math:`u^n_i`, and
-``u_2[i]`` to store :math:`u^{n-1}_i`. Our naming convention is use ``u`` for the
-unknown new spatial field to be computed, ``u_1`` as the solution at
-one time step back in time, ``u_2`` as the solution two time steps back
-in time and so forth.
-
-The algorithm only involves the three most recent time levels, so we
-need only three arrays for :math:`u_i^{n+1}`, :math:`u_i^n`, and :math:`u_i^{n-1}`,
-:math:`i=0,\ldots,N_x`.  Storing all the solutions in a two-dimensional
-array of size :math:`(N_x+1)\times (N_t+1)` would be possible in this simple
-one-dimensional PDE problem, but is normally out of the question in
-three-dimensional (3D) and large two-dimensional (2D) problems. We
-shall therefore, in all our PDE solving programs, have the unknown in
-memory at as few time levels as possible.
-
-The following Python snippet realizes the steps in the computational
-algorithm.
-
-.. code-block:: python
-
-        # Given mesh points as arrays x and t (x[i], t[n])
-        dx = x[1] - x[0]
-        dt = t[1] - t[0]
-        C = c*dt/dx            # Courant number
-        Nt = len(t)-1
-        C2 = C**2              # Help variable in the scheme
-        
-        # Set initial condition u(x,0) = I(x)
-        for i in range(0, Nx+1):
-            u_1[i] = I(x[i])
-        
-        # Apply special formula for first step, incorporating du/dt=0
-        for i in range(1, Nx):
-            u[i] = u_1[i] - 0.5*C**2(u_1[i+1] - 2*u_1[i] + u_1[i-1])
-        u[0] = 0;  u[Nx] = 0   # Enforce boundary conditions
-        
-        # Switch variables before next step
-        u_2[:], u_1[:] = u_1, u
-        
-        for n in range(1, Nt):
-            # Update all inner mesh points at time t[n+1]
-            for i in range(1, Nx):
-                u[i] = 2u_1[i] - u_2[i] - \ 
-                       C**2(u_1[i+1] - 2*u_1[i] + u_1[i-1])
-        
-            # Insert boundary conditions
-            u[0] = 0;  u[Nx] = 0
-        
-            # Switch variables before next step
-            u_2[:], u_1[:] = u_1, u
-
-Verification          (3)
-=========================
-
-Before implementing the algorithm, it is convenient to add a source
-term to the PDE :ref:`(81) <Eq:wave:pde1>`
-since it gives us more freedom in finding test problems for
-verification. Physically, a source term acts as a generation of waves
-in the interior of the domain.
-
-.. _wave:pde2:fd:
-
-A slightly generalized model problem
-------------------------------------
-
-We now address the following extended initial-boundary value problem
-for one-dimensional wave phenomena:
-
-.. _Eq:wave:pde2:
-
-.. math::
-
-    \tag{97}
-    u_{tt} = c^2 u_{xx} + f(x,t), \quad x\in (0,L),\ t\in (0,T]
-        
-        
-
-.. _Eq:wave:pde2:ic:u:
-
-.. math::
-
-    \tag{98}
-    u(x,0) = I(x), \quad x\in [0,L]
-        
-        
-
-.. _Eq:wave:pde2:ic:ut:
-
-.. math::
-
-    \tag{99}
-    u_t(x,0) = V(x), \quad x\in [0,L]
-        
-        
-
-.. _Eq:wave:pde2:bc:0:
-
-.. math::
-
-    \tag{100}
-    u(0,t)  = 0, \quad  t>0
-        
-        
-
-.. _Eq:wave:pde2:bc:L:
-
-.. math::
-
-    \tag{101}
-    u(L,t)  = 0, \quad  t>0
-        
-        
-
-Sampling the PDE at :math:`(x_i,t_n)` and using the same finite difference
-approximations as above, yields
-
-.. _Eq:wave:pde2:fdop:
-
-.. math::
-
-    \tag{102}
-    [D_tD_t u = c^2 D_xD_x u + f]^{n}_i
-        {\thinspace .}
-        
-        
-
-Writing this out and solving for the unknown :math:`u^{n+1}_i` results in
-
-.. _Eq:wave:pde2:step3b:
-
-.. math::
-
-    \tag{103}
-    u^{n+1}_i = -u^{n-1}_i + 2u^n_i + C^2
-        (u^{n}_{i+1}-2u^{n}_{i} + u^{n}_{i-1}) + \Delta t^2 f^n_i
-        
-        {\thinspace .}
-        
-
-The equation for the first time step must be rederived. The discretization
-of the initial condition :math:`u_t = V(x)` at :math:`t=0`
-becomes
-
-.. math::
-         [D_{2t}u = V]^0_i\quad\Rightarrow\quad u^{-1}_i = u^{1}_i - 2\Delta t V_i,
-
-which, when inserted in :ref:`(103) <Eq:wave:pde2:step3b>` for :math:`n=0`, gives
-the special formula
-
-.. _Eq:wave:pde2:step3c:
-
-.. math::
-
-    \tag{104}
-    u^{1}_i = u^0_i - \Delta t V_i + {\frac{1}{2}}
-        C^2
-        \left(u^{0}_{i+1}-2u^{0}_{i} + u^{0}_{i-1}\right) + \frac{1}{2}\Delta t^2 f^0_i
-        
-        {\thinspace .}
-        
-
-.. _wave:pde2:fd:standing:waves:
-
-Using an analytical solution of physical significance
------------------------------------------------------
-
-Many wave problems feature sinusoidal oscillations in time
-and space. For example, the original PDE problem
-:ref:`(81) <Eq:wave:pde1>`-:ref:`(85) <Eq:wave:pde1:bc:L>` allows an exact solution
-
-.. _Eq:wave:pde2:test:ue:
-
-.. math::
-
-    \tag{105}
-    {u_{\small\mbox{e}}}(x,t)) = A\sin\left(\frac{\pi}{L}x\right)
-        \cos\left(\frac{\pi}{L}ct\right){\thinspace .}
-        
-        
-
-This :math:`{u_{\small\mbox{e}}}` fulfills the PDE with :math:`f=0`, boundary conditions
-:math:`{u_{\small\mbox{e}}}(0,t)={u_{\small\mbox{e}}}(L,0)=0`, as well as initial
-conditions :math:`I(x)=A\sin\left(\frac{\pi}{L}x\right)` and :math:`V=0`.
-
-It is common to use such exact solutions of physical interest
-to verify implementations. However, the numerical
-solution :math:`u^n_i` will only be an approximation to :math:`{u_{\small\mbox{e}}}(x_i,t_n)`.
-We have no knowledge of the precise size of the error in
-this approximation, and therefore we can never know if discrepancies
-between :math:`u^n_i` and :math:`{u_{\small\mbox{e}}}(x_i,t_n)` are caused
-by mathematical approximations or programming errors.
-In particular, if a plot of the computed solution :math:`u^n_i` and
-the exact one \eq:ref:`wave:pde2:test:ue` looks similar, many
-are tempted to claim that the implementation works. However,
-even if color plots look nice and the accuracy is "deemed good",
-there can still be serious programming errors present!
-
-The only way to use exact physical solutions like
-:ref:`(105) <Eq:wave:pde2:test:ue>` for serious and thorough verification is to
-run a series of finer and finer meshes, measure the integrated error
-in each mesh, and from this information estimate the empirical convergence
-rate of the method.
-An introduction to the computing convergence rates is given in
-the section
-on `convergence rates <http://hplgit.github.io/decay-book/doc/pub/book/sphinx/._book007.html#computing-convergence-rates>`__ in [Ref2]_.
-There is also a detailed example on computing convergence rates in
-the section :ref:`vib:ode1:verify`.
-
-In the present problem, one expects the method to have a convergence rate
-of 2 (see the section :ref:`wave:pde1:analysis`), so if the computed rates
-are close to 2 on a sufficiently mesh, we have good evidence that
-the implementation is free of programming mistakes.
-
-.. _wave:pde2:fd:MMS:
-
-Manufactured solution
----------------------
-
-One problem with the exact solution :ref:`(105) <Eq:wave:pde2:test:ue>` is
-that it requires a simplification (:math:`V=0, f=0`) of the implemented problem
-:ref:`(97) <Eq:wave:pde2>`-:ref:`(101) <Eq:wave:pde2:bc:L>`. An advantage of using
-a *manufactured solution* is that we can test all terms in the
-PDE problem. The idea of this approach is to set up some chosen
-solution and fit the source term, boundary conditions, and initial
-conditions to be compatible with the chosen solution.
-Given that our boundary conditions in the implementation are
-:math:`u(0,t)=u(L,t)=0`, we must choose a solution that fulfills these
-conditions. One example is
-
-.. math::
-         {u_{\small\mbox{e}}}(x,t) = x(L-x)\sin t{\thinspace .}
-
-Inserted in the PDE :math:`u_{tt}=c^2u_{xx}+f` we get
-
-.. math::
-         -x(L-x)\sin t = -c^2 2\sin t + f\quad\Rightarrow f = (2c^2 - x(L-x))\sin t{\thinspace .}
-
-The initial conditions become
-
-.. math::
-        
-        u(x,0) =& I(x) = 0,\\ 
-        u_t(x,0) &= V(x) = x(L-x){\thinspace .}
-        
-
-To verify the code, we compute the convergence rates in a series of
-simulations, letting each simulation use a finer mesh than the
-previous one. Such empirical estimation of convergence rates
-tests rely on an assumption that some
-measure :math:`E` of the numerical error is related to the discretization
-parameters through
-
-.. math::
-         E = C_t\Delta t^r + C_x\Delta x^p,
-
-where :math:`C_t`, :math:`C_x`, :math:`r`, and :math:`p` are constants. The constants
-:math:`r` and :math:`p` are known as the *convergence rates* in time and space,
-respectively.
-From the
-accuracy in the finite difference approximations, we expect :math:`r=p=2`,
-since the error terms are of order :math:`\Delta t^2` and :math:`\Delta x^2`.
-This is confirmed by truncation error analysis and other types of analysis.
-
-By using an exact solution of the PDE problem, we will next compute
-the error measure :math:`E` on a sequence of refined meshes and see if
-the rates :math:`r=p=2` are obtained. We will not be concerned with estimating
-the constants :math:`C_t` and :math:`C_x`.
-
-It is advantageous to introduce a single discretization parameter
-:math:`h=\Delta t=\hat c \Delta x` for some constant :math:`\hat c`.
-Since :math:`\Delta t` and :math:`\Delta x`
-are related through the Courant number, :math:`\Delta t = C\Delta x/c`, we
-set :math:`h=\Delta t`, and then :math:`\Delta x = hc/C`.
-Now the expression for the error measure is greatly simplified:
-
-.. math::
-         E = C_t\Delta t^r + C_x\Delta x^r = C_t h^r + C_x\left(\frac{c}{C}\right)^r h^r
-        = Dh^r,\quad D = C_t+C_x\left(\frac{c}{C}\right)^r {\thinspace .}
-
-We choose an initial discretization parameter :math:`h_0` and run
-experiments with decreasing :math:`h`: :math:`h_i=2^{-i}h_0`, :math:`i=1,2,\ldots,m`.
-Halving :math:`h` in each experiment is not necessary, but it is a common choice.
-For each experiment we must record :math:`E` and :math:`h`.
-A standard choice of error measure
-is the :math:`\ell^2` or :math:`\ell^\infty` norm of
-the error mesh function :math:`e^n_i`:
-
-.. _Eq:_auto32:
-
-.. math::
-
-    \tag{106}
-    E = ||e^n_i||_{\ell^2} = \left( \Delta t\Delta x
-        \sum_{n=0}^{N_t}\sum_{i=0}^{N_x}
-        (e^n_i)^2\right)^{\frac{1}{2}},\quad e^n_i = {u_{\small\mbox{e}}}(x_i,t_n)-u^n_i,
-        
-        
-
-.. _Eq:_auto33:
-
-.. math::
-
-    \tag{107}
-    E = ||e^n_i||_{\ell^\infty} = \max_{i,n} |e^i_n|{\thinspace .}
-        
-        
-
-In Python, one can compute :math:`\sum_{i}(e^{n}_i)^2` at each time step
-and accumulate the value in some sum variable, say ``e2_sum``.  At the
-final time step one can do ``sqrt(dt*dx*e2_sum)``.  For the
-:math:`\ell^\infty` norm one must compare the maximum error at a time level
-(``e.max()``) with the global maximum over the time domain: ``e_max =
-max(e_max, e.max())``.
-
-An alternative error measure
-is to use a spatial norm at one time step only, e.g.,
-the end time :math:`T` (:math:`n=N_t`):
-
-.. _Eq:_auto34:
-
-.. math::
-
-    \tag{108}
-    E = ||e^n_i||_{\ell^2} = \left( \Delta x\sum_{i=0}^{N_x}
-        (e^n_i)^2\right)^{\frac{1}{2}},\quad e^n_i = {u_{\small\mbox{e}}}(x_i,t_n)-u^n_i,
-        
-        
-
-.. _Eq:_auto35:
-
-.. math::
-
-    \tag{109}
-    E = ||e^n_i||_{\ell^\infty} = \max_{0\leq i\leq N_x} |e^{n}_i|{\thinspace .}
-        
-        
-
-The important issue is that our error measure :math:`E` must be one number
-that represents the error in the simulation.
-
-Let :math:`E_i` be the error measure in experiment (mesh) number :math:`i` and
-let :math:`h_i` be the corresponding discretization parameter (:math:`h`).
-With the error model :math:`E_i = Dh_i^r`, we can
-estimate :math:`r` by comparing two consecutive
-experiments:
-
-.. math::
-        
-        E_{i+1}& =D h_{i+1}^{r},\\ 
-        E_{i}& =D h_{i}^{r}{\thinspace .}
-        
-
-Dividing the two equations eliminates the (uninteresting) constant :math:`D`.
-Thereafter, solving for :math:`r` yields
-
-.. math::
-         r = \frac{\ln E_{i+1}/E_{i}}{\ln h_{i+1}/h_{i}}{\thinspace .}
-        
-
-Since :math:`r` depends on :math:`i`, i.e., which simulations we compare,
-we add an index to :math:`r`: :math:`r_i`, where :math:`i=0,\ldots,m-2`, if we
-have :math:`m` experiments: :math:`(h_0,E_0),\ldots,(h_{m-1}, E_{m-1})`.
-
-In our present discretization of the wave equation we expect :math:`r=2`, and
-hence the :math:`r_i` values should converge to 2 as :math:`i` increases.
-
-.. _wave:pde2:fd:verify:quadratic:
-
-Constructing an exact solution of the discrete equations
---------------------------------------------------------
-
-With a manufactured or known analytical solution, as outlined above,
-we can estimate convergence rates and see if they have the correct
-asymptotic behavior. Experience shows that this is a quite good
-verification technique in that many common bugs will destroy the
-convergence rates. A significantly better test though,
-would be to check that the
-numerical solution is exactly what it should be. This will in general
-require exact knowledge of the numerical error, which we do not normally have
-(although we in the section :ref:`wave:pde1:analysis` establish such knowledge
-in simple cases).
-However, it is possible to look for solutions where we can show that
-the numerical error vanishes, i.e., the solution of the original continuous
-PDE problem is
-also a solution of the discrete equations. This property often arises
-if the exact solution of the PDE
-is a lower-order polynomial. (Truncation error
-analysis leads to error measures that involve derivatives of the
-exact solution. In the present problem, the truncation error involves
-4th-order derivatives of :math:`u` in space and time. Choosing :math:`u`
-as a polynomial of degree three or less
-will therefore lead to vanishing error.)
-
-We shall now illustrate the construction of an exact solution to both the
-PDE itself and the discrete equations.
-Our chosen manufactured solution is quadratic in space
-and linear in time. More specifically, we set
-
-.. _Eq:wave:pde2:fd:verify:quadratic:uex:
-
-.. math::
-
-    \tag{110}
-    {u_{\small\mbox{e}}} (x,t) = x(L-x)(1+{\frac{1}{2}}t),
-        
-        
-
-which by insertion in the PDE leads to :math:`f(x,t)=2(1+t)c^2`. This :math:`{u_{\small\mbox{e}}}`
-fulfills the boundary conditions :math:`u=0` and demands :math:`I(x)=x(L-x)`
-and :math:`V(x)={\frac{1}{2}}x(L-x)`.
-
-To realize that the chosen :math:`{u_{\small\mbox{e}}}` is also an exact
-solution of the discrete equations,
-we first remind ourselves that :math:`t_n=n\Delta t` before we
-establish that
-
-.. _Eq:_auto36:
-
-.. math::
-
-    \tag{111}
-    \lbrack D_tD_t t^2\rbrack^n = \frac{t_{n+1}^2 - 2t_n^2 + t_{n-1}^2}{\Delta t^2}
-        = (n+1)^2 -2n^2 + (n-1)^2 = 2,
-        
-        
-
-.. _Eq:_auto37:
-
-.. math::
-
-    \tag{112}
-    \lbrack D_tD_t t\rbrack^n = \frac{t_{n+1} - 2t_n + t_{n-1}}{\Delta t^2}
-        = \frac{((n+1) -2n + (n-1))\Delta t}{\Delta t^2} = 0
-        {\thinspace .}
-        
-        
-
-Hence,
-
-.. math::
-         [D_tD_t {u_{\small\mbox{e}}}]^n_i = x_i(L-x_i)[D_tD_t (1+{\frac{1}{2}}t)]^n =
-        x_i(L-x_i){\frac{1}{2}}[D_tD_t t]^n = 0{\thinspace .}
-
-Similarly, we get that
-
-.. math::
-        
-        \lbrack D_xD_x {u_{\small\mbox{e}}}\rbrack^n_i &=
-        (1+{\frac{1}{2}}t_n)\lbrack D_xD_x (xL-x^2)\rbrack_i =
-        (1+{\frac{1}{2}}t_n)\lbrack LD_xD_x x - D_xD_x x^2\rbrack_i \\ 
-        &= -2(1+{\frac{1}{2}}t_n)
-        {\thinspace .}
-        
-
-Now, :math:`f^n_i = 2(1+{\frac{1}{2}}t_n)c^2`, which results in
-
-.. math::
-         [D_tD_t {u_{\small\mbox{e}}} - c^2D_xD_x{u_{\small\mbox{e}}} - f]^n_i = 0 - c^2(-1)2(1 + {\frac{1}{2}}t_n
-        + 2(1+{\frac{1}{2}}t_n)c^2 = 0{\thinspace .}
-
-Moreover, :math:`{u_{\small\mbox{e}}}(x_i,0)=I(x_i)`,
-:math:`\partial {u_{\small\mbox{e}}}/\partial t = V(x_i)` at :math:`t=0`, and
-:math:`{u_{\small\mbox{e}}}(x_0,t)={u_{\small\mbox{e}}}(x_{N_x},0)=0`. Also the modified scheme for the
-first time step is fulfilled by :math:`{u_{\small\mbox{e}}}(x_i,t_n)`.
-
-Therefore, the exact solution :math:`{u_{\small\mbox{e}}}(x,t)=x(L-x)(1+t/2)`
-of the PDE problem is also an exact solution of the discrete problem.
-We can use this result to check that the computed :math:`u^n_i` values from
-an implementation equals :math:`{u_{\small\mbox{e}}}(x_i,t_n)` within machine precision,
-*regardless of the mesh spacings* :math:`\Delta x` and :math:`\Delta t`!
-Nevertheless, there might be stability
-restrictions on :math:`\Delta x` and :math:`\Delta t`, so the test can only be
-run for a mesh that is compatible with the stability criterion (which
-in the present case is :math:`C\leq 1`, to be derived later).
-
-
-.. note::
-   A product of quadratic or linear expressions in the various
-   independent variables, as shown above, will often fulfill both the
-   PDE problem and the discrete equations, and can therefore be very useful
-   solutions for verifying implementations.
-   
-   However, for 1D wave
-   equations of the type :math:`u_{tt}=c^2u_{xx}` we shall see that there is always
-   another much more powerful way of generating exact
-   solutions (which consists in just setting :math:`C=1` (!), as shown in
-   the section :ref:`wave:pde1:analysis`).
-
-
-
-
-.. _wave:pde1:impl:
-
-Implementation          (4)
-===========================
-
-.. index::
-   single: wave equation; 1D, implementation
-
-This section presents the complete computational algorithm, its
-implementation in Python code, animation of the solution, and
-verification of the implementation.
-
-A real implementation of the basic computational algorithm from
-the sections :ref:`wave:string:alg` and :ref:`wave:string:impl` can be
-encapsulated in a function, taking all the input data for the problem
-as arguments.  The physical input data consists of :math:`c`, :math:`I(x)`,
-:math:`V(x)`, :math:`f(x,t)`, :math:`L`, and :math:`T`.  The numerical input is the mesh
-parameters :math:`\Delta t` and :math:`\Delta x`.
-
-Instead of specifying :math:`\Delta t` *and* :math:`\Delta x`, we can specify one
-of them and the Courant number :math:`C` instead, since having explicit
-control of the Courant number is convenient when investigating the
-numerical method. Many find it natural to prescribe the resolution of
-the spatial grid and set :math:`N_x`. The solver function can then compute
-:math:`\Delta t = CL/(cN_x)`. However, for comparing :math:`u(x,t)` curves (as
-functions of :math:`x`) for various Courant numbers
-it is more convenient to keep :math:`\Delta t` fixed for
-all :math:`C` and let :math:`\Delta x` vary according to :math:`\Delta x = c\Delta t/C`.
-With :math:`\Delta t` fixed, all frames correspond to the same time :math:`t`,
-and this simplifies animations that compare simulations with different
-mesh resolutions. Plotting functions of :math:`x`
-with different spatial resolution is trivial,
-so it is easier to let :math:`\Delta x` vary in the simulations than :math:`\Delta t`.
-
-Callback function for user-specific actions
--------------------------------------------
-
-.. index:: callback function
-
-The solution at all spatial points at a new time level is stored in an
-array ``u`` of length :math:`N_x+1`. We need to decide what do to with
-this solution, e.g., visualize the curve, analyze the values, or write
-the array to file for later use. The decision about what to do is left to
-the user in the form of a user-suppled supplied function
-
-.. code-block:: python
-
-        user_action(u, x, t, n)
-
-where ``u`` is the solution at the spatial points ``x`` at time ``t[n]``.
-The ``user_action`` function is call from the solver at each time level ``n``.
-
-If the user wants to plot the solution or store the solution at a
-time point, she needs to write such a function and take appropriate
-actions inside it. We will show examples on many such ``user_action``
-functions.
-
-Since the solver function make calls back to the user's code
-via such a function, this type of function is called a *callback function*.
-When writing general software, like our solver function, which also needs
-to carry out special problem-dependent actions (like visualization),
-it is a common technique to leave those actions to user-supplied
-callback functions.
-
-.. _wave:pde1:impl:solver:
-
-The solver function
--------------------
-
-A first attempt at a solver function is listed below.
-
-.. code-block:: python
-
-        import numpy as np
-        
-        def solver(I, V, f, c, L, dt, C, T, user_action=None):
-            """Solve u_tt=c^2*u_xx + f on (0,L)x(0,T]."""
-            Nt = int(round(T/dt))
-            t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
-            dx = dt*c/float(C)
-            Nx = int(round(L/dx))
-            x = np.linspace(0, L, Nx+1)       # Mesh points in space
-            C2 = C**2                      # Help variable in the scheme
-            if f is None or f == 0 :
-                f = lambda x, t: 0
-            if V is None or V == 0:
-                V = lambda x: 0
-        
-            u   = np.zeros(Nx+1)   # Solution array at new time level
-            u_1 = np.zeros(Nx+1)   # Solution at 1 time level back
-            u_2 = np.zeros(Nx+1)   # Solution at 2 time levels back
-        
-            import time;  t0 = time.clock()  # for measuring CPU time
-        
-            # Load initial condition into u_1
-            for i in range(0,Nx+1):
-                u_1[i] = I(x[i])
-        
-            if user_action is not None:
-                user_action(u_1, x, t, 0)
-        
-            # Special formula for first time step
-            n = 0
-            for i in range(1, Nx):
-                u[i] = u_1[i] + dt*V(x[i]) + \ 
-                       0.5*C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) + \ 
-                       0.5*dt**2*f(x[i], t[n])
-            u[0] = 0;  u[Nx] = 0
-        
-            if user_action is not None:
-                user_action(u, x, t, 1)
-        
-            # Switch variables before next step
-            u_2[:] = u_1;  u_1[:] = u
-        
-            for n in range(1, Nt):
-                # Update all inner points at time t[n+1]
-                for i in range(1, Nx):
-                    u[i] = - u_2[i] + 2*u_1[i] + \ 
-                             C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) + \ 
-                             dt**2*f(x[i], t[n])
-        
-                # Insert boundary conditions
-                u[0] = 0;  u[Nx] = 0
-                if user_action is not None:
-                    if user_action(u, x, t, n+1):
-                        break
-        
-                # Switch variables before next step
-                u_2[:] = u_1;  u_1[:] = u
-        
-            cpu_time = t0 - time.clock()
-            return u, x, t, cpu_time
-
-.. Too trivial here:
-
-.. Checking that a solution :math:`u^n_i` stays constant throughout some
-
-.. time steps is often of considerable help in tracking down bugs
-
-.. in an implementation. A constant solution :math:`{u_{\small\mbox{e}}} = Q` fulfills
-
-.. the PDE problem :ref:`(97) <Eq:wave:pde2>`-:ref:`(101) <Eq:wave:pde2:bc:L>`
-
-.. if :math:`I(x)=Q`, :math:`V=0`, :math:`u(0,t)=u(L,t)=Q`, and :math:`f=0`
-
-.. _wave:pde1:impl:verify:quadratic:
-
-Verification: exact quadratic solution
---------------------------------------
-
-.. index:: nose test
-
-.. index:: pytest test
-
-.. index:: unit testing
-
-.. index::
-   single: software testing; nose
-
-.. index::
-   single: software testing; pytest
-
-We use the test problem derived in the section :ref:`wave:pde2:fd` for
-verification. Below is a unit test based on this test problem
-and realized as a proper *test function* (compatible with the unit test
-frameworks nose or pytest).
-
-.. code-block:: python
-
-        def test_quadratic():
-            """Check that u(x,t)=x(L-x)(1+t/2) is exactly reproduced."""
-        
-            def u_exact(x, t):
-                return x*(L-x)*(1 + 0.5*t)
-        
-            def I(x):
-                return u_exact(x, 0)
-        
-            def V(x):
-                return 0.5*u_exact(x, 0)
-        
-            def f(x, t):
-                return 2*(1 + 0.5*t)*c**2
-        
-            L = 2.5
-            c = 1.5
-            C = 0.75
-            Nx = 6  # Very coarse mesh for this exact test
-            dt = C*(L/Nx)/c
-            T = 18
-        
-            def assert_no_error(u, x, t, n):
-                u_e = u_exact(x, t[n])
-                diff = np.abs(u - u_e).max()
-                tol = 1E-13
-                assert diff < tol
-        
-            solver(I, V, f, c, L, dt, C, T,
-                   user_action=assert_no_error)
-
-When this function resides in the file ``wave1D_u0.py``, one can run ether
-``py.test`` or ``nosetests``,
-
-.. code-block:: text
-
-        Terminal> py.test   -s -v wave1D_u0.py
-        Terminal> nosetests -s -v wave1D_u0.py
-
-to automatically run all test functions with name ``test_*()``.
-
-.. _wave:pde1:impl:animate:
-
-Visualization: animating the solution
--------------------------------------
-
-Now that we have verified the implementation it is time to do a
-real computation where we also display the evolution of the waves
-on the screen. Since the ``solver`` function knows nothing about
-what type of visualizations we may want, it calls the callback function
-``user_action(u, x, t, n)``. We must therefore write this function and
-find the proper statements for plotting the solution.
-
-Function for administering the simulation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The following ``viz`` function
-
-1. defines a ``user_action`` callback function
-   for plotting the solution at each time level,
-
-2. calls the ``solver`` function, and
-
-3. combines all the plots (in files) to video in different formats.
-
-.. code-block:: python
-
-        def viz(
-            I, V, f, c, L, dt, C, T,  # PDE paramteres
-            umin, umax,               # Interval for u in plots
-            animate=True,             # Simulation with animation?
-            tool='matplotlib',        # 'matplotlib' or 'scitools'
-            solver_function=solver,   # Function with numerical algorithm
-            ):
-            """Run solver and visualize u at each time level."""
-        
-            def plot_u_st(u, x, t, n):
-                """user_action function for solver."""
-                plt.plot(x, u, 'r-',
-                         xlabel='x', ylabel='u',
-                         axis=[0, L, umin, umax],
-                         title='t=%f' % t[n], show=True)
-                # Let the initial condition stay on the screen for 2
-                # seconds, else insert a pause of 0.2 s between each plot
-                time.sleep(2) if t[n] == 0 else time.sleep(0.2)
-                plt.savefig('frame_%04d.png' % n)  # for movie making
-        
-            class PlotMatplotlib:
-                def __call__(self, u, x, t, n):
-                    """user_action function for solver."""
-                    if n == 0:
-                        plt.ion()
-                        self.lines = plt.plot(x, u, 'r-')
-                        plt.xlabel('x');  plt.ylabel('u')
-                        plt.axis([0, L, umin, umax])
-                        plt.legend(['t=%f' % t[n]], loc='lower left')
-                    else:
-                        self.lines[0].set_ydata(u)
-                        plt.legend(['t=%f' % t[n]], loc='lower left')
-                        plt.draw()
-                    time.sleep(2) if t[n] == 0 else time.sleep(0.2)
-                    plt.savefig('tmp_%04d.png' % n)  # for movie making
-        
-            if tool == 'matplotlib':
-                import matplotlib.pyplot as plt
-                plot_u = PlotMatplotlib()
-            elif tool == 'scitools':
-                import scitools.std as plt  # scitools.easyviz interface
-                plot_u = plot_u_st
-            import time, glob, os
-        
-            # Clean up old movie frames
-            for filename in glob.glob('tmp_*.png'):
-                os.remove(filename)
-        
-            # Call solver and do the simulaton
-            user_action = plot_u if animate else None
-            u, x, t, cpu = solver_function(
-                I, V, f, c, L, dt, C, T, user_action)
-        
-            # Make video files
-            fps = 4  # frames per second
-            codec2ext = dict(flv='flv', libx264='mp4', libvpx='webm',
-                             libtheora='ogg')  # video formats
-            filespec = 'tmp_%04d.png'
-            movie_program = 'ffmpeg'  # or 'avconv'
-            for codec in codec2ext:
-                ext = codec2ext[codec]
-                cmd = '%(movie_program)s -r %(fps)d -i %(filespec)s '\ 
-                      '-vcodec %(codec)s movie.%(ext)s' % vars()
-                os.system(cmd)
-        
-            if tool == 'scitools':
-                # Make an HTML play for showing the animation in a browser
-                plt.movie('tmp_*.png', encoder='html', fps=fps,
-                          output_file='movie.html')
-            return cpu
-
-Dissection of the code
-~~~~~~~~~~~~~~~~~~~~~~
-
-The ``viz`` function can either use SciTools or Matplotlib for
-visualizing the solution. The ``user_action`` function based on SciTools
-is called ``plot_u_st``, while the ``user_action`` function based on
-Matplotlib is a bit more complicated as it is realized as a class and
-needs statements that differ from those for making static plots.
-SciTools can utilize both Matplotlib and Gnuplot (and many other
-plotting programs) for doing the graphics, but Gnuplot is a relevant
-choice for large :math:`N_x` or in two-dimensional problems
-as Gnuplot is significantly faster than
-Matplotlib for screen animations.
-
-.. index:: closure
-
-A function inside another function, like ``plot_u_st`` in the above code
-segment, has access to *and remembers* all the local variables in the
-surrounding code inside the ``viz`` function (!). This is known in
-computer science as a *closure* and is very convenient to program
-with. For example, the ``plt`` and ``time`` modules defined outside
-``plot_u`` are accessible for ``plot_u_st`` when the function is called
-(as ``user_action``) in the ``solver`` function.  Some may think, however,
-that a class instead of a closure is a cleaner and
-easier-to-understand implementation of the user action function, see
-the section :ref:`wave:pde2:software`.
-
-The ``plot_u_st`` function just makes a standard SciTools ``plot`` command
-for plotting ``u`` as a function of ``x`` at time ``t[n]``.  To achieve a
-smooth animation, the ``plot`` command should take keyword arguments
-instead of being broken into separate calls to ``xlabel``, ``ylabel``,
-``axis``, ``time``, and ``show``.  Several ``plot`` calls will automatically
-cause an animation on the screen. In addition, we want to save each
-frame in the animation to file. We then need a filename where the
-frame number is padded with zeros, here ``tmp_0000.png``,
-``tmp_0001.png``, and so on.  The proper printf construction is then
-``tmp_%04d.png``.
-The section :ref:`vib:ode1:anim` contains more basic
-information on making animations.
-
-The solver is called with an argument ``plot_u`` as ``user_function``.
-If the user chooses to use SciTools, ``plot_u`` is the ``plot_u_st``
-callback function, but for Matplotlib it is an instance of the
-class ``PlotMatplotlib``. Also this class makes use of variables
-defined in the ``viz`` function: ``plt`` and ``time``.
-With Matplotlib, one has to make the first plot the standard way, and
-then update the :math:`y` data in the plot at every time level. The update
-requires active use of the returned value from ``plt.plot`` in the first
-plot.  This value would need to be stored in a local variable if we
-were to use a closure for the ``user_action`` function when doing the
-animation with Matplotlib. It is much easier to store the
-variable as a class attribute ``self.lines``. Since the class is essentially a
-function, we implement the function as the special method ``__call__``
-such that the instance ``plot_u(u, x, t, n)`` can be called as a standard
-callback function from ``solver``.
-
-Making movie files
-~~~~~~~~~~~~~~~~~~
-
-From the
-``frame_*.png`` files containing the frames in the animation we can
-make video files.
-The section :ref:`vib:ode1:anim` presents basic information on how to
-use the ``ffmpeg`` (or ``avconv``) program for producing video files
-in different modern formats: Flash, MP4, Webm, and Ogg.
-
-The ``viz`` function creates a ``ffmpeg`` or ``avconv`` command
-with the proper arguments for each of the formats Flash, MP4, WebM,
-and Ogg. The task is greatly simplified by having a
-``codec2ext`` dictionary for mapping
-video codec names to filename extensions.
-As mentioned in the section :ref:`vib:ode1:anim`, only
-two formats are actually needed to ensure that all browsers can
-successfully play the video: MP4 and WebM.
-
-Some animations consisting of a large number of plot files may not
-be properly combined into a video using ``ffmpeg`` or ``avconv``.
-A method that always works is to play the PNG files as an animation
-in a browser using JavaScript code in an HTML file.
-The SciTools package has a function ``movie`` (or a stand-alone command
-``scitools movie``) for creating such an HTML player. The ``plt.movie``
-call in the ``viz`` function shows how the function is used.
-The file ``movie.html`` can be loaded into a browser and features
-a user interface where the speed of the animation can be controlled.
-Note that the movie in this case consists of the ``movie.html`` file
-and all the frame files ``tmp_*.png``.
-
-Skipping frames for animation speed
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Sometimes the time step is small and :math:`T` is large, leading to an
-inconveniently large number of plot files and a slow animation on the
-screen. The solution to such a problem is to decide on a total number
-of frames in the animation, ``num_frames``, and plot the solution only for
-every ``skip_frame`` frames. For example, setting ``skip_frame=5`` leads
-to plots of every 5 frames. The default value ``skip_frame=1`` plots
-every frame.
-The total number of time levels (i.e., maximum
-possible number of frames) is the length of ``t``, ``t.size`` (or ``len(t)``),
-so if we want ``num_frames`` frames in the animation,
-we need to plot every ``t.size/num_frames`` frames:
-
-.. code-block:: python
-
-        skip_frame = int(t.size/float(num_frames))
-        if n % skip_frame == 0 or n == t.size-1:
-            st.plot(x, u, 'r-', ...)
-
-The initial condition (``n=0``) included by ``n % skip_frame == 0``,
-as well as every ``skip_frame``-th frame.
-As ``n % skip_frame == 0`` will very seldom be true for the
-very final frame, we must also check if ``n == t.size-1`` to
-get the final frame included.
-
-A simple choice of numbers may illustrate the formulas: say we have
-801 frames in total (``t.size``) and we allow only 60 frames to be
-plotted. Then we need to plot every 801/60 frame, which with integer
-division yields 13 as ``every``. Using the mod function, ``n % every``,
-this operation is zero every time ``n`` can be divided by 13 without a
-remainder. That is, the ``if`` test is true when ``n`` equals :math:`0, 13, 26,
-39, ..., 780, 801`. The associated code is included in the ``plot_u``
-function in the file `wave1D_u0v.py <http://tinyurl.com/nm5587k/wave/wave1D/wave1D_u0v.py>`__.
-
-.. _wave:pde1:guitar:data:
-
-Running a case
---------------
-
-The first demo of our 1D wave equation solver concerns vibrations of a
-string that is initially deformed to a triangular shape, like when picking
-a guitar string:
-
-.. _Eq:wave:pde1:guitar:I:
-
-.. math::
-
-    \tag{113}
-    I(x) = \left\lbrace
-        \begin{array}{ll}
-        ax/x_0, & x < x_0,\\ 
-        a(L-x)/(L-x_0), & \hbox{otherwise}
-        \end{array}\right.
-        
-        
-
-We choose :math:`L=75` cm, :math:`x_0=0.8L`, :math:`a=5` mm, and a time frequency
-:math:`\nu = 440` Hz. The relation between the wave speed :math:`c` and :math:`\nu` is
-:math:`c=\nu\lambda`, where :math:`\lambda` is the wavelength, taken as :math:`2L` because
-the longest wave on the string form half a wavelength. There is no
-external force, so :math:`f=0`, and the string is at rest initially so
-that :math:`V=0`.
-
-Regarding numerical parameters, we need to specify a :math:`\Delta t`.
-Sometimes it is more natural to think of a spatial resolution instead
-of a time step. A natural semi-coarse spatial resolution in the present
-problem is :math:`N_x=50`. We can then choose the associated :math:`\Delta t` (as required
-by the ``viz`` and ``solver`` functions) as the stability limit:
-:math:`\Delta t = L/(N_xc)`. This is the :math:`\Delta t` to be specified,
-but notice that if :math:`C<1`, the actual :math:`\Delta x` computed in ``solver`` gets
-larger than :math:`L/N_x`: :math:`\Delta x = c\Delta t/C = L/(N_xC)`. (The reason
-is that we fix :math:`\Delta t` and adjust :math:`\Delta x`, so if :math:`C` gets
-smaller, the code implements this effect in terms of a larger :math:`\Delta x`.)
-
-A function for setting the physical and numerical parameters and
-calling ``viz`` in this application goes as follows:
-
-.. code-block:: python
-
-        def guitar(C):
-            """Triangular wave (pulled guitar string)."""
-            L = 0.75
-            x0 = 0.8*L
-            a = 0.005
-            freq = 440
-            wavelength = 2*L
-            c = freq*wavelength
-            omega = 2*pi*freq
-            num_periods = 1
-            T = 2*pi/omega*num_periods
-            # Choose dt the same as the stability limit for Nx=50
-            dt = L/50./c
-        
-            def I(x):
-                return a*x/x0 if x < x0 else a/(L-x0)*(L-x)
-        
-            umin = -1.2*a;  umax = -umin
-            cpu = viz(I, 0, 0, c, L, dt, C, T, umin, umax,
-                      animate=True, tool='scitools')
-
-The associated program has the name `wave1D_u0.py <http://tinyurl.com/nm5587k/wave/wave1D/wave1D_u0.py>`__. Run
-the program and watch the `movie of the vibrating string <http://tinyurl.com/opdfafk/pub/mov-wave/guitar_C0.8/index.html>`__.
-
-[**hpl 10**: Must recompute these movies as :math:`\Delta t` is different when :math:`C<1`.]
-
-Working with a scaled PDE model
--------------------------------
-
-Depending on the model, it may be a substantial job to establish
-consistent and relevant physical parameter values for a case.
-The guitar string example illustrates the point.
-However, by *scaling*
-the mathematical problem we can often reduce the need to estimate
-physical parameters dramatically. The scaling technique
-consists of introducing new
-independent and dependent variables, with the aim that the absolute
-value of these is not very large or small, but preferably around unity
-in size. We introduce the dimensionless variables
-
-.. math::
-         \bar x = \frac{x}{L},\quad \bar t = \frac{c}{L}t,\quad
-        \bar u = \frac{u}{a}
-        {\thinspace .}
-        
-
-Here, :math:`L` is a typical length scale, e.g., the length of the domain,
-and :math:`a` is a typical size of :math:`u`, e.g., determined from the
-initial condition: :math:`a=\max_x|I(x)|`.
-
-Inserting these new variables in the PDE and noting that
-
-.. math::
-         \frac{\partial u}{\partial t} = \frac{aL}{c}\frac{\partial\bar u}{\partial\bar t},
-
-by the chain rule, one gets
-
-.. math::
-         \frac{a^2L^2}{c^2}\frac{\partial^2\bar u}{\partial\bar t^2}
-        = \frac{a^2c^2}{L^2}\frac{\partial^2\bar u}{\partial\bar x^2},
-
-in case :math:`f=0`.
-Dropping the bars, we arrive at the scaled PDE
-
-.. _Eq:_auto38:
-
-.. math::
-
-    \tag{114}
-    \frac{\partial^2 u}{\partial t^2} = \frac{\partial^2 u}{\partial x^2},
-        
-        
-
-which has not parameter :math:`c^2` anymore. The initial conditions are scaled
-as
-
-.. math::
-         a\bar u(\bar x, 0) = I(L\bar x)
-
-and
-
-.. math::
-         \frac{a}{L/c}\frac{\partial\bar u}{\partial\bar t}(\bar x,0) = V(L\bar x),
-
-resulting in
-
-.. math::
-         \bar u(\bar x, 0) = \frac{I(L\bar x)}{\max_x |I(x)|},\quad
-        \frac{\partial\bar u}{\partial\bar t}(\bar x,0) = \frac{L}{ac}V(L\bar x){\thinspace .}
-
-In the common case :math:`V=0` we see that there are no physical parameters to be
-estimated in the PDE model!
-
-If we have a program implemented for the physical wave equation with
-dimensions, we can obtain the dimensionless, scaled version by
-setting :math:`c=1`. The initial condition of a guitar string,
-given in :ref:`(113) <Eq:wave:pde1:guitar:I>`, gets its scaled form by choosing
-:math:`a=1`, :math:`L=1`, and :math:`x_0\in [0,1]`. This means that we only need to
-decide on the :math:`x_0` value as a fraction of unity, because
-the scaled problem corresponds to setting all
-other parameters to unity. In the code we can just set
-``a=c=L=1``, ``x0=0.8``, and there is no need to calculate with
-wavelengths and frequencies to estimate :math:`c`!
-
-The only non-trivial parameter to estimate in the scaled problem
-is the final end time of the simulation, or more precisely, how it relates
-to periods in periodic solutions in time, since we often want to
-express the end time as a certain number of periods.
-The period in the dimensionless problem is 2, so the end time can be
-set to the desired number of periods times 2.
-
-Why the dimensionless period is 2 can be explained by the following
-reasoning.
-Suppose as :math:`u` behaves as :math:`\cos (\omega t)` in time in variables
-with dimension. The corresponding period is then :math:`P=2\pi/\omega`, but
-we need to estimate :math:`\omega`. A typical solution of the wave
-equation is :math:`u(x,t)=A\cos(kx)\cos(\omega t)`, where :math:`A` is an amplitude
-and :math:`k` is related to the wave length :math:`\lambda` in space: :math:`\lambda = 2\pi/k`.
-Both :math:`\lambda` and :math:`A` will be given by the initial condition :math:`I(x)`.
-Inserting this :math:`u(x,t)` in the PDE yields :math:`-\omega^2 = -c^2k^2`, i.e.,
-:math:`\omega = kc`. The period is therefore :math:`P=2\pi/(kc)`.
-If the boundary conditions are :math:`u(0,t)=u(0,L)`, we need to have
-:math:`kL = n\pi` for integer :math:`n`. The period becomes :math:`P=2L/nc`. The longest
-period is :math:`P=2L/c`. The dimensionless period is :math:`\tilde P` is obtained
-by dividing :math:`P` by the time scale :math:`L/c`, which results in :math:`\tilde P=2`.
-Shorter waves in the initial condition will have a dimensionless
-shorter period :math:`\tilde P=2/n` (:math:`n>1`).
-
-.. _wave:pde1:impl:vec:
-
-Vectorization
-=============
-
-.. index:: vectorization
-
-The computational algorithm for solving the wave equation visits one
-mesh point at a time and evaluates a formula for the new value :math:`u_i^{n+1}`
-at
-that point. Technically, this is implemented by a loop over array
-elements in a program. Such loops may run slowly in Python (and
-similar interpreted languages such as R and MATLAB).
-One technique for speeding up loops is to
-perform operations on entire arrays instead of working with one element
-at a time. This is referred to as *vectorization*, *vector computing*,
-or *array computing*.
-Operations on whole arrays are possible if the computations
-involving each element is independent of each other and therefore can,
-at least in principle, be performed simultaneously.
-Vectorization not only speeds up the code on serial computers, but
-also makes it easy to exploit parallel computing.
-
-.. _wave:pde1:impl:vec:slices:basics:
-
-Operations on slices of arrays
-------------------------------
-
-.. index:: scalar code
-
-.. index:: vectorization
-
-.. index:: array computing
-
-.. index:: array slices
-
-.. index:: slice
-
-Efficient computing with ``numpy`` arrays demands that we avoid loops
-and compute with entire arrays at once (or at least large portions of them).
-Consider this calculation of differences :math:`d_i = u_{i+1}-u_i`:
-
-.. code-block:: python
-
-        n = u.size
-        for i in range(0, n-1):
-            d[i] = u[i+1] - u[i]
-
-All the differences here are independent of each other.
-The computation of ``d`` can therefore alternatively be done by
-subtracting the array :math:`(u_0,u_1,\ldots,u_{n-1})` from
-the array where the elements are shifted one index upwards:
-:math:`(u_1,u_2,\ldots,u_n)`, see Figure :ref:`wave:pde1:vec:fig1`.
-The former subset of the array can be
-expressed by ``u[0:n-1]``,
-``u[0:-1]``, or just
-``u[:-1]``, meaning from index 0 up to,
-but not including, the last element (``-1``). The latter subset
-is obtained by ``u[1:n]`` or ``u[1:]``,
-meaning from index 1 and the rest of the array.
-The computation of ``d`` can now be done without an explicit Python loop:
-
-.. code-block:: python
-
-        d = u[1:] - u[:-1]
-
-or with explicit limits if desired:
-
-.. code-block:: python
-
-        d = u[1:n] - u[0:n-1]
-
-Indices with a colon, going from an index to (but not including) another
-index are called *slices*. With ``numpy`` arrays, the computations
-are still done by loops, but in efficient, compiled, highly optimized
-C or Fortran code. Such loops are sometimes referred to as *vectorized
-loops*. Such loops can also easily be distributed
-among many processors on parallel computers. We say that the *scalar code*
-above, working on an element (a scalar) at a time, has been replaced by
-an equivalent *vectorized code*. The process of vectorizing code is called
-*vectorization*.
-
-.. _wave:pde1:vec:fig1:
-
-.. figure:: vectorized_diff.png
-   :width: 400
-
-   *Illustration of subtracting two slices of two arrays*
-
-
-.. admonition:: Test your understanding
-
-   Newcomers to vectorization are encouraged to choose
-   a small array ``u``, say with five elements,
-   and simulate with pen and paper
-   both the loop version and the vectorized version above.
-
-
-
-
-Finite difference schemes basically contain differences between array
-elements with shifted indices. As an example,
-consider the updating formula
-
-.. code-block:: python
-
-        for i in range(1, n-1):
-            u2[i] = u[i-1] - 2*u[i] + u[i+1]
-
-The vectorization consists of replacing the loop by arithmetics on
-slices of arrays of length ``n-2``:
-
-.. code-block:: python
-
-        u2 = u[:-2] - 2*u[1:-1] + u[2:]
-        u2 = u[0:n-2] - 2*u[1:n-1] + u[2:n]   # alternative
-
-Note that the length of ``u2`` becomes ``n-2``. If ``u2`` is already an array of
-length ``n`` and we want to use the formula to update all the "inner"
-elements of ``u2``, as we will when solving a 1D wave equation, we can write
-
-.. code-block:: python
-
-        u2[1:-1]  = u[:-2] - 2*u[1:-1] + u[2:]
-        u2[1:n-1] = u[0:n-2] - 2*u[1:n-1] + u[2:n]   # alternative
-
-The first expression's right-hand side is realized by the
-following steps, involving temporary arrays with intermediate results,
-since each array operation can only involve one or two arrays.
-The ``numpy`` package performs the first line above in
-four steps:
-
-.. code-block:: text
-
-        temp1 = 2*u[1:-1]
-        temp2 = u[:-2] - temp1
-        temp3 = temp2 + u[2:]
-        u2[1:-1] = temp3
-
-We need three temporary arrays, but a user does not need to worry about
-such temporary arrays.
-
-
-.. admonition:: Common mistakes with array slices
-
-   Array expressions with slices demand that the slices have the same
-   shape. It easy to make a mistake in, e.g.,
-   
-   .. code-block:: python
-   
-           u2[1:n-1] = u[0:n-2] - 2*u[1:n-1] + u[2:n]
-   
-   and write
-   
-   .. code-block:: python
-   
-           u2[1:n-1] = u[0:n-2] - 2*u[1:n-1] + u[1:n]
-   
-   Now ``u[1:n]`` has wrong length (``n-1``) compared to the other array
-   slices, causing a ``ValueError`` and the message
-   ``could not broadcast input array from shape 103 into shape 104``
-   (if ``n`` is 105). When such errors occur one must closely examine
-   all the slices. Usually, it is easier to get upper limits of slices
-   right when they use ``-1`` or ``-2`` or empty limit rather than
-   expressions involving the length.
-   
-   Another common mistake is to forget the slice in the array on the
-   left-hand side,
-   
-   .. code-block:: python
-   
-           u2 = u[0:n-2] - 2*u[1:n-1] + u[1:n]
-   
-   This is really crucial: now ``u2`` becomes a *new* array of length
-   ``n-2``, which is the wrong length as we have no entries for the boundary
-   values. We meant to insert the right-hand side array *into* the
-   in the original ``u2`` array for the entries that correspond to the
-   internal points in the mesh (``1:n-1`` or ``1:-1``).
-
-
-
-
-Vectorization may also work nicely with functions. To illustrate, we may
-extend the previous example as follows:
-
-.. code-block:: python
-
-        def f(x):
-            return x**2 + 1
-        
-        for i in range(1, n-1):
-            u2[i] = u[i-1] - 2*u[i] + u[i+1] + f(x[i])
-
-Assuming ``u2``, ``u``, and ``x`` all have length ``n``, the vectorized
-version becomes
-
-.. code-block:: python
-
-        u2[1:-1] = u[:-2] - 2*u[1:-1] + u[2:] + f(x[1:-1])
-
-Obviously, ``f`` must be able to take an array as argument for ``f[x[1:-1])``
-to make sense.
-
-.. _wave:pde1:impl:vec:slices:fdm:
-
-Finite difference schemes expressed as slices
----------------------------------------------
-
-We now have the necessary tools to vectorize the wave equation
-algorithm as described mathematically in the section :ref:`wave:string:alg`
-and through code in the section :ref:`wave:pde1:impl:solver`.  There are
-three loops: one for the initial condition, one for the first time
-step, and finally the loop that is repeated for all subsequent time
-levels. Since only the latter is repeated a potentially large number
-of times, we limit our vectorization efforts to this loop:
-
-.. code-block:: python
-
-        for i in range(1, Nx):
-            u[i] = 2*u_1[i] - u_2[i] + \ 
-                   C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1])
-
-The vectorized version becomes
-
-.. code-block:: python
-
-        u[1:-1] = - u_2[1:-1] + 2*u_1[1:-1] + \ 
-                  C2*(u_1[:-2] - 2*u_1[1:-1] + u_1[2:])
-
-or
-
-.. code-block:: python
-
-        u[1:Nx] = 2*u_1[1:Nx]- u_2[1:Nx] + \ 
-                  C2*(u_1[0:Nx-1] - 2*u_1[1:Nx] + u_1[2:Nx+1])
-
-.. We may vectorize the other loops regarding the initial condition and
-
-.. the first time step, but the effect will hardly be
-
-.. noticeable in long time simulations.
-
-The program
-`wave1D_u0v.py <http://tinyurl.com/nm5587k/wave/wave1D/wave1D_u0v.py>`__
-contains a new version of the function ``solver`` where both the scalar
-and the vectorized loops are included (the argument ``version`` is
-set to ``scalar`` or ``vectorized``, respectively).
-
-.. _wave:pde1:impl:vec:verify:quadratic:
-
-Verification          (4)
--------------------------
-
-.. index:: lambda function (Python)
-
-We may reuse the quadratic solution :math:`{u_{\small\mbox{e}}}(x,t)=x(L-x)(1+{\frac{1}{2}}t)` for
-verifying also the vectorized code. A test function can now verify
-both the scalar and the vectorized version. Moreover, we may
-use a ``user_action`` function that compares the computed and exact
-solution at each time level and performs a test:
-
-.. code-block:: python
-
-        def test_quadratic():
-            """
-            Check the scalar and vectorized versions work for
-            a quadratic u(x,t)=x(L-x)(1+t/2) that is exactly reproduced.
-            """
-            # The following function must work for x as array or scalar
-            u_exact = lambda x, t: x*(L - x)*(1 + 0.5*t)
-            I = lambda x: u_exact(x, 0)
-            V = lambda x: 0.5*u_exact(x, 0)
-            # f is a scalar (zeros_like(x) works for scalar x too)
-            f = lambda x, t: np.zeros_like(x) + 2*c**2*(1 + 0.5*t)
-        
-            L = 2.5
-            c = 1.5
-            C = 0.75
-            Nx = 3  # Very coarse mesh for this exact test
-            dt = C*(L/Nx)/c
-            T = 18
-        
-            def assert_no_error(u, x, t, n):
-                u_e = u_exact(x, t[n])
-                tol = 1E-13
-                diff = np.abs(u - u_e).max()
-                assert diff < tol
-        
-            solver(I, V, f, c, L, dt, C, T,
-                   user_action=assert_no_error, version='scalar')
-            solver(I, V, f, c, L, dt, C, T,
-                   user_action=assert_no_error, version='vectorized')
-
-
-.. admonition:: Lambda functions
-
-   The code segment above demonstrates how to achieve very
-   compact code, without degraded readability,
-   by use of lambda functions for the various
-   input parameters that require a Python function. In essence,
-   
-   .. code-block:: python
-   
-           f = lambda x, t: L*(x-t)**2
-   
-   is equivalent to
-   
-   .. code-block:: python
-   
-           def f(x, t):
-               return L(x-t)**2
-   
-   Note that lambda functions can just contain a single expression and no
-   statements.
-   
-   One advantage with lambda functions is that they can be used directly
-   in calls:
-   
-   .. code-block:: python
-   
-           solver(I=lambda x: sin(pi*x/L), V=0, f=0, ...)
-
-
-
-
-Efficiency measurements
------------------------
-
-The ``wave1D_u0v.py`` contains our new ``solver`` function with both
-scalar and vectorized code. For comparing the efficiency
-of scalar versus vectorized code, we need a ``viz`` function
-as discussed in the section :ref:`wave:pde1:impl:animate`.
-All of this ``viz`` function can be reused, except the call
-to ``solver_function``. This call lacks the parameter
-``version``, which we want to set to ``vectorized`` and ``scalar``
-for our efficiency measurements.
-
-One solution is to copy the ``viz`` code from ``wave1D_u0`` into
-``wave1D_u0v.py`` and add a ``version`` argument to the ``solver_function`` call.
-Taking into account how much quite complicated animation code we
-then duplicate, this is not a good idea.
-Introducing the ``version`` argument in ``wave1D_u0.viz`` is not
-a good solution since ``version`` has no meaning in that file.
-
-Solution 1
-~~~~~~~~~~
-
-Calling ``viz`` in ``wave1D_u0`` with ``solver_function`` as our new
-solver in ``wave1D_u0v`` works fine, since this solver has
-``version='vectorized'`` as default value. The problem arises when we
-want to test ``version='vectorized'``. The simplest solution is then
-to use ``wave1D_u0.solver`` instead. We make a new ``viz`` function
-in ``wave1D_u0v.py`` that has a ``version`` argument and that just
-calls ``wave1D_u0.viz``:
-
-.. code-block:: python
-
-        def viz(
-            I, V, f, c, L, dt, C, T,  # PDE paramteres
-            umin, umax,               # Interval for u in plots
-            animate=True,             # Simulation with animation?
-            tool='matplotlib',        # 'matplotlib' or 'scitools'
-            solver_function=solver,   # Function with numerical algorithm
-            version='vectorized',     # 'scalar' or 'vectorized'
-            ):
-            import wave1D_u0
-            if version == 'vectorized':
-                # Reuse viz from wave1D_u0, but with the present
-                # modules' new vectorized solver (which has
-                # version='vectorized' as default argument;
-                # wave1D_u0.viz does not feature this argument)
-                cpu = wave1D_u0.viz(
-                    I, V, f, c, L, dt, C, T, umin, umax,
-                    animate, tool, solver_function=solver)
-            elif version == 'scalar':
-                # Call wave1D_u0.viz with a solver with
-                # scalar code and use wave1D_u0.solver.
-                cpu = wave1D_u0.viz(
-                    I, V, f, c, L, dt, C, T, umin, umax,
-                    animate, tool,
-                    solver_function=wave1D_u0.solver)
-
-Solution 2
-~~~~~~~~~~
-
-There is a more advanced, fancier solution featuring a very useful trick:
-we can make a new function that will always call ``wave1D_u0v.solver``
-with ``version='scalar'``. The ``functools.partial`` function from
-standard Python takes a function ``func`` as argument and
-a series of positional and keyword arguments and returns a
-new function that will call ``func`` with the supplied arguments,
-while the user can control all the other arguments in ``func``.
-Consider a trivial example,
-
-.. code-block:: python
-
-        def f(a, b, c=2):
-            return a + b + c
-
-We want to ensure that ``f`` is always called with ``c=3``, i.e., ``f``
-has only two "free" arguments ``a`` and ``b``.
-This functionality is obtained by
-
-.. code-block:: python
-
-        import functools
-        f2 = functools.partial(f, c=3)
-        
-        print f2(1, 2)  # results in 1+2+3=6
-
-Now ``f2`` calls ``f`` with whatever the user supplies as ``a`` and ``b``,
-but ``c`` is always ``3``.
-
-Back to our ``viz`` code, we can do
-
-.. code-block:: python
-
-        import functools
-        # Call scalar with version fixed to `scalar`
-        scalar_solver = functools.partial(scalar, version='scalar')
-        cpu = wave1D_u0.viz(
-                I, V, f, c, L, dt, C, T, umin, umax,
-                animate, tool, solver_function=scalar_solver)
-
-The new ``scalar_solver`` takes the same arguments as
-``wave1D_u0.scalar`` and calls ``wave1D_u0v.scalar``,
-but always supplies the extra argument
-``version='scalar'``. When sending this ``solver_function``
-to ``wave1D_u0.viz``, the latter will call ``wave1D_u0v.solver``
-with all the ``I``, ``V``, ``f``, etc., arguments we supply, plus
-``version='scalar'``.
-
-Efficiency experiments
-~~~~~~~~~~~~~~~~~~~~~~
-
-We now have a ``viz`` function that can call our solver function both in
-scalar and vectorized mode. The function ``run_efficiency_experiments``
-in ``wave1D_u0v.py`` performs a set of experiments and reports the
-CPU time spent in the scalar and vectorized solver for
-the previous string vibration example with spatial mesh resolutions
-:math:`N_x=50,100,200,400,800`. Running this function reveals
-that the vectorized
-code runs substantially faster: the vectorized code runs approximately
-:math:`N_x/10` times as fast as the scalar code!
-
-.. _wave:pde1:impl:ref:switch:
-
-Remark on the updating of arrays
---------------------------------
-
-At the end of each time step we need to update the ``u_2`` and ``u_1``
-arrays such that they have the right content for the next time step:
-
-.. code-block:: python
-
-        u_2[:] = u_1
-        u_1[:] = u
-
-The order here is important! (Updating ``u_1`` first, makes ``u_2`` equal
-to ``u``, which is wrong.)
-
-The assignment ``u_1[:] = u`` copies the content of the ``u`` array into
-the elements of the ``u_1`` array. Such copying takes time, but
-that time is negligible compared to the time needed for
-computing ``u`` from the finite difference formula,
-even when the formula has a vectorized implementation.
-However, efficiency of program code is a key topic when solving
-PDEs numerically (particularly when there are two or three
-space dimensions), so it must be mentioned that there exists a
-much more efficient way of making the arrays ``u_2`` and ``u_1``
-ready for the next time step. The idea is based on *switching
-references* and explained as follows.
-
-A Python variable is actually a reference to some object (C programmers
-may think of pointers). Instead of copying data, we can let ``u_2``
-refer to the ``u_1`` object and ``u_1`` refer to the ``u`` object.
-This is a very efficiency operation (like switching pointers in C).
-A naive implementation like
-
-.. code-block:: python
-
-        u_2 = u_1
-        u_1 = u
-
-will fail, however, because now ``u_2`` refers to the ``u_1`` object,
-but then the name ``u_1`` refers to ``u``, so that this ``u`` object
-has two references, ``u_1`` and ``u``, while our third array, originally
-referred to by ``u_2`` has no more references and is lost.
-This means that the variables ``u``, ``u_1``, and ``u_2`` refer to two
-arrays and not three. Consequently, the computations at the next
-time level will be messed up since updating the elements in
-``u`` will imply updating the elements in ``u_1`` too so the solution
-at the previous time step, which is crucial in our formulas, is
-destroyed.
-
-While ``u_2 = u_1`` is fine, ``u_1 = u`` is problematic, so
-the solution to this problem is to ensure that ``u``
-points to the ``u_2`` array. This is mathematically wrong, but
-new correct values will be filled into ``u`` at the next time step
-and make it right.
-
-The correct switch of references is
-
-.. code-block:: python
-
-        tmp = u_2
-        u_2 = u_1
-        u_1 = u
-        u = tmp
-
-We can get rid of the temporary reference ``tmp`` by writing
-
-.. code-block:: python
-
-        u_2, u_1, u = u_1, u, u_2
-
-This switching of references for updating our arrays
-will be used in later implementations.
-
-
-.. admonition:: Caution
-
-   The update ``u_2, u_1, u = u_1, u, u_2`` leaves wrong content in ``u``
-   at the final time step. This means that if we return ``u``, as we
-   do in the example codes here, we actually return ``u_2``, which is
-   obviously wrong. It is therefore important to adjust the content
-   of ``u`` to ``u = u_1`` before returning ``u``.
-
-
-
+where :math:`V(t)` is the voltage source powering the circuit.
+This equation has the same form as the general model considered in
+Section ref:ref:`vib:model2` if we set :math:`u=I`, :math:`f(u^{\prime}=bu^{\prime}`
+and define :math:`b=R/L`, :math:`s(u) = L^{-1}C^{-1}u`, and :math:`F(t)=\dot V(t)`.
 
 Exercises          (1)
 ======================
 
 .. --- begin exercise ---
 
-.. _wave:exer:standingwave:
+.. _vib:exer:resonance:
 
-Exercise 18: Simulate a standing wave
--------------------------------------
+Exercise 1.18: Simulate resonance
+---------------------------------
 
-The purpose of this exercise is to simulate standing waves on :math:`[0,L]`
-and illustrate the error in the simulation.
-Standing waves arise from an initial condition
+.. index:: resonance
 
-.. math::
-         u(x,0)= A \sin\left(\frac{\pi}{L}mx\right),
-
-where :math:`m` is an integer and :math:`A` is a freely chosen amplitude.
-The corresponding exact solution can be computed and reads
-
-.. math::
-         {u_{\small\mbox{e}}}(x,t) =  A\sin\left(\frac{\pi}{L}mx\right)
-        \cos\left(\frac{\pi}{L}mct\right){\thinspace .}
-        
+We consider the scaled ODE model
+:ref:`(85) <Eq:vib:app:mass_gen:scaled>` from the section :ref:`vib:app:mass_gen`.
+After scaling, the amplitude of :math:`u` will have a size about unity
+as time grows and the effect of the initial conditions die out due
+to damping. However, as :math:`\gamma\rightarrow 1`, the amplitude of :math:`u`
+increases, especially if :math:`\beta` is small. This effect is called
+*resonance*. The purpose of this exercise is to explore resonance.
 
 **a)**
-Explain that for a function :math:`\sin kx\cos \omega t` the wave length
-in space is :math:`\lambda = 2\pi /k` and the period in time is :math:`P=2\pi/\omega`.
-Use these expressions to find the wave length in space and period in
-time of :math:`{u_{\small\mbox{e}}}` above.
+Figure out how the ``solver`` function in ``vib.py`` can be called
+for the scaled ODE :ref:`(85) <Eq:vib:app:mass_gen:scaled>`.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
 
 **b)**
-Import the ``solver`` function ``wave1D_u0.py`` into a new file
-where the ``viz`` function is reimplemented such that it
-plots either the numerical *and* the exact solution, *or* the error.
+Run :math:`\gamma =5, 1.5, 1.1, 1` for :math:`\beta=0.005, 0.05, 0.2`.
+For each :math:`\beta` value, present an image with plots of :math:`u(t)` for
+the four :math:`\gamma` values.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
+Filename: ``resonance``.
+
+.. --- end exercise ---
+
+.. --- begin exercise ---
+
+.. _vib:exer:sliding_box:
+
+Exercise 1.19: Simulate oscillations of a sliding box
+-----------------------------------------------------
+
+Consider a sliding box on a flat surface as modeled in the section :ref:`vib:app:mass_sliding`. As spring force we choose the nonlinear
+formula
+
+.. math::
+         s(u) = \frac{k}{\alpha}\tanh(\alpha u) = ku + \frac{1}{3}\alpha^2 ku^3 + \frac{2}{15}\alpha^4 k u^5 + {\mathcal{O}(u^6)}{\thinspace .}
+
+**a)**
+Plot :math:`g(u)=\alpha^{-1}\tanh(\alpha u)` for various values of :math:`\alpha`.
+Assume :math:`u\in [-1,1]`.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
+**b)**
+Scale the equations using :math:`I` as scale for :math:`u` and :math:`\sqrt{m/k}` as
+time scale.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
 
 **c)**
-Make animations where you illustrate how the error
-:math:`e^n_i ={u_{\small\mbox{e}}}(x_i, t_n)- u^n_i`
-develops and increases in time. Also make animations of
-:math:`u` and :math:`{u_{\small\mbox{e}}}` simultaneously.
+Implement the scaled model in b). Run it for some values of
+the dimensionless parameters.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
+Filename: ``sliding_box``.
+
+.. --- end exercise ---
+
+.. --- begin exercise ---
+
+.. _vib:exer:bouncing:ball:
+
+Exercise 1.20: Simulate a bouncing ball
+---------------------------------------
+
+The section :ref:`vib:app:bouncing_ball` presents a model for a bouncing
+ball.
+Choose one of the two ODE formulation, :ref:`(115) <Eq:vib:app:bouncing:ball:h2eq>` or
+:ref:`(116) <Eq:vib:app:bouncing:ball:veq>`-:ref:`(117) <Eq:vib:app:bouncing:ball:heq>`,
+and simulate the motion of a bouncing ball. Plot :math:`h(t)`. Think about how to
+plot :math:`v(t)`.
+
+.. --- begin hint in exercise ---
+
+**Hint.**
+A naive implementation may get stuck in repeated impacts for large time
+step sizes. To avoid this situation, one can introduce a state
+variable that holds the mode of the motion: free fall, impact, or rest.
+Two consecutive impacts imply that the motion has stopped.
+
+.. --- end hint in exercise ---
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
+Filename: ``bouncing_ball``.
+
+.. --- end exercise ---
+
+.. --- begin exercise ---
+
+.. _vib:exer:pendulum_simple:
+
+Exercise 1.21: Simulate a simple pendulum
+-----------------------------------------
+
+Simulation of simple pendulum can be carried out by using
+the mathematical model derived in the section :ref:`vib:app:pendulum`
+and calling up functionality in the `vib.py <http://tinyurl.com/nm5587k/vib/vib.py>`__
+file (i.e., solve the second-order ODE by centered finite differences).
+
+**a)**
+Scale the model. Set up the dimensionless governing equation for :math:`\theta`
+and expressions for dimensionless drag and wire forces.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
+**b)**
+Write a function for computing
+:math:`\theta` and the dimensionless drag force and the force in the wire,
+using the ``solver`` function in
+the ``vib.py`` file. Plot these three quantities
+below each other (in subplots) so the graphs can be compared.
+Run two cases, first one in the limit of :math:`\Theta` small and
+no drag, and then a second one with :math:`\Theta=40` degrees and :math:`\alpha=0.8`.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
+Filename: ``simple_pendulum``.
+
+.. --- end exercise ---
+
+.. --- begin exercise ---
+
+.. _vib:exer:pendulum_elastic:
+
+Exercise 1.22: Simulate an elastic pendulum
+-------------------------------------------
+
+The section :ref:`vib:app:pendulum_elastic` describes a model for an elastic
+pendulum, resulting in a system of two ODEs. The purpose of this
+exercise is to implement the scaled model, test the software, and
+generalize the model.
+
+**a)**
+Write a function ``simulate``
+that can simulate an elastic pendulum using the scaled model.
+The function should have the following arguments:
+
+.. code-block:: python
+
+        def simulate(
+            beta=0.9,                 # dimensionless parameter
+            Theta=30,                 # initial angle in degrees
+            epsilon=0,                # initial stretch of wire
+            num_periods=6,            # simulate for num_periods
+            time_steps_per_period=60, # time step resolution
+            plot=True,                # make plots or not
+            ):
+
+To set the total simulation time and the time step, we
+use our knowledge of the scaled, classical, non-elastic pendulum:
+:math:`u^{\prime\prime} + u = 0`, with solution
+:math:`u = \Theta\cos \bar t`.
+The period of these oscillations is :math:`P=2\pi`
+and the frequency is unity. The time
+for simulation is taken as ``num_periods`` times :math:`P`. The time step
+is set as :math:`P` divided by ``time_steps_per_period``.
+
+The ``simulate`` function should return the arrays of
+:math:`x`, :math:`y`, :math:`\theta`, and :math:`t`, where :math:`\theta = \tan^{-1}(x/(1-y))` is
+the angular displacement of the elastic pendulum corresponding to the
+position :math:`(x,y)`.
+
+If ``plot`` is ``True``, make a plot of :math:`\bar y(\bar t)`
+versus :math:`\bar x(\bar t)`, i.e., the physical motion
+of the mass at :math:`(\bar x,\bar y)`. Use the equal aspect ratio on the axis
+such that we get a physically correct picture of the motion. Also
+make a plot of :math:`\theta(\bar t)`, where :math:`\theta` is measured in degrees.
+If :math:`\Theta < 10` degrees, add a plot that compares the solutions of
+the scaled, classical, non-elastic pendulum and the elastic pendulum
+(:math:`\theta(t)`).
+
+Although the mathematics here employs a bar over scaled quantities, the
+code should feature plain names ``x`` for :math:`\bar x`, ``y`` for :math:`\bar y`, and
+``t`` for :math:`\bar t` (rather than ``x_bar``, etc.). These variable names make
+the code easier to read and compare with the mathematics.
 
 .. --- begin hint in exercise ---
 
 **Hint 1.**
-Quite long time simulations are needed in order to display significant
-discrepancies between the numerical and exact solution.
+Equal aspect ratio is set by ``plt.gca().set_aspect('equal')`` in
+Matplotlib (``import matplotlib.pyplot as plt``)
+and by ``plot(..., daspect=[1,1,1], daspectmode='equal')``
+in SciTools (``import scitools.std as plt``).
 
 .. --- end hint in exercise ---
 
 .. --- begin hint in exercise ---
 
 **Hint 2.**
-A possible set of parameters is :math:`L=12`, :math:`m=9`, :math:`c=2`, :math:`A=1`, :math:`N_x=80`,
-:math:`C=0.8`. The error mesh function :math:`e^n` can be simulated for 10 periods,
-while 20-30 periods are needed to show significant differences between
-the curves for the numerical and exact solution.
+If you want to use Odespy to solve the equations, order the ODEs
+like :math:`\dot \bar x, \bar x, \dot\bar y,\bar y` such that the Euler-Cromer
+scheme can (also) be used (``odespy.EulerCromer``).
 
 .. --- end hint in exercise ---
 
-Filename: ``wave_standing``.
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
+**b)**
+Write a test function for testing that :math:`\Theta=0` and :math:`\epsilon=0`
+gives :math:`x=y=0` for all times.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
+**c)**
+Write another test function for checking that the pure vertical
+motion of the elastic pendulum is correct.
+Start with simplifying the ODEs for pure vertical motion and show that
+:math:`\bar y(\bar t)` fulfills a vibration equation with
+frequency :math:`\sqrt{\beta/(1-\beta)}`. Set up the exact solution.
+
+Write a test function that
+uses this special case to verify the ``simulate`` function. There will
+be numerical approximation errors present in the results from
+``simulate`` so you have to believe in correct results and set a
+(low) tolerance that corresponds to the computed maximum error.
+Use a small :math:`\Delta t` to obtain a small numerical approximation error.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
+**d)**
+Make a function ``demo(beta, Theta)`` for simulating an elastic pendulum with a
+given :math:`\beta` parameter and initial angle :math:`\Theta`. Use 600 time steps
+per period to get every accurate results, and simulate for 3 periods.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
+Filename: ``elastic_pendulum``.
+
+.. --- end exercise ---
+
+.. --- begin exercise ---
+
+.. _vib:exer:pendulum_elastic_drag:
+
+Exercise 1.23: Simulate an elastic pendulum with air resistance
+---------------------------------------------------------------
+
+This is a continuation :ref:`vib:exer:pendulum_elastic_drag`.
+Air resistance on the body with mass :math:`m` can be modeled by the
+force :math:`-\frac{1}{2}\varrho C_D A|\boldsymbol{v}|\boldsymbol{v}`,
+where :math:`C_D` is a drag coefficient (0.2 for a sphere), :math:`\varrho`
+is the density of air (1.2 :math:`\hbox{kg }\,{\hbox{m}}^{-3}`), :math:`A` is the
+cross section area (:math:`A=\pi R^2` for a sphere, where :math:`R` is the radius),
+and :math:`\boldsymbol{v}` is the velocity of the body.
+Include air resistance in the original model, scale the model,
+write a function ``simulate_drag`` that is a copy of the ``simulate``
+function from :ref:`vib:exer:pendulum_elastic_drag`, but with the
+new ODEs included, and show plots of how air resistance
+influences the motion.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
+Filename: ``elastic_pendulum_drag``.
 
 .. Closing remarks for this Exercise
 
 Remarks          (1)
 ~~~~~~~~~~~~~~~~~~~~
 
-The important
-parameters for numerical quality are :math:`C` and :math:`k\Delta x`, where
-:math:`C=c\Delta t/\Delta x` is the Courant number and :math:`k` is defined above
-(:math:`k\Delta x` is proportional to how many mesh points we have per wave length
-in space, see the section :ref:`wave:pde1:num:dispersion` for explanation).
-
-.. --- end exercise ---
-
-.. --- begin exercise ---
-
-.. _wave:exer:store:list:
-
-Exercise 19: Add storage of solution in a user action function
---------------------------------------------------------------
-
-Extend the ``plot_u`` function in the file ``wave1D_u0.py`` to also store
-the solutions ``u`` in a list.
-To this end, declare ``all_u`` as
-an empty list in the ``viz`` function, outside ``plot_u``, and perform
-an append operation inside the ``plot_u`` function. Note that a
-function, like ``plot_u``, inside another function, like ``viz``,
-remembers all local variables in ``viz`` function, including ``all_u``,
-even when ``plot_u`` is called (as ``user_action``) in the ``solver`` function.
-Test both ``all_u.append(u)`` and ``all_u.append(u.copy())``.
-Why does one of these constructions fail to store the solution correctly?
-Let the ``viz`` function return the ``all_u`` list
-converted to a two-dimensional ``numpy`` array.
-Filename: ``wave1D_u0_s_store``.
-
-.. --- end exercise ---
-
-.. --- begin exercise ---
-
-.. _wave:exer:store:list:class:
-
-Exercise 20: Use a class for the user action function
------------------------------------------------------
-
-Redo :ref:`wave:exer:store:list` using a class for the
-user action function. That is, define a class ``Action`` where
-the ``all_u`` list is an attribute, and implement the user action
-function as a method (the special method ``__call__`` is a natural
-choice). The class versions avoids that the user action function
-depends on parameters defined outside the function (such as ``all_u``
-in :ref:`wave:exer:store:list`).
-Filename: ``wave1D_u0_s2c``.
-
-.. --- end exercise ---
-
-.. --- begin exercise ---
-
-.. _wave:exer:multiple:C:
-
-Exercise 21: Compare several Courant numbers in one movie
----------------------------------------------------------
-
-The goal of this exercise is to make movies where several curves,
-corresponding to different Courant numbers, are visualized.
-Import the ``solver`` function from the ``wave1D_u0_s`` movie
-in a new file ``wave_compare.py``. Reimplement the ``viz`` function
-such that it can take a list of ``C`` values as argument
-and create a movie with solutions corresponding to the given ``C``
-values. The ``plot_u`` function must be changed to store the solution
-in an array (see :ref:`wave:exer:store:list` or
-:ref:`wave:exer:store:list:class` for details), ``solver`` must be
-computed for each value of the Courant number, and finally
-one must run through each time step and plot all the spatial
-solution curves in one figure and store it in a file.
-
-The challenge in such a visualization is to ensure that the curves in
-one plot corresponds to the same time point. The easiest remedy is to
-keep the time and space resolution constant and change the wave
-velocity :math:`c` to change the Courant number.
-Filename: ``wave_numerics_comparison``.
-
-.. --- end exercise ---
-
-.. --- begin exercise ---
-
-.. _wave:exer:mesh1D:calculus:
-
-Project 22: Calculus with 1D mesh functions
--------------------------------------------
-
-This project explores integration and differentiation of
-mesh functions, both with scalar and vectorized implementations.
-We are given a mesh function :math:`f_i` on a spatial one-dimensional
-mesh :math:`x_i=i\Delta x`, :math:`i=0,\ldots,N_x`, over the interval :math:`[a,b]`.
-
-**a)**
-Define the discrete derivative of :math:`f_i` by using centered
-differences at internal mesh points and one-sided differences
-at the end points. Implement a scalar version of
-the computation in a Python function and write an associated unit test
-for the linear case :math:`f(x)=4x-2.5` where the discrete derivative should
-be exact.
-
-**b)**
-Vectorize the implementation of the discrete derivative.
-Extend the unit test to check the validity of the implementation.
-
-**c)**
-To compute the discrete integral :math:`F_i` of :math:`f_i`, we assume that
-the mesh function :math:`f_i` varies linearly between the mesh points.
-Let :math:`f(x)` be such a linear interpolant of :math:`f_i`. We then
-have
-
-.. math::
-         F_i = \int_{x_0}^{x_i} f(x) dx{\thinspace .}
-
-The exact integral of a piecewise linear function :math:`f(x)` is
-given by the Trapezoidal rule. S
-how that if :math:`F_{i}` is already computed, we can find :math:`F_{i+1}`
-from
-
-.. math::
-         F_{i+1} = F_i + \frac{1}{2}(f_i + f_{i+1})\Delta x{\thinspace .}
-
-Make a function for the scalar implementation of the discrete integral
-as a mesh function. That is, the function should return
-:math:`F_i` for :math:`i=0,\ldots,N_x`.
-For a unit test one can use the fact that the above defined
-discrete integral of a linear
-function (say :math:`f(x)=4x-2.5`) is exact.
-
-**d)**
-Vectorize the implementation of the discrete integral.
-Extend the unit test to check the validity of the implementation.
-
-.. --- begin hint in exercise ---
-
-**Hint.**
-Interpret the recursive formula for :math:`F_{i+1}` as a sum.
-Make an array with each element of the sum and use the "cumsum"
-(``numpy.cumsum``) operation to compute the accumulative sum:
-``numpy.cumsum([1,3,5])`` is ``[1,4,9]``.
-
-.. --- end hint in exercise ---
-
-**e)**
-Create a class ``MeshCalculus`` that can integrate and differentiate
-mesh functions. The class can just define some methods that call
-the previously implemented Python functions. Here is an example
-on the usage:
-
-.. code-block:: python
-
-        import numpy as np
-        calc = MeshCalculus(vectorized=True)
-        x = np.linspace(0, 1, 11)        # mesh
-        f = np.exp(x)                    # mesh function
-        df = calc.differentiate(f, x)    # discrete derivative
-        F = calc.integrate(f, x)         # discrete anti-derivative
-
-Filename: ``mesh_calculus_1D``.
+Test functions are challenging to construct for the problem with
+air resistance. You can reuse the tests from
+:ref:`vib:exer:pendulum_elastic_drag` for ``simulate_drag``,
+but these tests does not verify the new terms arising from air
+resistance.
 
 .. --- end exercise ---
 

@@ -4,7 +4,7 @@ Wave (Chapter ref{ch:wave}) and diffusion (Chapter ref{ch:diffu}) equations
 are solve reliably by finite difference methods. As soon as we add a
 first-order derivative in space, representing *advective transport* (also
 known as convective transport), the numerics gets more complicated, and
-and intuitively attractive methods no longer work well. We shall show
+intuitively attractive methods no longer work well. We shall show
 how and why methods fail and provide remedies. The present chapter
 builds on basic knowledge about finite difference methods for
 the diffusion equations, including the analysis by Fourier components,
@@ -60,14 +60,14 @@ two arguments lead us to a Forward Euler scheme in time and
 centered differences in space:
 
 !bt
-\begin{equation
+\begin{equation}
 [D_t^+ u + vD_{2x} u = 0]^n_i
 \end{equation}
 !et
 Written out,
 
 !bt
-\[ u^{n+1} = u^n - \half C (u_^n_{i+1}-u_{i-1}),\]
+\[ u^{n+1} = u^n - \half C (u^n_{i+1}-u_{i-1}),\]
 !et
 with $C$ as the Courant number
 
@@ -89,7 +89,7 @@ initial condition:
 
 !bt
 \begin{align}
-u(x,0) &= Ae^{-\half\left(\frac{x-L/10}{\sigma}\right)^2,
+u(x,0) &= Ae^{-\half\left(\frac{x-L/10}{\sigma}\right)^2},
 label{advec:1D:case_gaussian}\\
 u(x,0) &= A\cos\left(\frac{5\pi}{L}\left( x - \frac{L}{10}\right)\right),\quad
 x < \frac{L}{5} \hbox{ else } 0\tp
@@ -98,7 +98,7 @@ label{advec:1D:case_cos}
 !et
 The parameter $A$ is the maximum value of the initial condition.
 
-We scale the problem and introduce $\bar x x/L$ and $\bar t= vt/L$,
+We scale the problem and introduce $\bar x = x/L$ and $\bar t= vt/L$,
 which gives
 
 !bt
@@ -128,7 +128,7 @@ The hypothesis is therefore that the solution is unstable.
 
 ===== Analysis of the scheme =====
 
-We can analyize the finite difference scheme by look at how it treats
+We can analyze the finite difference scheme by look at how it treats
 a Fourier component
 
 !bt
@@ -171,7 +171,7 @@ numerical solutions.
 === Method ===
 
 Another explicit scheme is to do a ``leapfrog'' jump over $2\Delta t$ in
-time and combine it with centeral differences in space:
+time and combine it with central differences in space:
 
 !bt
 \[ [D_{2t} u + vD_{2x} u = 0,\]
@@ -181,7 +181,7 @@ which results in the updating formula
 !bt
 \[ u^{n+1} = u^{n-1} - C(u_{i+1}-u_{i-1})\tp\]
 !et
-A special scheme is needed to compute $u^1$, but we leave that problem for
+A special scheme is needed to compute $u^1$, but we leave that problem or
 now.
 
 === Implementation ===
@@ -222,12 +222,12 @@ Choosing scaled variables as $\Delta t=0.1$, $T=1$, and $C=1$ gives
 the plot in Figure ref{advec:1D:case_gaussian:fig:LFCS}, which
 is in fact identical to the exact solution (!).
 
-FIGURE: [src-advec/solver_FE_Upw, width=500 frac=0.8] Leapfrog scheme with $\Delta t = 0.1$ and $C=1$. label{advec:1D:case_gaussian:fig:LFCS}
+FIGURE: [fig-advec/solver_FE_Upw, width=500 frac=0.8] Leapfrog scheme with $\Delta t = 0.1$ and $C=1$. label{advec:1D:case_gaussian:fig:LFCS}
 
 
-=== Analyis ===
+=== Analysis ===
 
-We can perform a Fourier analyis again. Inserting the numerical
+We can perform a Fourier analysis again. Inserting the numerical
 Fourier component in the Leapfrog scheme, we get
 
 !bt
@@ -238,7 +238,7 @@ and
 !bt
 \[ A = -iC\sin(k\Delta x) \pm \sqrt{1-C^2\sin^2(k\Delta x)}\tp\]
 !et
-Rewriting to plar form, $A=A_re^{i\phi}$, we see that $A_r=1$, so the
+Rewriting to polar form, $A=A_re^{i\phi}$, we see that $A_r=1$, so the
 numerical component is not increasing or decreasing in time, which is
 exactly what we want. However, for $C>1$, the square root can become
 complex valued, so stability is obtained only as long as $C\leq 1$.
@@ -254,6 +254,7 @@ and is to be compared to the exact amplification factor
 
 !bt
 \[ \Aex = e^{-ikv\Delta t} = e^{-ikC\Delta x} = e^{-iCp}\tp\]
+!et
 Section ref{advec:1D:disprel} compares many numerical amplification factors
 with the exact expression.
 
@@ -267,6 +268,7 @@ positive $x$ direction $v>0$, it could be natural to go upstream and not
 downstream in a spatial derivative. That is, we approximate
 
 !bt
+\[
 \frac{\partial u}{\partial x}(x_i,t_n)\approx [D^-_x u]^n_i = \frac{u^n_{i} - u^n_{i-1}}{\Delta x}\tp\]
 !et
 This is called an *upwind difference*. This spatial approximation does magic to
@@ -334,6 +336,7 @@ the method becomes stable.
 !et
 
 ===== Analysis of dispersion relations =====
+label{advec:1D:disprel}
 
 We have developed expressions for $A(C,p)$ in the exact solution
 $u_q^n=A^ne^{ikq\Delta x}$ of the discrete equations. These
@@ -348,7 +351,7 @@ The corresponding $k$ is $k=2\pi/\lambda = \pi/Delta x$, so $p=k\Delta x\in
 (0,\pi]$.
 
 Given a complex $A$ as a function of $C$ and $p$, how can we visualize
-it? The two key ingredients in $A$ is the magntude, reflecting damping or
+it? The two key ingredients in $A$ is the magnitude, reflecting damping or
 growth of the wave, and the angle, closely related to the
 velocity of the wave. The Fourier component
 
@@ -394,8 +397,6 @@ FIGURE: [fig-advec/disprel_C0_9, width=800 frac=1] Dispersion relations for $C=0
 FIGURE: [fig-advec/disprel_C0_8, width=800 frac=1] Dispersion relations for $C=0.8$. label{advec:1D:disprel:C08}
 
 FIGURE: [fig-advec/disprel_C0_5, width=800 frac=1] Dispersion relations for $C=0.5$. label{advec:1D:disprel:C05}
-
-FIGURE: [fig-advec/disprel_C0_99, width=800 frac=1] Dispersion relations for $C=0.99$. label{advec:1D:disprel:C99}
 
 FIGURE: [fig-advec/disprel_C0_99, width=800 frac=1] Dispersion relations for $C=0.99$. label{advec:1D:disprel:C99}
 

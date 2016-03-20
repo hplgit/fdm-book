@@ -88,7 +88,7 @@ def solver(I, U0, v, L, dt, C, T, user_action=None,
         # Switch variables before next step
         u_2, u_1, u = u_1, u, u_2
 
-def run_FSCS(case):
+def run_FECS(case):
     if case == 'gaussian':
         def I(x):
             return np.exp(-0.5*((x-L/10)/sigma)**2)

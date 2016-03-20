@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Staggered mesh discretization</title>
+    <title>Advection-dominated equations</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -44,8 +44,8 @@
 
     
     <link rel="top" title="Finite Difference Computing with Partial Differential Equations" href="index.html" />
-    <link rel="next" title="Appendix: Useful formulas" href="._book013.html" />
-    <link rel="prev" title="Convection-diffusion equations" href="._book011.html" />
+    <link rel="next" title="Staggered mesh discretization" href="._book013.html" />
+    <link rel="prev" title="Diffusion equations" href="._book011.html" />
  
   
        <style type="text/css">
@@ -64,10 +64,10 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="._book013.html" title="Appendix: Useful formulas"
+          <a href="._book013.html" title="Staggered mesh discretization"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="._book011.html" title="Convection-diffusion equations"
+          <a href="._book011.html" title="Diffusion equations"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Finite Difference Computing with Partial Differential Equations</a> &raquo;</li> 
       </ul>
@@ -78,367 +78,416 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="staggered-mesh-discretization">
-<span id="ch-staggered"></span><h1>Staggered mesh discretization<a class="headerlink" href="#staggered-mesh-discretization" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="the-euler-cromer-scheme-on-a-standard-mesh">
-<h2>The Euler-Cromer scheme on a standard mesh<a class="headerlink" href="#the-euler-cromer-scheme-on-a-standard-mesh" title="Permalink to this headline">¶</a></h2>
-<p>Consider the fundamental model problem for simple harmonic oscillations,</p>
-<div class="math" id="eq-stag-vib-ode2nd">
-\[\tag{362}
-u'' + \omega^2u = 0,\quad u(0)=I,\ u'(0)=0,\]</div>
-<p>where <span class="math">\(\omega\)</span> is the frequency of the oscillations (the exact solution
-is <span class="math">\(u(t)=I\cos\omega t\)</span>). This model can equivalently be
-formulated as two first-order equations,</p>
-<div class="math" id="eq-stag-vib-eulercromer-veq">
-\[\tag{363}
-v' = -\omega^2 u,\]</div>
-<div class="math" id="eq-stag-vib-eulercromer-ueq">
-\[\tag{364}
-u' = v{\thinspace .}\]</div>
-<p>The popular Euler-Cromer scheme for this <span class="math">\(2\times 2\)</span> system of ODEs
-applies an explicit
-forward difference in <a class="reference internal" href="#eq-stag-vib-eulercromer-veq"><span class="std std-ref">(363)</span></a> and a
-backward difference in <a class="reference internal" href="#eq-stag-vib-eulercromer-ueq"><span class="std std-ref">(364)</span></a>:</p>
-<div class="math" id="eq-stag-vib-eulercromer-dveq0">
-\[\tag{365}
-\frac{v^{n+1}- v^n}{\Delta t} =- \omega^2u^{n},\]</div>
-<div class="math" id="eq-stag-vib-eulercromer-dueq0">
-\[\tag{366}
-\frac{u^{n+1} - u^n}{\Delta t} = v^{n+1}{\thinspace .}\]</div>
-<p>For a time domain <span class="math">\([0,T]\)</span>, we have introduced a mesh with points
-<span class="math">\(0=t_0 &lt; t_1 &lt; \cdots &lt; t_n=T\)</span>. The most common case is a mesh with
-uniform spacing <span class="math">\(\Delta t\)</span>: <span class="math">\(t_n=n\Delta t\)</span>. Then
-<span class="math">\(v^n\)</span> is an approximation to <span class="math">\(v(t)\)</span> at mesh point <span class="math">\(t_n\)</span>, and
-<span class="math">\(u^n\)</span> is an approximation to <span class="math">\(u(t)\)</span> at the same point.
-Note that the backward difference in <a class="reference internal" href="#eq-stag-vib-eulercromer-dueq"><span class="std std-ref">(368)</span></a>
-leads to an explicit updating formula for <span class="math">\(u^{n+1}\)</span>
-since <span class="math">\(v^{n+1}\)</span> is already computed:</p>
-<div class="math" id="eq-stag-vib-eulercromer-dveq">
-\[\tag{367}
-v^{n+1} = v^n -\Delta t \omega^2u^{n},\]</div>
-<div class="math" id="eq-stag-vib-eulercromer-dueq">
-\[\tag{368}
-u^{n+1} = u^n + \Delta t v^{n+1}{\thinspace .}\]</div>
-<p>The Euler-Cromer scheme is equivalent with the standard second-order
-accurate scheme for <a class="reference internal" href="#eq-stag-vib-ode2nd"><span class="std std-ref">(362)</span></a>:</p>
-<div class="math" id="eq-stag-vib-dode2nd">
-\[\tag{369}
-u^{n+1} = 2u^n - u^{n-1} - \Delta t^2\omega^2 u^n,\ n=1,2,\ldots,\]</div>
-<p>but for the first time step, the method for <a class="reference internal" href="#eq-stag-vib-ode2nd"><span class="std std-ref">(362)</span></a>
-leads to</p>
-<div class="math" id="eq-auto135">
-\[\tag{370}
-u^1= u^0 - \frac{1}{2}\Delta t^2\omega^2u^0,\]</div>
-<p>while Euler-Cromer gives</p>
-<div class="math" id="eq-auto136">
-\[\tag{371}
-u^1= u^0 - \Delta t^2\omega^2u^0,\]</div>
-<p>which can be interpreted as a first-order, backward difference approximation
-of <span class="math">\(u'(0)=0\)</span> combined with <a class="reference internal" href="#eq-stag-vib-dode2nd"><span class="std std-ref">(369)</span></a>. At later time steps,
-however, the alternating use of forward and backward differences in
-<a class="reference internal" href="#eq-stag-vib-eulercromer-dveq"><span class="std std-ref">(367)</span></a>-<a class="reference internal" href="#eq-stag-vib-eulercromer-dueq"><span class="std std-ref">(368)</span></a>
-leads to a method with error <span class="math">\({\mathcal{O}(\Delta t^2)}\)</span>.</p>
-</div>
-<div class="section" id="the-euler-cromer-scheme-on-a-staggered-mesh">
-<span id="vib-model2x2-staggered"></span><h2>The Euler-Cromer scheme on a staggered mesh<a class="headerlink" href="#the-euler-cromer-scheme-on-a-staggered-mesh" title="Permalink to this headline">¶</a></h2>
-<span class="target" id="index-0"></span><span class="target" id="index-1"></span><p id="index-2">[<strong>hpl 15</strong>: Do the equations in different sequence, first vel, then pos.]</p>
-<p>The fact that the forward and backward differences used the Euler-Cromer
-method yield a second-order accurate method is not obvious from intuition.
-A much more intuitive discretization employs solely centered differences
-and leads to a scheme that is equivalent to the Euler-Cromer scheme.
-It is in fact fully equivalent to the second-order scheme for
-<a class="reference internal" href="#eq-stag-vib-ode2nd"><span class="std std-ref">(362)</span></a>, also for the first time step.
-This alternative scheme is based on using a <em>staggered</em> (or
-alternating) mesh in time.</p>
-<p>In a staggered mesh, the unknowns are sought at different points in
-the mesh. Specifically, <span class="math">\(u\)</span> is sought at
-integer time points <span class="math">\(t_n\)</span> and <span class="math">\(v\)</span> is sought at <span class="math">\(t_{n+1/2}\)</span>
-<em>between</em> two <span class="math">\(u\)</span> points.
-The unknowns are then <span class="math">\(u^1, v^{3/2}, u^2, v^{5/2}\)</span>, and so on.
-We typically use the notation
-<span class="math">\(u^n\)</span> and <span class="math">\(v^{n+\frac{1}{2}}\)</span> for the two unknown mesh functions.</p>
-<p>On a staggered mesh it is natural to
-use centered difference approximations, expressed
-in operator notation as</p>
-<div class="math" id="eq-auto137">
-\[\tag{372}
-\lbrack D_t u = v\rbrack^{n+\frac{1}{2}},\]</div>
-<div class="math" id="eq-auto138">
-\[\tag{373}
-\lbrack D_t v = -\omega u\rbrack^{n+1}
-    {\thinspace .}\]</div>
-<p>Writing out the formulas gives</p>
-<div class="math" id="eq-vib-model2x2-eulercromer-ueq1s">
-\[\tag{374}
-u^{n+1} = u^{n} + \Delta t v^{n+\frac{1}{2}},\]</div>
-<div class="math" id="eq-vib-model2x2-eulercromer-veq1s">
-\[\tag{375}
-v^{n+\frac{3}{2}} = v^{n+\frac{1}{2}} -\Delta t \omega^2u^{n+1}\]\[    {\thinspace .}\]</div>
-<p>Of esthetic reasons one often writes these equations at the
-previous time level to replace the <span class="math">\(\frac{3}{2}\)</span> by <span class="math">\(\frac{1}{2}\)</span> in the
-left-most term in the last equation,</p>
-<div class="math" id="eq-vib-model2x2-eulercromer-ueq1s2">
-\[\tag{376}
-u^{n} = u^{n-1} + \Delta t v^{n-\frac{1}{2}},\]</div>
-<div class="math" id="eq-vib-model2x2-eulercromer-veq1s2">
-\[\tag{377}
-v^{n+\frac{1}{2}} = v^{n-\frac{1}{2}} -\Delta t \omega^2u^{n}\]\[    {\thinspace .}\]</div>
-<p>Such a rewrite is only mathematical cosmetics. The important thing
-is that this centered scheme has exactly the same computational
-structure as the forward-backward scheme. We shall use the names
-<em>forward-backward Euler-Cromer</em> and <em>staggered Euler-Cromer</em>
-to distinguish the two schemes.</p>
-<p>We can eliminate the <span class="math">\(v\)</span>
-values and get back the centered scheme based on the second-order
-differential equation, so all these three schemes are equivalent.
-However, they differ somewhat in the treatment of the initial
-conditions.</p>
-<p>Suppose we have <span class="math">\(u(0)=I\)</span> and <span class="math">\(u'(0)=v(0)=0\)</span> as mathematical
-initial conditions. This means <span class="math">\(u^0=I\)</span> and</p>
-<div class="math">
-\[v(0)\approx \frac{1}{2}(v^{-\frac{1}{2}} + v^{\frac{1}{2}}) = 0,
-\quad\Rightarrow\quad v^{-\frac{1}{2}} =- v^\frac{1}{2}{\thinspace .}\]</div>
-<p>Using the discretized equation <a class="reference internal" href="#eq-vib-model2x2-eulercromer-veq1s2"><span class="std std-ref">(377)</span></a> for
-<span class="math">\(n=0\)</span> yields</p>
-<div class="math">
-\[v^\frac{1}{2} = v^{-\frac{1}{2}} -\Delta t\omega^2 I,\]</div>
-<p>and eliminating <span class="math">\(v^{-\frac{1}{2}} =- v^{\frac{1}{2}}\)</span>
-results in <span class="math">\(v^\frac{1}{2} = -\frac{1}{2}\Delta t\omega^2I\)</span> and</p>
-<div class="math">
-\[u^1 = u^0 - \frac{1}{2}\Delta t^2\omega^2 I,\]</div>
-<p>which is exactly the same equation for <span class="math">\(u^1\)</span> as we had in the
-centered scheme based on the second-order differential equation
-(and hence corresponds to a centered difference approximation of
-the initial condition for <span class="math">\(u'(0)\)</span>).
-The conclusion is that a staggered mesh is fully equivalent with
-that scheme, while the forward-backward version gives a slight
-deviation in the computation of <span class="math">\(u^1\)</span>.</p>
-<p>We can redo the derivation of the initial conditions when <span class="math">\(u'(0)=V\)</span>:</p>
-<div class="math">
-\[v(0)\approx \frac{1}{2}(v^{-\frac{1}{2}} + v^{\frac{1}{2}}) = V,
-\quad\Rightarrow\quad v^{-\frac{1}{2}} = 2V - v^\frac{1}{2}{\thinspace .}\]</div>
-<p>Using this <span class="math">\(v^{-\frac{1}{2}}\)</span> in</p>
-<div class="math">
-\[v^\frac{1}{2} = v^{-\frac{1}{2}} -\Delta t\omega^2 I,\]</div>
-<p>then gives <span class="math">\(v^\frac{1}{2} = V - \frac{1}{2}\Delta t\omega^2 I\)</span>.
-The general initial conditions are therefore</p>
-<div class="math" id="eq-vib-ode2-staggered-u0">
-\[\tag{378}
-u^0 = I,\]</div>
-<div class="math" id="eq-vib-ode2-staggered-v0">
-\[\tag{379}
-v^\frac{1}{2} = V - \frac{1}{2}\Delta t\omega^2I
-    {\thinspace .}\]</div>
-</div>
-<div class="section" id="implementation-of-the-scheme-on-a-staggered-mesh">
-<h2>Implementation of the scheme on a staggered mesh<a class="headerlink" href="#implementation-of-the-scheme-on-a-staggered-mesh" title="Permalink to this headline">¶</a></h2>
-<p>The algorithm goes like this:</p>
-<ol class="arabic simple">
-<li>Set the initial values <a class="reference internal" href="#eq-vib-ode2-staggered-u0"><span class="std std-ref">(378)</span></a> and
-<a class="reference internal" href="#eq-vib-ode2-staggered-v0"><span class="std std-ref">(379)</span></a>.</li>
-<li>For <span class="math">\(n=1,2,\ldots\)</span>:</li>
-</ol>
-<blockquote>
-<div><ol class="arabic simple">
-<li>Compute <span class="math">\(u^{n}\)</span> from <a class="reference internal" href="#eq-vib-model2x2-eulercromer-ueq1s2"><span class="std std-ref">(376)</span></a>.</li>
-<li>Compute <span class="math">\(v^{n+\frac{1}{2}}\)</span> from <a class="reference internal" href="#eq-vib-model2x2-eulercromer-veq1s2"><span class="std std-ref">(377)</span></a>.</li>
-</ol>
-</div></blockquote>
-<div class="section" id="implementation-with-integer-indices">
-<h3>Implementation with integer indices<a class="headerlink" href="#implementation-with-integer-indices" title="Permalink to this headline">¶</a></h3>
-<p>Translating the schemes <a class="reference internal" href="#eq-vib-model2x2-eulercromer-ueq1s2"><span class="std std-ref">(376)</span></a>
-and <a class="reference internal" href="#eq-vib-model2x2-eulercromer-veq1s2"><span class="std std-ref">(377)</span></a> to computer code
-faces the problem of how to store and access <span class="math">\(v^{n+\frac{1}{2}}\)</span>,
-since arrays only allow integer indices with base 0.
-We must then introduce a convention: <span class="math">\(v^{1+\frac{1}{2}}\)</span> is stored
-in <code class="docutils literal"><span class="pre">v[n]</span></code> while <span class="math">\(v^{1-\frac{1}{2}}\)</span> is stored in <code class="docutils literal"><span class="pre">v[n-1]</span></code>.
-We can then write the algorithm in Python as</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">solver</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
-    <span class="n">dt</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
-    <span class="n">Nt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="n">dt</span><span class="p">))</span>
-    <span class="n">u</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">v</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">t</span> <span class="o">=</span> <span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> <span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>  <span class="c"># mesh for u</span>
-    <span class="n">t_v</span> <span class="o">=</span> <span class="n">t</span> <span class="o">+</span> <span class="n">dt</span><span class="o">/</span><span class="mi">2</span>                <span class="c"># mesh for v</span>
-
-    <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">I</span>
-    <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">dt</span><span class="o">*</span><span class="n">w</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
-        <span class="n">u</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">v</span><span class="p">[</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">v</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">dt</span><span class="o">*</span><span class="n">w</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">u</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">u</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">t_v</span>
-</pre></div>
-</div>
-<p>Note that the return <span class="math">\(u\)</span> and <span class="math">\(v\)</span> together with the mesh points such
-that the complete mesh function for <span class="math">\(u\)</span> is described by <code class="docutils literal"><span class="pre">u</span></code> and <code class="docutils literal"><span class="pre">t</span></code>,
-while <code class="docutils literal"><span class="pre">v</span></code> and <code class="docutils literal"><span class="pre">t_v</span></code> represents the mesh function for <span class="math">\(v\)</span>.</p>
-</div>
-<div class="section" id="implementation-with-half-integer-indices">
-<h3>Implementation with half-integer indices<a class="headerlink" href="#implementation-with-half-integer-indices" title="Permalink to this headline">¶</a></h3>
-<p>Some prefer to see a closer relationship between the code and
-the mathematics for the quantities with half-integer indices.
-For example, we would like to replace the updating equation for
-<code class="docutils literal"><span class="pre">v[n]</span></code> by</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">v</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="n">half</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="n">n</span><span class="o">-</span><span class="n">half</span><span class="p">]</span> <span class="o">-</span> <span class="n">dt</span><span class="o">*</span><span class="n">w</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">u</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
-</pre></div>
-</div>
-<p>This is easy to do if we could be sure that <code class="docutils literal"><span class="pre">n+half</span></code> means <code class="docutils literal"><span class="pre">n</span></code> and
-<code class="docutils literal"><span class="pre">n-half</span></code> means <code class="docutils literal"><span class="pre">n-1</span></code>. A possible solution is to define <code class="docutils literal"><span class="pre">half</span></code> as a
-special object such that an integer plus <code class="docutils literal"><span class="pre">half</span></code> results in the integer,
-while an integer minus <code class="docutils literal"><span class="pre">half</span></code> equals the integer minus 1.
-A simple Python class may realize the <code class="docutils literal"><span class="pre">half</span></code> object:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">HalfInt</span><span class="p">:</span>
-    <span class="k">def</span> <span class="nf">__radd__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">other</span>
-
-    <span class="k">def</span> <span class="nf">__rsub__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">other</span> <span class="o">-</span> <span class="mi">1</span>
-
-<span class="n">half</span> <span class="o">=</span> <span class="n">HalfInt</span><span class="p">()</span>
-</pre></div>
-</div>
-<p>The <code class="docutils literal"><span class="pre">__radd__</span></code> function is invoked for all expressions <code class="docutils literal"><span class="pre">n+half</span></code>
-(&#8220;right add&#8221; with <code class="docutils literal"><span class="pre">self</span></code> as <code class="docutils literal"><span class="pre">half</span></code> and <code class="docutils literal"><span class="pre">other</span></code> as <code class="docutils literal"><span class="pre">n</span></code>). Similarly,
-the <code class="docutils literal"><span class="pre">__rsub__</span></code> function is invoked for <code class="docutils literal"><span class="pre">n-half</span></code> and results in <code class="docutils literal"><span class="pre">n-1</span></code>.</p>
-<p>Using the <code class="docutils literal"><span class="pre">half</span></code> object, we can implement the algorithms in an even
-more readable way:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">solver</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Solve u&#39;=v, v&#39; = - w**2*u for t in (0,T], u(0)=I and v(0)=0,</span>
-<span class="sd">    by a central finite difference method with time step dt.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">dt</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
-    <span class="n">Nt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="n">dt</span><span class="p">))</span>
-    <span class="n">u</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">v</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">t</span> <span class="o">=</span> <span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> <span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>  <span class="c"># mesh for u</span>
-    <span class="n">t_v</span> <span class="o">=</span> <span class="n">t</span> <span class="o">+</span> <span class="n">dt</span><span class="o">/</span><span class="mi">2</span>                <span class="c"># mesh for v</span>
-
-    <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">I</span>
-    <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="o">+</span><span class="n">half</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">dt</span><span class="o">*</span><span class="n">w</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
-        <span class="k">print</span> <span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="o">+</span><span class="n">half</span><span class="p">,</span> <span class="n">n</span><span class="o">-</span><span class="n">half</span>
-        <span class="n">u</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">v</span><span class="p">[</span><span class="n">n</span><span class="o">-</span><span class="n">half</span><span class="p">]</span>
-        <span class="n">v</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="n">half</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="n">n</span><span class="o">-</span><span class="n">half</span><span class="p">]</span> <span class="o">-</span> <span class="n">dt</span><span class="o">*</span><span class="n">w</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">u</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
-    <span class="k">return</span> <span class="n">u</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">t_v</span>
-
-<span class="k">def</span> <span class="nf">test_staggered</span><span class="p">():</span>
-    <span class="n">I</span> <span class="o">=</span> <span class="mf">1.2</span><span class="p">;</span> <span class="n">w</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">;</span> <span class="n">T</span> <span class="o">=</span> <span class="mi">5</span><span class="p">;</span> <span class="n">dt</span> <span class="o">=</span> <span class="mi">2</span><span class="o">/</span><span class="n">w</span>
-    <span class="n">u</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">t_v</span> <span class="o">=</span> <span class="n">solver</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
-    <span class="kn">from</span> <span class="nn">vib_undamped</span> <span class="kn">import</span> <span class="n">solver</span> <span class="k">as</span> <span class="n">solver2</span>
-    <span class="n">u2</span><span class="p">,</span> <span class="n">t2</span> <span class="o">=</span> <span class="n">solver2</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
-    <span class="n">error</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">u</span> <span class="o">-</span> <span class="n">u2</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
-    <span class="n">tol</span> <span class="o">=</span> <span class="mf">1E-14</span>
-    <span class="k">assert</span> <span class="n">error</span> <span class="o">&lt;</span> <span class="n">tol</span>
-
-<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="n">test_staggered</span><span class="p">()</span>
-</pre></div>
-</div>
-<p>Verification of this code is easy as we can just compare the computed
-<code class="docutils literal"><span class="pre">u</span></code> with the <code class="docutils literal"><span class="pre">u</span></code> produced by the <code class="docutils literal"><span class="pre">solver</span></code> function in
-<code class="docutils literal"><span class="pre">vib_undamped.py</span></code> (which solves <span class="math">\(u''+\omega^2u=0\)</span> directly).  The
-values should coincide to machine precision since the two numerical
-methods are mathematically equivalent.  We refer to the file
-<a class="reference external" href="http://tinyurl.com/nm5587k/vib/vib_undamped_staggered.py">vib_undamped_staggered.py</a>
-for the details of a nose test that checks this property.</p>
-</div>
-</div>
-<div class="section" id="a-staggered-euler-cromer-scheme-for-a-generalized-model">
-<span id="vib-ode2-staggered"></span><h2>A staggered Euler-Cromer scheme for a generalized model<a class="headerlink" href="#a-staggered-euler-cromer-scheme-for-a-generalized-model" title="Permalink to this headline">¶</a></h2>
-<p>The more general model for vibration problems,</p>
-<div class="math" id="eq-auto139">
-\[\tag{380}
-mu'' + f(u') + s(u) = F(t),\quad u(0)=I,\ u'(0)=V,\ t\in (0,T],\]</div>
-<p>can be rewritten as a first-order ODE system</p>
-<div class="math" id="eq-vib-ode2-staggered-ueq">
-\[\tag{381}
-u' = v,\]</div>
-<div class="math" id="eq-vib-ode2-staggered-veq">
-\[\tag{382}
-v' = m^{-1}\left(F(t) - f(v) - s(u)\right){\thinspace .}\]</div>
-<p>It is natural to introduce a staggered mesh (see the section <a class="reference internal" href="#vib-model2x2-staggered"><span class="std std-ref">The Euler-Cromer scheme on a staggered mesh</span></a>) and seek <span class="math">\(u\)</span> at mesh points <span class="math">\(t_n\)</span> (the numerical value is
-denoted by <span class="math">\(u^n\)</span>) and <span class="math">\(v\)</span> between mesh points at <span class="math">\(t_{n+1/2}\)</span> (the numerical
-value is denoted by <span class="math">\(v^{n+\frac{1}{2}}\)</span>).
-A centered difference approximation to <a class="reference internal" href="#eq-vib-ode2-staggered-ueq"><span class="std std-ref">(381)</span></a>-<a class="reference internal" href="#eq-vib-ode2-staggered-veq"><span class="std std-ref">(382)</span></a> can then be written in operator notation as</p>
-<div class="math" id="eq-vib-ode2-staggered-dueq">
-\[\tag{383}
-\lbrack D_t u = v\rbrack^{n-\frac{1}{2}},\]</div>
-<div class="math" id="eq-vib-ode2-staggered-dveq">
-\[\tag{384}
-\lbrack D_tv = m^{-1}\left(F(t) - f(v) - s(u)\right)\rbrack^n{\thinspace .}\]</div>
+  <div class="section" id="advection-dominated-equations">
+<span id="ch-convdiff"></span><h1>Advection-dominated equations<a class="headerlink" href="#advection-dominated-equations" title="Permalink to this headline">¶</a></h1>
+<p>Wave (the chapter <a class="reference internal" href="._book005.html#ch-wave"><span class="std std-ref">Wave equations</span></a>) and diffusion (the chapter <a class="reference internal" href="._book011.html#ch-diffu"><span class="std std-ref">Diffusion equations</span></a>) equations
+are solve reliably by finite difference methods. As soon as we add a
+first-order derivative in space, representing <em>advective transport</em> (also
+known as convective transport), the numerics gets more complicated, and
+intuitively attractive methods no longer work well. We shall show
+how and why methods fail and provide remedies. The present chapter
+builds on basic knowledge about finite difference methods for
+the diffusion equations, including the analysis by Fourier components,
+truncation error analysis ( <a class="reference internal" href="._book021.html#ch-trunc"><span class="std std-ref">Appendix: Truncation error analysis</span></a>), and
+compact difference notation.</p>
+<div class="section" id="one-dimensional-time-dependent-advection-equations">
+<span id="advec-1d"></span><h2>One-dimensional time-dependent advection equations<a class="headerlink" href="#one-dimensional-time-dependent-advection-equations" title="Permalink to this headline">¶</a></h2>
+<p>We consider the pure advection model</p>
+<div class="math" id="eq-advec-1d-pde1-u">
+\[\tag{454}
+\frac{\partial u}{\partial t} + v\frac{partial u}{\partial x} = 0,\quad
+     x\in (0,L),\ t\in (0,T],\]</div>
+<div class="math" id="eq-advec-1d-pde1-u0">
+\[\tag{455}
+u(x,0) = I(x), x\in (0,L),\]</div>
+<div class="math" id="eq-advec-1d-pde1-i">
+\[\tag{456}
+u(0,t) = U_0, t\in (0,T].\]</div>
+<p>In <a class="reference internal" href="#eq-advec-1d-pde1-u"><span class="std std-ref">(454)</span></a>, <span class="math">\(v\)</span> is a given parameter, typically reflecting
+the velocity of transport of a quantity <span class="math">\(u\)</span> with a flow.
+There is only one boundary condition <a class="reference internal" href="#eq-advec-1d-pde1-u0"><span class="std std-ref">(455)</span></a> since
+there is only a first-derivative term in the PDE <a class="reference internal" href="#eq-advec-1d-pde1-u"><span class="std std-ref">(454)</span></a>.
+The information at <span class="math">\(x=0\)</span> and the initial condition get
+transported in positive <span class="math">\(x\)</span> direction
+if <span class="math">\(v&gt;0\)</span> through the domain.</p>
+<p>The solution of <a class="reference internal" href="#eq-advec-1d-pde1-u"><span class="std std-ref">(454)</span></a> in an infinite domain (no condition
+<a class="reference internal" href="#eq-advec-1d-pde1-u0"><span class="std std-ref">(455)</span></a> at <span class="math">\(x=0\)</span>) is</p>
+<div class="math" id="eq-advec-1d-pde1-sol">
+\[\tag{457}
+u(x,t) = I(x-vt){\thinspace .}\]</div>
+<p>This is also the solution we expect if we let <span class="math">\(I(x)\)</span> be located in
+the interior of the domain such that <span class="math">\(\lim_{x\rightarrow 0,L}I(x)=0\)</span>
+and <span class="math">\(U_0=0\)</span>.</p>
+<div class="section" id="simplest-scheme-forward-in-time-centered-in-space">
+<h3>Simplest scheme: forward in time, centered in space<a class="headerlink" href="#simplest-scheme-forward-in-time-centered-in-space" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="method-1">
+<h4>Method<a class="headerlink" href="#method-1" title="Permalink to this headline">¶</a></h4>
+<p>A first attempt to solve a PDE like <a class="reference internal" href="#eq-advec-1d-pde1-u"><span class="std std-ref">(454)</span></a> will normally
+look for a time-discretization scheme that is explicit so we avoid
+solving systems of linear equations. In space, we anticipate that
+centered differences are most accurate and therefore best. These
+two arguments lead us to a Forward Euler scheme in time and
+centered differences in space:</p>
+<div class="math" id="eq-auto181">
+\[\tag{458}
+[D_t^+ u + vD_{2x} u = 0]^n_i\]</div>
 <p>Written out,</p>
-<div class="math" id="eq-vib-ode2-staggered-dueq2">
-\[\tag{385}
-\frac{u^n - u^{n-1}}{\Delta t} = v^{n-\frac{1}{2}},\]</div>
-<div class="math" id="eq-vib-ode2-staggered-dveq2">
-\[\tag{386}
-\frac{v^{n+\frac{1}{2}} - v^{n-\frac{1}{2}}}{\Delta t}
-    = m^{-1}\left(F^n - f(v^n) - s(u^n)\right){\thinspace .}\]</div>
-<p>With linear damping, <span class="math">\(f(v)=bv\)</span>, we can use an arithmetic mean
-for <span class="math">\(f(v^n)\)</span>: <span class="math">\(f(v^n)\approx = \frac{1}{2}(f(v^{n-\frac{1}{2}}) +
-f(v^{n+\frac{1}{2}}))\)</span>. The system
-<a class="reference internal" href="#eq-vib-ode2-staggered-dueq2"><span class="std std-ref">(385)</span></a>-<a class="reference internal" href="#eq-vib-ode2-staggered-dveq2"><span class="std std-ref">(386)</span></a>
-can then be solved with respect to the unknowns <span class="math">\(u^n\)</span> and <span class="math">\(v^{n+\frac{1}{2}}\)</span>:</p>
-<div class="math" id="eq-vib-ode2-staggered-u-scheme-lin">
-\[\tag{387}
-u^n  = u^{n-1} + {\Delta t}v^{n-\frac{1}{2}},\]</div>
-<div class="math" id="eq-vib-ode2-staggered-v-scheme-lin">
-\[\tag{388}
-v^{n+\frac{1}{2}} = \left(1 + \frac{b}{2m}\Delta t\right)^{-1}\left(
-    v^{n-\frac{1}{2}} + {\Delta t}
-    m^{-1}\left(F^n - {\frac{1}{2}}f(v^{n-\frac{1}{2}}) - s(u^n)\right)\right){\thinspace .}\]</div>
-<p>In case of quadratic damping, <span class="math">\(f(v)=b|v|v\)</span>, we can use a geometric mean:
-<span class="math">\(f(v^n)\approx b|v^{n-\frac{1}{2}}|v^{n+\frac{1}{2}}\)</span>. Inserting this approximation
-in <a class="reference internal" href="#eq-vib-ode2-staggered-dueq2"><span class="std std-ref">(385)</span></a>-<a class="reference internal" href="#eq-vib-ode2-staggered-dveq2"><span class="std std-ref">(386)</span></a> and
-solving for the unknowns <span class="math">\(u^n\)</span> and <span class="math">\(v^{n+\frac{1}{2}}\)</span> results in</p>
-<div class="math" id="eq-vib-ode2-staggered-u-scheme-quad">
-\[\tag{389}
-u^n  = u^{n-1} + {\Delta t}v^{n-\frac{1}{2}},\]</div>
-<div class="math" id="eq-vib-ode2-staggered-v-scheme-quad">
-\[\tag{390}
-v^{n+\frac{1}{2}} = (1 + \frac{b}{m}|v^{n-\frac{1}{2}}|\Delta t)^{-1}\left(
-    v^{n-\frac{1}{2}} + {\Delta t}
-    m^{-1}\left(F^n - s(u^n)\right)\right){\thinspace .}\]</div>
-<p>The initial conditions are derived at the end of
-the section <a class="reference internal" href="#vib-model2x2-staggered"><span class="std std-ref">The Euler-Cromer scheme on a staggered mesh</span></a>:</p>
-<div class="math" id="eq-vib-ode2-staggered-u02">
-\[\tag{391}
-u^0 = I,\]</div>
-<div class="math" id="eq-vib-ode2-staggered-v02">
-\[\tag{392}
-v^\frac{1}{2} = V - \frac{1}{2}\Delta t\omega^2I
-    {\thinspace .}\]</div>
-</div>
-<div class="section" id="exercise-57-use-the-forward-backward-scheme-with-quadratic-damping">
-<span id="vib-exer-quad-damping-fwbw"></span><h2>Exercise 57: Use the forward-backward scheme with quadratic damping<a class="headerlink" href="#exercise-57-use-the-forward-backward-scheme-with-quadratic-damping" title="Permalink to this headline">¶</a></h2>
-<p>We consider the generalized model with quadratic damping, expressed
-as a system of two first-order equations as in the section <a class="reference internal" href="#vib-ode2-staggered"><span class="std std-ref">A staggered Euler-Cromer scheme for a generalized model</span></a>:</p>
 <div class="math">
-\[\begin{split}u^{\prime} &amp;= v,\\
-v' &amp;= \frac{1}{m}\left( F(t) - \beta |v|v - s(u)\right){\thinspace .}\end{split}\]</div>
-<p>However, contrary to what is done in the section <a class="reference internal" href="#vib-ode2-staggered"><span class="std std-ref">A staggered Euler-Cromer scheme for a generalized model</span></a>,
-we want to apply the idea of a forward-backward discretization:
-<span class="math">\(u\)</span> is marched forward by a one-sided Forward Euler scheme applied
-to the first equation, and
-thereafter <span class="math">\(v\)</span> can marched forward by a Backward Euler scheme in the
-second
-equation, see in the section <a class="reference internal" href="._book002.html#vib-model2x2-eulercromer"><span class="std std-ref">The Euler-Cromer method</span></a>.
-Express the idea in operator notation and write out the
-scheme. Unfortunately, the backward difference for the <span class="math">\(v\)</span> equation
-creates a nonlinearity <span class="math">\(|v^{n+1}|v^{n}\)</span>.  To linearize this
-nonlinearity, use the known value <span class="math">\(v^n\)</span> inside the absolute value
-factor, i.e., <span class="math">\(|v^{n+1}|v^{n}\approx |v^n|v^{n+1}\)</span>.  Show that the
-resulting scheme is equivalent to the one in the section <a class="reference internal" href="#vib-ode2-staggered"><span class="std std-ref">A staggered Euler-Cromer scheme for a generalized model</span></a> for some time level <span class="math">\(n\geq 1\)</span>.</p>
-<p>What we learn from this exercise is that the first-order differences
-and the linearization trick play together in &#8220;the right way&#8221; such that
-the scheme is as good as when we (in the section <a class="reference internal" href="#vib-ode2-staggered"><span class="std std-ref">A staggered Euler-Cromer scheme for a generalized model</span></a>)
-carefully apply centered differences and a geometric mean on a
-staggered mesh to achieve second-order accuracy.
-There is a
-difference in the handling of the initial conditions, though, as
-explained at the end of the section <a class="reference internal" href="._book002.html#vib-model2x2-eulercromer"><span class="std std-ref">The Euler-Cromer method</span></a>.
-Filename: <code class="docutils literal"><span class="pre">vib_gen_bwdamping</span></code>.</p>
+\[u^{n+1} = u^n - \frac{1}{2} C (u^n_{i+1}-u_{i-1}),\]</div>
+<p>with <span class="math">\(C\)</span> as the Courant number</p>
+<div class="math">
+\[C = \frac{v\Delta t}{\Delta x}{\thinspace .}\]</div>
+</div>
+<div class="section" id="implementation-9">
+<h4>Implementation<a class="headerlink" href="#implementation-9" title="Permalink to this headline">¶</a></h4>
+<p>A solver function for our scheme goes as follows.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+
+<span class="k">def</span> <span class="nf">solver_FECS</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">U0</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">user_action</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="n">Nt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dt</span><span class="p">)))</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> <span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>   <span class="c"># Mesh points in time</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">v</span><span class="o">*</span><span class="n">dt</span><span class="o">/</span><span class="n">C</span>
+    <span class="n">Nx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">L</span><span class="o">/</span><span class="n">dx</span><span class="p">))</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>       <span class="c"># Mesh points in space</span>
+    <span class="c"># Make sure dx and dt are compatible with x and t</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">v</span><span class="o">*</span><span class="n">dt</span><span class="o">/</span><span class="n">dx</span>
+
+    <span class="n">u</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">u_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c"># Set initial condition u(x,0) = I(x)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">u_1</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">I</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">user_action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">user_action</span><span class="p">(</span><span class="n">u_1</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="p">):</span>
+        <span class="c"># Compute u at inner mesh points</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">Nx</span><span class="p">):</span>
+            <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_1</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">C</span><span class="o">*</span><span class="p">(</span><span class="n">u_1</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">u_1</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="c"># Insert boundary condition</span>
+        <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">U0</span>
+
+        <span class="k">if</span> <span class="n">user_action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">user_action</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c"># Switch variables before next step</span>
+        <span class="n">u_1</span><span class="p">,</span> <span class="n">u</span> <span class="o">=</span> <span class="n">u</span><span class="p">,</span> <span class="n">u_1</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="test-cases">
+<h4>Test cases<a class="headerlink" href="#test-cases" title="Permalink to this headline">¶</a></h4>
+<p>The typical solution is <span class="math">\(u\)</span> has the shape of <span class="math">\(I\)</span> and is transported at
+velocity <span class="math">\(v\)</span> to the right (if <span class="math">\(v&gt;0\)</span>). Let us choose a smooth and non-smooth
+initial condition:</p>
+<div class="math" id="eq-advec-1d-case-gaussian">
+\[\tag{459}
+u(x,0) = Ae^{-\frac{1}{2}\left(\frac{x-L/10}{\sigma}\right)^2},\]</div>
+<div class="math" id="eq-advec-1d-case-cos">
+\[\begin{split}\tag{460}
+u(x,0) = A\cos\left(\frac{5\pi}{L}\left( x - \frac{L}{10}\right)\right),\quad
+    x &lt; \frac{L}{5} \hbox{ else } 0{\thinspace .}\end{split}\]</div>
+<p>The parameter <span class="math">\(A\)</span> is the maximum value of the initial condition.</p>
+<p>We scale the problem and introduce <span class="math">\(\bar x = x/L\)</span> and <span class="math">\(\bar t= vt/L\)</span>,
+which gives</p>
+<div class="math">
+\[\frac{\partial\bar u}{\partial \bar t} +
+\frac{\partial\bar u}{\partial\bar x} = 0{\thinspace .}\]</div>
+<p>The unknown <span class="math">\(u\)</span> is scaled by the maximum value of the initial condition:
+<span class="math">\(\bar u = u/\max |I(x)|\)</span> such that <span class="math">\(|\bar u(\bar x, 0)|\in [0,1]\)</span>.
+The scaled problem is solved by setting <span class="math">\(v=1\)</span>, <span class="math">\(L=1\)</span>, and <span class="math">\(A=1\)</span>.
+From now on we drop the bars.</p>
+<p>To run a case and plot the solution, we make the function</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">run_FECS</span><span class="p">(</span><span class="n">case</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">case</span> <span class="o">==</span> <span class="s">&#39;gaussian&#39;</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">I</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="p">((</span><span class="n">x</span><span class="o">-</span><span class="n">L</span><span class="o">/</span><span class="mi">10</span><span class="p">)</span><span class="o">/</span><span class="n">sigma</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">case</span> <span class="o">==</span> <span class="s">&#39;cosinehat&#39;</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">I</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mi">5</span><span class="o">/</span><span class="n">L</span><span class="o">*</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">L</span><span class="o">/</span><span class="mi">10</span><span class="p">))</span> <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">L</span><span class="o">/</span><span class="mi">5</span> <span class="k">else</span> <span class="mi">0</span>
+
+    <span class="n">L</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="mf">0.02</span>
+    <span class="n">legends</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plot every m steps in the same figure.&quot;&quot;&quot;</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="mi">40</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">%</span> <span class="n">m</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">print</span> <span class="s">&#39;t=</span><span class="si">%g</span><span class="s">, n=</span><span class="si">%d</span><span class="s">, u in [</span><span class="si">%g</span><span class="s">, </span><span class="si">%g</span><span class="s">] w/</span><span class="si">%d</span><span class="s"> points&#39;</span> <span class="o">%</span> \
+              <span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">],</span> <span class="n">n</span><span class="p">,</span> <span class="n">u</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">u</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">u</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>  <span class="c"># Instability?</span>
+            <span class="k">return</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span>
+        <span class="n">legends</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;t=</span><span class="si">%g</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">hold</span><span class="p">(</span><span class="s">&#39;on&#39;</span><span class="p">)</span>
+
+    <span class="n">U0</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="mf">0.001</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">solver</span><span class="p">(</span><span class="n">I</span><span class="o">=</span><span class="n">I</span><span class="p">,</span> <span class="n">U0</span><span class="o">=</span><span class="n">U0</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="n">C</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
+           <span class="n">user_action</span><span class="o">=</span><span class="n">plot</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">legends</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s">&#39;lower left&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">&#39;tmp.png&#39;</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">&#39;tmp.pdf&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.75</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="bug">
+<h4>Bug?<a class="headerlink" href="#bug" title="Permalink to this headline">¶</a></h4>
+<p>Running either of the test cases, the plot becomes a mess, and
+the printout of <span class="math">\(u\)</span> values in the <code class="docutils literal"><span class="pre">plot</span></code> function reveals that
+<span class="math">\(u\)</span> grows very quickly. We may reduce <span class="math">\(\Delta t\)</span> and make it
+very small, yet the solution just grows.
+Such behavior points to a bug in the code.
+However, choosing a coarse mesh and performing a time step by
+hand calculations produce the same numbers as in the code, so
+it seems that the implementation is correct.
+The hypothesis is therefore that the solution is unstable.</p>
+</div>
+</div>
+<div class="section" id="analysis-of-the-scheme">
+<h3>Analysis of the scheme<a class="headerlink" href="#analysis-of-the-scheme" title="Permalink to this headline">¶</a></h3>
+<p>We can analyze the finite difference scheme by look at how it treats
+a Fourier component</p>
+<div class="math">
+\[u_q^n = A^n e^{ikq\Delta x}{\thinspace .}\]</div>
+<p>The corresponding analytical Fourier component is</p>
+<div class="math">
+\[u = {A_{\small\mbox{e}}}^n e^{ikx},\quad {A_{\small\mbox{e}}} = e^{-ivk\Delta t}=e^{-iCkx}{\thinspace .}\]</div>
+<p>In particular, <span class="math">\(|{A_{\small\mbox{e}}}| \leq 1\)</span>.</p>
+<p>Inserting the numerical component in the scheme,</p>
+<div class="math">
+\[[D_t^+ A^n e^{ikq\Delta x} + v D_{2x}A^n e^{ikq\Delta x}]^n_i,\]</div>
+<p>and making use of <a class="reference internal" href="._book020.html#eq-form-exp-fd1c-center"><span class="std std-ref">(595)</span></a>
+results in</p>
+<div class="math">
+\[[e^{ikq\Delta x} (\frac{A-1}{\Delta t} + v\frac{1}{\Delta x}i\sin (k\Delta x))]^n_i,\]</div>
+<p>which implies</p>
+<div class="math">
+\[A = 1 - iC\sin(k\Delta x){\thinspace .}\]</div>
+<p>The numerical solution features the formula <span class="math">\(A^n\)</span>. To find out whether
+<span class="math">\(A^n\)</span> means growth in time, we rewrite <span class="math">\(A\)</span> in polar form: <span class="math">\(A=A_re^{i\phi}\)</span>,
+for real numbers <span class="math">\(A_r\)</span> and <span class="math">\(\phi\)</span>,
+since we then have <span class="math">\(A^n = A_r^ne^{i\phi n}\)</span>. The magnitude of <span class="math">\(A^n\)</span> is
+<span class="math">\(A_r^n\)</span>. In our case, <span class="math">\(A_r = (1 + C^2\sin^2(kx))^{1/2} &gt; 1\)</span>, so
+<span class="math">\(A_r^n\)</span> will increase in time, whereas the
+exact solution will not. Regardless of <span class="math">\(\Delta t\)</span>, we get unstable
+numerical solutions.</p>
+</div>
+<div class="section" id="leapfrog-in-time-centered-differences-in-space">
+<h3>Leapfrog in time, centered differences in space<a class="headerlink" href="#leapfrog-in-time-centered-differences-in-space" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="method-2">
+<h4>Method<a class="headerlink" href="#method-2" title="Permalink to this headline">¶</a></h4>
+<p>Another explicit scheme is to do a &#8220;leapfrog&#8221; jump over <span class="math">\(2\Delta t\)</span> in
+time and combine it with central differences in space:</p>
+<div class="math">
+\[[D_{2t} u + vD_{2x} u = 0,\]</div>
+<p>which results in the updating formula</p>
+<div class="math">
+\[u^{n+1} = u^{n-1} - C(u_{i+1}-u_{i-1}){\thinspace .}\]</div>
+<p>A special scheme is needed to compute <span class="math">\(u^1\)</span>, but we leave that problem or
+now.</p>
+</div>
+<div class="section" id="implementation-10">
+<h4>Implementation<a class="headerlink" href="#implementation-10" title="Permalink to this headline">¶</a></h4>
+<p>We now need to have three time levels and must modify our solver a bit:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Nt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dt</span><span class="p">)))</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> <span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>   <span class="c"># Mesh points in time</span>
+<span class="o">...</span>
+<span class="n">u</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">u_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">u_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">scheme</span> <span class="o">==</span> <span class="s">&#39;FECS&#39;</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">Nx</span><span class="p">):</span>
+            <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_1</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">C</span><span class="o">*</span><span class="p">(</span><span class="n">u_1</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">u_1</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="n">scheme</span> <span class="o">==</span> <span class="s">&#39;LFCS&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c"># Use some scheme for the first step</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">Nx</span><span class="p">):</span>
+                <span class="o">...</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_2</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">C</span><span class="o">*</span><span class="p">(</span><span class="n">u_1</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">u_1</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="c"># Switch variables before next step</span>
+    <span class="n">u_2</span><span class="p">,</span> <span class="n">u_1</span><span class="p">,</span> <span class="n">u</span> <span class="o">=</span> <span class="n">u_1</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">u_2</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="running-the-test-case">
+<h4>Running the test case<a class="headerlink" href="#running-the-test-case" title="Permalink to this headline">¶</a></h4>
+<p>Let us try a coarse mesh such that the smooth Gaussian initial condition
+is represented by 1 at mesh node 1 and 0 at all other nodes. This
+triangular initial condition should then be advected to the right.
+Choosing scaled variables as <span class="math">\(\Delta t=0.1\)</span>, <span class="math">\(T=1\)</span>, and <span class="math">\(C=1\)</span> gives
+the plot in Figure <a class="reference internal" href="#advec-1d-case-gaussian-fig-lfcs"><span class="std std-ref">Leapfrog scheme with  and </span></a>, which
+is in fact identical to the exact solution (!).</p>
+<div class="figure" id="id1">
+<span id="advec-1d-case-gaussian-fig-lfcs"></span><a class="reference internal image-reference" href="_images/solver_FE_Upw.png"><img alt="_images/solver_FE_Upw.png" src="_images/solver_FE_Upw.png" style="width: 500px;" /></a>
+<p class="caption"><span class="caption-text">Leapfrog scheme with <span class="math">\(\Delta t = 0.1\)</span> and <span class="math">\(C=1\)</span></span></p>
+</div>
+</div>
+<div class="section" id="analysis">
+<h4>Analysis<a class="headerlink" href="#analysis" title="Permalink to this headline">¶</a></h4>
+<p>We can perform a Fourier analysis again. Inserting the numerical
+Fourier component in the Leapfrog scheme, we get</p>
+<div class="math">
+\[A^2 - i2C\sin(k\Delta x) A - 1 = 0,\]</div>
+<p>and</p>
+<div class="math">
+\[A = -iC\sin(k\Delta x) \pm \sqrt{1-C^2\sin^2(k\Delta x)}{\thinspace .}\]</div>
+<p>Rewriting to polar form, <span class="math">\(A=A_re^{i\phi}\)</span>, we see that <span class="math">\(A_r=1\)</span>, so the
+numerical component is not increasing or decreasing in time, which is
+exactly what we want. However, for <span class="math">\(C&gt;1\)</span>, the square root can become
+complex valued, so stability is obtained only as long as <span class="math">\(C\leq 1\)</span>.</p>
+<p>[<strong>hpl 24</strong>: The complete numerical solution? How are the two roots combined?]</p>
+<p>We introduce <span class="math">\(p=k\Delta x\)</span>. The amplification factor now reads</p>
+<div class="math">
+\[A = -iC\sin p \pm \sqrt{1-C^2\sin^2 p},\]</div>
+<p>and is to be compared to the exact amplification factor</p>
+<div class="math">
+\[{A_{\small\mbox{e}}} = e^{-ikv\Delta t} = e^{-ikC\Delta x} = e^{-iCp}{\thinspace .}\]</div>
+<p>the section <a class="reference internal" href="#advec-1d-disprel"><span class="std std-ref">Analysis of dispersion relations</span></a> compares many numerical amplification factors
+with the exact expression.</p>
+</div>
+</div>
+<div class="section" id="upwind-differences-in-space">
+<h3>Upwind differences in space<a class="headerlink" href="#upwind-differences-in-space" title="Permalink to this headline">¶</a></h3>
+<p id="index-0">Since the PDE reflects transport of information along with a flow in
+positive <span class="math">\(x\)</span> direction <span class="math">\(v&gt;0\)</span>, it could be natural to go upstream and not
+downstream in a spatial derivative. That is, we approximate</p>
+<div class="math">
+\[\frac{\partial u}{\partial x}(x_i,t_n)\approx [D^-_x u]^n_i = \frac{u^n_{i} - u^n_{i-1}}{\Delta x}{\thinspace .}\]</div>
+<p>This is called an <em>upwind difference</em>. This spatial approximation does magic to
+the scheme we had with Forward Euler in time and centered difference in space.
+With an upwind difference,</p>
+<div class="math" id="eq-advec-1d-upwind">
+\[\tag{461}
+[D^+_t u + vD^-_x u = 0]^n_i,\]</div>
+<p>written out as</p>
+<div class="math">
+\[u^{n+1} = u^n_i - C(u^{n}_{i}-u^{n}_{i-1}),\]</div>
+<p>gives a robust scheme that is stable if <span class="math">\(C\leq 1\)</span>.
+As with the Leapfrog scheme, it becomes exact if <span class="math">\(C=1\)</span>.
+A plot of the solution in case <span class="math">\(C=1\)</span> is therefore given in
+Figure <a class="reference internal" href="#advec-1d-case-gaussian-fig-lfcs"><span class="std std-ref">Leapfrog scheme with  and </span></a>.</p>
+<p>The amplification factor can be computed using the
+formula <a class="reference internal" href="._book020.html#eq-form-exp-fd1-bw"><span class="std std-ref">(593)</span></a>,</p>
+<div class="math">
+\[\frac{A - 1}{\Delta t} + \frac{v}{\Delta x}(1 - e^{-ik\Delta x}) = 0,\]</div>
+<p>which means</p>
+<div class="math">
+\[A = 1 - C(1 - \cos(p) - i\sin(p)){\thinspace .}\]</div>
+<p>For <span class="math">\(C&lt;1\)</span> there is, unfortunately,
+non-physical damping of discrete Fourier components. This damping can
+be quite severe.</p>
+<p>One can interpret the upwind difference as extra, artificial diffusion
+in the equation. Solving</p>
+<div class="math">
+\[\frac{\partial u}{\partial t} + v\frac{\partial u}{\partial x}
+= \nu\frac{\partial^2 u}{\partial x^2},\]</div>
+<p>by a forward difference time and centered differences in space,</p>
+<div class="math">
+\[D^+_t u + vD_{2x} u = \nu D_xD_x u]^n_i,\]</div>
+<p>gives actually the upwind scheme <a class="reference internal" href="#eq-advec-1d-upwind"><span class="std std-ref">(461)</span></a> if
+<span class="math">\(\nu = v\Delta x/2\)</span>. That is, solving the PDE <span class="math">\(u_t + vu_x=0\)</span>
+by centered differences in space and forward difference in time is
+unsuccessful, but by adding some artificial diffusion <span class="math">\(\nu u_{xx}\)</span>,
+the method becomes stable.</p>
+</div>
+<div class="section" id="a-crank-nicolson-discretization-in-time-and-centered-differences-in-space">
+<h3>A Crank-Nicolson discretization in time and centered differences in space<a class="headerlink" href="#a-crank-nicolson-discretization-in-time-and-centered-differences-in-space" title="Permalink to this headline">¶</a></h3>
+<div class="math">
+\[A = \frac{1 - \frac{1}{2} i C\sin p}{1 + \frac{1}{2} i C\sin p}{\thinspace .}\]</div>
+</div>
+<div class="section" id="the-lax-wendroff-method">
+<h3>The Lax-Wendroff method<a class="headerlink" href="#the-lax-wendroff-method" title="Permalink to this headline">¶</a></h3>
+<div class="math">
+\[A = 1 - iC\sin p - 2C^2\sin^2 (p/2){\thinspace .}\]</div>
+</div>
+<div class="section" id="analysis-of-dispersion-relations">
+<span id="advec-1d-disprel"></span><h3>Analysis of dispersion relations<a class="headerlink" href="#analysis-of-dispersion-relations" title="Permalink to this headline">¶</a></h3>
+<p>We have developed expressions for <span class="math">\(A(C,p)\)</span> in the exact solution
+<span class="math">\(u_q^n=A^ne^{ikq\Delta x}\)</span> of the discrete equations. These
+expressions are valuable for investigating the quality of the numerical
+solutions. Note that the Fourier component that solves the original
+PDE problem has no damping and moves with constant velocity <span class="math">\(v\)</span>. There
+are two basic errors in the numerical Fourier component: there may be
+damping and the wave velocity may depend on <span class="math">\(C\)</span> and <span class="math">\(p=k\Delta x\)</span>.</p>
+<p>The shortest wavelength that can be represented is <span class="math">\(\lambda = 2\Delta x\)</span>.
+The corresponding <span class="math">\(k\)</span> is <span class="math">\(k=2\pi/\lambda = \pi/Delta x\)</span>, so <span class="math">\(p=k\Delta x\in
+(0,\pi]\)</span>.</p>
+<p>Given a complex <span class="math">\(A\)</span> as a function of <span class="math">\(C\)</span> and <span class="math">\(p\)</span>, how can we visualize
+it? The two key ingredients in <span class="math">\(A\)</span> is the magnitude, reflecting damping or
+growth of the wave, and the angle, closely related to the
+velocity of the wave. The Fourier component</p>
+<div class="math">
+\[D^n e^{ik(x-ct)}\]</div>
+<p>has damping <span class="math">\(D\)</span> and wave velocity <span class="math">\(c\)</span>. Let us express our <span class="math">\(A\)</span> in
+polar form, <span class="math">\(A = A_re^{i\phi}\)</span>, and insert this expression in
+our discrete component <span class="math">\(u_q^n = A^ne^{ikq\Delta x} = A^ne^{ikx}\)</span>:</p>
+<div class="math">
+\[u^n_q = A_r^n e^{i\phi n} e^{ikx} = A_r^n e^{i(kx - n\phi)} =
+A_r^ne^{i(k(x - ct))},\]</div>
+<p>for</p>
+<div class="math">
+\[c = \frac{\phi}{k\Delta t}{\thinspace .}\]</div>
+<p>Now,</p>
+<div class="math">
+\[k\Delta t = \frac{Ck\Delta x}{v}=\frac{Cp}{v},\]</div>
+<p>so</p>
+<div class="math">
+\[c = \frac{\phi v}{Cp}{\thinspace .}\]</div>
+<p>An appropriate dimensionless quantity to plot is <span class="math">\(c/v\)</span>:</p>
+<div class="math">
+\[\frac{c}{v} = \frac{\phi}{Cp}{\thinspace .}\]</div>
+<div class="figure" id="id2">
+<span id="advec-1d-disprel-c099"></span><a class="reference internal image-reference" href="_images/disprel_C0_99.png"><img alt="_images/disprel_C0_99.png" src="_images/disprel_C0_99.png" style="width: 800px;" /></a>
+<p class="caption"><span class="caption-text">Dispersion relations for <span class="math">\(C=0.99\)</span></span></p>
+</div>
+<div class="figure" id="id3">
+<span id="advec-1d-disprel-c09"></span><a class="reference internal image-reference" href="_images/disprel_C0_9.png"><img alt="_images/disprel_C0_9.png" src="_images/disprel_C0_9.png" style="width: 800px;" /></a>
+<p class="caption"><span class="caption-text">Dispersion relations for <span class="math">\(C=0.9\)</span></span></p>
+</div>
+<div class="figure" id="id4">
+<span id="advec-1d-disprel-c08"></span><a class="reference internal image-reference" href="_images/disprel_C0_8.png"><img alt="_images/disprel_C0_8.png" src="_images/disprel_C0_8.png" style="width: 800px;" /></a>
+<p class="caption"><span class="caption-text">Dispersion relations for <span class="math">\(C=0.8\)</span></span></p>
+</div>
+<div class="figure" id="id5">
+<span id="advec-1d-disprel-c05"></span><a class="reference internal image-reference" href="_images/disprel_C0_5.png"><img alt="_images/disprel_C0_5.png" src="_images/disprel_C0_5.png" style="width: 800px;" /></a>
+<p class="caption"><span class="caption-text">Dispersion relations for <span class="math">\(C=0.5\)</span></span></p>
+</div>
+<div class="figure" id="id6">
+<span id="advec-1d-disprel-c99"></span><a class="reference internal image-reference" href="_images/disprel_C0_99.png"><img alt="_images/disprel_C0_99.png" src="_images/disprel_C0_99.png" style="width: 800px;" /></a>
+<p class="caption"><span class="caption-text">Dispersion relations for <span class="math">\(C=0.99\)</span></span></p>
+</div>
+<p>The total damping after some time <span class="math">\(T=n\Delta t\)</span> is reflected by
+<span class="math">\(A_r(C,p)^n\)</span>. Since normally <span class="math">\(A_r&lt;1\)</span>, the damping goes like
+<span class="math">\(A_r^{1/\Delta t}\)</span> and approaches zero as <span class="math">\(\Delta t\rightarrow 0\)</span>.
+[<strong>hpl 25</strong>: No, how do we explain that reducing <span class="math">\(\Delta t\)</span> reduces the damping, while keeping <span class="math">\(C\)</span> fixed?]</p>
+</div>
+</div>
+<div class="section" id="one-dimensional-stationary-advection-diffusion-equation">
+<h2>One-dimensional stationary advection-diffusion equation<a class="headerlink" href="#one-dimensional-stationary-advection-diffusion-equation" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="two-dimensional-advection-diffusion-equations">
+<h2>Two-dimensional advection-diffusion equations<a class="headerlink" href="#two-dimensional-advection-diffusion-equations" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="applications-of-advection-equations">
+<h2>Applications of advection equations<a class="headerlink" href="#applications-of-advection-equations" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
@@ -455,26 +504,42 @@ Filename: <code class="docutils literal"><span class="pre">vib_gen_bwdamping</sp
             </center>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Staggered mesh discretization</a><ul>
-<li><a class="reference internal" href="#the-euler-cromer-scheme-on-a-standard-mesh">The Euler-Cromer scheme on a standard mesh</a></li>
-<li><a class="reference internal" href="#the-euler-cromer-scheme-on-a-staggered-mesh">The Euler-Cromer scheme on a staggered mesh</a></li>
-<li><a class="reference internal" href="#implementation-of-the-scheme-on-a-staggered-mesh">Implementation of the scheme on a staggered mesh</a><ul>
-<li><a class="reference internal" href="#implementation-with-integer-indices">Implementation with integer indices</a></li>
-<li><a class="reference internal" href="#implementation-with-half-integer-indices">Implementation with half-integer indices</a></li>
+<li><a class="reference internal" href="#">Advection-dominated equations</a><ul>
+<li><a class="reference internal" href="#one-dimensional-time-dependent-advection-equations">One-dimensional time-dependent advection equations</a><ul>
+<li><a class="reference internal" href="#simplest-scheme-forward-in-time-centered-in-space">Simplest scheme: forward in time, centered in space</a><ul>
+<li><a class="reference internal" href="#method-1">Method</a></li>
+<li><a class="reference internal" href="#implementation-9">Implementation</a></li>
+<li><a class="reference internal" href="#test-cases">Test cases</a></li>
+<li><a class="reference internal" href="#bug">Bug?</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#a-staggered-euler-cromer-scheme-for-a-generalized-model">A staggered Euler-Cromer scheme for a generalized model</a></li>
-<li><a class="reference internal" href="#exercise-57-use-the-forward-backward-scheme-with-quadratic-damping">Exercise 57: Use the forward-backward scheme with quadratic damping</a></li>
+<li><a class="reference internal" href="#analysis-of-the-scheme">Analysis of the scheme</a></li>
+<li><a class="reference internal" href="#leapfrog-in-time-centered-differences-in-space">Leapfrog in time, centered differences in space</a><ul>
+<li><a class="reference internal" href="#method-2">Method</a></li>
+<li><a class="reference internal" href="#implementation-10">Implementation</a></li>
+<li><a class="reference internal" href="#running-the-test-case">Running the test case</a></li>
+<li><a class="reference internal" href="#analysis">Analysis</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#upwind-differences-in-space">Upwind differences in space</a></li>
+<li><a class="reference internal" href="#a-crank-nicolson-discretization-in-time-and-centered-differences-in-space">A Crank-Nicolson discretization in time and centered differences in space</a></li>
+<li><a class="reference internal" href="#the-lax-wendroff-method">The Lax-Wendroff method</a></li>
+<li><a class="reference internal" href="#analysis-of-dispersion-relations">Analysis of dispersion relations</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#one-dimensional-stationary-advection-diffusion-equation">One-dimensional stationary advection-diffusion equation</a></li>
+<li><a class="reference internal" href="#two-dimensional-advection-diffusion-equations">Two-dimensional advection-diffusion equations</a></li>
+<li><a class="reference internal" href="#applications-of-advection-equations">Applications of advection equations</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="._book011.html"
-                        title="previous chapter">Convection-diffusion equations</a></p>
+                        title="previous chapter">Diffusion equations</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="._book013.html"
-                        title="next chapter">Appendix: Useful formulas</a></p>
+                        title="next chapter">Staggered mesh discretization</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -506,10 +571,10 @@ Filename: <code class="docutils literal"><span class="pre">vib_gen_bwdamping</sp
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="._book013.html" title="Appendix: Useful formulas"
+          <a href="._book013.html" title="Staggered mesh discretization"
              >next</a> |</li>
         <li class="right" >
-          <a href="._book011.html" title="Convection-diffusion equations"
+          <a href="._book011.html" title="Diffusion equations"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Finite Difference Computing with Partial Differential Equations</a> &raquo;</li> 
       </ul>
@@ -519,7 +584,7 @@ Filename: <code class="docutils literal"><span class="pre">vib_gen_bwdamping</sp
     <a href="http://cbc.simula.no"><img src="_static/cbc_banner.png" width="100%"><a>
     <br />
     <br />
-      &copy;2015, Svein Linge, Hans Petter Langtangen. Released under CC Attribution 4.0 license.
+      &copy;2016, Hans Petter Langtangen, Svein Linge. Released under CC Attribution 4.0 license.
   </div>
 </div>
 

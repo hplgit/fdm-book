@@ -106,7 +106,9 @@ Numerical simulations produce large arrays as results and the software
 needs to store these arrays on disk. Several methods are available
 in Python. We recommend to use tailored solutions for large arrays and
 not standard file storage tools such as `pickle` (`cPickle` for speed
-in Python version 2) and `shelve`.
+in Python version 2) and `shelve`, because the tailored solutions have
+been optimized for array data and are hence much more faster than the
+standard tools.
 
 ===== Using `savez` to store arrays in files =====
 label{softeng2:wave1D:filestorage:savez}
@@ -144,7 +146,7 @@ arguments, the task gets accomplished.
 === Merging zip archives ===
 
 Each separate call to `np.savez` creates a new file (zip archive) with
-extension `.npz`. It is very convenient if collect all results in
+extension `.npz`. It is very convenient to collect all results in
 one archive instead. This can be done by merging all the individual
 `.npz` files into a single zip archive:
 
@@ -157,7 +159,7 @@ archive.
 === Reading arrays from zip archives ===
 
 Archives created by `savez` or the merged archive we describe
-above with name of the form `myarchive.npz`
+above with name of the form `myarchive.npz`,
 can be conveniently read by the `numpy.load` function:
 
 !bc pycod
@@ -177,7 +179,7 @@ The Python package `joblib` has nice functionality for efficient storage
 of arrays on disk. The following class applies this functionality so that
 one can save an array, or in fact any Python data structure (e.g., a
 dictionary of arrays), to disk under a certain name. Later, we can
-retrieve the object from its name. The name of the directory under which
+retrieve the object by use of its name. The name of the directory under which
 the arrays are stored by `joblib` can be given by the user.
 
 @@@CODE src-softeng2/Storage.py
@@ -206,7 +208,7 @@ version of the files in Git is recognized by a hash string.)
 
 Suppose you have some input data in the form of functions,
 `numpy` arrays, and other objects. To turn these input data
-into a string we may grab the source code of the functions,
+into a string, we may grab the source code of the functions,
 use a very efficient hash method for potentially large arrays,
 and simply convert all other objects via `str` to a string
 representation. The final string, merging all input data,
@@ -393,7 +395,7 @@ verification purposes since the software should reproduce such
 solutions to machine precision. With Dirichlet boundary conditions
 we can construct a function that is linear in $t$ and quadratic in
 $x$ that is an exact solution of the scheme, while with Neumann
-conditions are left with testing just a constant solution
+conditions we are left with testing just a constant solution
 (see comments in ref[Section ref{wave:pde1:verify}][ in
 cite{Langtangen_deqbook_wave}][in
 the document "Finite difference methods for wave motion":
@@ -402,7 +404,7 @@ cite{Langtangen_deqbook_wave}]).
 
 A more general method for verification is to check the convergence rates.
 
-Do convergence rates here! It is general...
+[hpl: Do convergence rates here!]
 
 ======= Programming the solver with classes =======
 
@@ -482,7 +484,7 @@ We shall in the present chapter extend this code with computational
 modules written in other languages than Python. This extended version is
 called "`wave2D_u0_adv.py`": "${src_softeng2}/wave2D_u0_adv.py".
 
-The `wave2D_u0.py` file contains a `solver` function, which calls and
+The `wave2D_u0.py` file contains a `solver` function, which calls an
 `advance_*` function to advance the numerical scheme one level forward
 in time.  The function `advance_scalar` applies standard Python loops
 to implement the scheme, while `advance_vectorized` performs
@@ -705,8 +707,8 @@ the Cython version.
 Instead of relying on Cython's (excellent) ability to translate Python to C,
 we can invoke a compiled language directly and write the loops ourselves.
 Let us start with Fortran 77, because this is a language with more
-convenient array handling than C (or plain C++). Or more precisely,
-we can with ease program with the same multi-dimensional indices
+convenient array handling than C (or plain C++), because
+we can use the same multi-dimensional indices
 in the Fortran code as in the `numpy`
 arrays in the Python code, while in C these arrays are
 one-dimensional and requires us to reduce multi-dimensional indices
@@ -736,7 +738,7 @@ but we need a *wrapper code* in C for the Fortran subroutine to enable
 calling it from Python, and from this wrapper code one can return `u`
 to the calling Python code.
 
-!bnotice Remark
+!bnotice Tip: Return all computed objects to the calling code
 It is not strictly necessary to return `u` to the calling Python
 code since the `advance` function will modify the elements of `u`,
 but the convention in Python is to get all output from a function

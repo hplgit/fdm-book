@@ -1,9 +1,5 @@
 from sympy import *
 
-q = diff(sin(a*x), x, 4)
-q
-
-integrate(q, x)
 
 t, a, Q, w = symbols('t a A w', positive=True, real=True)
 u = Q*exp(-a*t)*sin(w*t)
@@ -20,5 +16,3 @@ simplify(expand_trig(dudt2))
 simplify(expand_trig(dudt2 - dudt))  # are they equal?
 s = solve(dudt2, t)
 s
-
-

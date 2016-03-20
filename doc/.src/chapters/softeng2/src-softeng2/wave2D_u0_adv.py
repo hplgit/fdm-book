@@ -139,7 +139,6 @@ def solver(I, V, f, c, Lx, Ly, Nx, Ny, dt, T,
         user_action(u, x, xv, y, yv, t, 1)
 
     # Update data structures for next step
-    #u_2[:] = u_1;  u_1[:] = u  # safe, but slower
     u_2, u_1, u = u_1, u, u_2
 
     for n in It[1:-1]:

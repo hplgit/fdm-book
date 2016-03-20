@@ -1,519 +1,633 @@
 .. !split
 
-.. _ch:formulas:
+.. _ch:staggered:
 
-Appendix: Useful formulas
-%%%%%%%%%%%%%%%%%%%%%%%%%
+Staggered mesh discretization
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-.. _sec:form:fdop:
+Ordinary differential equations
+===============================
 
-Finite difference operator notation
-===================================
+The Euler-Cromer scheme on a standard mesh
+------------------------------------------
 
-.. _Eq:Dop:fd1:center:
+Consider the fundamental model problem for simple harmonic oscillations,
 
-.. math::
-
-    \tag{393}
-    u'(t_n) \approx
-        \lbrack D_tu\rbrack^n = \frac{u^{n+\frac{1}{2}} - u^{n-\frac{1}{2}}}{\Delta t} 
-        
-
-.. _Eq:Dop:fd1:center2:
+.. _Eq:stag:vib:ODE2nd:
 
 .. math::
 
-    \tag{394}
-    u'(t_n) a\approx
-        \lbrack D_{2t}u\rbrack^n = \frac{u^{n+1} - u^{n-1}}{2\Delta t} +
+    \tag{462}
+    u'' + \omega^2u = 0,\quad u(0)=I,\ u'(0)=0,
         
         
 
-.. _Eq:Dop:fd1:bw:
+where :math:`\omega` is the frequency of the oscillations (the exact solution
+is :math:`u(t)=I\cos\omega t`). This model can equivalently be
+formulated as two first-order equations,
+
+.. _Eq:stag:vib:EulerCromer:veq:
 
 .. math::
 
-    \tag{395}
-    u'(t_n) =
-        \lbrack D_t^-u\rbrack^n = \frac{u^{n} - u^{n-1}}{\Delta t}
-        
+    \tag{463}
+    v' = -\omega^2 u,
+         
         
 
-.. _Eq:Dop:fd1:fw:
+.. _Eq:stag:vib:EulerCromer:ueq:
 
 .. math::
 
-    \tag{396}
-    u'(t_n) \approx
-        \lbrack D_t^+u\rbrack^n = \frac{u^{n+1} - u^{n}}{\Delta t}
+    \tag{464}
+    u' = v{\thinspace .}
         
         
 
-.. _Eq:Dop:fd1:theta:
+The popular Euler-Cromer scheme for this :math:`2\times 2` system of ODEs
+applies an explicit
+forward difference in :ref:`(463) <Eq:stag:vib:EulerCromer:veq>` and a
+backward difference in :ref:`(464) <Eq:stag:vib:EulerCromer:ueq>`:
+
+.. _Eq:stag:vib:EulerCromer:dveq0:
 
 .. math::
 
-    \tag{397}
-    u'(t_{n+\theta}) =
-        \lbrack \bar D_tu\rbrack^{n+\theta} = \frac{u^{n+1} - u^{n}}{\Delta t}
+    \tag{465}
+    \frac{v^{n+1}- v^n}{\Delta t} =- \omega^2u^{n},
         
         
 
-.. _Eq:Dop:fd1:bw2:
+.. _Eq:stag:vib:EulerCromer:dueq0:
 
 .. math::
 
-    \tag{398}
-    u'(t_n) \approx
-        \lbrack D_t^{2-}u\rbrack^n = \frac{3u^{n} - 4u^{n-1} + u^{n-2}}{2\Delta t}
+    \tag{466}
+    \frac{u^{n+1} - u^n}{\Delta t} = v^{n+1}{\thinspace .}
         
         
 
-.. _Eq:Dop:fd2:center:
+For a time domain :math:`[0,T]`, we have introduced a mesh with points
+:math:`0=t_0 < t_1 < \cdots < t_n=T`. The most common case is a mesh with
+uniform spacing :math:`\Delta t`: :math:`t_n=n\Delta t`. Then
+:math:`v^n` is an approximation to :math:`v(t)` at mesh point :math:`t_n`, and
+:math:`u^n` is an approximation to :math:`u(t)` at the same point.
+Note that the backward difference in :ref:`(468) <Eq:stag:vib:EulerCromer:dueq>`
+leads to an explicit updating formula for :math:`u^{n+1}`
+since :math:`v^{n+1}` is already computed:
+
+.. _Eq:stag:vib:EulerCromer:dveq:
 
 .. math::
 
-    \tag{399}
-    u''(t_n) \approx
-        \lbrack D_tD_t u\rbrack^n = \frac{u^{n+1} - 2u^{n} + u^{n-1}}{\Delta t^2}
+    \tag{467}
+    v^{n+1} = v^n -\Delta t \omega^2u^{n},
         
         
 
-.. _Eq:Dop:avg:arith:
+.. _Eq:stag:vib:EulerCromer:dueq:
 
 .. math::
 
-    \tag{400}
-    u(t_{n+\frac{1}{2}}) \approx \lbrack \overline{u}^{t}\rbrack^{n+\frac{1}{2}}
-        = \frac{1}{2}(u^{n+1} + u^n)
+    \tag{468}
+    u^{n+1} = u^n + \Delta t v^{n+1}{\thinspace .}
         
         
 
-.. _Eq:Dop:avg:geom:
+The Euler-Cromer scheme is equivalent with the standard second-order
+accurate scheme for :ref:`(462) <Eq:stag:vib:ODE2nd>`:
+
+.. _Eq:stag:vib:dODE2nd:
 
 .. math::
 
-    \tag{401}
-    u(t_{n+\frac{1}{2}})^2 \approx \lbrack \overline{u^2}^{t,g}\rbrack^{n+\frac{1}{2}}
-        = u^{n+1}u^n
+    \tag{469}
+    u^{n+1} = 2u^n - u^{n-1} - \Delta t^2\omega^2 u^n,\ n=1,2,\ldots,
         
         
 
-.. _Eq:Dop:avg:harm:
+but for the first time step, the method for :ref:`(462) <Eq:stag:vib:ODE2nd>`
+leads to
+
+.. _Eq:_auto182:
 
 .. math::
 
-    \tag{402}
-    u(t_{n+\frac{1}{2}}) \approx \lbrack \overline{u}^{t,h}\rbrack^{n+\frac{1}{2}}
-        = \frac{2}{\frac{1}{u^{n+1}} + \frac{1}{u^n}}
+    \tag{470}
+    u^1= u^0 - \frac{1}{2}\Delta t^2\omega^2u^0,
         
         
 
-.. _Eq:Dop:avg:theta:
+while Euler-Cromer gives
+
+.. _Eq:_auto183:
 
 .. math::
 
-    \tag{403}
-    u(t_{n+\theta}) \approx \lbrack \overline{u}^{t,\theta}\rbrack^{n+\theta}
-        = \theta u^{n+1} + (1-\theta)u^n ,\quad t_{n+\theta}=\theta t_{n+1} + (1-\theta)t_{n-1}
+    \tag{471}
+    u^1= u^0 - \Delta t^2\omega^2u^0,
         
         
 
-.. _sec:form:truncerr:
+which can be interpreted as a first-order, backward difference approximation
+of :math:`u'(0)=0` combined with :ref:`(469) <Eq:stag:vib:dODE2nd>`. At later time steps,
+however, the alternating use of forward and backward differences in
+:ref:`(467) <Eq:stag:vib:EulerCromer:dveq>`-:ref:`(468) <Eq:stag:vib:EulerCromer:dueq>`
+leads to a method with error :math:`{\mathcal{O}(\Delta t^2)}`.
 
-Truncation errors of finite difference approximations
-=====================================================
+.. _vib:model2x2:staggered:
 
-.. math::
-        
-        {u_{\small\mbox{e}}}'(t_n) =
-        [D_t{u_{\small\mbox{e}}}]^n + R^n = \frac{{u_{\small\mbox{e}}}^{n+\frac{1}{2}} - {u_{\small\mbox{e}}}^{n-\frac{1}{2}}}{\Delta t} +R^n\nonumber,
-        
+The Euler-Cromer scheme on a staggered mesh
+-------------------------------------------
 
-.. _Eq:form:trunc:fd1:center:
+.. index:: staggered mesh
 
-.. math::
+.. index:: staggered Euler-Cromer scheme
 
-    \tag{404}
-    R^n = -\frac{1}{24}{u_{\small\mbox{e}}}'''(t_n)\Delta t^2 + {\cal O}(\Delta t^4)
-        
-        
+.. index:: alternating mesh
 
-.. math::
-          
-        {u_{\small\mbox{e}}}'(t_n) =
-        [D_{2t}{u_{\small\mbox{e}}}]^n +R^n = \frac{{u_{\small\mbox{e}}}^{n+1} - {u_{\small\mbox{e}}}^{n-1}}{2\Delta t} +
-        R^n\nonumber,
-        
+[**hpl 26**: Do the equations in different sequence, first vel, then pos.]
 
-.. _Eq:form:trunc:fd1:center2:
+The fact that the forward and backward differences used in the Euler-Cromer
+method yield a second-order accurate method, is not obvious from intuition.
+A much more intuitive discretization employs solely centered differences
+and leads to a scheme that is equivalent to the Euler-Cromer scheme.
+It is in fact fully equivalent to the second-order scheme for
+:ref:`(462) <Eq:stag:vib:ODE2nd>`, also for the first time step.
+This alternative scheme is based on using a *staggered* (or
+alternating) mesh in time.
 
-.. math::
+In a staggered mesh, the unknowns are sought at different points in
+the mesh. Specifically, :math:`u` is sought at
+integer time points :math:`t_n` and :math:`v` is sought at :math:`t_{n+1/2}`
+*between* two :math:`u` points.
+The unknowns are then :math:`u^1, v^{3/2}, u^2, v^{5/2}`, and so on.
+We typically use the notation
+:math:`u^n` and :math:`v^{n+\frac{1}{2}}` for the two unknown mesh functions.
+Figure :ref:`staggered:EC:fig1` presents a graphical sketch of two
+mesh functions :math:`u` and :math:`v` on a staggered mesh.
 
-    \tag{405}
-    R^n = -\frac{1}{6}{u_{\small\mbox{e}}}'''(t_n)\Delta t^2 + {\cal O}(\Delta t^4)
-        
-        
+.. _staggered:EC:fig1:
 
-.. math::
-          
-        {u_{\small\mbox{e}}}'(t_n) =
-        [D_t^-{u_{\small\mbox{e}}}]^n +R^n = \frac{{u_{\small\mbox{e}}}^{n} - {u_{\small\mbox{e}}}^{n-1}}{\Delta t}
-        +R^n\nonumber,
-        
+.. figure:: staggered_time.png
+   :width: 500
 
-.. _Eq:form:trunc:fd1:bw:
+   *Examples on mesh functions on a staggered mesh in time*
 
-.. math::
+On a staggered mesh it is natural to
+use centered difference approximations, expressed
+in operator notation as
 
-    \tag{406}
-    R^n = -\frac{1}{2}{u_{\small\mbox{e}}}''(t_n)\Delta t + {\cal O}(\Delta t^2)
-        
-        
-
-.. math::
-          
-        {u_{\small\mbox{e}}}'(t_n) =
-        [D_t^+{u_{\small\mbox{e}}}]^n +R^n = \frac{{u_{\small\mbox{e}}}^{n+1} - {u_{\small\mbox{e}}}^{n}}{\Delta t}
-        +R^n\nonumber,
-        
-
-.. _Eq:form:trunc:fd1:fw:
+.. _Eq:_auto184:
 
 .. math::
 
-    \tag{407}
-    R^n = -\frac{1}{2}{u_{\small\mbox{e}}}''(t_n)\Delta t + {\cal O}(\Delta t^2)
+    \tag{472}
+    \lbrack D_t u = v\rbrack^{n+\frac{1}{2}},
         
         
 
-.. math::
-          
-        {u_{\small\mbox{e}}}'(t_{n+\theta}) =
-        [\bar D_t{u_{\small\mbox{e}}}]^{n+\theta} +R^{n+\theta} = \frac{{u_{\small\mbox{e}}}^{n+1} - {u_{\small\mbox{e}}}^{n}}{\Delta t}
-        +R^{n+\theta}\nonumber,
-        
-
-.. math::
-          
-        R^{n+\theta} = -\frac{1}{2}(1-2\theta){u_{\small\mbox{e}}}''(t_{n+\theta})\Delta t +
-        \frac{1}{6}((1 - \theta)^3 - \theta^3){u_{\small\mbox{e}}}'''(t_{n+\theta})\Delta t^2 +
-        \nonumber
-        
-
-.. _Eq:form:trunc:fd1:theta:
+.. _Eq:_auto185:
 
 .. math::
 
-    \tag{408}
-    \quad {\cal O}(\Delta t^3)
-        
-        
-
-.. math::
-          
-        {u_{\small\mbox{e}}}'(t_n) =
-        [D_t^{2-}{u_{\small\mbox{e}}}]^n +R^n = \frac{3{u_{\small\mbox{e}}}^{n} - 4{u_{\small\mbox{e}}}^{n-1} + {u_{\small\mbox{e}}}^{n-2}}{2\Delta t}
-        +R^n\nonumber,
-        
-
-.. _Eq:form:trunc:fd1:bw2:
-
-.. math::
-
-    \tag{409}
-    R^n = \frac{1}{3}{u_{\small\mbox{e}}}'''(t_n)\Delta t^2 + {\cal O}(\Delta t^3)
-        
-        
-
-.. math::
-          
-        {u_{\small\mbox{e}}}''(t_n) =
-        [D_tD_t {u_{\small\mbox{e}}}]^n +R^n = \frac{{u_{\small\mbox{e}}}^{n+1} - 2{u_{\small\mbox{e}}}^{n} + {u_{\small\mbox{e}}}^{n-1}}{\Delta t^2}
-        +R^n\nonumber,
-        
-
-.. _Eq:form:trunc:fd2:center:
-
-.. math::
-
-    \tag{410}
-    R^n = -\frac{1}{12}{u_{\small\mbox{e}}}''''(t_n)\Delta t^2 + {\cal O}(\Delta t^4)
-        
-        
-
-.. math::
-        
-        {u_{\small\mbox{e}}}(t_{n+\theta}) = [\overline{{u_{\small\mbox{e}}}}^{t,\theta}]^{n+\theta} +R^{n+\theta}
-        = \theta {u_{\small\mbox{e}}}^{n+1} + (1-\theta){u_{\small\mbox{e}}}^n +R^{n+\theta},\nonumber
-        
-
-.. _Eq:form:trunc:avg:theta:
-
-.. math::
-
-    \tag{411}
-    R^{n+\theta} = -\frac{1}{2}{u_{\small\mbox{e}}}''(t_{n+\theta})\Delta t^2\theta (1-\theta) +
-        {\cal O}(\Delta t^3)
+    \tag{473}
+    \lbrack D_t v = -\omega u\rbrack^{n+1}
         {\thinspace .}
         
         
 
-.. _sec:form:fdexp:
+Writing out the formulas gives
 
-Finite differences of exponential functions
-===========================================
-
-Complex exponentials
-~~~~~~~~~~~~~~~~~~~~
-
-Let :math:`u^n = \exp{(i\omega n\Delta t)} = e^{i\omega t}`.
-
-.. _Eq:form:exp:fd2:center:
+.. _Eq:vib:model2x2:EulerCromer:ueq1s:
 
 .. math::
 
-    \tag{412}
-    [D_tD_t u]^n = u^n \frac{2}{\Delta t}(\cos \omega\Delta t - 1) =
-        -\frac{4}{\Delta t}\sin^2\left(\frac{\omega\Delta t}{2}\right),
+    \tag{474}
+    u^{n+1} = u^{n} + \Delta t v^{n+\frac{1}{2}},
         
         
 
-.. _Eq:form:exp:fd1:fw:
+.. _Eq:vib:model2x2:EulerCromer:veq1s:
 
 .. math::
 
-    \tag{413}
-    [D_t^+ u]^n = u^n\frac{1}{\Delta t}(\exp{(i\omega\Delta t)} - 1),
-        
-        
-
-.. _Eq:form:exp:fd1:bw:
-
-.. math::
-
-    \tag{414}
-    [D_t^- u]^n = u^n\frac{1}{\Delta t}(1 - \exp{(-i\omega\Delta t)}),
-        
-        
-
-.. _Eq:form:exp:fd1:center:
-
-.. math::
-
-    \tag{415}
-    [D_t u]^n = u^n\frac{2}{\Delta t}i\sin{\left(\frac{\omega\Delta t}{2}\right)},
-        
-        
-
-.. _Eq:form:exp:fd1c:center:
-
-.. math::
-
-    \tag{416}
-    [D_{2t} u]^n = u^n\frac{1}{\Delta t}i\sin{(\omega\Delta t)}
+    \tag{475}
+    v^{n+\frac{3}{2}} = v^{n+\frac{1}{2}} -\Delta t \omega^2u^{n+1}
         
         {\thinspace .}
         
 
-Real exponentials
-~~~~~~~~~~~~~~~~~
+Of esthetic reasons one often writes these equations at the
+previous time level to replace the :math:`\frac{3}{2}` by :math:`\frac{1}{2}` in the
+left-most term in the last equation,
 
-Let :math:`u^n = \exp{(\omega n\Delta t)} = e^{\omega t}`.
-
-.. _Eq:form:rexp:fd2:center:
-
-.. math::
-
-    \tag{417}
-    [D_tD_t u]^n = u^n \frac{2}{\Delta t}(\cos \omega\Delta t - 1) =
-        -\frac{4}{\Delta t}\sin^2\left(\frac{\omega\Delta t}{2}\right),
-        
-        
-
-.. _Eq:form:rexp:fd1:fw:
+.. _Eq:vib:model2x2:EulerCromer:ueq1s2:
 
 .. math::
 
-    \tag{418}
-    [D_t^+ u]^n = u^n\frac{1}{\Delta t}(\exp{(i\omega\Delta t)} - 1),
+    \tag{476}
+    u^{n} = u^{n-1} + \Delta t v^{n-\frac{1}{2}},
         
         
 
-.. _Eq:form:rexp:fd1:bw:
+.. _Eq:vib:model2x2:EulerCromer:veq1s2:
 
 .. math::
 
-    \tag{419}
-    [D_t^- u]^n = u^n\frac{1}{\Delta t}(1 - \exp{(-i\omega\Delta t)}),
-        
-        
-
-.. _Eq:form:rexp:fd1:center:
-
-.. math::
-
-    \tag{420}
-    [D_t u]^n = u^n\frac{2}{\Delta t}i\sin{\left(\frac{\omega\Delta t}{2}\right)},
-        
-        
-
-.. _Eq:form:rexp:fd1c:center:
-
-.. math::
-
-    \tag{421}
-    [D_{2t} u]^n = u^n\frac{1}{\Delta t}i\sin{(\omega\Delta t)}
+    \tag{477}
+    v^{n+\frac{1}{2}} = v^{n-\frac{1}{2}} -\Delta t \omega^2u^{n}
         
         {\thinspace .}
         
 
-.. _sec:form:fdtn:
+Such a rewrite is only mathematical cosmetics. The important thing
+is that this centered scheme has exactly the same computational
+structure as the forward-backward scheme. We shall use the names
+*forward-backward Euler-Cromer* and *staggered Euler-Cromer*
+to distinguish the two schemes.
 
-Finite differences of :math:`t^n`
-=================================
+We can eliminate the :math:`v`
+values and get back the centered scheme based on the second-order
+differential equation, so all these three schemes are equivalent.
+However, they differ somewhat in the treatment of the initial
+conditions.
 
-The following results are useful when checking if a polynomial term in a
-solution fulfills the discrete equation for the numerical method.
+Suppose we have :math:`u(0)=I` and :math:`u'(0)=v(0)=0` as mathematical
+initial conditions. This means :math:`u^0=I` and
 
-.. _Eq:form:Dop:tn:fw:
+.. math::
+         v(0)\approx \frac{1}{2}(v^{-\frac{1}{2}} + v^{\frac{1}{2}}) = 0,
+        \quad\Rightarrow\quad v^{-\frac{1}{2}} =- v^\frac{1}{2}{\thinspace .}
+
+Using the discretized equation :ref:`(477) <Eq:vib:model2x2:EulerCromer:veq1s2>` for
+:math:`n=0` yields
+
+.. math::
+         v^\frac{1}{2} = v^{-\frac{1}{2}} -\Delta t\omega^2 I,
+
+and eliminating :math:`v^{-\frac{1}{2}} =- v^{\frac{1}{2}}`
+results in :math:`v^\frac{1}{2} = -\frac{1}{2}\Delta t\omega^2I` and
+
+.. math::
+         u^1 = u^0 - \frac{1}{2}\Delta t^2\omega^2 I,
+
+which is exactly the same equation for :math:`u^1` as we had in the
+centered scheme based on the second-order differential equation
+(and hence corresponds to a centered difference approximation of
+the initial condition for :math:`u'(0)`).
+The conclusion is that a staggered mesh is fully equivalent with
+that scheme, while the forward-backward version gives a slight
+deviation in the computation of :math:`u^1`.
+
+We can redo the derivation of the initial conditions when :math:`u'(0)=V`:
+
+.. math::
+         v(0)\approx \frac{1}{2}(v^{-\frac{1}{2}} + v^{\frac{1}{2}}) = V,
+        \quad\Rightarrow\quad v^{-\frac{1}{2}} = 2V - v^\frac{1}{2}{\thinspace .}
+
+Using this :math:`v^{-\frac{1}{2}}` in
+
+.. math::
+         v^\frac{1}{2} = v^{-\frac{1}{2}} -\Delta t\omega^2 I,
+
+then gives :math:`v^\frac{1}{2} = V - \frac{1}{2}\Delta t\omega^2 I`.
+The general initial conditions are therefore
+
+.. _Eq:vib:ode2:staggered:u0:
 
 .. math::
 
-    \tag{422}
-    \lbrack D_t^+ t\rbrack^n = 1,
+    \tag{478}
+    u^0 = I,
         
         
 
-.. _Eq:form:Dop:tn:bw:
+.. _Eq:vib:ode2:staggered:v0:
 
 .. math::
 
-    \tag{423}
-    \lbrack D_t^- t\rbrack^n = 1,
-        
-        
-
-.. _Eq:form:Dop:tn:cn:
-
-.. math::
-
-    \tag{424}
-    \lbrack D_t t\rbrack^n = 1,
-        
-        
-
-.. _Eq:form:Dop:tn:2cn:
-
-.. math::
-
-    \tag{425}
-    \lbrack D_{2t} t\rbrack^n = 1,
-        
-        
-
-.. _Eq:form:Dop2:tn:cn:
-
-.. math::
-
-    \tag{426}
-    \lbrack D_{t}D_t t\rbrack^n = 0
-        
+    \tag{479}
+    v^\frac{1}{2} = V - \frac{1}{2}\Delta t\omega^2I
         {\thinspace .}
         
 
-The next formulas concern the action of difference operators on a :math:`t^2` term.
+Implementation of the scheme on a staggered mesh
+------------------------------------------------
 
-.. _Eq:form:Dop:tn2:fw:
+The algorithm goes like this:
+
+1. Set the initial values :ref:`(478) <Eq:vib:ode2:staggered:u0>` and
+   :ref:`(479) <Eq:vib:ode2:staggered:v0>`.
+
+2. For :math:`n=1,2,\ldots`:
+
+  a. Compute :math:`u^{n}` from :ref:`(476) <Eq:vib:model2x2:EulerCromer:ueq1s2>`.
+
+  b. Compute :math:`v^{n+\frac{1}{2}}` from :ref:`(477) <Eq:vib:model2x2:EulerCromer:veq1s2>`.
+
+Implementation with integer indices
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Translating the schemes :ref:`(476) <Eq:vib:model2x2:EulerCromer:ueq1s2>`
+and :ref:`(477) <Eq:vib:model2x2:EulerCromer:veq1s2>` to computer code
+faces the problem of how to store and access :math:`v^{n+\frac{1}{2}}`,
+since arrays only allow integer indices with base 0.
+We must then introduce a convention: :math:`v^{1+\frac{1}{2}}` is stored
+in ``v[n]`` while :math:`v^{1-\frac{1}{2}}` is stored in ``v[n-1]``.
+We can then write the algorithm in Python as
+
+.. code-block:: python
+
+        def solver(I, w, dt, T):
+            dt = float(dt)
+            Nt = int(round(T/dt))
+            u = zeros(Nt+1)
+            v = zeros(Nt+1)
+            t = linspace(0, Nt*dt, Nt+1)  # mesh for u
+            t_v = t + dt/2                # mesh for v
+        
+            u[0] = I
+            v[0] = 0 - 0.5*dt*w**2*u[0]
+            for n in range(1, Nt+1):
+                u[n] = u[n-1] + dt*v[n-1]
+                v[n] = v[n-1] - dt*w**2*u[n]
+            return u, t, v, t_v
+
+Note that :math:`u` and :math:`v` are returned together with the mesh points such
+that the complete mesh function for :math:`u` is described by ``u`` and ``t``,
+while ``v`` and ``t_v`` represent the mesh function for :math:`v`.
+
+Implementation with half-integer indices
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Some prefer to see a closer relationship between the code and
+the mathematics for the quantities with half-integer indices.
+For example, we would like to replace the updating equation for
+``v[n]`` by
+
+.. code-block:: python
+
+        v[n+half] = v[n-half] - dt*w**2*u[n]
+
+This is easy to do if we could be sure that ``n+half`` means ``n`` and
+``n-half`` means ``n-1``. A possible solution is to define ``half`` as a
+special object such that an integer plus ``half`` results in the integer,
+while an integer minus ``half`` equals the integer minus 1.
+A simple Python class may realize the ``half`` object:
+
+.. code-block:: python
+
+        class HalfInt:
+            def __radd__(self, other):
+                return other
+        
+            def __rsub__(self, other):
+                return other - 1
+        
+        half = HalfInt()
+
+The ``__radd__`` function is invoked for all expressions ``n+half``
+("right add" with ``self`` as ``half`` and ``other`` as ``n``). Similarly,
+the ``__rsub__`` function is invoked for ``n-half`` and results in ``n-1``.
+
+Using the ``half`` object, we can implement the algorithms in an even
+more readable way:
+
+.. code-block:: python
+
+        def solver(I, w, dt, T):
+            """
+            Solve u'=v, v' = - w**2*u for t in (0,T], u(0)=I and v(0)=0,
+            by a central finite difference method with time step dt.
+            """
+            dt = float(dt)
+            Nt = int(round(T/dt))
+            u = zeros(Nt+1)
+            v = zeros(Nt+1)
+            t = linspace(0, Nt*dt, Nt+1)  # mesh for u
+            t_v = t + dt/2                # mesh for v
+        
+            u[0] = I
+            v[0+half] = 0 - 0.5*dt*w**2*u[0]
+            for n in range(1, Nt+1):
+                print n, n+half, n-half
+                u[n] = u[n-1] + dt*v[n-half]
+                v[n+half] = v[n-half] - dt*w**2*u[n]
+            return u, t, v, t_v
+
+Verification of this code is easy as we can just compare the computed
+``u`` with the ``u`` produced by the ``solver`` function in
+``vib_undamped.py`` (which solves :math:`u''+\omega^2u=0` directly).  The
+values should coincide to machine precision since the two numerical
+methods are mathematically equivalent.  We refer to the file
+`vib_undamped_staggered.py <http://tinyurl.com/nm5587k/vib/vib_undamped_staggered.py>`__
+for the details of a unit test (``test_staggered``) that checks this property.
+
+.. _vib:ode2:staggered:
+
+A staggered Euler-Cromer scheme for a generalized model
+-------------------------------------------------------
+
+The more general model for vibration problems,
+
+.. _Eq:_auto186:
 
 .. math::
 
-    \tag{427}
-    \lbrack D_t^+ t^2\rbrack^n = (2n+1)\Delta t,
+    \tag{480}
+    mu'' + f(u') + s(u) = F(t),\quad u(0)=I,\ u'(0)=V,\ t\in (0,T],
         
         
 
-.. _Eq:form:Dop:tn2:bw:
+can be rewritten as a first-order ODE system
+
+.. _Eq:vib:ode2:staggered:ueq:
 
 .. math::
 
-    \tag{428}
-    \lbrack D_t^- t^2\rbrack^n = (2n-1)\Delta t,
-        
+    \tag{481}
+    u' = v,
+         
         
 
-.. _Eq:form:Dop:tn2:cn:
+.. _Eq:vib:ode2:staggered:veq:
 
 .. math::
 
-    \tag{429}
-    \lbrack D_t t^2\rbrack^n = 2n\Delta t,
+    \tag{482}
+    v' = m^{-1}\left(F(t) - f(v) - s(u)\right){\thinspace .}
         
         
 
-.. _Eq:form:Dop:tn2:2cn:
+It is natural to introduce a staggered mesh (see the section :ref:`vib:model2x2:staggered`) and seek :math:`u` at mesh points :math:`t_n` (the numerical value is
+denoted by :math:`u^n`) and :math:`v` between mesh points at :math:`t_{n+1/2}` (the numerical
+value is denoted by :math:`v^{n+\frac{1}{2}}`).
+A centered difference approximation to :ref:`(481) <Eq:vib:ode2:staggered:ueq>`-:ref:`(482) <Eq:vib:ode2:staggered:veq>` can then be written in operator notation as
+
+.. _Eq:vib:ode2:staggered:dueq:
 
 .. math::
 
-    \tag{430}
-    \lbrack D_{2t} t^2\rbrack^n = 2n\Delta t,
-        
+    \tag{483}
+    \lbrack D_t u = v\rbrack^{n-\frac{1}{2}},
+         
         
 
-.. _Eq:form:Dop2:tn2:cn:
+.. _Eq:vib:ode2:staggered:dveq:
 
 .. math::
 
-    \tag{431}
-    \lbrack D_{t}D_t t^2\rbrack^n = 2,
+    \tag{484}
+    \lbrack D_tv = m^{-1}\left(F(t) - f(v) - s(u)\right)\rbrack^n{\thinspace .}
         
         
 
-Finally, we present formulas for a :math:`t^3` term: **These must be controlled**
-against ``lib.py``. Use :math:`t_n` instead of :math:`n\Delta t`??
+Written out,
 
-.. _Eq:form:Dop:tn3:fw:
+.. _Eq:vib:ode2:staggered:dueq2:
 
 .. math::
 
-    \tag{432}
-    \lbrack D_t^+ t^3\rbrack^n = 3(n\Delta t)^2 + 3n\Delta t^2 + \Delta t^2,
-        
+    \tag{485}
+    \frac{u^n - u^{n-1}}{\Delta t} = v^{n-\frac{1}{2}},
+         
         
 
-.. _Eq:form:Dop:tn3:bw:
+.. _Eq:vib:ode2:staggered:dveq2:
 
 .. math::
 
-    \tag{433}
-    \lbrack D_t^- t^3\rbrack^n = 3(n\Delta t)^2 - 3n\Delta t^2 + \Delta t^2,
+    \tag{486}
+    \frac{v^{n+\frac{1}{2}} - v^{n-\frac{1}{2}}}{\Delta t}
+        = m^{-1}\left(F^n - f(v^n) - s(u^n)\right){\thinspace .}
         
         
 
-.. _Eq:form:Dop:tn3:cn:
+With linear damping, :math:`f(v)=bv`, we can use an arithmetic mean
+for :math:`f(v^n)`: :math:`f(v^n)\approx = \frac{1}{2}(f(v^{n-\frac{1}{2}}) +
+f(v^{n+\frac{1}{2}}))`. The system
+:ref:`(485) <Eq:vib:ode2:staggered:dueq2>`-:ref:`(486) <Eq:vib:ode2:staggered:dveq2>`
+can then be solved with respect to the unknowns :math:`u^n` and :math:`v^{n+\frac{1}{2}}`:
+
+.. _Eq:vib:ode2:staggered:u:scheme:lin:
 
 .. math::
 
-    \tag{434}
-    \lbrack D_t t^3\rbrack^n = 3(n\Delta t)^2 + \frac{1}{4}\Delta t^2,
-        
-        
-
-.. _Eq:form:Dop:tn3:2cn:
-
-.. math::
-
-    \tag{435}
-    \lbrack D_{2t} t^3\rbrack^n = 3(n\Delta t)^2 + \Delta t^2,
-        
+    \tag{487}
+    u^n  = u^{n-1} + {\Delta t}v^{n-\frac{1}{2}},
+         
         
 
-.. _Eq:form:Dop2:tn3:cn:
+.. _Eq:vib:ode2:staggered:v:scheme:lin:
 
 .. math::
 
-    \tag{436}
-    \lbrack D_{t}D_t t^3\rbrack^n = 6n\Delta t,
+    \tag{488}
+    v^{n+\frac{1}{2}} = \left(1 + \frac{b}{2m}\Delta t\right)^{-1}\left(
+        v^{n-\frac{1}{2}} + {\Delta t}
+        m^{-1}\left(F^n - {\frac{1}{2}}f(v^{n-\frac{1}{2}}) - s(u^n)\right)\right){\thinspace .}
         
         
+
+In case of quadratic damping, :math:`f(v)=b|v|v`, we can use a geometric mean:
+:math:`f(v^n)\approx b|v^{n-\frac{1}{2}}|v^{n+\frac{1}{2}}`. Inserting this approximation
+in :ref:`(485) <Eq:vib:ode2:staggered:dueq2>`-:ref:`(486) <Eq:vib:ode2:staggered:dveq2>` and
+solving for the unknowns :math:`u^n` and :math:`v^{n+\frac{1}{2}}` results in
+
+.. _Eq:vib:ode2:staggered:u:scheme:quad:
+
+.. math::
+
+    \tag{489}
+    u^n  = u^{n-1} + {\Delta t}v^{n-\frac{1}{2}},
+         
+        
+
+.. _Eq:vib:ode2:staggered:v:scheme:quad:
+
+.. math::
+
+    \tag{490}
+    v^{n+\frac{1}{2}} = (1 + \frac{b}{m}|v^{n-\frac{1}{2}}|\Delta t)^{-1}\left(
+        v^{n-\frac{1}{2}} + {\Delta t}
+        m^{-1}\left(F^n - s(u^n)\right)\right){\thinspace .}
+        
+        
+
+The initial conditions are derived at the end of
+the section :ref:`vib:model2x2:staggered`:
+
+.. _Eq:vib:ode2:staggered:u02:
+
+.. math::
+
+    \tag{491}
+    u^0 = I,
+        
+        
+
+.. _Eq:vib:ode2:staggered:v02:
+
+.. math::
+
+    \tag{492}
+    v^\frac{1}{2} = V - \frac{1}{2}\Delta t\omega^2I
+        {\thinspace .}
+        
+
+Exercises          (8)
+======================
+
+.. --- begin exercise ---
+
+.. _vib:exer:quad:damping:fwbw:
+
+Exercise 5.1: Use the forward-backward scheme with quadratic damping
+--------------------------------------------------------------------
+
+We consider the generalized model with quadratic damping, expressed
+as a system of two first-order equations as in the section :ref:`vib:ode2:staggered`:
+
+.. math::
+        
+        u^{\prime} &= v,\\ 
+        v' &= \frac{1}{m}\left( F(t) - \beta |v|v - s(u)\right){\thinspace .}
+        
+
+However, contrary to what is done in the section :ref:`vib:ode2:staggered`,
+we want to apply the idea of a forward-backward discretization:
+:math:`u` is marched forward by a one-sided Forward Euler scheme applied
+to the first equation, and
+thereafter :math:`v` can be marched forward by a Backward Euler scheme in the
+second
+equation, see in the section :ref:`vib:model2x2:EulerCromer`.
+Express the idea in operator notation and write out the
+scheme. Unfortunately, the backward difference for the :math:`v` equation
+creates a nonlinearity :math:`|v^{n+1}|v^{n+1}`.  To linearize this
+nonlinearity, use the known value :math:`v^n` inside the absolute value
+factor, i.e., :math:`|v^{n+1}|v^{n+1}\approx |v^n|v^{n+1}`.  Show that the
+resulting scheme is equivalent to the one in the section :ref:`vib:ode2:staggered` for some time level :math:`n\geq 1`.
+
+What we learn from this exercise is that the first-order differences
+and the linearization trick play together in "the right way" such that
+the scheme is as good as when we (in the section :ref:`vib:ode2:staggered`)
+carefully apply centered differences and a geometric mean on a
+staggered mesh to achieve second-order accuracy.
+There is a
+difference in the handling of the initial conditions, though, as
+explained at the end of the section :ref:`vib:model2x2:EulerCromer`.
+Filename: ``vib_gen_bwdamping``.
+
+.. --- end exercise ---
+
+Partial differential equations
+==============================
+
+.. _staggered:wave:fig1:
+
+.. figure:: staggered_space.png
+   :width: 500
+
+   *Examples on mesh functions on a staggered mesh in space*
 

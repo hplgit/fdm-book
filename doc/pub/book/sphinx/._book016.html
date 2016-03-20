@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Truncation errors in vibration ODEs</title>
+    <title>Linearization at the differential equation level</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -44,8 +44,8 @@
 
     
     <link rel="top" title="Finite Difference Computing with Partial Differential Equations" href="index.html" />
-    <link rel="next" title="Truncation errors in wave equations" href="._book017.html" />
-    <link rel="prev" title="Truncation errors in exponential decay ODE" href="._book015.html" />
+    <link rel="next" title="Discretization of 1D stationary nonlinear differential equations" href="._book017.html" />
+    <link rel="prev" title="Systems of nonlinear algebraic equations" href="._book015.html" />
  
   
        <style type="text/css">
@@ -64,10 +64,10 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="._book017.html" title="Truncation errors in wave equations"
+          <a href="._book017.html" title="Discretization of 1D stationary nonlinear differential equations"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="._book015.html" title="Truncation errors in exponential decay ODE"
+          <a href="._book015.html" title="Systems of nonlinear algebraic equations"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Finite Difference Computing with Partial Differential Equations</a> &raquo;</li> 
       </ul>
@@ -78,405 +78,323 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="truncation-errors-in-vibration-odes">
-<span id="trunc-vib"></span><h1>Truncation errors in vibration ODEs<a class="headerlink" href="#truncation-errors-in-vibration-odes" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="linear-model-without-damping">
-<span id="trunc-vib-undamped"></span><h2>Linear model without damping<a class="headerlink" href="#linear-model-without-damping" title="Permalink to this headline">¶</a></h2>
-<p>The next example on computing the truncation error involves the
-following ODE for vibration problems:</p>
-<div class="math" id="eq-trunc-vib-undamped-ode">
-\[\tag{484}
-u''(t) + \omega^2 u(t) = 0{\thinspace .}\]</div>
-<p>Here, <span class="math">\(\omega\)</span> is a given constant.</p>
-<div class="section" id="the-truncation-error-of-a-centered-finite-difference-scheme">
-<h3>The truncation error of a centered finite difference scheme<a class="headerlink" href="#the-truncation-error-of-a-centered-finite-difference-scheme" title="Permalink to this headline">¶</a></h3>
-<p>Using a standard, second-ordered, central difference for the
-second-order derivative time, we have the scheme</p>
-<div class="math" id="eq-trunc-vib-undamped-scheme">
-\[\tag{485}
-[D_tD_t u + \omega^2u=0]^n\]\[    {\thinspace .}\]</div>
-<p>Inserting the exact solution <span class="math">\({u_{\small\mbox{e}}}\)</span> in this equation and adding
-a residual <span class="math">\(R\)</span> so that <span class="math">\({u_{\small\mbox{e}}}\)</span> can fulfill the equation results in</p>
-<div class="math" id="eq-auto147">
-\[\tag{486}
-[D_tD_t {u_{\small\mbox{e}}} + \omega^2{u_{\small\mbox{e}}} =R]^n
-    {\thinspace .}\]</div>
-<p>To calculate the truncation error <span class="math">\(R^n\)</span>, we use
-<a class="reference internal" href="._book014.html#eq-trunc-table-fd2-center-eq"><span class="std std-ref">(453)</span></a>-<a class="reference internal" href="._book014.html#eq-trunc-table-fd2-center"><span class="std std-ref">(454)</span></a>, i.e.,</p>
+  <div class="section" id="linearization-at-the-differential-equation-level">
+<span id="nonlin-pdelevel"></span><h1>Linearization at the differential equation level<a class="headerlink" href="#linearization-at-the-differential-equation-level" title="Permalink to this headline">¶</a></h1>
+<p>The attention is now turned
+to nonlinear partial differential equations (PDEs)
+and application of the techniques explained above for ODEs.
+The model problem is a nonlinear diffusion equation for
+<span class="math">\(u(\boldsymbol{x},t)\)</span>:</p>
+<div class="math" id="eq-nonlin-pdelevel-model-pde">
+\[\tag{522}
+\frac{\partial u}{\partial t} = \nabla\cdot ({\alpha}(u)\nabla u) + f(u),\quad
+    \boldsymbol{x}\in\Omega,\ t\in (0,T],\]</div>
+<div class="math" id="eq-nonlin-pdelevel-model-neumann">
+\[\tag{523}
+-{\alpha}(u)\frac{\partial u}{\partial n} = g,\quad \boldsymbol{x}\in\partial\Omega_N,\
+    t\in (0,T],\]</div>
+<div class="math" id="eq-nonlin-pdelevel-model-dirichlet">
+\[\tag{524}
+u = u_0,\quad \boldsymbol{x}\in\partial\Omega_D,\ t\in (0,T]{\thinspace .}\]</div>
+<p>In the present section, our aim is to discretize this problem in time
+and then present techniques for linearizing the time-discrete PDE
+problem &#8220;at the PDE level&#8221; such that we transform the nonlinear
+stationary PDE problem at each time level into a sequence of linear
+PDE problems, which can be solved using any method for linear
+PDEs. This strategy avoids the solution of systems of nonlinear
+algebraic equations.  In the section <a class="reference internal" href="._book017.html#nonlin-alglevel-1d"><span class="std std-ref">Discretization of 1D stationary nonlinear differential equations</span></a> we shall take
+the opposite (and more common) approach: discretize the nonlinear
+problem in time and space first, and then solve the resulting
+nonlinear algebraic equations at each time level by the methods of
+the section <a class="reference internal" href="._book015.html#nonlin-systems-alg"><span class="std std-ref">Systems of nonlinear algebraic equations</span></a>.  Very often, the two approaches are
+mathematically identical, so there is no preference from a
+computational efficiency point of view.  The details of the ideas
+sketched above will hopefully become clear through the forthcoming
+examples.</p>
+<div class="section" id="explicit-time-integration">
+<span id="nonlin-pdelevel-explicit"></span><h2>Explicit time integration<a class="headerlink" href="#explicit-time-integration" title="Permalink to this headline">¶</a></h2>
+<p>The nonlinearities in the PDE are trivial to deal with if we choose an
+explicit time integration method for <a class="reference internal" href="#eq-nonlin-pdelevel-model-pde"><span class="std std-ref">(522)</span></a>,
+such as the Forward Euler method:</p>
 <div class="math">
-\[[D_tD_t {u_{\small\mbox{e}}}]^n = {u_{\small\mbox{e}}}''(t_n) + \frac{1}{12}{u_{\small\mbox{e}}}''''(t_n)\Delta t^2,\]</div>
-<p>and the fact that <span class="math">\({u_{\small\mbox{e}}}''(t) + \omega^2{u_{\small\mbox{e}}}(t)=0\)</span>. The result is</p>
-<div class="math" id="eq-auto148">
-\[\tag{487}
-R^n =  \frac{1}{12}{u_{\small\mbox{e}}}''''(t_n)\Delta t^2 + {\mathcal{O}(\Delta t^4)}
-    {\thinspace .}\]</div>
+\[[D_t^+ u = \nabla\cdot ({\alpha}(u)\nabla u) + f(u)]^n,\]</div>
+<p>or written out,</p>
+<div class="math">
+\[\frac{u^{n+1} - u^n}{\Delta t} = \nabla\cdot ({\alpha}(u^n)\nabla u^n)
++ f(u^n),\]</div>
+<p>which is a linear equation in the unknown <span class="math">\(u^{n+1}\)</span> with solution</p>
+<div class="math">
+\[u^{n+1} = u^n + \Delta t\nabla\cdot ({\alpha}(u^n)\nabla u^n) +
+\Delta t f(u^n){\thinspace .}\]</div>
+<p>The disadvantage with this discretization is
+the strict stability criterion <span class="math">\(\Delta t \leq h^2/(6\max\alpha)\)</span>
+for the case <span class="math">\(f=0\)</span> and a standard 2nd-order finite difference discretization
+in 3D space with mesh cell sizes <span class="math">\(h=\Delta x=\Delta y=\Delta z\)</span>.</p>
 </div>
-<div class="section" id="the-truncation-error-of-approximating">
-<h3>The truncation error of approximating <span class="math">\(u'(0)\)</span><a class="headerlink" href="#the-truncation-error-of-approximating" title="Permalink to this headline">¶</a></h3>
-<p>The initial conditions for <a class="reference internal" href="#eq-trunc-vib-undamped-ode"><span class="std std-ref">(484)</span></a> are
-<span class="math">\(u(0)=I\)</span> and <span class="math">\(u'(0)=V\)</span>. The latter involves a finite difference
-approximation. The standard choice</p>
+<div class="section" id="backward-euler-scheme-and-picard-iteration">
+<span id="nonlin-pdelevel-picard"></span><h2>Backward Euler scheme and Picard iteration<a class="headerlink" href="#backward-euler-scheme-and-picard-iteration" title="Permalink to this headline">¶</a></h2>
+<p>A Backward Euler scheme for <a class="reference internal" href="#eq-nonlin-pdelevel-model-pde"><span class="std std-ref">(522)</span></a>
+reads</p>
 <div class="math">
-\[[D_{2t}u=V]^0,\]</div>
-<p>where <span class="math">\(u^{-1}\)</span> is eliminated with the aid of the discretized ODE
-for <span class="math">\(n=0\)</span>, involves a centered difference with an
-<span class="math">\({\mathcal{O}(\Delta t^2)}\)</span> truncation error
-given by <a class="reference internal" href="._book014.html#eq-trunc-table-fd1-center2-eq"><span class="std std-ref">(443)</span></a>-<a class="reference internal" href="._book014.html#eq-trunc-table-fd1-center2"><span class="std std-ref">(444)</span></a>.
-The simpler choice</p>
-<div class="math">
-\[[D_t^+u = V]^0,\]</div>
-<p>is based on a forward difference with a truncation error <span class="math">\({\mathcal{O}(\Delta t)}\)</span>.
-A central question is if this initial error will impact the
-order of the scheme throughout the simulation.
-<a class="reference internal" href="._book018.html#trunc-exer-vib-ic-fw"><span class="std std-ref">Exercise 68: Investigate the impact of approximating </span></a> asks you to quickly perform an
-experiment to investigate this question.</p>
-</div>
-<div class="section" id="truncation-error-of-the-equation-for-the-first-step">
-<h3>Truncation error of the equation for the first step<a class="headerlink" href="#truncation-error-of-the-equation-for-the-first-step" title="Permalink to this headline">¶</a></h3>
-<p>We have shown that the truncation error of the difference used to
-approximate the initial condition <span class="math">\(u'(0)=0\)</span> is <span class="math">\({\mathcal{O}(\Delta t^2)}\)</span>,
-but can also investigate the difference equation used for
-the first step. In a truncation error setting, the right way to
-view this equation is not to use the initial condition
-<span class="math">\([D_{2t}u=V]^0\)</span> to express
-<span class="math">\(u^{-1}=u^1 - 2\Delta t V\)</span> in order
-to eliminate <span class="math">\(u^{-1}\)</span> from the discretized
-differential equation, but the other way around: the fundamental
-equation is the discretized initial condition <span class="math">\([D_{2t}u=V]^0\)</span> and we
-use the discretized ODE <span class="math">\([D_tD_t + \omega^2 u=0]^0\)</span> to eliminate
-<span class="math">\(u^{-1}\)</span> in the disretized initial condition. From <span class="math">\([D_tD_t + \omega^2 u=0]^0\)</span>
-we have</p>
-<div class="math">
-\[u^{-1} = 2u^0 - u^1 - \Delta t^2\omega^2 u^0,\]</div>
-<p>which inserted in <span class="math">\([D_{2t}u = V]^0\)</span> gives</p>
-<div class="math" id="eq-trunc-vib-undamped-ic-d2">
-\[\tag{488}
-\frac{u^1 - u^0}{\Delta t} + \frac{1}{2}\omega^2\Delta t u^0 = V{\thinspace .}\]</div>
-<p>The first term can be recognized as a forward difference such that
-the equation can be written in operator notation as</p>
-<div class="math">
-\[[D_t^+ u + \frac{1}{2}\omega^2\Delta t u = V]^0{\thinspace .}\]</div>
-<p>The truncation error is defined as</p>
-<div class="math">
-\[[D_t^+ {u_{\small\mbox{e}}} + \frac{1}{2}\omega^2\Delta t {u_{\small\mbox{e}}} - V = R]^0{\thinspace .}\]</div>
-<p>Using <a class="reference internal" href="._book014.html#eq-trunc-table-fd1-fw-eq"><span class="std std-ref">(447)</span></a>-<a class="reference internal" href="._book014.html#eq-trunc-table-fd1-fw"><span class="std std-ref">(448)</span></a> with
-one more term in the Taylor series, we get that</p>
-<div class="math">
-\[{u_{\small\mbox{e}}}'(0) + \frac{1}{2}{u_{\small\mbox{e}}}''(0)\Delta t + \frac{1}{6}{u_{\small\mbox{e}}}'''(0)\Delta t^2
- + {\mathcal{O}(\Delta t^3)}
-+ \frac{1}{2}\omega^2\Delta t {u_{\small\mbox{e}}}(0) - V = R^n{\thinspace .}\]</div>
-<p>Now, <span class="math">\({u_{\small\mbox{e}}}'(0)=V\)</span> and <span class="math">\({u_{\small\mbox{e}}}''(0)=-\omega^2 {u_{\small\mbox{e}}}(0)\)</span> so we get</p>
-<div class="math">
-\[R^n = \frac{1}{6}{u_{\small\mbox{e}}}'''(0)\Delta t^2 + {\mathcal{O}(\Delta t^3)}{\thinspace .}\]</div>
-<p>There is another way of analyzing the discrete initial
-condition, because eliminating <span class="math">\(u^{-1}\)</span> via the discretized ODE
-can be expressed as</p>
-<div class="math" id="eq-trunc-vib-undamped-ic-d3">
-\[\tag{489}
-[ D_{2t} u + \Delta t(D_tD_t u - \omega^2 u) = V]^0{\thinspace .}\]</div>
-<p>Writing out <a class="reference internal" href="#eq-trunc-vib-undamped-ic-d3"><span class="std std-ref">(489)</span></a> shows that the equation is
-equivalent to <a class="reference internal" href="#eq-trunc-vib-undamped-ic-d2"><span class="std std-ref">(488)</span></a>.
-The truncation error is defined by</p>
-<div class="math">
-\[[ D_{2t} {u_{\small\mbox{e}}} + \Delta t(D_tD_t {u_{\small\mbox{e}}} - \omega^2 {u_{\small\mbox{e}}}) = V + R]^0{\thinspace .}\]</div>
-<p>Replacing the difference via
-<a class="reference internal" href="._book014.html#eq-trunc-table-fd1-center2-eq"><span class="std std-ref">(443)</span></a>-<a class="reference internal" href="._book014.html#eq-trunc-table-fd1-center2"><span class="std std-ref">(444)</span></a> and
-<a class="reference internal" href="._book014.html#eq-trunc-table-fd2-center-eq"><span class="std std-ref">(453)</span></a>-<a class="reference internal" href="._book014.html#eq-trunc-table-fd2-center"><span class="std std-ref">(454)</span></a>, as
-well as using <span class="math">\({u_{\small\mbox{e}}}'(0)=V\)</span> and <span class="math">\({u_{\small\mbox{e}}}''(0) = -\omega^2{u_{\small\mbox{e}}}(0)\)</span>,
-gives</p>
-<div class="math">
-\[R^n = \frac{1}{6}u'''(0)\Delta t^2 + {\mathcal{O}(\Delta t^3)}{\thinspace .}\]</div>
-</div>
-<div class="section" id="computing-correction-terms">
-<h3>Computing correction terms<a class="headerlink" href="#computing-correction-terms" title="Permalink to this headline">¶</a></h3>
-<p>The idea of using correction terms to increase the order of <span class="math">\(R^n\)</span> can
-be applied as described in the section <a class="reference internal" href="._book015.html#trunc-decay-corr"><span class="std std-ref">Increasing the accuracy by adding correction terms</span></a>. We look at</p>
-<div class="math">
-\[[D_tD_t {u_{\small\mbox{e}}} + \omega^2{u_{\small\mbox{e}}} =C + R]^n,\]</div>
-<p>and observe that <span class="math">\(C^n\)</span> must be chosen to cancel
-the <span class="math">\(\Delta t^2\)</span> term in <span class="math">\(R^n\)</span>. That is,</p>
-<div class="math">
-\[C^n = \frac{1}{12}{u_{\small\mbox{e}}}''''(t_n)\Delta t^2{\thinspace .}\]</div>
-<p>To get rid of the 4th-order derivative we can use the differential
-equation: <span class="math">\(u''=-\omega^2u\)</span>, which implies <span class="math">\(u'''' = \omega^4 u\)</span>.
-Adding the correction term to the ODE results in</p>
-<div class="math" id="eq-trunc-vib-undamped-corr-ode">
-\[\tag{490}
-u'' + \omega^2(1 - \frac{1}{12}\omega^2\Delta t^2)u = 0{\thinspace .}\]</div>
-<p>Solving this equation by the standard scheme</p>
-<div class="math">
-\[[D_tD_t u + \omega^2(1 - \frac{1}{12}\omega^2\Delta t^2)u=0]^n,\]</div>
-<p>will result in a scheme with truncation error <span class="math">\({\mathcal{O}(\Delta t^4)}\)</span>.</p>
-<p>We can use another set of arguments to justify that <a class="reference internal" href="#eq-trunc-vib-undamped-corr-ode"><span class="std std-ref">(490)</span></a> leads to a higher-order method.
-Mathematical analysis of the scheme <a class="reference internal" href="#eq-trunc-vib-undamped-scheme"><span class="std std-ref">(485)</span></a>
-reveals that the numerical frequency <span class="math">\(\tilde\omega\)</span> is (approximately
-as <span class="math">\(\Delta t\rightarrow 0\)</span>)</p>
-<div class="math">
-\[\tilde\omega = \omega (1+\frac{1}{24}\omega^2\Delta t^2){\thinspace .}\]</div>
-<p>One can therefore attempt to replace <span class="math">\(\omega\)</span> in the ODE by
-a slightly smaller <span class="math">\(\omega\)</span> since the numerics will make it larger:</p>
-<div class="math">
-\[[ u'' + (\omega(1 - \frac{1}{24}\omega^2\Delta t^2))^2 u = 0{\thinspace .}\]</div>
-<p>Expanding the squared term and omitting the higher-order term <span class="math">\(\Delta t^4\)</span>
-gives exactly the ODE <a class="reference internal" href="#eq-trunc-vib-undamped-corr-ode"><span class="std std-ref">(490)</span></a>. Experiments
-show that <span class="math">\(u^n\)</span> is computed to 4th order in <span class="math">\(\Delta t\)</span>.</p>
+\[[D_t^- u = \nabla\cdot ({\alpha}(u)\nabla u) + f(u)]^n{\thinspace .}\]</div>
+<p>Written out,</p>
+<div class="math" id="eq-nonlin-pdelevel-pde-be">
+\[\tag{525}
+\frac{u^{n} - u^{n-1}}{\Delta t} = \nabla\cdot ({\alpha}(u^n)\nabla u^n)
+    + f(u^n){\thinspace .}\]</div>
+<p>This is a nonlinear PDE for the unknown function <span class="math">\(u^n(\boldsymbol{x})\)</span>. Such a
+PDE can be viewed as a time-independent PDE where
+<span class="math">\(u^{n-1}(\boldsymbol{x})\)</span> is a known function.</p>
+<p>We introduce a Picard iteration with <span class="math">\(k\)</span> as iteration counter.
+A typical linearization of the <span class="math">\(\nabla\cdot({\alpha}(u^n)\nabla u^n)\)</span> term
+in iteration <span class="math">\(k+1\)</span> is to use the previously computed <span class="math">\(u^{n,k}\)</span>
+approximation in the diffusion coefficient: <span class="math">\({\alpha}(u^{n,k})\)</span>.
+The nonlinear source term is treated similarly: <span class="math">\(f(u^{n,k})\)</span>.
+The unknown function <span class="math">\(u^{n,k+1}\)</span> then fulfills the linear PDE</p>
+<div class="math" id="eq-nonlin-pdelevel-pde-be-picard-k">
+\[\tag{526}
+\frac{u^{n,k+1} - u^{n-1}}{\Delta t} = \nabla\cdot ({\alpha}(u^{n,k})
+    \nabla u^{n,k+1})
+    + f(u^{n,k}){\thinspace .}\]</div>
+<p>The initial guess for the Picard iteration at this time level can be
+taken as the solution at the previous time level: <span class="math">\(u^{n,0}=u^{n-1}\)</span>.</p>
+<p>We can alternatively apply the implementation-friendly
+notation where <span class="math">\(u\)</span> corresponds to
+the unknown we want to solve for, i.e., <span class="math">\(u^{n,k+1}\)</span> above, and <span class="math">\(u^{-}\)</span>
+is the most recently computed value, <span class="math">\(u^{n,k}\)</span> above. Moreover,
+<span class="math">\(u^{(1)}\)</span> denotes the unknown function at the previous time level, <span class="math">\(u^{n-1}\)</span>
+above. The PDE to be solved in a Picard iteration then looks like</p>
+<div class="math" id="eq-nonlin-pdelevel-pde-be-picard">
+\[\tag{527}
+\frac{u - u^{(1)}}{\Delta t} = \nabla\cdot ({\alpha}(u^{-})
+    \nabla u)
+    + f(u^{-}){\thinspace .}\]</div>
+<p>At the beginning of the iteration we start with the value from the
+previous time level: <span class="math">\(u^{-}=u^{(1)}\)</span>, and after each
+iteration, <span class="math">\(u^{-}\)</span> is updated to <span class="math">\(u\)</span>.</p>
+<div class="admonition-remark-on-notation admonition">
+<p class="first admonition-title">Remark on notation</p>
+<p>The previous derivations of the numerical scheme for time discretizations
+of PDEs have, strictly
+speaking, a somewhat sloppy notation, but it is much used and convenient
+to read. A more precise notation must
+distinguish clearly between the exact solution of the PDE problem,
+here denoted <span class="math">\({u_{\small\mbox{e}}}(\boldsymbol{x},t)\)</span>, and the exact solution of the spatial
+problem, arising after time discretization at each time level,
+where <a class="reference internal" href="#eq-nonlin-pdelevel-pde-be"><span class="std std-ref">(525)</span></a> is an example. The latter
+is here represented as <span class="math">\(u^n(\boldsymbol{x})\)</span> and is an approximation to
+<span class="math">\({u_{\small\mbox{e}}}(\boldsymbol{x},t_n)\)</span>. Then we have another approximation <span class="math">\(u^{n,k}(\boldsymbol{x})\)</span>
+to <span class="math">\(u^n(\boldsymbol{x})\)</span> when solving the nonlinear PDE problem for
+<span class="math">\(u^n\)</span> by iteration methods, as in <a class="reference internal" href="#eq-nonlin-pdelevel-pde-be-picard-k"><span class="std std-ref">(526)</span></a>.</p>
+<p class="last">In our notation, <span class="math">\(u\)</span> is a synonym for <span class="math">\(u^{n,k+1}\)</span> and <span class="math">\(u^{(1)}\)</span> is
+a synonym for <span class="math">\(u^{n-1}\)</span>, inspired by what are natural variable names
+in a code.
+We will usually state the PDE problem in terms of <span class="math">\(u\)</span> and
+quickly redefine the symbol <span class="math">\(u\)</span> to mean the numerical approximation,
+while <span class="math">\({u_{\small\mbox{e}}}\)</span> is not explicitly introduced unless we need to talk about
+the exact solution and the approximate solution at the same time.</p>
 </div>
 </div>
-<div class="section" id="model-with-damping-and-nonlinearity">
-<span id="trunc-vib-gen"></span><h2>Model with damping and nonlinearity<a class="headerlink" href="#model-with-damping-and-nonlinearity" title="Permalink to this headline">¶</a></h2>
-<p>The model <a class="reference internal" href="#eq-trunc-vib-undamped-ode"><span class="std std-ref">(484)</span></a>
-can be extended to include damping <span class="math">\(\beta u'\)</span>,
-a nonlinear restoring (spring) force <span class="math">\(s(u)\)</span>, and some
-known excitation force <span class="math">\(F(t)\)</span>:</p>
-<div class="math" id="eq-trunc-vib-gen-ode1">
-\[\tag{491}
-mu'' + \beta u' + s(u) =F(t){\thinspace .}\]</div>
-<p>The coefficient <span class="math">\(m\)</span> usually represents the mass of the system.
-This governing equation can by discretized by centered differences:</p>
-<div class="math" id="eq-auto149">
-\[\tag{492}
-[mD_tD_t u + \beta D_{2t} u + s(u)=F]^n
-    {\thinspace .}\]</div>
-<p>The exact solution <span class="math">\({u_{\small\mbox{e}}}\)</span> fulfills the discrete equations with a residual term:</p>
-<div class="math" id="eq-auto150">
-\[\tag{493}
-[mD_tD_t {u_{\small\mbox{e}}} + \beta D_{2t} {u_{\small\mbox{e}}} + s({u_{\small\mbox{e}}})=F + R]^n
-    {\thinspace .}\]</div>
-<p>Using <a class="reference internal" href="._book014.html#eq-trunc-table-fd2-center-eq"><span class="std std-ref">(453)</span></a>-<a class="reference internal" href="._book014.html#eq-trunc-table-fd2-center"><span class="std std-ref">(454)</span></a> and
-<a class="reference internal" href="._book014.html#eq-trunc-table-fd1-center2-eq"><span class="std std-ref">(443)</span></a>-<a class="reference internal" href="._book014.html#eq-trunc-table-fd1-center2"><span class="std std-ref">(444)</span></a> we
-get</p>
+<div class="section" id="backward-euler-scheme-and-newton-s-method">
+<span id="nonlin-pdelevel-newton"></span><h2>Backward Euler scheme and Newton&#8217;s method<a class="headerlink" href="#backward-euler-scheme-and-newton-s-method" title="Permalink to this headline">¶</a></h2>
+<p>At time level <span class="math">\(n\)</span>, we have to solve the stationary PDE
+<a class="reference internal" href="#eq-nonlin-pdelevel-pde-be"><span class="std std-ref">(525)</span></a>. In the previous section, we
+saw how this can be done with Picard iterations.
+Another alternative is to apply the idea of Newton&#8217;s method
+in a clever way.
+Normally, Newton&#8217;s method is defined for systems of <em>algebraic equations</em>,
+but the idea of the method can be applied at the PDE level too.</p>
+<div class="section" id="linearization-via-taylor-expansions">
+<h3>Linearization via Taylor expansions<a class="headerlink" href="#linearization-via-taylor-expansions" title="Permalink to this headline">¶</a></h3>
+<p>Let <span class="math">\(u^{n,k}\)</span> be an approximation to the unknown <span class="math">\(u^n\)</span>. We seek a
+better approximation on
+the form</p>
+<div class="math" id="eq-nonlin-pdelevel-newton-ansatz">
+\[\tag{528}
+u^{n} = u^{n,k} + \delta u{\thinspace .}\]</div>
+<p>The idea is to insert <a class="reference internal" href="#eq-nonlin-pdelevel-newton-ansatz"><span class="std std-ref">(528)</span></a> in
+<a class="reference internal" href="#eq-nonlin-pdelevel-pde-be"><span class="std std-ref">(525)</span></a>, Taylor expand the nonlinearities
+and keep only the terms that are
+linear in <span class="math">\(\delta u\)</span> (which makes <a class="reference internal" href="#eq-nonlin-pdelevel-newton-ansatz"><span class="std std-ref">(528)</span></a>
+an approximation for <span class="math">\(u^{n}\)</span>). Then we can solve a linear PDE for
+the correction <span class="math">\(\delta u\)</span> and use <a class="reference internal" href="#eq-nonlin-pdelevel-newton-ansatz"><span class="std std-ref">(528)</span></a>
+to find a new approximation</p>
 <div class="math">
-\[\begin{split}\lbrack mD_tD_t {u_{\small\mbox{e}}} + \beta D_{2t} {u_{\small\mbox{e}}}\rbrack^n &amp;=
-m{u_{\small\mbox{e}}}''(t_n) + \beta{u_{\small\mbox{e}}}'(t_n) + \\
-&amp;\quad \left(\frac{m}{12}{u_{\small\mbox{e}}}''''(t_n) +
-  \frac{\beta}{6}{u_{\small\mbox{e}}}'''(t_n)\right)\Delta t^2 + {\mathcal{O}(\Delta t^4)}\end{split}\]</div>
-<p>Combining this with the previous equation, we can collect the terms</p>
+\[u^{n,k+1}=u^{n,k}+\delta u\]</div>
+<p>to <span class="math">\(u^{n}\)</span>.
+Repeating this procedure gives a sequence <span class="math">\(u^{n,k+1}\)</span>, <span class="math">\(k=0,1,\ldots\)</span>
+that hopefully converges to the goal <span class="math">\(u^n\)</span>.</p>
+<p>Let us carry out all the mathematical details for the nonlinear diffusion
+PDE discretized by the Backward Euler method.
+Inserting <a class="reference internal" href="#eq-nonlin-pdelevel-newton-ansatz"><span class="std std-ref">(528)</span></a> in
+<a class="reference internal" href="#eq-nonlin-pdelevel-pde-be"><span class="std std-ref">(525)</span></a> gives</p>
+<div class="math" id="eq-nonlin-pdelevel-pde-be-newton1">
+\[\tag{529}
+\frac{u^{n,k} +\delta u - u^{n-1}}{\Delta t} =
+    \nabla\cdot ({\alpha}(u^{n,k} + \delta u)\nabla (u^{n,k}+\delta u))
+    + f(u^{n,k}+\delta u){\thinspace .}\]</div>
+<p>We can Taylor expand <span class="math">\({\alpha}(u^{n,k} + \delta u)\)</span> and
+<span class="math">\(f(u^{n,k}+\delta u)\)</span>:</p>
 <div class="math">
-\[m{u_{\small\mbox{e}}}''(t_n) + \beta{u_{\small\mbox{e}}}'(t_n) + \omega^2{u_{\small\mbox{e}}}(t_n) + s({u_{\small\mbox{e}}}(t_n)) - F^n,\]</div>
-<p>and set this sum to zero because <span class="math">\({u_{\small\mbox{e}}}\)</span> solves
-the differential equation. We are left with
-the truncation error</p>
-<div class="math" id="eq-trunc-vib-gen-r">
-\[\tag{494}
-R^n = \left(\frac{m}{12}{u_{\small\mbox{e}}}''''(t_n) +
-      \frac{\beta}{6}{u_{\small\mbox{e}}}'''(t_n)\right)\Delta t^2 + {\mathcal{O}(\Delta t^4)},\]</div>
-<p>so the scheme is of second order.</p>
-<p>According to <a class="reference internal" href="#eq-trunc-vib-gen-r"><span class="std std-ref">(494)</span></a>, we can add correction terms</p>
+\[\begin{split}{\alpha}(u^{n,k} + \delta u) &amp; = {\alpha}(u^{n,k}) + \frac{d{\alpha}}{du}(u^{n,k})
+\delta u + {\mathcal{O}(\delta u^2)}\approx {\alpha}(u^{n,k}) + {\alpha}^{\prime}(u^{n,k})\delta u,\\
+f(u^{n,k}+\delta u) &amp;=  f(u^{n,k}) + \frac{df}{du}(u^{n,k})\delta u
++ {\mathcal{O}(\delta u^2)}\approx f(u^{n,k}) + f^{\prime}(u^{n,k})\delta u{\thinspace .}\end{split}\]</div>
+<p>Inserting the linear approximations of <span class="math">\({\alpha}\)</span> and <span class="math">\(f\)</span> in
+<a class="reference internal" href="#eq-nonlin-pdelevel-pde-be-newton1"><span class="std std-ref">(529)</span></a> results in</p>
 <div class="math">
-\[C^n = \left(\frac{m}{12}{u_{\small\mbox{e}}}''''(t_n) +
- \frac{\beta}{6}{u_{\small\mbox{e}}}'''(t_n)\right)\Delta t^2,\]</div>
-<p>to the right-hand side of the ODE to obtain a fourth-order scheme.
-However, expressing <span class="math">\(u''''\)</span> and <span class="math">\(u'''\)</span> in terms
-of lower-order derivatives is now harder because the differential equation
-is more complicated:</p>
+\[\frac{u^{n,k} +\delta u - u^{n-1}}{\Delta t} =
+\nabla\cdot ({\alpha}(u^{n,k})\nabla u^{n,k}) + f(u^{n,k}) + \nonumber\]</div>
 <div class="math">
-\[\begin{split}u''' &amp;= \frac{1}{m}(F' - \beta u'' - s'(u)u'),\\
-u'''' &amp;= \frac{1}{m}(F'' - \beta u''' - s''(u)(u')^2 - s'(u)u''),\\
-&amp;= \frac{1}{m}(F'' - \beta \frac{1}{m}(F' - \beta u'' - s'(u)u')
-- s''(u)(u')^2 - s'(u)u''){\thinspace .}\end{split}\]</div>
-<p>It is not impossible to discretize the resulting modified ODE, but it is up
-to debate whether correction terms are feasible and the way to go.
-Computing with a smaller <span class="math">\(\Delta t\)</span> is usually always possible in these
-problems to achieve the desired accuracy.</p>
+\[\qquad \nabla\cdot ({\alpha}(u^{n,k})\nabla \delta u)
++ \nabla\cdot ({\alpha}^{\prime}(u^{n,k})\delta u\nabla u^{n,k}) + \nonumber\]</div>
+<div class="math" id="eq-nonlin-pdelevel-pde-be-newton2">
+\[\tag{530}
+\qquad \nabla\cdot ({\alpha}^{\prime}(u^{n,k})\delta u\nabla \delta u)
+    + f^{\prime}(u^{n,k})\delta u{\thinspace .}\]</div>
+<p>The term <span class="math">\({\alpha}^{\prime}(u^{n,k})\delta u\nabla \delta u\)</span> is of
+order <span class="math">\(\delta u^2\)</span>
+and therefore omitted since we expect the correction <span class="math">\(\delta u\)</span>
+to be small (<span class="math">\(\delta u \gg \delta u^2\)</span>).
+Reorganizing the equation gives a PDE
+for <span class="math">\(\delta u\)</span> that we can write in short form as</p>
+<div class="math">
+\[\delta F(\delta u; u^{n,k}) = -F(u^{n,k}),\]</div>
+<p>where</p>
+<div class="math" id="eq-nonlin-pdelevel-pde-be-newton2-f">
+\[\tag{531}
+F(u^{n,k}) = \frac{u^{n,k} - u^{n-1}}{\Delta t} -
+    \nabla\cdot ({\alpha}(u^{n,k})\nabla u^{n,k}) + f(u^{n,k}),\]</div>
+<div class="math">
+\[\delta F(\delta u; u^{n,k}) =
+- \frac{1}{\Delta t}\delta u +
+\nabla\cdot ({\alpha}(u^{n,k})\nabla \delta u) + \nonumber\]</div>
+<div class="math" id="eq-auto200">
+\[\tag{532}
+\quad \nabla\cdot ({\alpha}^{\prime}(u^{n,k})\delta u\nabla u^{n,k})
+    + f^{\prime}(u^{n,k})\delta u{\thinspace .}\]</div>
+<p>Note that <span class="math">\(\delta F\)</span> is a linear function of <span class="math">\(\delta u\)</span>, and
+<span class="math">\(F\)</span> contains only terms that are known, such that
+the PDE for <span class="math">\(\delta u\)</span> is indeed linear.</p>
+<div class="admonition-observations admonition">
+<p class="first admonition-title">Observations</p>
+<p class="last">The notational form <span class="math">\(\delta F = -F\)</span> resembles the Newton system <span class="math">\(J\delta u =-F\)</span>
+for systems of algebraic equations, with <span class="math">\(\delta F\)</span> as <span class="math">\(J\delta u\)</span>.
+The unknown vector in a linear system of algebraic equations enters
+the system as a linear operator in terms of a
+matrix-vector product (<span class="math">\(J\delta u\)</span>), while at
+the PDE level we have a linear differential operator instead
+(<span class="math">\(\delta F\)</span>).</p>
 </div>
-<div class="section" id="extension-to-quadratic-damping">
-<h2>Extension to quadratic damping<a class="headerlink" href="#extension-to-quadratic-damping" title="Permalink to this headline">¶</a></h2>
-<p>Instead of the linear damping term <span class="math">\(\beta u'\)</span> in <a class="reference internal" href="#eq-trunc-vib-gen-ode1"><span class="std std-ref">(491)</span></a>
-we now consider quadratic damping <span class="math">\(\beta |u'|u'\)</span>:</p>
-<div class="math" id="eq-trunc-vib-gen-ode2">
-\[\tag{495}
-mu'' + \beta |u'|u' + s(u) =F(t){\thinspace .}\]</div>
-<p>A centered difference for <span class="math">\(u'\)</span> gives rise to a nonlinearity, which can
-be linearized using a geometric mean:
-<span class="math">\([|u'|u']^n \approx |[u']^{n-\frac{1}{2}}|[u']^{n+\frac{1}{2}}\)</span>.
-The resulting scheme becomes</p>
-<div class="math" id="eq-auto151">
-\[\tag{496}
-[mD_t D_t u]^n + \beta |[D_{t} u]^{n-\frac{1}{2}}|[D_t u]^{n+\frac{1}{2}}
-    + s(u^n)=F^n{\thinspace .}\]</div>
-<p>The truncation error is defined through</p>
-<div class="math" id="eq-auto152">
-\[\tag{497}
-[mD_t D_t {u_{\small\mbox{e}}}]^n +
-    \beta |[D_{t} {u_{\small\mbox{e}}}]^{n-\frac{1}{2}}|[D_t {u_{\small\mbox{e}}}]^{n+\frac{1}{2}}
-    + s({u_{\small\mbox{e}}}^n)-F^n = R^n{\thinspace .}\]</div>
-<p>We start with expressing the truncation error of the geometric mean.
-According to <a class="reference internal" href="._book014.html#eq-trunc-table-avg-geom-eq"><span class="std std-ref">(459)</span></a>-<a class="reference internal" href="._book014.html#eq-trunc-table-avg-geom"><span class="std std-ref">(460)</span></a>,</p>
-<div class="math">
-\[|[D_{t} {u_{\small\mbox{e}}}]^{n-\frac{1}{2}}|[D_t {u_{\small\mbox{e}}}]^{n+\frac{1}{2}}
-= [|D_t{u_{\small\mbox{e}}}|D_t{u_{\small\mbox{e}}}]^n
-- \frac{1}{4}u'(t_n)^2\Delta t^2  + \frac{1}{4}u(t_n)u''(t_n)\Delta t^2
-+ {\mathcal{O}(\Delta t^4)}{\thinspace .}\]</div>
-<p>Using <a class="reference internal" href="._book014.html#eq-trunc-table-fd1-center-eq"><span class="std std-ref">(441)</span></a>-<a class="reference internal" href="._book014.html#eq-trunc-table-fd1-center"><span class="std std-ref">(442)</span></a>
-for the <span class="math">\(D_t{u_{\small\mbox{e}}}\)</span> factors results in</p>
-<div class="math">
-\[[|D_t{u_{\small\mbox{e}}}|D_t{u_{\small\mbox{e}}}]^n = |{u_{\small\mbox{e}}}' + \frac{1}{24}{u_{\small\mbox{e}}}'''(t_n)\Delta t^2 +
-{\mathcal{O}(\Delta t^4)}|({u_{\small\mbox{e}}}' + \frac{1}{24}{u_{\small\mbox{e}}}'''(t_n)\Delta t^2 +
-{\mathcal{O}(\Delta t^4)})\]</div>
-<p>We can remove the absolute value since it essentially gives a factor 1 or -1
-only. Calculating the product, we have the leading-order terms</p>
-<div class="math">
-\[[D_t{u_{\small\mbox{e}}} D_t{u_{\small\mbox{e}}}]^n = ({u_{\small\mbox{e}}}'(t_n))^2 +
-\frac{1}{12}{u_{\small\mbox{e}}}(t_n){u_{\small\mbox{e}}}'''(t_n)\Delta t^2 +
-{\mathcal{O}(\Delta t^4)}{\thinspace .}\]</div>
-<p>With</p>
-<div class="math">
-\[m[D_t D_t{u_{\small\mbox{e}}}]^n = m{u_{\small\mbox{e}}}''(t_n) + \frac{m}{12}{u_{\small\mbox{e}}}''''(t_n)\Delta t^2
-+{\mathcal{O}(\Delta t^4)},\]</div>
-<p>and using the differential equation on the
-form <span class="math">\(mu'' + \beta (u')^2 + s(u)=F\)</span>, we end up with</p>
-<div class="math">
-\[R^n = (\frac{m}{12}{u_{\small\mbox{e}}}''''(t_n) +
-\frac{\beta}{12}{u_{\small\mbox{e}}}(t_n){u_{\small\mbox{e}}}'''(t_n))
-\Delta t^2 + {\mathcal{O}(\Delta t^4)}{\thinspace .}\]</div>
-<p>This result demonstrates that we have
-second-order accuracy also with quadratic damping.
-The key elements that lead to the second-order accuracy is that
-the difference approximations are <span class="math">\({\mathcal{O}(\Delta t^2)}\)</span> <em>and</em> the
-geometric mean approximation is also of <span class="math">\({\mathcal{O}(\Delta t^2)}\)</span>.</p>
 </div>
-<div class="section" id="the-general-model-formulated-as-first-order-odes">
-<span id="trunc-vib-gen-staggered"></span><h2>The general model formulated as first-order ODEs<a class="headerlink" href="#the-general-model-formulated-as-first-order-odes" title="Permalink to this headline">¶</a></h2>
-<p>The second-order model <a class="reference internal" href="#eq-trunc-vib-gen-ode2"><span class="std std-ref">(495)</span></a> can be
-formulated as a first-order system,</p>
-<div class="math" id="eq-trunc-vib-gen-2x2model-ode-u">
-\[\tag{498}
-u' = v,\]</div>
-<div class="math" id="eq-trunc-vib-gen-2x2model-ode-v">
-\[\tag{499}
-v' = \frac{1}{m}\left( F(t) - \beta |v|v - s(u)\right){\thinspace .}\]</div>
-<p>The system <a class="reference internal" href="#eq-trunc-vib-gen-2x2model-ode-u"><span class="std std-ref">(498)</span></a>-<a class="reference internal" href="#eq-trunc-vib-gen-2x2model-ode-u"><span class="std std-ref">(498)</span></a> can be solved either by a forward-backward scheme or a centered
-scheme on a staggered mesh.</p>
-<div class="section" id="the-forward-backward-scheme">
-<h3>The forward-backward scheme<a class="headerlink" href="#the-forward-backward-scheme" title="Permalink to this headline">¶</a></h3>
-<p>The discretization is based on the idea of stepping
-<a class="reference internal" href="#eq-trunc-vib-gen-2x2model-ode-u"><span class="std std-ref">(498)</span></a> forward in time and then
-using a backward difference in <a class="reference internal" href="#eq-trunc-vib-gen-2x2model-ode-v"><span class="std std-ref">(499)</span></a>
-with the recently computed (and therefore known) <span class="math">\(u\)</span>:</p>
-<div class="math" id="eq-trunc-vib-gen-2x2model-ode-u-fw">
-\[\tag{500}
-\lbrack D_t^+ u = v \rbrack^n,\]</div>
-<div class="math" id="eq-trunc-vib-gen-2x2model-ode-v-bw">
-\[\tag{501}
-\lbrack D_t^-v = \frac{1}{m}( F(t) - \beta |v|v - s(u)) \rbrack^{n+1}{\thinspace .}\]</div>
-<p>The term <span class="math">\(|v|v\)</span> gives rise to a nonlinearity <span class="math">\(|v^{n+1}|v^{n+1}\)</span>,
-which can be linearized as <span class="math">\(|v^{n}|v^{n+1}\)</span>:</p>
-<div class="math" id="eq-trunc-vib-gen-2x2model-ode-u-fw2">
-\[\tag{502}
-\lbrack D_t^+ u = v \rbrack^n,\]</div>
-<div class="math" id="eq-trunc-vib-gen-2x2model-ode-v-bw2">
-\[\tag{503}
-\lbrack D_t^-v \rbrack^{n+1} = \frac{1}{m}( F(t_{n+1}) - \beta |v^n|v^{n+1} - s(u^{n+1})){\thinspace .}\]</div>
-<p>Each ODE will have a truncation error when inserting the exact
-solutions <span class="math">\({u_{\small\mbox{e}}}\)</span> and <span class="math">\({v_{\small\mbox{e}}}\)</span> in
-<a class="reference internal" href="#eq-trunc-vib-gen-2x2model-ode-u-fw"><span class="std std-ref">(500)</span></a>-<a class="reference internal" href="#eq-trunc-vib-gen-2x2model-ode-v-bw"><span class="std std-ref">(501)</span></a>:</p>
-<div class="math" id="eq-trunc-vib-gen-2x2model-ode-u-fw-r">
-\[\tag{504}
-\lbrack D_t^+ {u_{\small\mbox{e}}} = {v_{\small\mbox{e}}} + R_u \rbrack^n,\]</div>
-<div class="math" id="eq-trunc-vib-gen-2x2model-ode-v-bw-r">
-\[\tag{505}
-\lbrack D_t^-{v_{\small\mbox{e}}} \rbrack^{n+1} = \frac{1}{m}( F(t_{n+1}) - \beta |{v_{\small\mbox{e}}}(t_n)|{v_{\small\mbox{e}}}(t_{n+1}) - s({u_{\small\mbox{e}}}(t_{n+1}))) + R_v^{n+1}{\thinspace .}\]</div>
-<p>Application of <a class="reference internal" href="._book014.html#eq-trunc-table-fd1-fw-eq"><span class="std std-ref">(447)</span></a>-<a class="reference internal" href="._book014.html#eq-trunc-table-fd1-fw"><span class="std std-ref">(448)</span></a>
-and <a class="reference internal" href="._book014.html#eq-trunc-table-fd1-bw-eq"><span class="std std-ref">(445)</span></a>-<a class="reference internal" href="._book014.html#eq-trunc-table-fd1-bw"><span class="std std-ref">(446)</span></a> in
-<a class="reference internal" href="#eq-trunc-vib-gen-2x2model-ode-u-fw-r"><span class="std std-ref">(504)</span></a> and
-<a class="reference internal" href="#eq-trunc-vib-gen-2x2model-ode-v-bw-r"><span class="std std-ref">(505)</span></a>, respectively, gives</p>
-<div class="math" id="eq-trunc-vib-gen-2x2model-ode-u-fw-r2">
-\[\tag{506}
-{u_{\small\mbox{e}}}'(t_n) + \frac{1}{2}{u_{\small\mbox{e}}}''(t_n)\Delta t + {\mathcal{O}(\Delta t^2)}
-    = {v_{\small\mbox{e}}}(t_n) + R_u^n,\]</div>
+<div class="section" id="similarity-with-picard-iteration">
+<h3>Similarity with Picard iteration<a class="headerlink" href="#similarity-with-picard-iteration" title="Permalink to this headline">¶</a></h3>
+<p>We can rewrite the PDE for <span class="math">\(\delta u\)</span> in a slightly different way too
+if we define <span class="math">\(u^{n,k} + \delta u\)</span> as <span class="math">\(u^{n,k+1}\)</span>.</p>
 <div class="math">
-\[{v_{\small\mbox{e}}}'(t_{n+1}) - \frac{1}{2}{v_{\small\mbox{e}}}''(t_{n+1})\Delta t + {\mathcal{O}(\Delta t^2)}
-= \frac{1}{m}(F(t_{n+1}) - \beta|{v_{\small\mbox{e}}}(t_n)|{v_{\small\mbox{e}}}(t_{n+1}) +\nonumber\]</div>
-<div class="math" id="eq-trunc-vib-gen-2x2model-ode-v-bw-r2">
-\[\tag{507}
-\quad s({u_{\small\mbox{e}}}(t_{n+1}))+ R_v^n{\thinspace .}\]</div>
-<p>Since <span class="math">\({u_{\small\mbox{e}}} ' = {v_{\small\mbox{e}}}\)</span>, <a class="reference internal" href="#eq-trunc-vib-gen-2x2model-ode-u-fw-r2"><span class="std std-ref">(506)</span></a>
-gives</p>
-<div class="math">
-\[R_u^n = \frac{1}{2}{u_{\small\mbox{e}}}''(t_n)\Delta t + {\mathcal{O}(\Delta t^2)}{\thinspace .}\]</div>
-<p>In <a class="reference internal" href="#eq-trunc-vib-gen-2x2model-ode-v-bw-r2"><span class="std std-ref">(507)</span></a> we can collect the
-terms that constitute the ODE, but the damping term has the wrong
-form.
-Let us drop the absolute value in the damping term for simplicity.
-Adding a subtracting the right form <span class="math">\(v^{n+1}v^{n+1}\)</span> helps:</p>
-<div class="math">
-\[\begin{split}{v_{\small\mbox{e}}}'(t_{n+1}) &amp;-
-\frac{1}{m}(F(t_{n+1}) - \beta {v_{\small\mbox{e}}}(t_{n+1}){v_{\small\mbox{e}}}(t_{n+1}) +
-s({u_{\small\mbox{e}}}(t_{n+1})) + \\
-&amp; (\beta {v_{\small\mbox{e}}}(t_n){v_{\small\mbox{e}}}(t_{n+1}) - \beta {v_{\small\mbox{e}}}(t_{n+1}){v_{\small\mbox{e}}}(t_{n+1}))),\end{split}\]</div>
-<p>which reduces to</p>
-<div class="math">
-\[\begin{split}\frac{\beta}{m}{v_{\small\mbox{e}}}(t_{n+1}({v_{\small\mbox{e}}}(t_n) - {v_{\small\mbox{e}}}(t_{n+1}))
-&amp;= \frac{\beta}{m}{v_{\small\mbox{e}}}(t_{n+1}[D_t^-{v_{\small\mbox{e}}}]^{n+1}\Delta t\\
-&amp;= \frac{\beta}{m}{v_{\small\mbox{e}}}(t_{n+1}({v_{\small\mbox{e}}}'(t_{n+1})\Delta t +
--\frac{1}{2}{v_{\small\mbox{e}}}'''(t_{n+1})\Delta t^ + {\mathcal{O}(\Delta t^3)}){\thinspace .}\end{split}\]</div>
-<p>We end with <span class="math">\(R_u^n\)</span> and <span class="math">\(R_v^{n+1}\)</span> as <span class="math">\({\mathcal{O}(\Delta t)}\)</span>, simply because
-all the building blocks in the schemes (the forward and backward
-differences and the linearization trick) are only first-order
-accurate. However, this analysis is misleading: the building blocks
-play together in a way that makes the scheme second-order accurate.
-This is shown by considering an alternative, yet equivalent, formulation
-of the above scheme.</p>
+\[ \frac{u^{n,k+1} - u^{n-1}}{\Delta t} =
+\nabla\cdot ({\alpha}(u^{n,k})\nabla u^{n,k+1}) + f(u^{n,k})\nonumber\]</div>
+<div class="math" id="eq-auto201">
+\[\tag{533}
+\qquad  + \nabla\cdot ({\alpha}^{\prime}(u^{n,k})\delta u\nabla u^{n,k})
+    + f^{\prime}(u^{n,k})\delta u{\thinspace .}\]</div>
+<p>Note that the first line is the same PDE as arise in the Picard
+iteration, while the remaining terms arise from the differentiations
+that are an inherent ingredient in Newton&#8217;s method.</p>
 </div>
-<div class="section" id="a-centered-scheme-on-a-staggered-mesh">
-<h3>A centered scheme on a staggered mesh<a class="headerlink" href="#a-centered-scheme-on-a-staggered-mesh" title="Permalink to this headline">¶</a></h3>
-<p>We now introduce a staggered mesh where we
-seek <span class="math">\(u\)</span> at mesh points <span class="math">\(t_n\)</span> and <span class="math">\(v\)</span> at points <span class="math">\(t_{n+\frac{1}{2}}\)</span>
-in between the <span class="math">\(u\)</span> points. The staggered mesh makes it easy to
-formulate centered differences in the system
-<a class="reference internal" href="#eq-trunc-vib-gen-2x2model-ode-u"><span class="std std-ref">(498)</span></a>-<a class="reference internal" href="#eq-trunc-vib-gen-2x2model-ode-u"><span class="std std-ref">(498)</span></a>:</p>
-<div class="math" id="eq-trunc-vib-gen-2x2model-ode-u-staggered">
-\[\tag{508}
-\lbrack D_t u = v \rbrack^{n-\frac{1}{2}},\]</div>
-<div class="math" id="eq-trunc-vib-gen-2x2model-ode-v-staggered">
-\[\tag{509}
-\lbrack D_t v = \frac{1}{m}( F(t) - \beta |v|v - s(u)) \rbrack^{n}{\thinspace .}\]</div>
-<p>The term <span class="math">\(|v^n|v^n\)</span> causes trouble since <span class="math">\(v^n\)</span> is not computed, only
-<span class="math">\(v^{n-\frac{1}{2}}\)</span> and <span class="math">\(v^{n+\frac{1}{2}}\)</span>. Using geometric mean,
-we can express <span class="math">\(|v^n|v^n\)</span> in terms of known quantities:
-<span class="math">\(|v^n|v^n \approx |v^{n-\frac{1}{2}}|v^{n+\frac{1}{2}}\)</span>.
-We then have</p>
-<div class="math" id="eq-trunc-vib-gen-2x2model-ode-u-staggered2">
-\[\tag{510}
-\lbrack D_t u \rbrack^{n-\frac{1}{2}} = v^{n-\frac{1}{2}},\]</div>
-<div class="math" id="eq-trunc-vib-gen-2x2model-ode-v-staggered2">
-\[\tag{511}
-\lbrack D_t v \rbrack^n = \frac{1}{m}( F(t_n) -
-    \beta |v^{n-\frac{1}{2}}|v^{n+\frac{1}{2}} - s(u^n)){\thinspace .}\]</div>
-<p>The truncation error in each equation fulfills</p>
+<div class="section" id="implementation-11">
+<h3>Implementation<a class="headerlink" href="#implementation-11" title="Permalink to this headline">¶</a></h3>
+<p>For coding we want to introduce <span class="math">\(u\)</span> for <span class="math">\(u^n\)</span>, <span class="math">\(u^{-}\)</span> for <span class="math">\(u^{n,k}\)</span> and
+<span class="math">\(u^{(1)}\)</span> for <span class="math">\(u^{n-1}\)</span>. The formulas for <span class="math">\(F\)</span> and <span class="math">\(\delta F\)</span>
+are then more clearly written as</p>
+<div class="math" id="eq-nonlin-pdelevel-pde-be-newton2-f2">
+\[\tag{534}
+F(u^{-}) = \frac{u^{-} - u^{(1)}}{\Delta t} -
+    \nabla\cdot ({\alpha}(u^{-})\nabla u^{-}) + f(u^{-}),\]</div>
 <div class="math">
-\[\begin{split}\lbrack D_t {u_{\small\mbox{e}}} \rbrack^{n-\frac{1}{2}} &amp;= {v_{\small\mbox{e}}}(t_{n-\frac{1}{2}}) + R_u^{n-\frac{1}{2}},\\
-\lbrack D_t {v_{\small\mbox{e}}} \rbrack^n &amp;= \frac{1}{m}( F(t_n) -
-\beta |{v_{\small\mbox{e}}}(t_{n-\frac{1}{2}})|{v_{\small\mbox{e}}}(t_{n+\frac{1}{2}}) - s(u^n)) + R_v^n{\thinspace .}\end{split}\]</div>
-<p>The truncation error of the centered differences is given
-by <a class="reference internal" href="._book014.html#eq-trunc-table-fd1-center-eq"><span class="std std-ref">(441)</span></a>-<a class="reference internal" href="._book014.html#eq-trunc-table-fd1-center"><span class="std std-ref">(442)</span></a>,
-and the geometric mean approximation
-analysis can be taken from <a class="reference internal" href="._book014.html#eq-trunc-table-avg-geom-eq"><span class="std std-ref">(459)</span></a>-<a class="reference internal" href="._book014.html#eq-trunc-table-avg-geom"><span class="std std-ref">(460)</span></a>.
-These results lead to</p>
+\[\delta F(\delta u; u^{-}) =
+- \frac{1}{\Delta t}\delta u +
+\nabla\cdot ({\alpha}(u^{-})\nabla \delta u) + \nonumber\]</div>
+<div class="math" id="eq-auto202">
+\[\tag{535}
+\quad \nabla\cdot ({\alpha}^{\prime}(u^{-})\delta u\nabla u^{-})
+    + f^{\prime}(u^{-})\delta u{\thinspace .}\]</div>
+<p>The form that orders the PDE as the Picard iteration terms plus
+the Newton method&#8217;s derivative terms becomes</p>
 <div class="math">
-\[{u_{\small\mbox{e}}}'(t_{n-\frac{1}{2}}) +
-\frac{1}{24}{u_{\small\mbox{e}}}'''(t_{n-\frac{1}{2}})\Delta t^2 + {\mathcal{O}(\Delta t^4)}
-= {v_{\small\mbox{e}}}(t_{n-\frac{1}{2}}) + R_u^{n-\frac{1}{2}},\]</div>
-<p>and</p>
-<div class="math">
-\[{v_{\small\mbox{e}}}'(t_n) =
-\frac{1}{m}( F(t_n) -
-\beta |{v_{\small\mbox{e}}}(t_n)|{v_{\small\mbox{e}}}(t_n) + {\mathcal{O}(\Delta t^2)} - s(u^n)) + R_v^n{\thinspace .}\]</div>
-<p>The ODEs fulfilled by <span class="math">\({u_{\small\mbox{e}}}\)</span> and <span class="math">\({v_{\small\mbox{e}}}\)</span> are evident in these equations,
-and we achieve second-order accuracy for the truncation error
-in both equations:</p>
-<div class="math">
-\[R_u^{n-\frac{1}{2}}= {\mathcal{O}(\Delta t^2)}, \quad R_v^n = {\mathcal{O}(\Delta t^2)}{\thinspace .}\]</div>
-<p>Comparing
-<a class="reference internal" href="#eq-trunc-vib-gen-2x2model-ode-u-staggered2"><span class="std std-ref">(510)</span></a>-<a class="reference internal" href="#eq-trunc-vib-gen-2x2model-ode-v-staggered2"><span class="std std-ref">(511)</span></a>
-with
-<a class="reference internal" href="#eq-trunc-vib-gen-2x2model-ode-u-fw2"><span class="std std-ref">(502)</span></a>-<a class="reference internal" href="#eq-trunc-vib-gen-2x2model-ode-v-bw2"><span class="std std-ref">(503)</span></a>,
-we can hopefully realize that these schemes are equivalent (which
-becomes clear when we implement both).  The obvious advantage with the
-staggered mesh approach is that we can all the way use second-order
-accurate building blocks and in this way convince ourselves that the
-resulting scheme has an error of <span class="math">\({\mathcal{O}(\Delta t^2)}\)</span>.</p>
+\[ \frac{u - u^{(1)}}{\Delta t} =
+\nabla\cdot ({\alpha}(u^{-})\nabla u) + f(u^{-}) + \nonumber\]</div>
+<div class="math" id="eq-auto203">
+\[\tag{536}
+\qquad  \gamma(\nabla\cdot ({\alpha}^{\prime}(u^{-})(u - u^{-})\nabla u^{-})
+    + f^{\prime}(u^{-})(u - u^{-})){\thinspace .}\]</div>
+<p>The Picard and full Newton versions correspond to
+<span class="math">\(\gamma=0\)</span> and <span class="math">\(\gamma=1\)</span>, respectively.</p>
 </div>
+<div class="section" id="derivation-with-alternative-notation">
+<h3>Derivation with alternative notation<a class="headerlink" href="#derivation-with-alternative-notation" title="Permalink to this headline">¶</a></h3>
+<p>Some may prefer to derive the linearized PDE for <span class="math">\(\delta u\)</span> using
+the more compact notation. We start with inserting <span class="math">\(u^n=u^{-}+\delta u\)</span>
+to get</p>
+<div class="math">
+\[\frac{u^{-} +\delta u - u^{n-1}}{\Delta t} =
+\nabla\cdot ({\alpha}(u^{-} + \delta u)\nabla (u^{-}+\delta u))
++ f(u^{-}+\delta u){\thinspace .}\]</div>
+<p>Taylor expanding,</p>
+<div class="math">
+\[\begin{split}{\alpha}(u^{-} + \delta u) &amp; \approx {\alpha}(u^{-}) + {\alpha}^{\prime}(u^{-})\delta u,\\
+f(u^{-}+\delta u) &amp; \approx f(u^{-}) + f^{\prime}(u^{-})\delta u,\end{split}\]</div>
+<p>and inserting these expressions gives a less cluttered PDE for <span class="math">\(\delta u\)</span>:</p>
+<div class="math">
+\[\begin{split}\frac{u^{-} +\delta u - u^{n-1}}{\Delta t} &amp;=
+\nabla\cdot ({\alpha}(u^{-})\nabla u^{-}) + f(u^{-}) + \\
+&amp;\qquad \nabla\cdot ({\alpha}(u^{-})\nabla \delta u)
++ \nabla\cdot ({\alpha}^{\prime}(u^{-})\delta u\nabla u^{-}) + \\
+&amp;\qquad \nabla\cdot ({\alpha}^{\prime}(u^{-})\delta u\nabla \delta u)
++ f^{\prime}(u^{-})\delta u{\thinspace .}\end{split}\]</div>
+</div>
+</div>
+<div class="section" id="crank-nicolson-discretization-2">
+<span id="nonlin-pdelevel-picard-cn"></span><h2>Crank-Nicolson discretization<a class="headerlink" href="#crank-nicolson-discretization-2" title="Permalink to this headline">¶</a></h2>
+<p>A Crank-Nicolson discretization of
+<a class="reference internal" href="#eq-nonlin-pdelevel-model-pde"><span class="std std-ref">(522)</span></a> applies a centered difference
+at <span class="math">\(t_{n+\frac{1}{2}}\)</span>:</p>
+<div class="math">
+\[[D_t u = \nabla\cdot ({\alpha}(u)\nabla u) + f(u)]^{n+\frac{1}{2}}{\thinspace .}\]</div>
+<p>The standard technique is to apply an arithmetic average for
+quantities defined between two mesh points, e.g.,</p>
+<div class="math">
+\[u^{n+\frac{1}{2}}\approx \frac{1}{2}(u^n + u^{n+1}){\thinspace .}\]</div>
+<p>However, with nonlinear terms we have many choices of formulating
+an arithmetic mean:</p>
+<div class="math" id="eq-auto204">
+\[\tag{537}
+[f(u)]^{n+\frac{1}{2}} \approx f(\frac{1}{2}(u^n + u^{n+1}))
+    = [f(\overline{u}^t)]^{n+\frac{1}{2}},\]</div>
+<div class="math" id="eq-auto205">
+\[\tag{538}
+[f(u)]^{n+\frac{1}{2}} \approx \frac{1}{2}(f(u^n) + f(u^{n+1}))
+    =[\overline{f(u)}^t]^{n+\frac{1}{2}},\]</div>
+<div class="math" id="eq-auto206">
+\[\tag{539}
+[{\alpha}(u)\nabla u]^{n+\frac{1}{2}} \approx
+    {\alpha}(\frac{1}{2}(u^n + u^{n+1}))\nabla (\frac{1}{2}(u^n + u^{n+1}))
+    = [{\alpha}(\overline{u}^t)\nabla \overline{u}^t]^{n+\frac{1}{2}},\]</div>
+<div class="math" id="eq-auto207">
+\[\tag{540}
+[{\alpha}(u)\nabla u]^{n+\frac{1}{2}} \approx
+    \frac{1}{2}({\alpha}(u^n) + {\alpha}(u^{n+1}))\nabla (\frac{1}{2}(u^n + u^{n+1}))
+    = [\overline{{\alpha}(u)}^t\nabla\overline{u}^t]^{n+\frac{1}{2}},\]</div>
+<div class="math" id="eq-auto208">
+\[\tag{541}
+[{\alpha}(u)\nabla u]^{n+\frac{1}{2}} \approx
+    \frac{1}{2}({\alpha}(u^n)\nabla u^n + {\alpha}(u^{n+1})\nabla u^{n+1})
+    = [\overline{{\alpha}(u)\nabla u}^t]^{n+\frac{1}{2}}{\thinspace .}\]</div>
+<p>A big question is whether there are significant differences in accuracy
+between taking the products of arithmetic means or taking the arithmetic
+mean of products. <a class="reference internal" href="._book019.html#nonlin-exer-products-arith-mean"><span class="std std-ref">Exercise 6.6: Find the truncation error of arithmetic mean of products</span></a> investigates
+this question, and the answer is that the approximation is
+<span class="math">\({\mathcal{O}(\Delta t^2)}\)</span> in both cases.</p>
 </div>
 </div>
 
@@ -493,31 +411,27 @@ resulting scheme has an error of <span class="math">\({\mathcal{O}(\Delta t^2)}\
             </center>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Truncation errors in vibration ODEs</a><ul>
-<li><a class="reference internal" href="#linear-model-without-damping">Linear model without damping</a><ul>
-<li><a class="reference internal" href="#the-truncation-error-of-a-centered-finite-difference-scheme">The truncation error of a centered finite difference scheme</a></li>
-<li><a class="reference internal" href="#the-truncation-error-of-approximating">The truncation error of approximating <span class="math">\(u'(0)\)</span></a></li>
-<li><a class="reference internal" href="#truncation-error-of-the-equation-for-the-first-step">Truncation error of the equation for the first step</a></li>
-<li><a class="reference internal" href="#computing-correction-terms">Computing correction terms</a></li>
+<li><a class="reference internal" href="#">Linearization at the differential equation level</a><ul>
+<li><a class="reference internal" href="#explicit-time-integration">Explicit time integration</a></li>
+<li><a class="reference internal" href="#backward-euler-scheme-and-picard-iteration">Backward Euler scheme and Picard iteration</a></li>
+<li><a class="reference internal" href="#backward-euler-scheme-and-newton-s-method">Backward Euler scheme and Newton&#8217;s method</a><ul>
+<li><a class="reference internal" href="#linearization-via-taylor-expansions">Linearization via Taylor expansions</a></li>
+<li><a class="reference internal" href="#similarity-with-picard-iteration">Similarity with Picard iteration</a></li>
+<li><a class="reference internal" href="#implementation-11">Implementation</a></li>
+<li><a class="reference internal" href="#derivation-with-alternative-notation">Derivation with alternative notation</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#model-with-damping-and-nonlinearity">Model with damping and nonlinearity</a></li>
-<li><a class="reference internal" href="#extension-to-quadratic-damping">Extension to quadratic damping</a></li>
-<li><a class="reference internal" href="#the-general-model-formulated-as-first-order-odes">The general model formulated as first-order ODEs</a><ul>
-<li><a class="reference internal" href="#the-forward-backward-scheme">The forward-backward scheme</a></li>
-<li><a class="reference internal" href="#a-centered-scheme-on-a-staggered-mesh">A centered scheme on a staggered mesh</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#crank-nicolson-discretization-2">Crank-Nicolson discretization</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="._book015.html"
-                        title="previous chapter">Truncation errors in exponential decay ODE</a></p>
+                        title="previous chapter">Systems of nonlinear algebraic equations</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="._book017.html"
-                        title="next chapter">Truncation errors in wave equations</a></p>
+                        title="next chapter">Discretization of 1D stationary nonlinear differential equations</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -549,10 +463,10 @@ resulting scheme has an error of <span class="math">\({\mathcal{O}(\Delta t^2)}\
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="._book017.html" title="Truncation errors in wave equations"
+          <a href="._book017.html" title="Discretization of 1D stationary nonlinear differential equations"
              >next</a> |</li>
         <li class="right" >
-          <a href="._book015.html" title="Truncation errors in exponential decay ODE"
+          <a href="._book015.html" title="Systems of nonlinear algebraic equations"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Finite Difference Computing with Partial Differential Equations</a> &raquo;</li> 
       </ul>
@@ -562,7 +476,7 @@ resulting scheme has an error of <span class="math">\({\mathcal{O}(\Delta t^2)}\
     <a href="http://cbc.simula.no"><img src="_static/cbc_banner.png" width="100%"><a>
     <br />
     <br />
-      &copy;2015, Svein Linge, Hans Petter Langtangen. Released under CC Attribution 4.0 license.
+      &copy;2016, Hans Petter Langtangen, Svein Linge. Released under CC Attribution 4.0 license.
   </div>
 </div>
 

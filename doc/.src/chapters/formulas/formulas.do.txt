@@ -5,8 +5,8 @@ label{sec:form:fdop}
 \begin{align}
 u'(t_n) &\approx
 \lbrack D_tu\rbrack^n = \frac{u^{n+\half} - u^{n-\half}}{\Delta t} label{Dop:fd1:center}\\
-u'(t_n) &a\approx
-\lbrack D_{2t}u\rbrack^n = \frac{u^{n+1} - u^{n-1}}{2\Delta t} +
+u'(t_n) &\approx
+\lbrack D_{2t}u\rbrack^n = \frac{u^{n+1} - u^{n-1}}{2\Delta t}
 label{Dop:fd1:center2}\\
 u'(t_n) &=
 \lbrack D_t^-u\rbrack^n = \frac{u^{n} - u^{n-1}}{\Delta t}
@@ -33,8 +33,9 @@ u(t_{n+\half}) &\approx \lbrack \overline{u}^{t,h}\rbrack^{n+\half}
 = \frac{2}{\frac{1}{u^{n+1}} + \frac{1}{u^n}}
 label{Dop:avg:harm}\\
 u(t_{n+\theta}) &\approx \lbrack \overline{u}^{t,\theta}\rbrack^{n+\theta}
-= \theta u^{n+1} + (1-\theta)u^n ,\quad t_{n+\theta}=\theta t_{n+1} + (1-\theta)t_{n-1}
-label{Dop:avg:theta}
+= \theta u^{n+1} + (1-\theta)u^n ,
+label{Dop:avg:theta}\\
+&\qquad t_{n+\theta}=\theta t_{n+1} + (1-\theta)t_{n-1}
 \end{align}
 !et
 
@@ -121,7 +122,7 @@ label{form:exp:fd1c:center}
 
 === Real exponentials ===
 
-Let $u^n = \exp{(\omega n\Delta t)} = e^{\omega t}$.
+Let $u^n = \exp{(\omega n\Delta t)} = e^{\omega t_n}$.
 
 !bt
 \begin{align}
@@ -196,3 +197,26 @@ label{form:Dop:tn3:2cn}\\
 label{form:Dop2:tn3:cn}
 \end{align}
 !et
+
+===== Software =====
+
+Application of finite difference operators to polynomials and exponential
+functions, resulting in the formulas above, can easily be computed by
+some `sympy` code:
+
+@@@CODE src-formulas/lib.py fromto: from sympy import@import inspect
+To see the results, one can now make a simple loop  like
+
+!bc pycod
+for func in func_list:
+    for op in op_list:
+        f = func
+        e = op(f)
+        e = simplify(expand(e))
+        print e
+        if func in [f_expiwt, f_expwt]:
+            e = e/f(t)
+        e = e.subs(t, n*dt)
+        print expand(e)
+        print factor(simplify(expand(e)))
+!ec

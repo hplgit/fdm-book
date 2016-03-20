@@ -1,1149 +1,928 @@
 .. !split
 
-.. _wave:app:
+.. _wave:2D3D:
 
-Applications of wave equations
-==============================
+Finite difference methods for 2D and 3D wave equations
+======================================================
 
-This section presents a range of wave equation models
-for different physical phenomena. Although many wave motion problems
-in physics can be modeled by the standard linear wave equation, or a similar
-formulation with a system of first-order equations, there are some
-exceptions. Perhaps the most important is water waves: these are modeled by
-the Laplace equation with time-dependent boundary conditions at
-the water surface (long water waves, however, can be approximated
-by a standard wave equation, see the section :ref:`wave:app:sw:2D`).
-Quantum mechanical waves constitute another example where the waves
-are governed by the
-Schrodinger
-equation, i.e., not by a standard wave equation.
-Many wave phenomena also need to take nonlinear effects into account
-when the wave amplitude is significant. Shock waves in the air is
-a primary example.
+A natural next step is to consider extensions of the methods for
+various
+variants of the one-dimensional wave equation to two-dimensional (2D) and
+three-dimensional (3D) versions of the wave equation.
 
-The derivations in the following are very brief. Those with a firm
-background in continuum mechanics will probably have enough
-information to fill in the details, while other readers will hopefully
-get some impression of the physics and approximations involved when
-establishing wave equation models.
+.. _wave:2D3D:models:
 
-.. _wave:app:string:
-
-Waves on a string
------------------
-
-.. _wave:app:string:fig:
-
-.. figure:: wave_on_string.png
-   :width: 800
-
-   *Discrete string model with point masses connected by elastic strings*
-
-Figure :ref:`wave:app:string:fig` shows a model we may use to derive
-the equation for waves on a string. The string is modeled as a
-set of discrete point masses (at mesh points) with
-elastic strings in between. The string has a large constant tension :math:`T`.
-We let the mass at mesh point :math:`x_i` be :math:`m_i`. The displacement of
-this mass point in :math:`y` direction is denoted by :math:`u_i(t)`.
-
-The motion of mass :math:`m_i` is governed by Newton's second law of motion.
-The position of the mass at time :math:`t` is :math:`x_i\boldsymbol{i} + u_i(t)\boldsymbol{j}`, where
-:math:`\boldsymbol{i}` and :math:`\boldsymbol{j}` are unit vectors in the :math:`x` and :math:`y` direction, respectively.
-The acceleration is then :math:`u_i''(t)\boldsymbol{j}`. Two forces are acting
-on the mass as indicated in Figure :ref:`wave:app:string:fig`.
-The force :math:`\boldsymbol{T}^{-}` acting toward the point :math:`x_{i-1}` can be decomposed
-as
-
-.. math::
-         \boldsymbol{T}^{-} = -T\sin\phi\boldsymbol{i} -T\cos\phi\boldsymbol{j}, 
-
-where :math:`\phi` is the angle between the force and the
-line :math:`x=x_i`. Let :math:`\Delta u_i = u_i - u_{i-1}` and let
-:math:`\Delta s_i = \sqrt{\Delta u_i^2 + (x_i - x_{i-1})^2}`
-be the distance from mass :math:`m_{i-1}` to mass :math:`m_i`.
-It is seen that :math:`\cos\phi = \Delta u_i/\Delta s_i` and :math:`\sin\phi =
-(x_{i}-x_{i-1})/\Delta s` or :math:`\Delta x/\Delta s_i` if we
-introduce a constant mesh spacing :math:`\Delta x = x_i - x_{i-1}`.
-The force can then be written
-
-.. math::
-         \boldsymbol{T}^{-} = -T\frac{\Delta x}{\Delta s_i}\boldsymbol{i} - T\frac{\Delta u_i}{\Delta s_i}\boldsymbol{j}
-        {\thinspace .}
-        
-
-The force :math:`\boldsymbol{T}^{+}` acting toward :math:`x_{i+1}` can be calculated in a similar way:
-
-.. math::
-         \boldsymbol{T}^{+} = T\frac{\Delta x}{\Delta s_{i+1}}\boldsymbol{i} +
-                    T\frac{\Delta u_{i+1}}{\Delta s_{i+1}}\boldsymbol{j}
-        {\thinspace .}
-        
-
-Newton's second law becomes
-
-.. math::
-         m_iu_i''(t)\boldsymbol{j} = \boldsymbol{T}^{+} + \boldsymbol{T}^{-},
-
-which gives the component equations
-
-.. _Eq:wave:app:string:hcomp:
-
-.. math::
-
-    \tag{200}
-    T\frac{\Delta x}{\Delta s_i} = T\frac{\Delta x}{\Delta s_{i+1}},
-        
-        
-
-.. _Eq:wave:app:string:vcomp:
-
-.. math::
-
-    \tag{201}
-    m_iu_i''(t) = T\frac{\Delta u_{i+1}}{\Delta s_{i+1}} -
-                       T\frac{\Delta u_i}{\Delta s_i}
-        
-        {\thinspace .}
-        
-
-A basic reasonable assumption for a string
-is small displacements :math:`u_i` and small
-displacement gradients :math:`\Delta u_i/\Delta x`. For small :math:`g=\Delta u_i/\Delta x`
-we have that
-
-.. math::
-         \Delta s_i = \sqrt{\Delta u_i^2 + \Delta x^2} = \Delta x\sqrt{1 + g^2}
-        + \Delta x (1 + {\frac{1}{2}}g^2 + {\cal O}(g^4) \approx \Delta x
-        {\thinspace .}
-        
-
-Equation :ref:`(200) <Eq:wave:app:string:hcomp>` is then simply the identity :math:`T=T`, while
-:ref:`(201) <Eq:wave:app:string:vcomp>` can be written as
-
-.. math::
-        
-        m_iu_i''(t) = T\frac{\Delta u_{i+1}}{\Delta x} - T\frac{\Delta u_i}{\Delta x},
-        
-
-which upon division by :math:`\Delta x` and introducing the density
-:math:`\varrho_i = m_i/\Delta x` becomes
-
-.. _Eq:wave:app:string:model0:
-
-.. math::
-
-    \tag{202}
-    \varrho_i u_i''(t) = T\frac{1}{\Delta x^2}
-        \left( u_{i+1} - 2u_i + u_{i-1}\right)
-        
-        {\thinspace .}
-        
-
-We can now choose to approximate :math:`u_i''` by a finite difference in time
-and get the discretized wave equation,
-
-.. _Eq:_auto71:
-
-.. math::
-
-    \tag{203}
-    \varrho_i \frac{1}{\Delta t^2}
-        \left(u^{n+1}_i - 2u^n_i - u^{n-1}_i\right) =
-        T\frac{1}{\Delta x^2}
-        \left( u_{i+1} - 2u_i + u_{i-1}\right){\thinspace .}
-        
-        
-
-On the other hand, we may go to the continuum limit :math:`\Delta x\rightarrow 0` and
-replace :math:`u_i(t)` by :math:`u(x,t)`, :math:`\varrho_i` by :math:`\varrho(x)`, and
-recognize that the right-hand side of :ref:`(202) <Eq:wave:app:string:model0>`
-approaches :math:`\partial^2 u/\partial x^2` as :math:`\Delta x\rightarrow 0`.
-We end up with the continuous model for waves on a string:
-
-.. _Eq:wave:app:string:model1:
-
-.. math::
-
-    \tag{204}
-    \varrho\frac{\partial^2 u}{\partial t^2} = T\frac{\partial^2 u}{\partial x^2}
-        
-        {\thinspace .}
-        
-
-Note that the density :math:`\varrho` may change along the string, while the
-tension :math:`T` is a constant. With variable wave velocity :math:`c(x) = \sqrt{T/\varrho(x)}` we can write the wave equation in the more standard form
-
-.. _Eq:wave:app:string:model2:
-
-.. math::
-
-    \tag{205}
-    \frac{\partial^2 u}{\partial t^2} = c^2(x)\frac{\partial^2 u}{\partial x^2}
-        
-        {\thinspace .}
-        
-
-Because of the way :math:`\varrho` enters the equations, the variable wave
-velocity does *not* appear inside the derivatives as in many other
-versions of the wave equation. However, most strings of interest have
-constant :math:`\varrho`.
-
-The end points of a string are fixed so that the displacement
-:math:`u` is zero. The boundary conditions are therefore :math:`u=0`.
-
-Damping
-~~~~~~~
-
-Air resistance and non-elastic effects in the string will contribute
-to reduce the amplitudes of the waves so that the motion dies out
-after some time. This damping effect can be modeled by a term
-:math:`bu_t` on the left-hand side of the equation
-
-.. _Eq:wave:app:string:model1:damping:
-
-.. math::
-
-    \tag{206}
-    \varrho\frac{\partial^2 u}{\partial t^2}
-        + b\frac{\partial u}{\partial t}  =  T\frac{\partial^2 u}{\partial x^2}
-        
-        {\thinspace .}
-        
-
-The parameter :math:`b\geq 0` is small for most wave phenomena, but the
-damping effect may become significant in long time simulations.
-
-External forcing
-~~~~~~~~~~~~~~~~
-
-It is easy to include an external force acting on the string.
-Say we have a vertical force :math:`\tilde f_i\boldsymbol{j}` acting on mass :math:`m_i`.
-This force affects the vertical component of Newton's law
-and gives rise to an extra term :math:`\tilde f(x,t)` on the right-hand side of
-:ref:`(204) <Eq:wave:app:string:model1>`. In the model
-:ref:`(205) <Eq:wave:app:string:model2>` we would add a term
-:math:`f(x,t) = \tilde f(x,y)/\varrho(x)`.
-
-Modeling the tension via springs
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We assumed, in the derivation above, that the tension in the string, :math:`T`,
-was constant. It is easy to check this assumption by modeling the
-string segments between the masses as standard springs, where the
-force (tension :math:`T`) is proportional to the elongation of the spring segment.
-Let :math:`k` be the spring constant, and set :math:`T_i=k\Delta \ell` for the
-tension in the spring segment between :math:`x_{i-1}` and :math:`x_i`, where
-:math:`\Delta\ell` is the elongation of this segment from the tension-free state.
-A basic feature of a string is that it has high tension in the
-equilibrium position :math:`u=0`. Let the string segment have an elongation
-:math:`\Delta\ell_0` in the equilibrium position. After deformation of the
-string, the elongation is :math:`\Delta \ell = \Delta \ell_0 + \Delta s_i`:
-:math:`T_i = k(\Delta \ell_0 + \Delta s_i)\approx k(\Delta \ell_0 + \Delta x)`.
-This shows that :math:`T_i` is independent of :math:`i`. Moreover, the extra
-approximate elongation :math:`\Delta x` is very small compared to :math:`\Delta\ell_0`,
-so we may well set :math:`T_i = T = k\Delta\ell_0`. This means that
-the tension is completely dominated by the initial tension determined
-by the tuning of the string. The additional deformations of the
-spring during the vibrations do not introduce significant changes in the
-tension.
-
-.. _wave:app:membrane:
-
-Waves on a membrane
--------------------
-
-[**hpl 12**: Must write the memberane model. Easiest to use Navier.]
-
-.. _wave:app:elastic:rod:
-
-Elastic waves in a rod
-----------------------
-
-Consider an elastic rod subject to a hammer impact at the end.
-This experiment will give rise to an elastic deformation pulse that travels
-through the rod. A mathematical model for longitudinal waves along
-an elastic rod starts with the general equation for deformations
-and stresses in an elastic medium,
-
-.. _Eq:wave:app:elastic:rod:eqmotion:
-
-.. math::
-
-    \tag{207}
-    \varrho\boldsymbol{u}_{tt} = \nabla\cdot\boldsymbol{\sigma} + \varrho\boldsymbol{f},
-        
-        
-
-where :math:`\varrho` is the density, :math:`\boldsymbol{u}` the displacement field, :math:`\boldsymbol{\sigma}` the
-stress tensor, and :math:`\boldsymbol{f}` body forces. The latter has normally no impact
-on elastic waves.
-
-For stationary deformation of an elastic rod, one has that
-:math:`\sigma_{xx} = Eu_x`, with all other
-stress components being zero.
-The parameter :math:`E` is known as Young's modulus.
-Moreover, we set :math:`\boldsymbol{u} = u(x,t)\boldsymbol{i}` and neglect the radial contraction
-and expansion (where Poisson's ratio is the important parameter).
-Assuming that this simple stress and deformation field
-is a good approximation, :ref:`(207) <Eq:wave:app:elastic:rod:eqmotion>` simplifies
-to
-
-.. _Eq:wave:app:elastic:rod:eq:
-
-.. math::
-
-    \tag{208}
-    \varrho\frac{\partial^2 u}{\partial t^2} = \frac{\partial}{\partial x}
-        \left( E\frac{\partial u}{\partial x}\right)
-        
-        {\thinspace .}
-        
-
-The associated boundary conditions are :math:`u` or :math:`\sigma_{xx}=Eu_x` known,
-typically
-:math:`u=0` for a fixed end and :math:`\sigma_{xx}=0` for a free end.
-
-.. _wave:app:acoustic:seismic:
-
-The acoustic model for seismic waves
-------------------------------------
-
-Seismic waves are used to infer properties of subsurface
-geological structures. The physical model is a heterogeneous
-elastic medium where sound is propagated by small elastic
-vibrations. The general mathematical model for deformations
-in an elastic medium is based on Newton's second law,
-
-.. _Eq:wave:app:acoustic:seismic:eqmotion:
-
-.. math::
-
-    \tag{209}
-    \varrho\boldsymbol{u}_{tt} = \nabla\cdot\boldsymbol{\sigma} + \varrho\boldsymbol{f},
-        
-        
-
-and a constitutive law relating :math:`\boldsymbol{\sigma}` to :math:`\boldsymbol{u}`, often Hooke's
-generalized law,
-
-.. _Eq:wave:app:acoustic:seismic:Hooke:
-
-.. math::
-
-    \tag{210}
-    \boldsymbol{\sigma} = K\nabla\cdot\boldsymbol{u}\, \boldsymbol{I}  + G(\nabla\boldsymbol{u} + (\nabla\boldsymbol{u})^T - \frac{2}{3}\nabla\cdot\boldsymbol{u}\, \boldsymbol{I})
-        
-        {\thinspace .}
-        
-
-Here, :math:`\boldsymbol{u}` is the displacement field, :math:`\boldsymbol{\sigma}` is the stress tensor,
-:math:`\boldsymbol{I}` is the identity tensor,
-:math:`\varrho` is the medium's density, :math:`\boldsymbol{f}` are body forces (such as gravity),
-:math:`K` is the medium's bulk modulus and :math:`G` is the shear modulus.
-All these quantities may vary in space, while :math:`\boldsymbol{u}` and :math:`\boldsymbol{\sigma}` will
-also show significant variation in time during wave motion.
-
-The acoustic approximation to elastic waves arises from a basic
-assumption that the second term in Hooke's law, representing the
-deformations that give rise to shear stresses, can be neglected.
-This assumption can be interpreted as approximating the geological
-medium by a fluid.
-Neglecting also the body forces :math:`\boldsymbol{f}`,
-:ref:`(209) <Eq:wave:app:acoustic:seismic:eqmotion>` becomes
-
-.. _Eq:wave:app:acoustic:seismic:eqmotion2:
-
-.. math::
-
-    \tag{211}
-    \varrho\boldsymbol{u}_{tt} = \nabla (K\nabla\cdot\boldsymbol{u} )
-        
-        
-
-Introducing :math:`p` as a pressure via
-
-.. _Eq:wave:app:acoustic:seismic:eqmotion3:
-
-.. math::
-
-    \tag{212}
-    p=-K\nabla\cdot\boldsymbol{u},
-        
-        
-
-and dividing :ref:`(211) <Eq:wave:app:acoustic:seismic:eqmotion2>` by :math:`\varrho`,
-we get
-
-.. _Eq:_auto72:
-
-.. math::
-
-    \tag{213}
-    \boldsymbol{u}_{tt} = -\frac{1}{\varrho}\nabla p
-        {\thinspace .}
-        
-        
-
-Taking the divergence of this equation, using :math:`\nabla\cdot\boldsymbol{u} = -p/K`
-from :ref:`(212) <Eq:wave:app:acoustic:seismic:eqmotion3>`,
-gives the *acoustic approximation to elastic waves*:
-
-.. _Eq:wave:app:acoustic:seismic:accoustic1:
-
-.. math::
-
-    \tag{214}
-    p_{tt} = K\nabla\cdot\left(\frac{1}{\varrho}\nabla p\right)
-        {\thinspace .}
-        
-        
-
-This is a standard, linear wave equation with variable coefficients.
-It is common to add a source term :math:`s(x,y,z,t)`
-to model the generation of sound waves:
-
-.. _Eq:wave:app:acoustic:seismic:accoustic:
-
-.. math::
-
-    \tag{215}
-    p_{tt} = K\nabla\cdot\left(\frac{1}{\varrho}\nabla p\right) + s
-        {\thinspace .}
-        
-        
-
-A common additional approximation of :ref:`(215) <Eq:wave:app:acoustic:seismic:accoustic>`
-is based on using the chain rule on the right-hand side,
-
-.. math::
-        
-        K\nabla\cdot\left(\frac{1}{\varrho}\nabla p\right)
-        = \frac{K}{\varrho}\nabla^2 p + K\nabla\left(\frac{1}{\varrho}\right)\cdot
-        \nabla p \approx \frac{K}{\varrho}\nabla^2 p,
-        
-
-under the assumption that
-the relative spatial gradient :math:`\nabla\varrho^{-1}
-= -\varrho^{-2}\nabla\varrho` is small. This approximation results
-in the simplified equation
-
-.. _Eq:wave:app:acoustic:seismic:accoustic1:const:
-
-.. math::
-
-    \tag{216}
-    p_{tt} = \frac{K}{\varrho}\nabla^2 p + s
-        {\thinspace .}
-        
-        
-
-The acoustic approximations to seismic waves are used for sound
-waves in the ground, and the Earth's surface is then a boundary
-where :math:`p` equals the atmospheric pressure :math:`p_0` such that the
-boundary condition becomes :math:`p=p_0`.
-
-Anisotropy
-~~~~~~~~~~
-
-Quite often in geological materials, the effective wave velocity
-:math:`c=\sqrt{K/\varrho}` is different in different spatial directions
-because geological layers are compacted, and often twisted, in such a
-way that the properties in the horizontal and vertical direction
-differ. With :math:`z` as the vertical coordinate, we can introduce a
-vertical wave velocity :math:`c_z` and a horizontal wave velocity :math:`c_h`, and
-generalize :ref:`(216) <Eq:wave:app:acoustic:seismic:accoustic1:const>` to
-
-.. _Eq:wave:app:acoustic:seismic:accoustic1a:
-
-.. math::
-
-    \tag{217}
-    p_{tt} = c_z^2 p_{zz} + c_h^2 (p_{xx} + p_{yy}) + s
-        {\thinspace .}
-        
-        
-
-.. _wave:app:sound:
-
-Sound waves in liquids and gases
+Multi-dimensional wave equations
 --------------------------------
 
-Sound waves arise from pressure and density variations in fluids.
-The starting point of modeling sound waves is the basic
-equations for a compressible fluid where we omit viscous (frictional)
-forces, body forces (gravity, for instance), and temperature effects:
+The general wave equation in :math:`d` space dimensions, with constant
+wave velocity :math:`c`,
+can be written in the compact form
 
-.. _Eq:wave:app:sound:cont:
-
-.. math::
-
-    \tag{218}
-    \varrho_t + \nabla\cdot (\varrho \boldsymbol{u}) = 0,
-        
-        
-
-.. _Eq:wave:app:sound:Euler:
-
-.. math::
-
-    \tag{219}
-    \varrho \boldsymbol{u}_{t} + \varrho \boldsymbol{u}\cdot\nabla\boldsymbol{u} = -\nabla p,
-        
-        
-
-.. _Eq:wave:app:sound:prho:
-
-.. math::
-
-    \tag{220}
-    \varrho = \varrho (p)
-        {\thinspace .}
-        
-        
-
-These equations are often referred to as the Euler equations for the motion
-of a fluid. The parameters involved are the density :math:`\varrho`,
-the velocity :math:`\boldsymbol{u}`,
-and the pressure :math:`p`. Equation :ref:`(219) <Eq:wave:app:sound:Euler>` reflects
-mass balance, :ref:`(218) <Eq:wave:app:sound:cont>` is Newton's second law for
-a fluid, with frictional and body forces omitted, and
-:ref:`(220) <Eq:wave:app:sound:prho>` is a constitutive law relating
-density to pressure by thermodynamic considerations.
-A typical model
-for :ref:`(220) <Eq:wave:app:sound:prho>` is the so-called `isentropic relation <http://en.wikipedia.org/wiki/Isentropic_process>`__, valid for
-adiabatic processes where there is no heat transfer:
-
-.. _Eq:wave:app:sound:prho:formula:
-
-.. math::
-
-    \tag{221}
-    \varrho = \varrho_0\left(\frac{p}{p_0}\right)^{1/\gamma}
-        {\thinspace .}
-        
-        
-
-Here, :math:`p_0` and :math:`\varrho_0` are references values for :math:`p` and :math:`\varrho` when the fluid is at rest, and
-:math:`\gamma` is the ratio of specific heat at constant pressure and
-constant volume (:math:`\gamma = 5/3` for air).
-
-The key approximation in a mathematical model for sound waves is to
-assume that these waves are small perturbations to the density, pressure,
-and velocity. We therefore write
-
-.. math::
-        
-        p &= p_0 + \hat p,\\ 
-        \varrho &= \varrho_0 + \hat\varrho,\\ 
-        \boldsymbol{u} &= \hat\boldsymbol{u},
-        
-
-where we have decomposed the fields in a constant
-equilibrium value, corresponding
-to :math:`\boldsymbol{u}=0`, and a small perturbation marked with a hat symbol.
-By inserting these decompositions in :ref:`(218) <Eq:wave:app:sound:cont>` and
-:ref:`(219) <Eq:wave:app:sound:Euler>`, neglecting all product terms of small
-perturbations and/or their derivatives, and dropping the hat symbols,
-one gets the following linearized PDE system for the small perturbations in
-density, pressure, and velocity:
-
-.. _Eq:_auto73:
+.. _Eq:wave:2D3D:model1:
 
 .. math::
 
     \tag{222}
-    \varrho_t + \varrho_0\nabla\cdot\boldsymbol{u} = 0,
+    \frac{\partial^2 u}{\partial t^2} = c^2\nabla^2 u\hbox{ for }\boldsymbol{x}\in\Omega\subset\mathbb{R}^d,\ t\in (0,T] ,
         
         
 
-.. _Eq:_auto74:
+where
+
+.. math::
+         \nabla^2 u = \frac{\partial^2 u}{\partial x^2} +
+        \frac{\partial^2 u}{\partial y^2} ,
+
+in a 2D problem (:math:`d=2`) and
+
+.. math::
+         \nabla^2 u = \frac{\partial^2 u}{\partial x^2} +
+        \frac{\partial^2 u}{\partial y^2} + \frac{\partial^2 u}{\partial z^2},
+        
+
+in three space dimensions (:math:`d=3`).
+
+Many applications involve variable coefficients, and the general
+wave equation in :math:`d` dimensions is in this case written as
+
+.. _Eq:wave:2D3D:model2:
 
 .. math::
 
     \tag{223}
-    \varrho_0\boldsymbol{u}_t = -\nabla p
-        {\thinspace .}
+    \varrho\frac{\partial^2 u}{\partial t^2} = \nabla\cdot (q\nabla u) + f\hbox{ for }\boldsymbol{x}\in\Omega\subset\mathbb{R}^d,\ t\in (0,T],
         
         
 
-Now we can eliminate :math:`\varrho_t` by differentiating the relation :math:`\varrho(p)`,
-
-.. math::
-         \varrho_t = \varrho_0 \frac{1}{\gamma}\left(\frac{p}{p_0}\right)^{1/\gamma-1}
-        \frac{1}{p_0}p_t = \frac{\varrho_0}{\gamma p_0}
-        \left(\frac{p}{p_0}\right)^{1/\gamma-1}p_t
-        {\thinspace .}
-        
-
-The product term :math:`p^{1/\gamma -1}p_t` can be linearized as
-:math:`p_0^{1/\gamma -1}p_t`, resulting in
-
-.. math::
-         \varrho_t \approx \frac{\varrho_0}{\gamma p_0} p_t
-        {\thinspace .}  
-
-We then get
-
-.. _Eq:wave:app:sound:cont:pert:
-
-.. math::
-
-    \tag{224}
-    p_t + \gamma p_0\nabla\cdot\boldsymbol{u} = 0,
-        
-        
-
-.. _Eq:wave:app:sound:Euler:pert:
-
-.. math::
-
-    \tag{225}
-    \boldsymbol{u}_t = -\frac{1}{\varrho_0}\nabla p,
-        
-        {\thinspace .}
-        
-
-Taking the divergence of :ref:`(225) <Eq:wave:app:sound:Euler:pert>` and
-differentiating :ref:`(224) <Eq:wave:app:sound:cont:pert>` with respect to time
-gives the possibility to easily eliminate :math:`\nabla\cdot\boldsymbol{u}_t` and
-arrive at a standard, linear wave equation for :math:`p`:
-
-.. _Eq:_auto75:
-
-.. math::
-
-    \tag{226}
-    p_{tt} = c^2\nabla^2 p,
-        
-        
-
-where :math:`c = \sqrt{\gamma p_0/\varrho_0}` is the speed of sound in the fluid.
-
-.. Challenge: have p_0(z) and varrho_0(z) and gravity - perhaps exercise?
-
-.. _wave:app:spherical:
-
-Spherical waves
----------------
-
-Spherically symmetric three-dimensional
-waves propagate in the radial direction :math:`r` only so that
-:math:`u = u(r,t)`. The fully three-dimensional wave equation
-
-.. math::
-         \frac{\partial^2u}{\partial t^2}=\nabla\cdot (c^2\nabla u) + f 
-
-then reduces to the spherically symmetric wave equation
-
-.. _Eq:_auto76:
-
-.. math::
-
-    \tag{227}
-    \frac{\partial^2u}{\partial t^2}=\frac{1}{r^2}\frac{\partial}{\partial r}
-        \left(c^2(r)r^2\frac{\partial u}{\partial t}\right)
-        + f(r,t),\quad r\in (0,R),\ t>0
-        {\thinspace .}
-        
-        
-
-One can easily show
-that the function :math:`v(r,t) = ru(r,t)` fulfills a standard wave equation
-in Cartesian coordinates if :math:`c` is constant. To this end, insert :math:`u=v/r` in
-
-.. math::
-         \frac{1}{r^2}\frac{\partial}{\partial r}
-        \left(c^2(r)r^2\frac{\partial u}{\partial t}\right) 
-
-to obtain
-
-.. math::
-         r\left(\frac{d c^2}{dr}\frac{\partial v}{\partial r} +
-        c^2\frac{\partial^2 v}{\partial r^2}\right) - \frac{d c^2}{dr}v
-        {\thinspace .}
-        
-
-The two terms in the parenthesis can be combined to
-
-.. math::
-         r\frac{\partial}{\partial r}\left( c^2\frac{\partial v}{\partial r}\right),
-        
-
-which is recognized as the variable-coefficient Laplace operator in
-one Cartesian coordinate. The spherically symmetric wave equation in
-terms of :math:`v(r,t)` now becomes
-
-.. _Eq:_auto77:
-
-.. math::
-
-    \tag{228}
-    \frac{\partial^2v}{\partial t^2}=
-        \frac{\partial}{\partial r}
-        \left(c^2(r)\frac{\partial v}{\partial r}\right)
-        -\frac{1}{r}\frac{d c^2}{dr}v + rf(r,t),\quad r\in (0,R),\ t>0
-        {\thinspace .}
-        
-        
-
-In the case of constant wave velocity :math:`c`, this equation reduces to
-the wave equation in a single Cartesian coordinate called :math:`r`:
-
-.. _Eq:wave:app:rsymm:Cart:
-
-.. math::
-
-    \tag{229}
-    \frac{\partial^2v}{\partial t^2}=
-        c^2 \frac{\partial^2 v}{\partial r^2}
-        + rf(r,t),\quad r\in (0,R),\ t>0
-        {\thinspace .}
-        
-        
-
-That is, any program for solving the one-dimensional wave equation
-in a Cartesian coordinate system can be used to
-solve :ref:`(229) <Eq:wave:app:rsymm:Cart>`, provided the source term is
-multiplied by the coordinate, and that we divide the Cartesian mesh
-solution by :math:`r` to get the spherically symmetric solution.
-Moreover, if :math:`r=0` is included in the
-domain, spherical symmetry demands that :math:`\partial u/\partial r=0` at
-:math:`r=0`, which means that
-
-.. math::
-         \frac{\partial u}{\partial r} = \frac{1}{r^2}\left(
-        r\frac{\partial v}{\partial r} - v\right) = 0,\quad r=0,
-        
-
-implying :math:`v(0,t)=0` as a necessary condition. For practical applications,
-we exclude :math:`r=0` from the domain and assume that some boundary
-condition is assigned at :math:`r=\epsilon`, for some :math:`\epsilon >0`.
-
-.. _wave:app:sw:2D:
-
-The linear shallow water equations
-----------------------------------
-
-The next example considers water waves whose wavelengths are much
-lager than the depth and whose wave amplitudes are small. This class
-of waves may be generated by catastrophic geophysical events, such as
-earthquakes at the sea bottom, landslides moving into water, or
-underwater slides (or a combination, as earthquakes frequently release
-avalanches of masses). For example, a subsea earthquake will normally
-have an extension of many kilometers but lift the water only a few
-meters. The wave length will have a size dictated by the earthquake
-area, which is much lager than the water depth, and compared to this
-wave length, an amplitude of a few meters is very small.
-The water is essentially a thin film, and mathematically we can average
-the problem in the vertical direction and approximate the 3D
-wave phenomenon by 2D PDEs. Instead of a moving water domain in three
-space dimensions, we get a horizontal 2D domain with an unknown function
-for the surface elevation and the water depth as a variable coefficient
-in the PDEs.
-
-Let :math:`\eta(x,y,t)` be the elevation of
-the water surface, :math:`H(x,y)` the water depth corresponding to a flat
-surface (:math:`\eta =0`), :math:`u(x,y,t)` and :math:`v(x,y,t)` the
-depth-averaged horizontal velocities of the water. Mass and momentum
-balance of the water volume give rise to the PDEs involving these
-quantities:
-
-.. _Eq:wave:app:sw:2D:eeq:
-
-.. math::
-
-    \tag{230}
-    \eta_t = - (Hu)_x - (Hv)_x
-        
-        
-
-.. _Eq:wave:app:sw:2D:ueq:
-
-.. math::
-
-    \tag{231}
-    u_t = -g\eta_x,
-        
-        
-
-.. _Eq:wave:app:sw:2D:veq:
-
-.. math::
-
-    \tag{232}
-    v_t = -g\eta_y,
-        
-        
-
-where :math:`g` is the acceleration of gravity. Equation :ref:`(230) <Eq:wave:app:sw:2D:eeq>`
-corresponds to mass balance while the other two are derived from momentum
-balance (Newton's second law).
-
-The initial conditions associated with
-:ref:`(230) <Eq:wave:app:sw:2D:eeq>`-:ref:`(232) <Eq:wave:app:sw:2D:veq>` are :math:`\eta`, :math:`u`,
-and :math:`v` prescribed at :math:`t=0`. A common condition is to have some water
-elevation :math:`\eta =I(x,y)` and assume that the surface is at rest:
-:math:`u=v=0`. A subsea earthquake usually means a sufficiently rapid motion
-of the bottom and the water volume to say that the bottom
-deformation is mirrored at the water surface as an initial lift :math:`I(x,y)`
-and that :math:`u=v=0`.
-
-Boundary conditions may be :math:`\eta` prescribed for incoming, known
-waves, or zero normal velocity at reflecting boundaries (steep
-mountains, for instance): :math:`un_x + vn_y =0`, where :math:`(n_x,n_y)` is the
-outward unit normal to the boundary.  More sophisticated boundary
-conditions are needed when waves run up at the shore, and at open
-boundaries where we want the waves to leave the computational domain
-undisturbed.
-
-Equations :ref:`(230) <Eq:wave:app:sw:2D:eeq>`, :ref:`(231) <Eq:wave:app:sw:2D:ueq>`, and
-:ref:`(232) <Eq:wave:app:sw:2D:veq>` can be transformed to a standard, linear
-wave equation. First, multiply :ref:`(231) <Eq:wave:app:sw:2D:ueq>` and
-:ref:`(232) <Eq:wave:app:sw:2D:veq>` by :math:`H`, differentiate :ref:`(231) <Eq:wave:app:sw:2D:ueq>`)
-with respect to :math:`x` and :ref:`(232) <Eq:wave:app:sw:2D:veq>` with respect to :math:`y`.
-Second, differentiate :ref:`(230) <Eq:wave:app:sw:2D:eeq>` with respect to :math:`t`
-and use that :math:`(Hu)_{xt}=(Hu_t)_x` and :math:`(Hv)_{yt}=(Hv_t)_y` when :math:`H`
-is independent of :math:`t`. Third, eliminate :math:`(Hu_t)_x` and :math:`(Hv_t)_y`
-with the aid of the other two differentiated equations. These manipulations
-results in a standard, linear wave equation for :math:`\eta`:
-
-.. _Eq:wave:app:sw:2D:eta:2ndoeq:
-
-.. math::
-
-    \tag{233}
-    \eta_{tt} = (gH\eta_x)_x + (gH\eta_y)_y = \nabla\cdot (gH\nabla\eta)
-        
-        {\thinspace .}
-        
-
-In the case we have an initial non-flat water surface at rest, the
-initial conditions become :math:`\eta =I(x,y)` and :math:`\eta_t=0`.
-The latter follows from :ref:`(230) <Eq:wave:app:sw:2D:eeq>` if :math:`u=v=0`, or
-simply from the fact that the vertical velocity of the surface
-is :math:`\eta_t`, which is zero for a surface at rest.
-
-The system :ref:`(230) <Eq:wave:app:sw:2D:eeq>`-:ref:`(232) <Eq:wave:app:sw:2D:veq>`
-can be extended to handle a time-varying bottom topography, which is
-relevant for modeling long waves generated by underwater slides.
-In such cases the water depth function :math:`H` is also a function of :math:`t`,
-due to the moving slide,
-and one must add a time-derivative term :math:`H_t` to the left-hand side
-of :ref:`(230) <Eq:wave:app:sw:2D:eeq>`. A moving bottom is best described by
-introducing :math:`z=H_0` as the still-water level, :math:`z=B(x,y,t)` as
-the time- and space-varying bottom topography, so that :math:`H=H_0-B(x,y,t)`.
-In the elimination of :math:`u` and :math:`v` one may assume that the dependence of
-:math:`H` on :math:`t` can be neglected in the terms :math:`(Hu)_{xt}` and :math:`(Hv)_{yt}`.
-We then end up with a source term in :ref:`(233) <Eq:wave:app:sw:2D:eta:2ndoeq>`,
-because of the moving (accelerating) bottom:
-
-.. _Eq:wave:app:sw:2D:eta:2ndoeq:Ht:
-
-.. math::
-
-    \tag{234}
-    \eta_{tt} = \nabla\cdot(gH\nabla\eta) + B_{tt}
-        
-        {\thinspace .}
-        
-
-The reduction of :ref:`(234) <Eq:wave:app:sw:2D:eta:2ndoeq:Ht>` to 1D, for long waves
-in a straight channel, or for approximately plane waves in the ocean, is
-trivial by assuming no change in :math:`y` direction (:math:`\partial/\partial y=0`):
-
-.. _Eq:wave:app:sw:1D:eta:2ndoeq:Ht:
-
-.. math::
-
-    \tag{235}
-    \eta_{tt} = (gH\eta_x)_x + B_{tt}
-        
-        {\thinspace .}
-        
-
-Wind drag on the surface
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-Surface waves are influenced by the drag of the wind, and if the
-wind velocity some meters above the surface is :math:`(U,V)`,
-the wind drag gives contributions
-:math:`C_V\sqrt{U^2+V^2}U` and :math:`C_V\sqrt{U^2+V^2}V` to
-:ref:`(231) <Eq:wave:app:sw:2D:ueq>` and :ref:`(232) <Eq:wave:app:sw:2D:veq>`, respectively,
-on the right-hand sides.
-
-Bottom drag
-~~~~~~~~~~~
-
-The waves will experience a drag from the bottom, often roughly modeled
-by a term similar to the wind drag:
-:math:`C_B\sqrt{u^2+v^2}u` on the right-hand side of :ref:`(231) <Eq:wave:app:sw:2D:ueq>` and
-:math:`C_B\sqrt{u^2+v^2}v` on the right-hand side of :ref:`(232) <Eq:wave:app:sw:2D:veq>`.
-Note that in this case the PDEs :ref:`(231) <Eq:wave:app:sw:2D:ueq>` and
-:ref:`(232) <Eq:wave:app:sw:2D:veq>` become nonlinear and the elimination of :math:`u` and :math:`v`
-to arrive at a 2nd-order wave equation for :math:`\eta` is not possible anymore.
-
-Effect of the Earth's rotation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Long geophysical waves will often be affected by the rotation of the
-Earth because of the Coriolis force. This force gives rise to a
-term :math:`fv` on the right-hand side of :ref:`(231) <Eq:wave:app:sw:2D:ueq>` and
-:math:`-fu` on the right-hand side of :ref:`(232) <Eq:wave:app:sw:2D:veq>`.
-Also in this case one cannot eliminate :math:`u` and :math:`v` to work with a single
-equation for :math:`\eta`. The Coriolis parameter is :math:`f=2\Omega\sin\phi`,
-where :math:`\Omega` is the angular velocity of the earth and :math:`\phi` is
-the latitude.
-
-.. _wave:app:blood:
-
-Waves in blood vessels
-----------------------
-
-The flow of blood in our bodies is basically fluid flow in
-a network of pipes. Unlike rigid pipes, the walls in the
-blood vessels are elastic and will increase their diameter when the
-pressure rises. The elastic forces will then push the wall back
-and accelerate the fluid. This interaction between the flow of blood
-and the deformation of the vessel wall results in waves traveling along
-our blood vessels.
-
-A model for one-dimensional waves along blood vessels can be derived
-from averaging the fluid flow over the cross section of the blood
-vessels. Let :math:`x` be a coordinate along the blood vessel and assume
-that all cross sections are circular, though with different radii :math:`R(x,t)`.
-The main quantities to compute is the cross section
-area :math:`A(x,t)`, the averaged pressure :math:`P(x,t)`, and the total volume
-flux :math:`Q(x,t)`.
-The area of this cross section
-is
-
-.. _Eq:_auto78:
-
-.. math::
-
-    \tag{236}
-    A(x,t) = 2\pi\int_{0}^{R(x,t)} rdr,
-        
-        
-
-Let :math:`v_x(x,t)` be the velocity of blood averaged over
-the cross section at point :math:`x`. The volume flux,
-being the total volume of blood passing a cross section per time unit,
-becomes
-
-.. _Eq:_auto79:
-
-.. math::
-
-    \tag{237}
-    Q(x,t) = A(x,t)v_x(x,t)
-        \thinspace
-        
-        
-
-Mass balance and Newton's second law lead to the PDEs
-
-.. _Eq:wave:app:blood:cont:
-
-.. math::
-
-    \tag{238}
-    \frac{\partial A}{\partial t} + \frac{\partial Q}{\partial x} = 0,
-        
-        
-
-.. _Eq:wave:app:blood:mom:
-
-.. math::
-
-    \tag{239}
-    \frac{\partial Q}{\partial t} +
-        \frac{\gamma+2}{\gamma + 1}
-        \frac{\partial}{\partial x}\left(\frac{Q^2}{A}\right)
-        + \frac{A}{\varrho}\frac{\partial P}{\partial x}
-        = -2\pi (\gamma + 2)\frac{\mu}{\varrho}\frac{Q}{A},
-        
-        
-
-where :math:`\gamma` is a parameter related to the velocity profile,
-:math:`\varrho` is the density of blood, and :math:`\mu` is the dynamic viscosity
-of blood.
-
-We have three unknowns :math:`A`, :math:`Q`, and :math:`P`, and two equations
-:ref:`(238) <Eq:wave:app:blood:cont>` and :ref:`(239) <Eq:wave:app:blood:mom>`.
-A third equation is needed to relate the flow to
-the deformations of the wall. A common form for this equation is
-
-.. _Eq:wave:app:blood:const:
-
-.. math::
-
-    \tag{240}
-    \frac{\partial P}{\partial t} + \frac{1}{C}
-        \frac{\partial Q}{\partial x} =0,
-        
-        
-
-where :math:`C` is the compliance of the wall, given by the constitutive
-relation
-
-.. _Eq:_auto80:
-
-.. math::
-
-    \tag{241}
-    C = \frac{\partial A}{\partial P} + \frac{\partial A}{\partial t},
-        
-        
-
-which require a relationship between :math:`A` and :math:`P`. One common model
-is to view the vessel wall, locally, as a thin elastic tube subject to an
-internal pressure. This gives the relation
-
-.. math::
-         P=P_0 + \frac{\pi h E}{(1-\nu^2)A_0}(\sqrt{A} - \sqrt{A_0}),
-        
-
-where :math:`P_0` and :math:`A_0` are corresponding reference values when the
-wall is not deformed, :math:`h` is the
-thickness of the wall, and :math:`E` and :math:`\nu` are Young's modulus and
-Poisson's ratio of the elastic material in the wall.
-The derivative becomes
-
-.. _Eq:_auto81:
-
-.. math::
-
-    \tag{242}
-    C = \frac{\partial A}{\partial P} =
-        \frac{2(1-\nu^2)A_0}{\pi h E}\sqrt{A_0} +
-        2\left(\frac{(1-\nu^2)A_0}{\pi h E}\right)^2(P-P_0)
-        {\thinspace .}
-        
-        
-
-Another (nonlinear) deformation model of the wall, which has a better
-fit with experiments, is
-
-.. math::
-         P = P_0\exp{(\beta (A/A_0 - 1))},
-
-where :math:`\beta` is some parameter to be estimated. This law leads to
-
-.. _Eq:_auto82:
-
-.. math::
-
-    \tag{243}
-    C = \frac{\partial A}{\partial P} = \frac{A_0}{\beta P}
-        {\thinspace .}
-        
-        
-
-**Reduction to the standard wave equation.**
-It is not uncommon to neglect the viscous term on the right-hand side of
-:ref:`(239) <Eq:wave:app:blood:mom>` and also the quadratic term
-with :math:`Q^2` on the left-hand side. The reduced equations
-:ref:`(239) <Eq:wave:app:blood:mom>`
-and :ref:`(240) <Eq:wave:app:blood:const>` form a first-order
-linear wave equation system:
-
-.. _Eq:_auto83:
-
-.. math::
-
-    \tag{244}
-    C\frac{\partial P}{\partial t} = - \frac{\partial Q}{\partial x},
-        
-        
-
-.. _Eq:_auto84:
-
-.. math::
-
-    \tag{245}
-    \frac{\partial Q}{\partial t}
-        = - \frac{A}{\varrho}\frac{\partial P}{\partial x}
-        {\thinspace .}
-        
-        
-
-These can be combined into standard 1D wave equation PDE by differentiating
-the first equation with respect :math:`t` and the second with respect to :math:`x`,
-
-.. math::
-         \frac{\partial}{\partial t}\left( C\frac{\partial P}{\partial t}
-        \right) = \frac{\partial}{\partial x}\left(
-        \frac{A}{\varrho}\frac{\partial P}{\partial x}\right),
-
-which can be approximated by
-
-.. _Eq:_auto85:
-
-.. math::
-
-    \tag{246}
-    \frac{\partial^2 Q}{\partial t^2} = c^2\frac{\partial^2 Q}{\partial x^2},\quad
-        c = \sqrt{\frac{A}{\varrho C}},
-        
-        
-
-where the :math:`A` and :math:`C` in the expression for :math:`c` are taken as constant
-reference values.
-
-.. _wave:app:light:
-
-Electromagnetic waves
----------------------
-
-Light and radio waves are governed by standard wave equations arising
-from Maxwell's general equations. When there are no charges and
-no currents, as in a vacuum, Maxwell's equations take the form
-
-.. math::
-        
-        \nabla\cdot\pmb{E} &= 0,\\ 
-        \nabla\cdot\pmb{B} &= 0,\\ 
-        \nabla\times\pmb{E} &= -\frac{\partial\pmb{B}}{\partial t},\\ 
-        \nabla\times\pmb{B} &= \mu_0\epsilon_0\frac{\partial\pmb{E}}{\partial t},
-        
-
-where :math:`\epsilon_0=8.854187817620\cdot 10^{-12}` (F/m)
-is the permittivity of free space, also known as the
-electric constant, and :math:`\mu_0=1.2566370614\cdot 10^{-6}` (H/m)
-is the permeability of free space,
-also known as the magnetic constant.
-Taking the curl of the two last equations and using the
-mathematical identity
-
-.. math::
-         \nabla\times (\nabla\times \pmb{E}) = \nabla(\nabla \cdot \pmb{E})
-        - \nabla^2\pmb{E} = - \nabla^2\pmb{E}\hbox{ when }\nabla\cdot\pmb{E}=0,
-        
-
-gives the wave equation governing the electric and magnetic field:
-
-.. _Eq:_auto86:
-
-.. math::
-
-    \tag{247}
-    \frac{\partial^2\pmb{E}}{\partial t^2} =
-        c^2\nabla^2\pmb{E},
-        
-        
+which in, e.g.,  2D becomes
 
 .. _Eq:_auto87:
 
 .. math::
 
-    \tag{248}
-    \frac{\partial^2\pmb{B}}{\partial t^2} =
-        c^2\nabla^2\pmb{B},
+    \tag{224}
+    \varrho(x,y)
+        \frac{\partial^2 u}{\partial t^2} =
+        \frac{\partial}{\partial x}\left( q(x,y)
+        \frac{\partial u}{\partial x}\right)
+        +
+        \frac{\partial}{\partial y}\left( q(x,y)
+        \frac{\partial u}{\partial y}\right)
+        + f(x,y,t)
+        {\thinspace .}
         
         
 
-with :math:`c=1/\sqrt{\mu_0\epsilon_0}` as the velocity of light.
-Each component of :math:`\pmb{E}` and :math:`\pmb{B}` fulfills a wave equation
-and can hence be solved independently.
+To save some writing and space we may use the index notation, where
+subscript :math:`t`, :math:`x`, or :math:`y` means differentiation with respect
+to that coordinate. For example,
+
+.. math::
+        
+        \frac{\partial^2 u}{\partial t^2} &= u_{tt},\\ 
+        \frac{\partial}{\partial y}\left( q(x,y)
+        \frac{\partial u}{\partial y}\right) &= (q u_y)_y
+        {\thinspace .}
+        
+
+These comments extend straightforwardly to 3D, which means that
+the 3D versions of the
+two wave PDEs, with and without variable coefficients,
+can be stated as
+
+.. _Eq:wave:2D3D:model1:v2:
+
+.. math::
+
+    \tag{225}
+    u_{tt} = c^2(u_{xx} + u_{yy} + u_{zz}) + f,
+        
+        
+
+.. _Eq:wave:2D3D:model2:v2:
+
+.. math::
+
+    \tag{226}
+    \varrho u_{tt} = (q u_x)_x + (q u_z)_z + (q u_z)_z + f{\thinspace .}
+        
+        
+
+At *each point* of the boundary :math:`\partial\Omega` (of :math:`\Omega`) we need
+*one* boundary condition involving the unknown :math:`u`.
+The boundary conditions are of three principal types:
+
+ 1. :math:`u` is prescribed (:math:`u=0` or a known time variation of :math:`u` at
+    the boundary points, e.g.,
+    modeling an incoming wave),
+
+ 2. :math:`\partial u/\partial n = \boldsymbol{n}\cdot\nabla u` is prescribed
+    (zero for reflecting boundaries),
+
+ 3. an open boundary condition (also called radiation condition)
+    is specified to let waves travel undisturbed out of the domain,
+    see :ref:`wave:app:exer:radiationBC` for details.
+
+All the listed wave equations with *second-order* derivatives in
+time need *two* initial conditions:
+
+ 1. :math:`u=I`,
+
+ 2. :math:`u_t = V`.
+
+.. _wave:2D3D:mesh:
+
+Mesh
+----
+
+We introduce a mesh in time and in space. The mesh in time consists
+of time points
+
+.. math::
+         t_0=0 < t_1 < \cdots < t_{N_t},
+
+often with a constant
+spacing :math:`\Delta t= t_{n+1}-t_{n}`, :math:`n\in{{\mathcal{I^-}_t}}`.
+
+Finite difference methods are easy to implement on simple
+rectangle- or box-shaped
+domains. More complicated shapes of the domain
+require substantially more advanced techniques and
+implementational efforts. On a rectangle- or box-shaped domain,
+mesh points are introduced separately in the various space directions:
+
+.. math::
+        
+        &x_0 < x_1 < \cdots < x_{N_x}  \hbox{ in the }x \hbox{ direction},\\ 
+        &y_0 < y_1 < \cdots < y_{N_y}  \hbox{ in the }y \hbox{ direction},\\ 
+        &z_0 < z_1 < \cdots < z_{N_z}  \hbox{ in the }z \hbox{ direction}{\thinspace .}
+        
+
+We can write a general mesh point as :math:`(x_i,y_j,z_k,t_n)`, with
+:math:`i\in{\mathcal{I}_x}`, :math:`j\in{\mathcal{I}_y}`, :math:`k\in{\mathcal{I}_z}`, and :math:`n\in{\mathcal{I}_t}`.
+
+It is a very common choice to use constant mesh spacings:
+:math:`\Delta x = x_{i+1}-x_{i}`, :math:`i\in{{\mathcal{I^-}_x}}`,
+:math:`\Delta y = y_{j+1}-y_{j}`, :math:`j\in{{\mathcal{I^-}_y}}`, and
+:math:`\Delta z = z_{k+1}-z_{k}`, :math:`k\in{{\mathcal{I^-}_z}}`.
+With equal mesh spacings one often introduces
+:math:`h = \Delta x = \Delta y =\Delta z`.
+
+The unknown :math:`u` at mesh point :math:`(x_i,y_j,z_k,t_n)` is denoted by
+:math:`u^{n}_{i,j,k}`. In 2D problems we just skip the :math:`z` coordinate
+(by assuming no variation in that direction: :math:`\partial/\partial z=0`)
+and write :math:`u^n_{i,j}`.
+
+.. _wave:2D3D:discretization:
+
+Discretization          (1)
+---------------------------
+
+Two- and three-dimensional wave equations are easily discretized by
+assembling building blocks for discretization of
+1D wave equations, because the multi-dimensional versions just contain
+terms of the same type as those in 1D.
+
+Discretizing the PDEs
+~~~~~~~~~~~~~~~~~~~~~
+
+Equation :ref:`(225) <Eq:wave:2D3D:model1:v2>` can be discretized as
+
+.. _Eq:_auto88:
+
+.. math::
+
+    \tag{227}
+    [D_tD_t u = c^2(D_xD_x u + D_yD_yu + D_zD_z u) + f]^n_{i,j,k}
+        {\thinspace .}
+        
+        
+
+A 2D version might be instructive to write out in detail:
+
+.. math::
+        
+        [D_tD_t u = c^2(D_xD_x u + D_yD_yu) + f]^n_{i,j,k},
+        
+
+which becomes
+
+.. math::
+        
+        \frac{u^{n+1}_{i,j} - 2u^{n}_{i,j} + u^{n-1}_{i,j}}{\Delta t^2}
+        = c^2
+        \frac{u^{n}_{i+1,j} - 2u^{n}_{i,j} + u^{n}_{i-1,j}}{\Delta x^2}
+        + c^2
+        \frac{u^{n}_{i,j+1} - 2u^{n}_{i,j} + u^{n}_{i,j-1}}{\Delta y^2}
+        + f^n_{i,j},
+        
+
+Assuming, as usual, that all values at time levels :math:`n` and :math:`n-1`
+are known, we can solve for the only unknown :math:`u^{n+1}_{i,j}`. The
+result can be compactly written as
+
+.. _Eq:wave:2D3D:models:unp1:
+
+.. math::
+
+    \tag{228}
+    u^{n+1}_{i,j} = 2u^n_{i,j} + u^{n-1}_{i,j} + c^2\Delta t^2[D_xD_x u + D_yD_y u]^n_{i,j}{\thinspace .}
+        
+        
+
+As in the 1D case, we need to develop a special formula for :math:`u^1_{i,j}`
+where we combine the general scheme for :math:`u^{n+1}_{i,j}`, when :math:`n=0`,
+with the discretization of the initial condition:
+
+.. math::
+         [D_{2t}u = V]^0_{i,j}\quad\Rightarrow\quad u^{-1}_{i,j} = u^1_{i,j} - 2\Delta t V_{i,j}
+        {\thinspace .}
+        
+
+The result becomes, in compact form,
+
+.. _Eq:wave:2D3D:models:u1:
+
+.. math::
+
+    \tag{229}
+    u^{1}_{i,j} = u^0_{i,j} -2\Delta V_{i,j} + {\frac{1}{2}}
+        c^2\Delta t^2[D_xD_x u + D_yD_y u]^0_{i,j}{\thinspace .}
+        
+        
+
+The PDE :ref:`(226) <Eq:wave:2D3D:model2:v2>`
+with variable coefficients is discretized term by term using
+the corresponding elements from the 1D case:
+
+.. _Eq:_auto89:
+
+.. math::
+
+    \tag{230}
+    [\varrho D_tD_t u = (D_x\overline{q}^x D_x u +
+        D_y\overline{q}^y D_yu + D_z\overline{q}^z D_z u) + f]^n_{i,j,k}
+        {\thinspace .}
+        
+        
+
+When written out and solved for the unknown :math:`u^{n+1}_{i,j,k}`, one gets the
+scheme
+
+.. math::
+        
+        u^{n+1}_{i,j,k} &= - u^{n-1}_{i,j,k}  + 2u^{n}_{i,j,k} + \\ 
+        &\quad \frac{1}{\varrho_{i,j,k}}\frac{1}{\Delta x^2} ( \frac{1}{2}(q_{i,j,k} + q_{i+1,j,k})(u^{n}_{i+1,j,k} - u^{n}_{i,j,k}) - \\ 
+        &\qquad\qquad \frac{1}{2}(q_{i-1,j,k} + q_{i,j,k})(u^{n}_{i,j,k} - u^{n}_{i-1,j,k})) + \\ 
+        &\quad \frac{1}{\varrho_{i,j,k}}\frac{1}{\Delta x^2} ( \frac{1}{2}(q_{i,j,k} + q_{i,j+1,k})(u^{n}_{i,j+1,k} - u^{n}_{i,j,k}) - \\ 
+        &\qquad\qquad\frac{1}{2}(q_{i,j-1,k} + q_{i,j,k})(u^{n}_{i,j,k} - u^{n}_{i,j-1,k})) + \\ 
+        &\quad \frac{1}{\varrho_{i,j,k}}\frac{1}{\Delta x^2} ( \frac{1}{2}(q_{i,j,k} + q_{i,j,k+1})(u^{n}_{i,j,k+1} - u^{n}_{i,j,k}) -\\ 
+        &\qquad\qquad \frac{1}{2}(q_{i,j,k-1} + q_{i,j,k})(u^{n}_{i,j,k} - u^{n}_{i,j,k-1})) + \\ 
+        &\quad \Delta t^2 f^n_{i,j,k}
+        {\thinspace .}
+        
+
+Also here we need to develop a special formula for :math:`u^1_{i,j,k}`
+by combining the scheme for :math:`n=0` with the discrete initial condition,
+which is just a matter of inserting
+:math:`u^{-1}_{i,j,k}=u^1_{i,j,k} - 2\Delta tV_{i,j,k}` in the scheme
+and solving for :math:`u^1_{i,j,k}`.
+
+Handling boundary conditions where :math:`u` is known
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The schemes listed above are valid for the internal points in the mesh.
+After updating these, we need to visit all the mesh points at the
+boundaries and set the prescribed :math:`u` value.
+
+Discretizing the Neumann condition
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The condition :math:`\partial u/\partial n = 0` was implemented in 1D by
+discretizing it with a :math:`D_{2x}u` centered difference, followed by
+eliminating the fictitious :math:`u` point outside the mesh by using the
+general scheme at the boundary point. Alternatively, one can introduce
+ghost cells and update a ghost value for use in the Neumann
+condition. Exactly the same ideas are reused in multiple dimensions.
+
+Consider the condition  :math:`\partial u/\partial n = 0`
+at a boundary :math:`y=0` of a rectangular domain :math:`[0, L_x]\times [0,L_y]` in 2D.
+The normal direction is then in :math:`-y` direction,
+so
+
+.. math::
+         \frac{\partial u}{\partial n} = -\frac{\partial u}{\partial y},
+
+and we set
+
+.. math::
+         [-D_{2y} u = 0]^n_{i,0}\quad\Rightarrow\quad \frac{u^n_{i,1}-u^n_{i,-1}}{2\Delta y} = 0
+        {\thinspace .}
+        
+
+From this it follows that :math:`u^n_{i,-1}=u^n_{i,1}`.
+The discretized PDE at the boundary point :math:`(i,0)` reads
+
+.. math::
+        
+        \frac{u^{n+1}_{i,0} - 2u^{n}_{i,0} + u^{n-1}_{i,0}}{\Delta t^2}
+        = c^2
+        \frac{u^{n}_{i+1,0} - 2u^{n}_{i,0} + u^{n}_{i-1,0}}{\Delta x^2}
+        + c^2
+        \frac{u^{n}_{i,1} - 2u^{n}_{i,0} + u^{n}_{i,-1}}{\Delta y^2}
+        + f^n_{i,j},
+        
+
+We can then just insert :math:`u^n_{i,1}` for :math:`u^n_{i,-1}` in this equation
+and solve for the boundary value :math:`u^{n+1}_{i,0}`, just as was done in 1D.
+
+From these calculations, we see a pattern:
+the general scheme applies at the boundary :math:`j=0` too if we just
+replace :math:`j-1` by :math:`j+1`. Such a pattern is particularly useful for
+implementations. The details follow from the explained 1D case
+in the section :ref:`wave:pde2:Neumann:impl`.
+
+The alternative approach to eliminating fictitious values outside the
+mesh is to have :math:`u^n_{i,-1}` available as a ghost value.  The mesh is
+extended with one extra line (2D) or plane (3D) of ghost cells at a
+Neumann boundary. In the present example it means that we need a line
+with ghost cells below the :math:`y` axis.  The ghost values must be updated
+according to :math:`u^{n+1}_{i,-1}=u^{n+1}_{i,1}`.
+
+.. _wave:2D3D:impl:
+
+Implementation          (6)
+===========================
+
+.. index::
+   single: wave equation; 2D, implementation
+
+We shall now describe in detail various Python implementations
+for solving a standard 2D, linear wave equation with constant
+wave velocity and :math:`u=0` on the
+boundary. The wave equation is to be solved
+in the space-time domain :math:`\Omega\times (0,T]`,
+where :math:`\Omega = (0,L_x)\times (0,L_y)` is a rectangular spatial
+domain. More precisely,
+the complete initial-boundary value problem is defined by
+
+.. _Eq:_auto90:
+
+.. math::
+
+    \tag{231}
+    u_{tt} = c^2(u_{xx} + u_{yy}) + f(x,y,t),\quad (x,y)\in \Omega,\ t\in (0,T],
+        
+        
+
+.. _Eq:_auto91:
+
+.. math::
+
+    \tag{232}
+    u(x,y,0) = I(x,y),\quad (x,y)\in\Omega,
+        
+        
+
+.. _Eq:_auto92:
+
+.. math::
+
+    \tag{233}
+    u_t(x,y,0) = V(x,y),\quad (x,y)\in\Omega,
+        
+        
+
+.. _Eq:_auto93:
+
+.. math::
+
+    \tag{234}
+    u = 0,\quad (x,y)\in\partial\Omega,\ t\in (0,T],
+        
+        
+
+where :math:`\partial\Omega` is the boundary of :math:`\Omega`, in this case
+the four sides of the rectangle :math:`\Omega = [0,L_x]\times [0,L_y]`:
+:math:`x=0`, :math:`x=L_x`, :math:`y=0`, and :math:`y=L_y`.
+
+The PDE is discretized as
+
+.. math::
+         [D_t D_t u = c^2(D_xD_x u + D_yD_y u) + f]^n_{i,j},
+        
+
+which leads to an explicit updating formula to be implemented in a
+program:
+
+.. math::
+        
+        u^{n+1}_{i,j} = -u^{n-1}_{i,j} + 2u^n_{i,j} + \nonumber
+        
+
+.. _Eq:wave:2D3D:impl1:2Du0:ueq:discrete:
+
+.. math::
+
+    \tag{235}
+    \quad C_x^2(
+        u^{n}_{i+1,j} - 2u^{n}_{i,j} + u^{n}_{i-1,j}) + C_y^2
+        (u^{n}_{i,j+1} - 2u^{n}_{i,j} + u^{n}_{i,j-1}) + \Delta t^2 f_{i,j}^n,
+        
+        
+
+for all interior mesh points :math:`i\in{{\mathcal{I^i}_x}}` and
+:math:`j\in{{\mathcal{I^i}_y}}`, for :math:`n\in{{\mathcal{I^+}_t}}`.
+The constants :math:`C_x` and :math:`C_y` are defined as
+
+.. math::
+         C_x = c\frac{\Delta t}{\Delta x},\quad C_x = c\frac{\Delta t}{\Delta y}
+        {\thinspace .}
+        
+
+At the boundary, we simply set :math:`u^{n+1}_{i,j}=0` for
+:math:`i=0`, :math:`j=0,\ldots,N_y`; :math:`i=N_x`, :math:`j=0,\ldots,N_y`;
+:math:`j=0`, :math:`i=0,\ldots,N_x`; and :math:`j=N_y`, :math:`i=0,\ldots,N_x`.
+For the first step, :math:`n=0`, :ref:`(235) <Eq:wave:2D3D:impl1:2Du0:ueq:discrete>`
+is combined with the discretization of the initial condition :math:`u_t=V`,
+:math:`[D_{2t} u = V]^0_{i,j}` to obtain a special formula for
+:math:`u^1_{i,j}` at the interior mesh points:
+
+.. math::
+        
+        u^{1}_{i,j} = u^0_{i,j} + \Delta t V_{i,j} + \nonumber
+        
+
+.. math::
+          
+        \quad {\frac{1}{2}}C_x^2(
+        u^{0}_{i+1,j} - 2u^{0}_{i,j} + u^{0}_{i-1,j}) + {\frac{1}{2}}C_y^2
+        (u^{0}_{i,j+1} - 2u^{0}_{i,j} + u^{0}_{i,j-1}) +\nonumber
+        
+
+.. _Eq:wave:2D3D:impl1:2Du0:ueq:n0:discrete:
+
+.. math::
+
+    \tag{236}
+    \quad \frac{1}{2}\Delta t^2f_{i,j}^n,
+        
+        
+
+The algorithm is very similar to the one in 1D:
+
+1. Set initial condition :math:`u^0_{i,j}=I(x_i,y_j)`
+
+2. Compute :math:`u^1_{i,j}` from :ref:`(235) <Eq:wave:2D3D:impl1:2Du0:ueq:discrete>`
+
+3. Set :math:`u^1_{i,j}=0` for the boundaries :math:`i=0,N_x`, :math:`j=0,N_y`
+
+4. For :math:`n=1,2,\ldots,N_t`:
+
+ a. Find :math:`u^{n+1}_{i,j}` from :ref:`(235) <Eq:wave:2D3D:impl1:2Du0:ueq:discrete>`
+    for all internal mesh points, :math:`i\in{{\mathcal{I^i}_x}}`, :math:`j\in{{\mathcal{I^i}_y}}`
+
+ b. Set :math:`u^{n+1}_{i,j}=0` for the boundaries :math:`i=0,N_x`, :math:`j=0,N_y`
+
+.. _wave2D3D:impl:scalar:
+
+Scalar computations
+-------------------
+
+The ``solver`` function for a 2D case with constant wave velocity and
+boundary condition :math:`u=0` is analogous to the 1D case with similar parameter
+values (see ``wave1D_u0.py``), apart from a few necessary
+extensions. The code is found in the program
+`wave2D_u0.py <http://tinyurl.com/nm5587k/wave/wave2D_u0/wave2D_u0.py>`__.
+
+Domain and mesh
+~~~~~~~~~~~~~~~
+
+The spatial domain is now :math:`[0,L_x]\times [0,L_y]`, specified
+by the arguments ``Lx`` and ``Ly``. Similarly, the number of mesh
+points in the :math:`x` and :math:`y` directions,
+:math:`N_x` and :math:`N_y`, become the arguments ``Nx`` and ``Ny``.
+In multi-dimensional problems it makes less sense to specify a
+Courant number since the wave velocity is a vector and mesh spacings
+may differ in the various spatial directions.
+We therefore give :math:`\Delta t` explicitly. The signature of
+the ``solver`` function is then
+
+.. code-block:: python
+
+        def solver(I, V, f, c, Lx, Ly, Nx, Ny, dt, T,
+                   user_action=None, version='scalar'):
+
+Key parameters used in the calculations are created as
+
+.. code-block:: python
+
+        x = linspace(0, Lx, Nx+1)                  # mesh points in x dir
+        y = linspace(0, Ly, Ny+1)                  # mesh points in y dir
+        dx = x[1] - x[0]
+        dy = y[1] - y[0]
+        Nt = int(round(T/float(dt)))
+        t = linspace(0, N*dt, N+1)                 # mesh points in time
+        Cx2 = (c*dt/dx)**2;  Cy2 = (c*dt/dy)**2    # help variables
+        dt2 = dt**2
+
+Solution arrays
+~~~~~~~~~~~~~~~
+
+We store :math:`u^{n+1}_{i,j}`, :math:`u^{n}_{i,j}`, and
+:math:`u^{n-1}_{i,j}` in three two-dimensional arrays,
+
+.. code-block:: python
+
+        u   = zeros((Nx+1,Ny+1))   # solution array
+        u_1 = zeros((Nx+1,Ny+1))   # solution at t-dt
+        u_2 = zeros((Nx+1,Ny+1))   # solution at t-2*dt
+
+where :math:`u^{n+1}_{i,j}` corresponds to ``u[i,j]``,
+:math:`u^{n}_{i,j}` to ``u_1[i,j]``, and
+:math:`u^{n-1}_{i,j}` to ``u_2[i,j]``
+
+.. index:: index set notation
+
+Index sets
+~~~~~~~~~~
+
+It is also convenient to introduce the index sets (cf. the section :ref:`wave:indexset`)
+
+.. code-block:: python
+
+        Ix = range(0, u.shape[0])
+        Iy = range(0, u.shape[1])
+        It = range(0, t.shape[0])
+
+Computing the solution
+~~~~~~~~~~~~~~~~~~~~~~
+
+Inserting the initial
+condition ``I`` in ``u_1`` and making a callback to the user in terms of
+the ``user_action`` function is a straightforward generalization of
+the 1D code from the section :ref:`wave:string:impl`:
+
+.. code-block:: python
+
+        for i in Ix:
+            for j in Iy:
+                u_1[i,j] = I(x[i], y[j])
+        
+        if user_action is not None:
+            user_action(u_1, x, xv, y, yv, t, 0)
+
+The ``user_action`` function has additional arguments compared to the
+1D case. The arguments ``xv`` and ``yv`` will be commented
+upon in the section :ref:`wave2D3D:impl:vectorized`.
+
+The key finite difference formula :ref:`(228) <Eq:wave:2D3D:models:unp1>`
+for updating the solution at
+a time level is implemented in a separate function as
+
+.. code-block:: python
+
+        def advance_scalar(u, u_1, u_2, f, x, y, t, n, Cx2, Cy2, dt2,
+                           V=None, step1=False):
+            Ix = range(0, u.shape[0]);  Iy = range(0, u.shape[1])
+            if step1:
+                dt = sqrt(dt2)  # save
+                Cx2 = 0.5*Cx2;  Cy2 = 0.5*Cy2; dt2 = 0.5*dt2  # redefine
+                D1 = 1;  D2 = 0
+            else:
+                D1 = 2;  D2 = 1
+            for i in Ix[1:-1]:
+                for j in Iy[1:-1]:
+                    u_xx = u_1[i-1,j] - 2*u_1[i,j] + u_1[i+1,j]
+                    u_yy = u_1[i,j-1] - 2*u_1[i,j] + u_1[i,j+1]
+                    u[i,j] = D1*u_1[i,j] - D2*u_2[i,j] + \ 
+                             Cx2*u_xx + Cy2*u_yy + dt2*f(x[i], y[j], t[n])
+                    if step1:
+                        u[i,j] += dt*V(x[i], y[j])
+            # Boundary condition u=0
+            j = Iy[0]
+            for i in Ix: u[i,j] = 0
+            j = Iy[-1]
+            for i in Ix: u[i,j] = 0
+            i = Ix[0]
+            for j in Iy: u[i,j] = 0
+            i = Ix[-1]
+            for j in Iy: u[i,j] = 0
+            return u
+
+The ``step1`` variable has been introduced to allow the formula to be
+reused for first step :math:`u^1_{i,j}`:
+
+.. code-block:: python
+
+        u = advance_scalar(u, u_1, u_2, f, x, y, t,
+                           n, Cx2, Cy2, dt, V, step1=True)
+
+Below, we will make many alternative implementations of the
+``advance_scalar`` function to speed up the code since most of
+the CPU time in simulations is spent in this function.
+
+Finally, we remark that the ``solver`` function in the ``wave2D_u0.py`` code
+updates arrays for the next time step by switching references as
+described in the section :ref:`wave:pde1:impl:ref:switch`. If the solution
+``u`` is returned from ``solver``, which it is not, it is important to
+set ``u = u_1`` after the time loop, otherwise ``u`` actually contains ``u_2``.
+
+.. _wave2D3D:impl:vectorized:
+
+Vectorized computations
+-----------------------
+
+The scalar code above turns out to be extremely slow for large 2D
+meshes, and probably useless in 3D beyond debugging of small test cases.
+Vectorization is therefore a must for multi-dimensional
+finite difference computations in Python. For example,
+with a mesh consisting of :math:`30\times 30` cells, vectorization
+brings down the CPU time by a factor of 70 (!). Equally important,
+vectorized code can also easily be parallelized to take (usually)
+optimal advantage of parallel computer platforms.
+
+In the vectorized case, we must be able to evaluate user-given
+functions like :math:`I(x,y)` and :math:`f(x,y,t)` for the entire mesh in one
+operation (without loops). These user-given functions are provided as
+Python functions ``I(x,y)`` and ``f(x,y,t)``, respectively.  Having the
+one-dimensional coordinate arrays ``x`` and ``y`` is not sufficient when
+calling ``I`` and ``f`` in a vectorized way.  We must extend ``x`` and ``y``
+to their vectorized versions ``xv`` and ``yv``:
+
+.. code-block:: python
+
+        from numpy import newaxis
+        xv = x[:,newaxis]
+        yv = y[newaxis,:]
+        # or
+        xv = x.reshape((x.size, 1))
+        yv = y.reshape((1, y.size))
+
+This is a standard required technique when evaluating functions over
+a 2D mesh, say ``sin(xv)*cos(xv)``, which then gives a result with shape
+``(Nx+1,Ny+1)``. Calling ``I(xv, yv)`` and ``f(xv, yv, t[n])`` will now
+return ``I`` and ``f`` values for the entire set of mesh points.
+
+With the ``xv`` and ``yv`` arrays for vectorized computing,
+setting the initial condition is just a matter of
+
+.. code-block:: python
+
+        u_1[:,:] = I(xv, yv)
+
+One could also have written ``u_1 = I(xv, yv)`` and let ``u_1`` point to a
+new object, but vectorized operations often make use of direct
+insertion in the original array through ``u_1[:,:]``, because sometimes
+not all of the array is to be filled by such a function
+evaluation. This is the case with the computational scheme for
+:math:`u^{n+1}_{i,j}`:
+
+.. code-block:: python
+
+        def advance_vectorized(u, u_1, u_2, f_a, Cx2, Cy2, dt2,
+                               V=None, step1=False):
+            if step1:
+                dt = sqrt(dt2)  # save
+                Cx2 = 0.5*Cx2;  Cy2 = 0.5*Cy2; dt2 = 0.5*dt2  # redefine
+                D1 = 1;  D2 = 0
+            else:
+                D1 = 2;  D2 = 1
+            u_xx = u_1[:-2,1:-1] - 2*u_1[1:-1,1:-1] + u_1[2:,1:-1]
+            u_yy = u_1[1:-1,:-2] - 2*u_1[1:-1,1:-1] + u_1[1:-1,2:]
+            u[1:-1,1:-1] = D1*u_1[1:-1,1:-1] - D2*u_2[1:-1,1:-1] + \ 
+                           Cx2*u_xx + Cy2*u_yy + dt2*f_a[1:-1,1:-1]
+            if step1:
+                u[1:-1,1:-1] += dt*V[1:-1, 1:-1]
+            # Boundary condition u=0
+            j = 0
+            u[:,j] = 0
+            j = u.shape[1]-1
+            u[:,j] = 0
+            i = 0
+            u[i,:] = 0
+            i = u.shape[0]-1
+            u[i,:] = 0
+            return u
+
+Array slices in 2D are more complicated to understand than those in
+1D, but the logic from 1D applies to each dimension separately.
+For example, when doing :math:`u^{n}_{i,j} - u^{n}_{i-1,j}` for :math:`i\in{{\mathcal{I^+}_x}}`,
+we just keep ``j`` constant and make a slice in the first index:
+``u_1[1:,j] - u_1[:-1,j]``, exactly as in 1D. The ``1:`` slice
+specifies all the indices :math:`i=1,2,\ldots,N_x` (up to the last
+valid index),
+while ``:-1`` specifies the relevant indices for the second term:
+:math:`0,1,\ldots,N_x-1` (up to, but not including the last index).
+
+In the above code segment, the situation is slightly more complicated,
+because each displaced slice in one direction is
+accompanied by a ``1:-1`` slice in the other direction. The reason is
+that we only work with the internal points for the index that is
+kept constant in a difference.
+
+The boundary conditions along the four sides makes use of
+a slice consisting of all indices along a boundary:
+
+.. code-block:: python
+
+        u[: ,0] = 0
+        u[:,Ny] = 0
+        u[0 ,:] = 0
+        u[Nx,:] = 0
+
+In the vectorized update of ``u`` (above), the function ``f`` is first computed
+as an array over all mesh points:
+
+.. code-block:: text
+
+        f_a = f(xv, yv, t[n])
+
+We could, alternatively, have used the call ``f(xv, yv, t[n])[1:-1,1:-1]``
+in the last term of the update statement, but other implementations
+in compiled languages benefit from having ``f`` available in an array
+rather than calling our Python function ``f(x,y,t)`` for
+every point.
+
+Also in the ``advance_vectorized`` function we have introduced a
+boolean ``step1`` to reuse the formula for the first time step
+in the same way as we did with ``advance_scalar``.
+We refer to the ``solver`` function in ``wave2D_u0.py``
+for the details on how the overall algorithm is implemented.
+
+The callback function now has the arguments
+``u, x, xv, y, yv, t, n``. The inclusion of ``xv`` and ``yv`` makes it
+easy to, e.g., compute an exact 2D solution in the callback function
+and compute errors, through an expression like
+``u - u_exact(xv, yv, t[n])``.
+
+.. _wave2D3D:impl:verify:
+
+Verification          (5)
+-------------------------
+
+Testing a quadratic solution
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The 1D solution from the section :ref:`wave:pde2:fd:verify:quadratic` can be
+generalized to multi-dimensions and provides a test case where the
+exact solution also fulfills the discrete equations, such that we know
+(to machine precision) what numbers the solver function should
+produce. In 2D we use the following generalization of
+:ref:`(148) <Eq:wave:pde2:fd:verify:quadratic:uex>`:
+
+.. _Eq:wave2D3D:impl:verify:quadratic:
+
+.. math::
+
+    \tag{237}
+    {u_{\small\mbox{e}}}(x,y,t) = x(L_x-x)y(L_y-y)(1+{\frac{1}{2}}t)
+        {\thinspace .}
+        
+        
+
+This solution fulfills the PDE problem if :math:`I(x,y)={u_{\small\mbox{e}}}(x,y,0)`,
+:math:`V=\frac{1}{2}{u_{\small\mbox{e}}}(x,y,0)`, and :math:`f=2c^2(1+{\frac{1}{2}}t)(y(L_y-y) +
+x(L_x-x))`. To show that :math:`{u_{\small\mbox{e}}}` also solves the discrete equations,
+we start with the general results :math:`[D_t D_t 1]^n=0`, :math:`[D_t D_t t]^n=0`,
+and :math:`[D_t D_t t^2]=2`, and use these to compute
+
+.. math::
+        
+        [D_xD_x {u_{\small\mbox{e}}}]^n_{i,j} &= [y(L_y-y)(1+{\frac{1}{2}}t) D_xD_x x(L_x-x)]^n_{i,j}\\ 
+        &= y_j(L_y-y_j)(1+{\frac{1}{2}}t_n)(-2){\thinspace .}
+        
+
+A similar calculation must be carried out for the :math:`[D_yD_y
+{u_{\small\mbox{e}}}]^n_{i,j}` and :math:`[D_tD_t {u_{\small\mbox{e}}}]^n_{i,j}` terms.  One must also show
+that the quadratic solution fits the special formula for
+:math:`u^1_{i,j}`. The details are left as :ref:`wave:exer:quadratic:2D`.
+The ``test_quadratic`` function in the
+`wave2D_u0.py <http://tinyurl.com/nm5587k/wave/wave2D_u0/wave2D_u0.py>`__
+program implements this verification as a proper test function
+for the pytest and nose frameworks.
+
+Exercises          (4)
+======================
+
+.. --- begin exercise ---
+
+.. _wave:exer:quadratic:2D:
+
+Exercise 2.15: Check that a solution fulfills the discrete model
+----------------------------------------------------------------
+
+Carry out all mathematical details to show that
+:ref:`(237) <Eq:wave2D3D:impl:verify:quadratic>` is indeed a solution of the
+discrete model for a 2D wave equation with :math:`u=0` on the boundary.
+One must check the boundary conditions, the initial conditions,
+the general discrete equation at a time level and the special
+version of this equation for the first time level.
+Filename: ``check_quadratic_solution``.
+
+.. --- end exercise ---
+
+.. --- begin exercise ---
+
+.. _wave:exer:mesh3D:calculus:
+
+Project 2.16: Calculus with 2D mesh functions
+---------------------------------------------
+
+The goal of this project is to redo
+:ref:`wave:exer:mesh1D:calculus` with 2D
+mesh functions (:math:`f_{i,j}`).
+
+**Differentiation.**
+The differentiation results in a discrete gradient
+function, which in the 2D case can be represented by a three-dimensional
+array ``df[d,i,j]`` where ``d`` represents the direction of
+the derivative, and ``i,j`` is a mesh point in 2D.
+Use centered differences for
+the derivative at inner points and one-sided forward or backward
+differences at the boundary points. Construct unit tests and
+write a corresponding test function.
+
+**Integration.**
+The integral of a 2D mesh function :math:`f_{i,j}` is defined as
+
+.. math::
+         F_{i,j} = \int_{y_0}^{y_j} \int_{x_0}^{x_i} f(x,y)dxdy,
+
+where :math:`f(x,y)` is a function that takes on the values of the
+discrete mesh function :math:`f_{i,j}` at the mesh points, but can also
+be evaluated in between the mesh points. The particular variation
+between mesh points can be taken as bilinear, but this is not
+important as we will use a product Trapezoidal rule to approximate
+the integral over a cell in the mesh and then we only need to
+evaluate :math:`f(x,y)` at the mesh points.
+
+Suppose :math:`F_{i,j}` is computed. The calculation of :math:`F_{i+1,j}`
+is then
+
+.. math::
+        
+        F_{i+1,j} &= F_{i,j} + \int_{x_i}^{x_{i+1}}\int_{y_0}^{y_j} f(x,y)dydx\\ 
+        & \approx \Delta x \frac{1}{2}\left(
+        \int_{y_0}^{y_j} f(x_{i},y)dy
+        + \int_{y_0}^{y_j} f(x_{i+1},y)dy\right)
+        
+
+The integrals in the :math:`y` direction can be approximated by a Trapezoidal
+rule. A similar idea can be used to compute :math:`F_{i,j+1}`. Thereafter,
+:math:`F_{i+1,j+1}` can be computed by adding the integral over the final
+corner cell to :math:`F_{i+1,j} + F_{i,j+1} - F_{i,j}`. Carry out the
+details of these computations and implement a function that can
+return :math:`F_{i,j}` for all mesh indices :math:`i` and :math:`j`. Use the
+fact that the Trapezoidal rule is exact for linear functions and
+write a test function.
+Filename: ``mesh_calculus_2D``.
+
+.. --- end exercise ---
+
+.. --- begin exercise ---
+
+.. _wave:app:exer:wave2D:Neumann:
+
+Exercise 2.17: Implement Neumann conditions in 2D
+-------------------------------------------------
+
+Modify the `wave2D_u0.py <http://tinyurl.com/nm5587k/wave/wave2D_u0/wave2D_u0.py>`__
+program, which solves the 2D wave equation :math:`u_{tt}=c^2(u_{xx}+u_{yy})`
+with constant wave velocity :math:`c` and :math:`u=0` on the boundary, to have
+Neumann boundary conditions: :math:`\partial u/\partial n=0`.
+Include both scalar code (for debugging and reference) and
+vectorized code (for speed).
+
+To test the code, use :math:`u=1.2` as solution (:math:`I(x,y)=1.2`, :math:`V=f=0`, and
+:math:`c` arbitrary), which should be exactly reproduced with any mesh
+as long as the stability criterion is satisfied.
+Another test is to use the plug-shaped pulse
+in the ``pulse`` function from the section :ref:`wave:pde2:software`
+and the `wave1D_dn_vc.py <http://tinyurl.com/nm5587k/wave/wave1D/wave1D_dn_vc.py>`__
+program. This pulse
+is exactly propagated in 1D if :math:`c\Delta t/\Delta x=1`. Check
+that also the 2D program can propagate this pulse exactly
+in :math:`x` direction (:math:`c\Delta t/\Delta x=1`, :math:`\Delta y` arbitrary)
+and :math:`y` direction (:math:`c\Delta t/\Delta y=1`, :math:`\Delta x` arbitrary).
+Filename: ``wave2D_dn``.
+
+.. --- end exercise ---
+
+.. --- begin exercise ---
+
+.. _wave:exer:3D:f77:cy:efficiency:
+
+Exercise 2.18: Test the efficiency of compiled loops in 3D
+----------------------------------------------------------
+
+Extend the ``wave2D_u0.py`` code and the Cython, Fortran, and C versions to 3D.
+Set up an efficiency experiment to determine the relative efficiency of
+pure scalar Python code, vectorized code, Cython-compiled loops,
+Fortran-compiled loops, and C-compiled loops.
+Normalize the CPU time for each mesh by the fastest version.
+Filename: ``wave3D_u0``.
+
+.. --- end exercise ---
 
