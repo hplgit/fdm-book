@@ -409,6 +409,7 @@ class PlotAndStoreSolution:
         """
         # Make HTML movie in a subdirectory
         directory = self.casename
+               
         if os.path.isdir(directory):
             shutil.rmtree(directory)   # rm -rf directory
         os.mkdir(directory)            # mkdir directory
@@ -416,6 +417,7 @@ class PlotAndStoreSolution:
         for filename in glob.glob('frame_*.png'):
             os.rename(filename, os.path.join(directory, filename))
         os.chdir(directory)        # cd directory
+                
         fps = 4 # frames per second
         if self.backend is not None:
             from scitools.std import movie
@@ -432,6 +434,7 @@ class PlotAndStoreSolution:
             cmd = '%(movie_program)s -r %(fps)d -i %(filespec)s '\
                   '-vcodec %(codec)s movie.%(ext)s' % vars()
             os.system(cmd)
+                        
         os.chdir(os.pardir)  # move back to parent directory
 
     def close_file(self, hashed_input):
@@ -443,7 +446,7 @@ class PlotAndStoreSolution:
         if self.filename is not None:
             # Save all the time points where solutions are saved
             np.savez('.' + self.filename + '_t.dat',
-                     t=array(self.t, dtype=float))
+                     t=np.array(self.t, dtype=float))
 
             # Merge all savez files to one zip archive
             archive_name = '.' + hashed_input + '_archive.npz'
@@ -563,8 +566,8 @@ class PlotMediumAndSolution(PlotAndStoreSolution):
                 self.plt.xlabel('x')
                 self.plt.ylabel('u')
                 self.plt.title(title)
-                self.plt.text(0.75, 1.0, 'C=0.25')
-                self.plt.text(0.32, 1.0, 'C=1')
+                self.plt.text(0.75, 1.0, 'c lower')
+                self.plt.text(0.32, 1.0, 'c=1')
                 self.plt.legend(['t=%.3f' % t[n]])
             else:
                 # Update new solution
@@ -590,23 +593,27 @@ class PlotMediumAndSolution(PlotAndStoreSolution):
             time.sleep(pause)
 
         self.plt.savefig('frame_%04d.png' % (n))
+        
+        if n == (len(t) - 1):   # finished with this run, close plot
+            self.plt.close()
+
 
 def animate_multiple_solutions(*archives):
     a = [load(archive) for archive in archives]
     # Assume the array names are the same in all archives
     raise NotImplementedError  # more to do...
 
-def pulse(C=1,            # aximum Courant number
+def pulse(C=1,            # Maximum Courant number
           Nx=200,         # spatial resolution
           animate=True,
           version='vectorized',
           T=2,            # end time
           loc='left',     # location of initial condition
           pulse_tp='gaussian',  # pulse/init.cond. type
-          slowness_factor=2, # wave vel. in right medium
+          slowness_factor=2, # inverse of wave vel. in right medium
           medium=[0.7, 0.9], # interval for right medium
           skip_frame=1,      # skip frames in animations
-          sigma=0.05,        # width measure of the pulse
+          sigma=0.05         # width measure of the pulse
           ):
     """
     Various peaked-shaped initial conditions on [0,1].
@@ -663,12 +670,17 @@ def pulse(C=1,            # aximum Courant number
     # Choose the stability limit with given Nx, worst case c
     # (lower C will then use this dt, but smaller Nx)
     dt = (L/Nx)/c_0
-    solver(I=I, V=None, f=None, c=c, U_0=None, U_L=None,
-           L=L, dt=dt, C=C, T=T,
-           user_action=action, version=version,
-           stability_safety_factor=1)
-    action.make_movie_file()
-    action.file_close()
+    cpu, hashed_input = solver(I=I, V=None, f=None, c=c, 
+                               U_0=None, U_L=None,
+                               L=L, dt=dt, C=C, T=T,
+                               user_action=action, 
+                               version=version,
+                               stability_safety_factor=1)
 
+    if cpu > 0:  # did we generate new data?
+        action.close_file(hashed_input)
+        action.make_movie_file()        
+    print 'cpu (-1 means no new data generated):', cpu
+    
 if __name__ == '__main__':
     pass
