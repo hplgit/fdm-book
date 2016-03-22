@@ -1,6 +1,5 @@
 import wave1D_dn_vc as wave
 import os, sys, shutil, glob
-import scitools.std as st
 
 for pulse_tp in 'gaussian', 'cosinehat', 'half-cosinehat', 'plug':
     for Nx in 40, 80, 160:
@@ -15,4 +14,3 @@ for pulse_tp in 'gaussian', 'cosinehat', 'half-cosinehat', 'plug':
                        slowness_factor=sf, medium=[0.7, 0.9],
                        skip_frame = 1,
                        sigma=0.05)
-    
