@@ -2686,7 +2686,7 @@ A 1D diffusion model with such a variable diffusion coefficient reads
 
     \tag{69}
     \frac{\partial u}{\partial t} =
-        \frac{\partial}{\partial x}\left( \alpha (x) \frac{\partial u}{\partial x^2}
+        \frac{\partial}{\partial x}\left( \alpha (x) \frac{\partial u}{\partial x}
         \right) + f(x,t), \quad x\in (0,L),\ t\in (0,T],
         
         
@@ -2730,16 +2730,16 @@ We can discretize :ref:`(69) <Eq:diffu:pde2>` by a :math:`\theta`-rule in time
 and centered differences in space:
 
 .. math::
-         \lbrack D_t u\rbrack^{n+\frac{1}{2}} = \theta\lbrack D_x\overline{{\alpha}}^x
-        D_x u + f\rbrack^{n+1} +
+         \lbrack D_t u\rbrack^{n+\frac{1}{2}}_i = \theta\lbrack D_x\overline{{\alpha}}^x
+        D_x u + f\rbrack^{n+1}_i +
         (1-\theta)\lbrack D_x\overline{{\alpha}}^x
-        D_x u + f\rbrack^{n}{\thinspace .}
+        D_x u + f\rbrack^{n}_i{\thinspace .}
 
 Written out, this becomes
 
 .. math::
         
-        \frac{u^{n+1}-u^{n}}{\Delta t} &=
+        \frac{u^{n+1}_i-u^{n}_i}{\Delta t} &=
         \theta\frac{1}{\Delta x^2}
         ({\alpha}_{i+\frac{1}{2}}(u^{n+1}_{i+1} - u^{n+1}_{i})
         - {\alpha}_{i-\frac{1}{2}}(u^{n+1}_i - u^{n+1}_{i+1})) +\\ 
@@ -2885,7 +2885,7 @@ is otherwise constant, we can express :math:`\alpha` as a
         \vdots &\\ 
         \alpha_i,& b_i \leq x < b_{i+1},\\ 
         \vdots &\\ 
-        \alpha_0,& b_{M-1} \leq x \leq b_M.
+        \alpha_{M-1},& b_{M-1} \leq x \leq b_M.
         \end{array}\right.
         
         
@@ -3042,9 +3042,29 @@ shows the result.
 Diffusion equation in axi-symmetric geometries
 ----------------------------------------------
 
-Suppose we have a diffusion process taking care in a straight tube
+Suppose we have a diffusion process taking place in a straight tube
 with radius :math:`R`. We assume axi-symmetry such that :math:`u` is just a
-function of :math:`r` and :math:`t`. A model problem is
+function of :math:`r` and :math:`t`, :math:`r` being the radial distance from the center 
+axis of the tube to a point. With such axi-symmetry it is
+advantageous to introduce *cylindrical coordinates* :math:`r`, :math:`\theta`, and
+:math:`z`, where :math:`z` is in the direction of the tube and :math:`(r,\theta)` are
+polar coordinates in a cross section. Axi-symmetry means that all
+quantities are independent of :math:`\theta`. From the relations :math:`x=\cos\theta`,
+:math:`y=\sin\theta`, and :math:`z=z`, between Cartesian and cylindrical coordinates,
+one can (with some effort) derive the diffusion equation in cylindrical
+coordinates, which with axi-symmetry takes the form
+
+.. math::
+        
+        \frac{\partial u}{\partial t} = \frac{1}{r}\frac{\partial}{\partial r}
+        \left(r{\alpha}(r,z)\frac{\partial u}{\partial r}\right) + \frac{\partial}{\partial z}
+        \left(\alpha(r,z)\frac{\partial u}{\partial z}\right) + f(r,z,t){\thinspace .}
+
+Let us assume that :math:`u` does not change along the tube axis so it
+suffices to compute variations in a cross section. Then :math:`\partial u/\partial
+z = 0` and the we have a 1D diffusion equation in the radial coordinate
+:math:`r` and time :math:`t`. In particular, we shall address the initial-boundary
+value problem
 
 .. _Eq:diffu:fd2:radial:PDE:
 
@@ -3087,24 +3107,27 @@ The condition :ref:`(78) <Eq:diffu:fd2:radial:symmr0>` is a necessary symmetry c
 at :math:`r=0`, while :ref:`(79) <Eq:diffu:fd2:radial:uR>` could be any Dirichlet
 or Neumann condition (or Robin condition in case of cooling or heating).
 
-The finite difference approximation at :math:`r=0` of the spatial derivative term
-is the only new challenge in this problem. Let us in case of
-constant :math:`{\alpha}` expand the derivative to
+The finite difference approximation will need the discretized version
+of the PDE for :math:`r=0` (just as we use the PDE at the boundary when
+implementing Neumann conditions). However, discretizing the PDE at
+:math:`r=0` poses a problem because of the :math:`1/r` factor. We therefore need
+to work out the PDE for discretization at :math:`r=0` with care.
+Let us, for the case of constant :math:`{\alpha}`, expand the spatial derivative term to
 
 .. math::
-         \frac{\partial^2 u}{\partial r^2} + \frac{1}{r}\frac{\partial u}{\partial r}{\thinspace .}
+         \alpha\frac{\partial^2 u}{\partial r^2} + \alpha\frac{1}{r}\frac{\partial u}{\partial r}{\thinspace .}
 
-The last term faces a difficulty at :math:`r=0` since it becomes a :math:`0/0` expression
-because of the symmetry condition.
-L'Hosptial's rule can be used:
+The last term faces a difficulty at :math:`r=0`, since it becomes a :math:`0/0` expression
+caused by the symmetry condition at :math:`r=0`.
+However, L'Hosptial's rule can be used:
 
 .. math::
          \lim_{r\rightarrow 0} \frac{1}{r}\frac{\partial u}{\partial r}
-        = \lim_{r\rightarrow 0} \frac{\partial^2 u}{\partial r^2}{\thinspace .}
+        = \frac{\partial^2 u}{\partial r^2}{\thinspace .}
 
 The PDE at :math:`r=0` therefore becomes
 
-.. _Eq:_auto37:
+.. _Eq:diffu:fd2:radial:eq_PDEr0:aconst:
 
 .. math::
 
@@ -3114,27 +3137,29 @@ The PDE at :math:`r=0` therefore becomes
         
         
 
-For a variable coefficient :math:`{\alpha}(r)` the expanded derivative reads
+For a variable coefficient :math:`{\alpha}(r)` the expanded spatial derivative term reads
 
 .. math::
          {\alpha}(r)\frac{\partial^2 u}{\partial r^2} +
         \frac{1}{r}({\alpha}(r) + r{\alpha}'(r))\frac{\partial u}{\partial r}{\thinspace .}
 
-We have that the `limit of a product <https://en.wikibooks.org/wiki/Calculus/Proofs_of_Some_Basic_Limit_Rules>`__ is
+From the rules for the `limit of a product <https://en.wikibooks.org/wiki/Calculus/Proofs_of_Some_Basic_Limit_Rules>`__ we have that
 
 .. math::
          \lim_{r\rightarrow 0}
         \frac{1}{r}({\alpha}(r) + r{\alpha}'(r))\frac{\partial u}{\partial r} =
         \lim_{r\rightarrow 0} ({\alpha}(r) + r{\alpha}'(r))\ 
-        \lim_{x\rightarrow c}
+        \lim_{x\rightarrow 0}
         \frac{1}{r}\frac{\partial u}{\partial r}{\thinspace .}
         
 
-The second limit becomes as above, so the PDE at :math:`r=0`,
-assuming :math:`({\alpha}(0) + r{\alpha}'(0))\neq 0`,
+The second limit was found above, so the PDE at :math:`r=0`
+
+.. assuming :math:`({\alpha}(0) + r{\alpha}'(0))\neq 0`,
+
 looks like
 
-.. _Eq:_auto38:
+.. _Eq:diffu:fd2:radial:eq_PDEr0:avar:
 
 .. math::
 
@@ -3145,7 +3170,9 @@ looks like
         
         
 
-The second-order derivative is discretized in the usual way.
+The second-order derivatives in :ref:`(81) <Eq:diffu:fd2:radial:eq_PDEr0:aconst>`
+and :ref:`(82) <Eq:diffu:fd2:radial:eq_PDEr0:avar>`
+are discretized in the usual way.
 Consider first constant :math:`{\alpha}`:
 
 .. math::
@@ -3159,10 +3186,10 @@ symmetry condition
 .. math::
          [D_{2r} u =0]^n_0 \quad\Rightarrow\quad u^n_{-1} = u^n_1,
 
-which then gives the modified approximation to the second-order derivative
+which then gives the modified approximation to the term with the second-order derivative
 of :math:`u` in :math:`r` at :math:`r=0`:
 
-.. _Eq:_auto39:
+.. _Eq:_auto37:
 
 .. math::
 
@@ -3177,19 +3204,22 @@ With variable :math:`{\alpha}` we simply get
         (2{\alpha} + r{\alpha}')2D_rD_r u]^n_0 =
         (2{\alpha}(0) + r{\alpha}'(0)) \frac{u^{n}_{1} - 2u^{n}_0 + u^n_{-1}}{\Delta r^2}{\thinspace .}
 
-The discretization of the second-order derivative in :math:`r` at another
+Also now we replace :math:`u^n_{-1}` by :math:`u^n_{1}` because of symmetry at :math:`r=0`.
+
+The discretization of the term with the second-order derivative in :math:`r` at any
 internal mesh point is straightforward:
 
 .. math::
         
         \left.\frac{1}{r}\frac{\partial}{\partial r}
         \left(r{\alpha}\frac{\partial u}{\partial r}\right)\right\vert_{r=r_i}^{t=t_n}
-        \approx [r^{-1} D_r (r {\alpha} D_r u)]_i^n
-        = \frac{1}{\Delta r^2}\left(
+        & \approx [r^{-1} D_r (r {\alpha} D_r u)]_i^n\\ 
+        &= \frac{1}{\Delta r^2}\left(
         r_{i+\frac{1}{2}}{\alpha}_{i+\frac{1}{2}}(u_{i+1}^n - u_i^n) - r_{i-\frac{1}{2}}{\alpha}_{i-\frac{1}{2}}(u_{i}^n - u_{i-1}^n)\right){\thinspace .}
         
 
-:math:`\theta`-rule in time...
+To complete the discretization, we need a scheme in time, but that can
+be done as before and does not interfere with the discretization in space.
 
 .. _diffu:fd2:spherical:
 
@@ -3205,7 +3235,7 @@ in spherical coordinates, where :math:`u` only depends on the radial coordinate
 For simplicity we restrict the diffusion coefficient :math:`{\alpha}` to be
 a constant. The PDE reads
 
-.. _Eq:_auto40:
+.. _Eq:_auto38:
 
 .. math::
 
@@ -3232,7 +3262,7 @@ At the origin :math:`r=0` we get problems with the term
 but L'Hosptial's rule shows that this term equals :math:`\gamma\partial^2 u/
 \partial r^2`, and the PDE at :math:`r=0` becomes
 
-.. _Eq:_auto41:
+.. _Eq:_auto39:
 
 .. math::
 
@@ -3244,7 +3274,7 @@ but L'Hosptial's rule shows that this term equals :math:`\gamma\partial^2 u/
 
 The associated discrete form is then
 
-.. _Eq:_auto42:
+.. _Eq:_auto40:
 
 .. math::
 
@@ -3294,7 +3324,7 @@ Diffusion in 2D
 
 We now address a diffusion in two space dimensions:
 
-.. _Eq:_auto43:
+.. _Eq:_auto41:
 
 .. math::
 
@@ -3328,7 +3358,7 @@ point :math:`(i,j,n+\frac{1}{2})` and apply the difference approximations:
         \theta \lbrack {\alpha} (D_xD_x u + D_yD_yu) + f\rbrack^{n+1} + \nonumber
         
 
-.. _Eq:_auto44:
+.. _Eq:_auto42:
 
 .. math::
 
@@ -3349,7 +3379,7 @@ Written out,
         + \nonumber
         
 
-.. _Eq:_auto45:
+.. _Eq:_auto43:
 
 .. math::
 
@@ -3558,7 +3588,7 @@ We have :math:`A_{p,q}=1` for :math:`p=q=0,1,2,3,4,7,8,9,10,11`, corresponding
 to all the known boundary values. Let :math:`p` be :math:`m(i,j)`, i.e.,
 the single index corresponding to mesh point :math:`(i,j)`. Then we have
 
-.. _Eq:_auto46:
+.. _Eq:_auto44:
 
 .. math::
 
@@ -3569,7 +3599,7 @@ the single index corresponding to mesh point :math:`(i,j)`. Then we have
         
         
 
-.. _Eq:_auto47:
+.. _Eq:_auto45:
 
 .. math::
 
@@ -3578,7 +3608,7 @@ the single index corresponding to mesh point :math:`(i,j)`. Then we have
         
         
 
-.. _Eq:_auto48:
+.. _Eq:_auto46:
 
 .. math::
 
@@ -3587,7 +3617,7 @@ the single index corresponding to mesh point :math:`(i,j)`. Then we have
         
         
 
-.. _Eq:_auto49:
+.. _Eq:_auto47:
 
 .. math::
 
@@ -3596,7 +3626,7 @@ the single index corresponding to mesh point :math:`(i,j)`. Then we have
         
         
 
-.. _Eq:_auto50:
+.. _Eq:_auto48:
 
 .. math::
 
@@ -3605,7 +3635,7 @@ the single index corresponding to mesh point :math:`(i,j)`. Then we have
         
         
 
-.. _Eq:_auto51:
+.. _Eq:_auto49:
 
 .. math::
 
@@ -4597,7 +4627,7 @@ Stopping criteria
 The iteration can be stopped when the change from one iteration to the
 next is sufficiently small (:math:`\epsilon`), using either an infinity norm,
 
-.. _Eq:_auto52:
+.. _Eq:_auto50:
 
 .. math::
 
@@ -4609,7 +4639,7 @@ next is sufficiently small (:math:`\epsilon`), using either an infinity norm,
 
 or an :math:`L^2` norm,
 
-.. _Eq:_auto53:
+.. _Eq:_auto51:
 
 .. math::
 
@@ -4648,7 +4678,7 @@ The residual, defined in terms of the finite difference stencil, is
 One can then iterate until the norm of the mesh function :math:`R_{i,j}`
 is less than some tolerance:
 
-.. _Eq:_auto54:
+.. _Eq:_auto52:
 
 .. math::
 
@@ -5087,7 +5117,7 @@ shortened :math:`u` and :math:`u^{-}` notation, can be written
         
         
 
-.. _Eq:_auto55:
+.. _Eq:_auto53:
 
 .. math::
 
@@ -5532,7 +5562,7 @@ then SOR will converge for any :math:`0<\omega <2`.
 The optimal :math:`\omega` parameter can be theoretically established for
 a Poisson problem as
 
-.. _Eq:_auto56:
+.. _Eq:_auto54:
 
 .. math::
 
@@ -6732,7 +6762,7 @@ we formally get the stochastic differential equation
 
 .. index:: Wiener process
 
-.. _Eq:_auto57:
+.. _Eq:_auto55:
 
 .. math::
 
@@ -7405,7 +7435,7 @@ approximation much used in mathematical modeling.
 Inserting the expression for :math:`\boldsymbol{q}` via :math:`p`, :math:`U`, and :math:`V` in the
 equation :math:`\nabla\boldsymbol{q} = 0` gives a diffusion PDE for :math:`p`:
 
-.. _Eq:_auto58:
+.. _Eq:_auto56:
 
 .. math::
 
@@ -7873,7 +7903,7 @@ We consider flow in a straight tube with radius :math:`R` and straight walls.
 The flow is driven by a pressure gradient :math:`\beta(t)`. The effect of
 gravity can be neglected. The mathematical problem reads
 
-.. _Eq:_auto59:
+.. _Eq:_auto57:
 
 .. math::
 
@@ -7885,25 +7915,25 @@ gravity can be neglected. The mathematical problem reads
         
         
 
-.. _Eq:_auto60:
+.. _Eq:_auto58:
 
 .. math::
 
     \tag{144}
-    u(r,0) = 0,\quad  r\in [0,R],
+    u(r,0) = I(r),\quad  r\in [0,R],
         
         
 
-.. _Eq:_auto61:
+.. _Eq:_auto59:
 
 .. math::
 
     \tag{145}
-    u(R,0) = 0,\quad  t\in (0,T],
+    u(R,t) = 0,\quad  t\in (0,T],
         
         
 
-.. _Eq:_auto62:
+.. _Eq:_auto60:
 
 .. math::
 
@@ -7914,7 +7944,7 @@ gravity can be neglected. The mathematical problem reads
 
 We consider two models for :math:`\beta(t)`. One plain, sinusoidal oscillation:
 
-.. _Eq:_auto63:
+.. _Eq:_auto61:
 
 .. math::
 
@@ -7925,7 +7955,7 @@ We consider two models for :math:`\beta(t)`. One plain, sinusoidal oscillation:
 
 and one with periodic pulses,
 
-.. _Eq:_auto64:
+.. _Eq:_auto62:
 
 .. math::
 

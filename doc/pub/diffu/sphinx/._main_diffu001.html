@@ -1847,7 +1847,7 @@ A 1D diffusion model with such a variable diffusion coefficient reads</p>
 <div class="math" id="eq-diffu-pde2">
 \[\tag{69}
 \frac{\partial u}{\partial t} =
-    \frac{\partial}{\partial x}\left( \alpha (x) \frac{\partial u}{\partial x^2}
+    \frac{\partial}{\partial x}\left( \alpha (x) \frac{\partial u}{\partial x}
     \right) + f(x,t), \quad x\in (0,L),\ t\in (0,T],\]</div>
 <div class="math" id="eq-diffu-pde2-ic-u">
 \[\tag{70}
@@ -1865,13 +1865,13 @@ u(L,t)  = U_L, \quad  t&gt;0.\end{split}\]</div>
 <p>We can discretize <a class="reference internal" href="#eq-diffu-pde2"><em>(69)</em></a> by a <span class="math">\(\theta\)</span>-rule in time
 and centered differences in space:</p>
 <div class="math">
-\[\lbrack D_t u\rbrack^{n+\frac{1}{2}} = \theta\lbrack D_x\overline{{\alpha}}^x
-D_x u + f\rbrack^{n+1} +
+\[\lbrack D_t u\rbrack^{n+\frac{1}{2}}_i = \theta\lbrack D_x\overline{{\alpha}}^x
+D_x u + f\rbrack^{n+1}_i +
 (1-\theta)\lbrack D_x\overline{{\alpha}}^x
-D_x u + f\rbrack^{n}{\thinspace .}\]</div>
+D_x u + f\rbrack^{n}_i{\thinspace .}\]</div>
 <p>Written out, this becomes</p>
 <div class="math">
-\[\begin{split}\frac{u^{n+1}-u^{n}}{\Delta t} &amp;=
+\[\begin{split}\frac{u^{n+1}_i-u^{n}_i}{\Delta t} &amp;=
 \theta\frac{1}{\Delta x^2}
 ({\alpha}_{i+\frac{1}{2}}(u^{n+1}_{i+1} - u^{n+1}_{i})
 - {\alpha}_{i-\frac{1}{2}}(u^{n+1}_i - u^{n+1}_{i+1})) +\\
@@ -1986,7 +1986,7 @@ is otherwise constant, we can express <span class="math">\(\alpha\)</span> as a
     \vdots &amp;\\
     \alpha_i,&amp; b_i \leq x &lt; b_{i+1},\\
     \vdots &amp;\\
-    \alpha_0,&amp; b_{M-1} \leq x \leq b_M.
+    \alpha_{M-1},&amp; b_{M-1} \leq x \leq b_M.
     \end{array}\right.\end{split}\]</div>
 <p>The exact solution <a class="reference internal" href="#eq-diffu-fd2-pde-st-sol"><em>(74)</em></a> in case of such a
 piecewise constant <span class="math">\(\alpha\)</span> function is easy to derive. Assume that
@@ -2113,9 +2113,26 @@ shows the result.</p>
 </div>
 <div class="section" id="diffusion-equation-in-axi-symmetric-geometries">
 <span id="diffu-fd2-radial"></span><h2>Diffusion equation in axi-symmetric geometries<a class="headerlink" href="#diffusion-equation-in-axi-symmetric-geometries" title="Permalink to this headline">¶</a></h2>
-<p>Suppose we have a diffusion process taking care in a straight tube
+<p>Suppose we have a diffusion process taking place in a straight tube
 with radius <span class="math">\(R\)</span>. We assume axi-symmetry such that <span class="math">\(u\)</span> is just a
-function of <span class="math">\(r\)</span> and <span class="math">\(t\)</span>. A model problem is</p>
+function of <span class="math">\(r\)</span> and <span class="math">\(t\)</span>, <span class="math">\(r\)</span> being the radial distance from the center
+axis of the tube to a point. With such axi-symmetry it is
+advantageous to introduce <em>cylindrical coordinates</em> <span class="math">\(r\)</span>, <span class="math">\(\theta\)</span>, and
+<span class="math">\(z\)</span>, where <span class="math">\(z\)</span> is in the direction of the tube and <span class="math">\((r,\theta)\)</span> are
+polar coordinates in a cross section. Axi-symmetry means that all
+quantities are independent of <span class="math">\(\theta\)</span>. From the relations <span class="math">\(x=\cos\theta\)</span>,
+<span class="math">\(y=\sin\theta\)</span>, and <span class="math">\(z=z\)</span>, between Cartesian and cylindrical coordinates,
+one can (with some effort) derive the diffusion equation in cylindrical
+coordinates, which with axi-symmetry takes the form</p>
+<div class="math">
+\[\frac{\partial u}{\partial t} = \frac{1}{r}\frac{\partial}{\partial r}
+\left(r{\alpha}(r,z)\frac{\partial u}{\partial r}\right) + \frac{\partial}{\partial z}
+\left(\alpha(r,z)\frac{\partial u}{\partial z}\right) + f(r,z,t){\thinspace .}\]</div>
+<p>Let us assume that <span class="math">\(u\)</span> does not change along the tube axis so it
+suffices to compute variations in a cross section. Then <span class="math">\(\partial u/\partial
+z = 0\)</span> and the we have a 1D diffusion equation in the radial coordinate
+<span class="math">\(r\)</span> and time <span class="math">\(t\)</span>. In particular, we shall address the initial-boundary
+value problem</p>
 <div class="math" id="eq-diffu-fd2-radial-pde">
 \[\tag{77}
 \frac{\partial u}{\partial t} = \frac{1}{r}\frac{\partial}{\partial r}
@@ -2132,42 +2149,46 @@ u(r,0) = I(r),  r\in [0,R].\]</div>
 <p>The condition <a class="reference internal" href="#eq-diffu-fd2-radial-symmr0"><em>(78)</em></a> is a necessary symmetry condition
 at <span class="math">\(r=0\)</span>, while <a class="reference internal" href="#eq-diffu-fd2-radial-ur"><em>(79)</em></a> could be any Dirichlet
 or Neumann condition (or Robin condition in case of cooling or heating).</p>
-<p>The finite difference approximation at <span class="math">\(r=0\)</span> of the spatial derivative term
-is the only new challenge in this problem. Let us in case of
-constant <span class="math">\({\alpha}\)</span> expand the derivative to</p>
+<p>The finite difference approximation will need the discretized version
+of the PDE for <span class="math">\(r=0\)</span> (just as we use the PDE at the boundary when
+implementing Neumann conditions). However, discretizing the PDE at
+<span class="math">\(r=0\)</span> poses a problem because of the <span class="math">\(1/r\)</span> factor. We therefore need
+to work out the PDE for discretization at <span class="math">\(r=0\)</span> with care.
+Let us, for the case of constant <span class="math">\({\alpha}\)</span>, expand the spatial derivative term to</p>
 <div class="math">
-\[\frac{\partial^2 u}{\partial r^2} + \frac{1}{r}\frac{\partial u}{\partial r}{\thinspace .}\]</div>
-<p>The last term faces a difficulty at <span class="math">\(r=0\)</span> since it becomes a <span class="math">\(0/0\)</span> expression
-because of the symmetry condition.
-L&#8217;Hosptial&#8217;s rule can be used:</p>
+\[\alpha\frac{\partial^2 u}{\partial r^2} + \alpha\frac{1}{r}\frac{\partial u}{\partial r}{\thinspace .}\]</div>
+<p>The last term faces a difficulty at <span class="math">\(r=0\)</span>, since it becomes a <span class="math">\(0/0\)</span> expression
+caused by the symmetry condition at <span class="math">\(r=0\)</span>.
+However, L&#8217;Hosptial&#8217;s rule can be used:</p>
 <div class="math">
 \[\lim_{r\rightarrow 0} \frac{1}{r}\frac{\partial u}{\partial r}
-= \lim_{r\rightarrow 0} \frac{\partial^2 u}{\partial r^2}{\thinspace .}\]</div>
+= \frac{\partial^2 u}{\partial r^2}{\thinspace .}\]</div>
 <p>The PDE at <span class="math">\(r=0\)</span> therefore becomes</p>
-<div class="math" id="eq-auto37">
+<div class="math" id="eq-diffu-fd2-radial-eq-pder0-aconst">
 \[\tag{81}
 \frac{\partial u}{\partial t} = 2{\alpha}\frac{\partial^2 u}{\partial r^2}
     + f(t){\thinspace .}\]</div>
-<p>For a variable coefficient <span class="math">\({\alpha}(r)\)</span> the expanded derivative reads</p>
+<p>For a variable coefficient <span class="math">\({\alpha}(r)\)</span> the expanded spatial derivative term reads</p>
 <div class="math">
 \[{\alpha}(r)\frac{\partial^2 u}{\partial r^2} +
 \frac{1}{r}({\alpha}(r) + r{\alpha}'(r))\frac{\partial u}{\partial r}{\thinspace .}\]</div>
-<p>We have that the <a class="reference external" href="https://en.wikibooks.org/wiki/Calculus/Proofs_of_Some_Basic_Limit_Rules">limit of a product</a> is</p>
+<p>From the rules for the <a class="reference external" href="https://en.wikibooks.org/wiki/Calculus/Proofs_of_Some_Basic_Limit_Rules">limit of a product</a> we have that</p>
 <div class="math">
 \[\lim_{r\rightarrow 0}
 \frac{1}{r}({\alpha}(r) + r{\alpha}'(r))\frac{\partial u}{\partial r} =
 \lim_{r\rightarrow 0} ({\alpha}(r) + r{\alpha}'(r))\
-\lim_{x\rightarrow c}
+\lim_{x\rightarrow 0}
 \frac{1}{r}\frac{\partial u}{\partial r}{\thinspace .}\]</div>
-<p>The second limit becomes as above, so the PDE at <span class="math">\(r=0\)</span>,
-assuming <span class="math">\(({\alpha}(0) + r{\alpha}'(0))\neq 0\)</span>,
-looks like</p>
-<div class="math" id="eq-auto38">
+<p>The second limit was found above, so the PDE at <span class="math">\(r=0\)</span></p>
+<p>looks like</p>
+<div class="math" id="eq-diffu-fd2-radial-eq-pder0-avar">
 \[\tag{82}
 \frac{\partial u}{\partial t} = (2{\alpha} + r{\alpha}')
     \frac{\partial^2 u}{\partial r^2}
     + f(t){\thinspace .}\]</div>
-<p>The second-order derivative is discretized in the usual way.
+<p>The second-order derivatives in <a class="reference internal" href="#eq-diffu-fd2-radial-eq-pder0-aconst"><em>(81)</em></a>
+and <a class="reference internal" href="#eq-diffu-fd2-radial-eq-pder0-avar"><em>(82)</em></a>
+are discretized in the usual way.
 Consider first constant <span class="math">\({\alpha}\)</span>:</p>
 <div class="math">
 \[2{\alpha}\frac{\partial^2}{\partial r^2}u(r_0,t_n) \approx
@@ -2177,24 +2198,26 @@ Consider first constant <span class="math">\({\alpha}\)</span>:</p>
 symmetry condition</p>
 <div class="math">
 \[[D_{2r} u =0]^n_0 \quad\Rightarrow\quad u^n_{-1} = u^n_1,\]</div>
-<p>which then gives the modified approximation to the second-order derivative
+<p>which then gives the modified approximation to the term with the second-order derivative
 of <span class="math">\(u\)</span> in <span class="math">\(r\)</span> at <span class="math">\(r=0\)</span>:</p>
-<div class="math" id="eq-auto39">
+<div class="math" id="eq-auto37">
 \[\tag{83}
 4{\alpha} \frac{u^{n}_{1} - u^{n}_0}{\Delta r^2}{\thinspace .}\]</div>
 <p>With variable <span class="math">\({\alpha}\)</span> we simply get</p>
 <div class="math">
 \[(2{\alpha} + r{\alpha}')2D_rD_r u]^n_0 =
 (2{\alpha}(0) + r{\alpha}'(0)) \frac{u^{n}_{1} - 2u^{n}_0 + u^n_{-1}}{\Delta r^2}{\thinspace .}\]</div>
-<p>The discretization of the second-order derivative in <span class="math">\(r\)</span> at another
+<p>Also now we replace <span class="math">\(u^n_{-1}\)</span> by <span class="math">\(u^n_{1}\)</span> because of symmetry at <span class="math">\(r=0\)</span>.</p>
+<p>The discretization of the term with the second-order derivative in <span class="math">\(r\)</span> at any
 internal mesh point is straightforward:</p>
 <div class="math">
-\[\left.\frac{1}{r}\frac{\partial}{\partial r}
+\[\begin{split}\left.\frac{1}{r}\frac{\partial}{\partial r}
 \left(r{\alpha}\frac{\partial u}{\partial r}\right)\right\vert_{r=r_i}^{t=t_n}
-\approx [r^{-1} D_r (r {\alpha} D_r u)]_i^n
-= \frac{1}{\Delta r^2}\left(
-r_{i+\frac{1}{2}}{\alpha}_{i+\frac{1}{2}}(u_{i+1}^n - u_i^n) - r_{i-\frac{1}{2}}{\alpha}_{i-\frac{1}{2}}(u_{i}^n - u_{i-1}^n)\right){\thinspace .}\]</div>
-<p><span class="math">\(\theta\)</span>-rule in time...</p>
+&amp; \approx [r^{-1} D_r (r {\alpha} D_r u)]_i^n\\
+&amp;= \frac{1}{\Delta r^2}\left(
+r_{i+\frac{1}{2}}{\alpha}_{i+\frac{1}{2}}(u_{i+1}^n - u_i^n) - r_{i-\frac{1}{2}}{\alpha}_{i-\frac{1}{2}}(u_{i}^n - u_{i-1}^n)\right){\thinspace .}\end{split}\]</div>
+<p>To complete the discretization, we need a scheme in time, but that can
+be done as before and does not interfere with the discretization in space.</p>
 </div>
 <div class="section" id="diffusion-equation-in-spherically-symmetric-geometries">
 <span id="diffu-fd2-spherical"></span><h2>Diffusion equation in spherically-symmetric geometries<a class="headerlink" href="#diffusion-equation-in-spherically-symmetric-geometries" title="Permalink to this headline">¶</a></h2>
@@ -2205,7 +2228,7 @@ in spherical coordinates, where <span class="math">\(u\)</span> only depends on 
 <span class="math">\(r\)</span> and time <span class="math">\(t\)</span>. That is, we have spherical symmetry.
 For simplicity we restrict the diffusion coefficient <span class="math">\({\alpha}\)</span> to be
 a constant. The PDE reads</p>
-<div class="math" id="eq-auto40">
+<div class="math" id="eq-auto38">
 \[\tag{84}
 \frac{\partial u}{\partial t} = \frac{{\alpha}}{r^\gamma}\frac{\partial}{\partial r}
     \left(r^\gamma\frac{\partial u}{\partial r}\right) + f(t),\]</div>
@@ -2222,12 +2245,12 @@ At the origin <span class="math">\(r=0\)</span> we get problems with the term</p
 \[\frac{\gamma}{r}\frac{\partial u}{\partial t},\]</div>
 <p>but L&#8217;Hosptial&#8217;s rule shows that this term equals <span class="math">\(\gamma\partial^2 u/
 \partial r^2\)</span>, and the PDE at <span class="math">\(r=0\)</span> becomes</p>
-<div class="math" id="eq-auto41">
+<div class="math" id="eq-auto39">
 \[\tag{85}
 \frac{\partial u}{\partial t} = (\gamma+1){\alpha}\frac{\partial^2 u}{\partial r^2}
     + f(t){\thinspace .}\]</div>
 <p>The associated discrete form is then</p>
-<div class="math" id="eq-auto42">
+<div class="math" id="eq-auto40">
 \[\tag{86}
 [D_t u = \frac{1}{2} (\gamma+1){\alpha}([D_rD_r \overline{u}^t + \overline{f}^t]^n_i,\]</div>
 <p>for a Crank-Nicolson scheme.</p>
@@ -2258,7 +2281,7 @@ one Cartesian coordinate.</p>
 <div class="section" id="diffusion-in-2d">
 <span id="diffu-2d"></span><h1>Diffusion in 2D<a class="headerlink" href="#diffusion-in-2d" title="Permalink to this headline">¶</a></h1>
 <p>We now address a diffusion in two space dimensions:</p>
-<div class="math" id="eq-auto43">
+<div class="math" id="eq-auto41">
 \[\tag{87}
 \frac{\partial u}{\partial t}  = {\alpha}\left(
     \frac{\partial^2 u}{\partial x^2} +
@@ -2276,7 +2299,7 @@ point <span class="math">\((i,j,n+\frac{1}{2})\)</span> and apply the difference
 <div class="math">
 \[\lbrack D_t u\rbrack^{n+\frac{1}{2}} =
 \theta \lbrack {\alpha} (D_xD_x u + D_yD_yu) + f\rbrack^{n+1} + \nonumber\]</div>
-<div class="math" id="eq-auto44">
+<div class="math" id="eq-auto42">
 \[\tag{88}
 \quad (1-\theta)\lbrack {\alpha} (D_xD_x u + D_yD_y u) + f\rbrack^{n}{\thinspace .}\]</div>
 <p>Written out,</p>
@@ -2287,7 +2310,7 @@ point <span class="math">\((i,j,n+\frac{1}{2})\)</span> and apply the difference
 (\frac{u^{n+1}_{i,j-1} - 2^{n+1}_{i,j} + u^{n+1}_{i,j+1}}{\Delta y^2})) +
 f^{n+1}_{i,j})
 + \nonumber\]</div>
-<div class="math" id="eq-auto45">
+<div class="math" id="eq-auto43">
 \[\tag{89}
 \quad (1-\theta)({\alpha}
     (\frac{u^{n}_{i-1,j} - 2^{n}_{i,j} + u^{n}_{i+1,j}}{\Delta x^2}) +
@@ -2438,24 +2461,24 @@ equation system.
 We have <span class="math">\(A_{p,q}=1\)</span> for <span class="math">\(p=q=0,1,2,3,4,7,8,9,10,11\)</span>, corresponding
 to all the known boundary values. Let <span class="math">\(p\)</span> be <span class="math">\(m(i,j)\)</span>, i.e.,
 the single index corresponding to mesh point <span class="math">\((i,j)\)</span>. Then we have</p>
-<div class="math" id="eq-auto46">
+<div class="math" id="eq-auto44">
 \[\tag{91}
 A_{m(i,j),m(i,j)} = A_{p,p} =
     1 +
     \theta (F_x + F_y),\]</div>
-<div class="math" id="eq-auto47">
+<div class="math" id="eq-auto45">
 \[\tag{92}
 A_{p, m(i-1,j)} = A_{p,p-1} = -\theta F_x,\]</div>
-<div class="math" id="eq-auto48">
+<div class="math" id="eq-auto46">
 \[\tag{93}
 A_{p, m(i+1,j)} = A_{p,p+1} = -\theta F_x,\]</div>
-<div class="math" id="eq-auto49">
+<div class="math" id="eq-auto47">
 \[\tag{94}
 A_{p, m(i,j-1)} = A_{p, p-(N_x+1)} = -\theta F_y,\]</div>
-<div class="math" id="eq-auto50">
+<div class="math" id="eq-auto48">
 \[\tag{95}
 A_{p, m(i,j+1)} = A_{p, p+(N_x+1)} = -\theta F_y,\]</div>
-<div class="math" id="eq-auto51">
+<div class="math" id="eq-auto49">
 \[\tag{96}
 for the equations associated with the two interior mesh points.\]</div>
 <p>At these interior points, the single index <span class="math">\(p\)</span> takes on the
@@ -3285,12 +3308,12 @@ u^{n+1,r+1} = \omega u^{n+1,*}_{i,j} + (1-\omega) u^{n+1,r}_{i,j}{\thinspace .}\
 <h3>Stopping criteria<a class="headerlink" href="#stopping-criteria" title="Permalink to this headline">¶</a></h3>
 <p>The iteration can be stopped when the change from one iteration to the
 next is sufficiently small (<span class="math">\(\epsilon\)</span>), using either an infinity norm,</p>
-<div class="math" id="eq-auto52">
+<div class="math" id="eq-auto50">
 \[\tag{102}
 \max_{i,j}\left\vert u^{n+1,r+1}_{i,j}-u^{n+1,r}_{i,j}
     \right\vert \leq \epsilon,\]</div>
 <p>or an <span class="math">\(L^2\)</span> norm,</p>
-<div class="math" id="eq-auto53">
+<div class="math" id="eq-auto51">
 \[\tag{103}
 \left(\Delta x\Delta y\sum_{i,j} (u^{n+1,r+1}_{i,j}-u^{n+1,r}_{i,j})^2
     \right)^{\frac{1}{2}} \leq \epsilon{\thinspace .}\]</div>
@@ -3309,7 +3332,7 @@ The residual, defined in terms of the finite difference stencil, is</p>
 \qquad u^n_{i,j} -  \Delta t f^{n+1}_{i,j}\]</div>
 <p>One can then iterate until the norm of the mesh function <span class="math">\(R_{i,j}\)</span>
 is less than some tolerance:</p>
-<div class="math" id="eq-auto54">
+<div class="math" id="eq-auto52">
 \[\tag{105}
 \left(\Delta x\Delta y\sum_{i,j} R_{i,j}^2
     \right)^{\frac{1}{2}} \leq \epsilon{\thinspace .}\]</div>
@@ -3646,7 +3669,7 @@ u^{(1)}_{i,j} + \theta \Delta t f^{n+1}_{i,j}
 \qquad (1-\theta)(
     F_x(u^{(1)}_{i-1,j}-2u^{(1)}_{i,j} + u^{(1)}_{i+1,j}) +
     F_y(u^{(1)}_{i,j-1}-2u^{(1)}_{i,j} + u^{(1)}_{i,j+1}))),\]</div>
-<div class="math" id="eq-auto55">
+<div class="math" id="eq-auto53">
 \[\tag{111}
 u_{i,j} = \omega u^{*}_{i,j} + (1-\omega)u^{-}_{i,j}\]</div>
 <p>The sequence of mesh points in <a class="reference internal" href="#eq-diffu-2d-sor3"><em>(110)</em></a> is
@@ -4016,7 +4039,7 @@ One important result is that if <span class="math">\(A\)</span> is symmetric and
 then SOR will converge for any <span class="math">\(0&lt;\omega &lt;2\)</span>.</p>
 <p>The optimal <span class="math">\(\omega\)</span> parameter can be theoretically established for
 a Poisson problem as</p>
-<div class="math" id="eq-auto56">
+<div class="math" id="eq-auto54">
 \[\tag{112}
 \omega_{o} = \frac{2}{1 + \sqrt{1-\varrho^2}},\quad \varrho = \frac{\cos(\pi/N_x) + (\Delta x/\Delta y)^2\cos(\pi/N_y)}{1 + (\Delta x/\Delta y)^2}{\thinspace .}\]</div>
 <p>This formula can be used as a guide also in other problems.</p>
@@ -4953,7 +4976,7 @@ stochastic process (<span class="math">\(s\)</span> is standardized Gaussian var
 With <span class="math">\(\bar X(t)\)</span> as the continuous process in the limit
 <span class="math">\(\Delta t\rightarrow 0\)</span> (<span class="math">\(X_k\rightarrow X(t_k)\)</span>),
 we formally get the stochastic differential equation</p>
-<span class="target" id="index-24"></span><span class="target" id="index-25"></span><div class="math" id="eq-auto57">
+<span class="target" id="index-24"></span><span class="target" id="index-25"></span><div class="math" id="eq-auto55">
 <span id="index-26"></span>\[\tag{118}
 d\bar X = dW,\]</div>
 <p>where <span class="math">\(W(t)\)</span> is a <a class="reference external" href="https://en.wikipedia.org/wiki/Wiener_process">Wiener process</a>. Then <span class="math">\(X\)</span> is also a
@@ -5434,7 +5457,7 @@ time variation is sufficiently slow. This is a common quasi-static
 approximation much used in mathematical modeling.</p>
 <p>Inserting the expression for <span class="math">\(\boldsymbol{q}\)</span> via <span class="math">\(p\)</span>, <span class="math">\(U\)</span>, and <span class="math">\(V\)</span> in the
 equation <span class="math">\(\nabla\boldsymbol{q} = 0\)</span> gives a diffusion PDE for <span class="math">\(p\)</span>:</p>
-<div class="math" id="eq-auto58">
+<div class="math" id="eq-auto56">
 \[\tag{127}
 \nabla\cdot\left(\frac{h^3}{12\mu}\nabla p\right) =
     \frac{1}{2}\frac{\partial}{\partial x}(hU)
@@ -5698,27 +5721,27 @@ with <span class="math">\(\bar L=4\)</span> and <span class="math">\(\bar L=8\)<
 <p>We consider flow in a straight tube with radius <span class="math">\(R\)</span> and straight walls.
 The flow is driven by a pressure gradient <span class="math">\(\beta(t)\)</span>. The effect of
 gravity can be neglected. The mathematical problem reads</p>
-<div class="math" id="eq-auto59">
+<div class="math" id="eq-auto57">
 \[\tag{143}
 \varrho\frac{\partial u}{\partial t} =
     \mu\frac{1}{r}\frac{\partial}{\partial r}\left(
     r\frac{\partial u}{\partial r}\right) + \beta(t),\quad
      r\in [0,R],\ t\in (0,T],\]</div>
-<div class="math" id="eq-auto60">
+<div class="math" id="eq-auto58">
 \[\tag{144}
-u(r,0) = 0,\quad  r\in [0,R],\]</div>
-<div class="math" id="eq-auto61">
+u(r,0) = I(r),\quad  r\in [0,R],\]</div>
+<div class="math" id="eq-auto59">
 \[\tag{145}
-u(R,0) = 0,\quad  t\in (0,T],\]</div>
-<div class="math" id="eq-auto62">
+u(R,t) = 0,\quad  t\in (0,T],\]</div>
+<div class="math" id="eq-auto60">
 \[\tag{146}
 \frac{\partial u}{\partial r}(0,t) = 0,\quad  t\in (0,T].\]</div>
 <p>We consider two models for <span class="math">\(\beta(t)\)</span>. One plain, sinusoidal oscillation:</p>
-<div class="math" id="eq-auto63">
+<div class="math" id="eq-auto61">
 \[\tag{147}
 \beta = A\sin(\omega t),\]</div>
 <p>and one with periodic pulses,</p>
-<div class="math" id="eq-auto64">
+<div class="math" id="eq-auto62">
 \[\tag{148}
 \beta = A\sin^{16}(\omega t),\]</div>
 <p>Note that both models can be written as <span class="math">\(\beta = A\sin^m(\omega t)\)</span>, with

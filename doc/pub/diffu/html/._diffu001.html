@@ -3054,7 +3054,7 @@ A 1D diffusion model with such a variable diffusion coefficient reads
 $$
 \begin{align}
 \frac{\partial u}{\partial t} &=
-\frac{\partial}{\partial x}\left( \alpha (x) \frac{\partial u}{\partial x^2}
+\frac{\partial}{\partial x}\left( \alpha (x) \frac{\partial u}{\partial x}
 \right) + f(x,t), \quad &x\in (0,L),\ t\in (0,T],
 \tag{69}\\ 
 u(x,0) &= I(x), \quad  &x\in [0,L],
@@ -3075,16 +3075,16 @@ A short form of the diffusion equation with variable coefficients is
 We can discretize <a href="#mjx-eqn-69">(69)</a> by a \( \theta \)-rule in time
 and centered differences in space:
 
-$$ \lbrack D_t u\rbrack^{n+\half} = \theta\lbrack D_x\overline{\dfc}^x
-D_x u + f\rbrack^{n+1} +
+$$ \lbrack D_t u\rbrack^{n+\half}_i = \theta\lbrack D_x\overline{\dfc}^x
+D_x u + f\rbrack^{n+1}_i +
 (1-\theta)\lbrack D_x\overline{\dfc}^x
-D_x u + f\rbrack^{n}\tp$$
+D_x u + f\rbrack^{n}_i\tp$$
 
 Written out, this becomes
 
 $$
 \begin{align*}
-\frac{u^{n+1}-u^{n}}{\Delta t} &=
+\frac{u^{n+1}_i-u^{n}_i}{\Delta t} &=
 \theta\frac{1}{\Delta x^2}
 (\dfc_{i+\half}(u^{n+1}_{i+1} - u^{n+1}_{i})
 - \dfc_{i-\half}(u^{n+1}_i - u^{n+1}_{i+1})) +\\ 
@@ -3219,7 +3219,7 @@ $$
 \vdots &\\ 
 \alpha_i,& b_i \leq x < b_{i+1},\\ 
 \vdots &\\ 
-\alpha_0,& b_{M-1} \leq x \leq b_M.
+\alpha_{M-1},& b_{M-1} \leq x \leq b_M.
 \end{array}\right.
 \end{equation}
 \tag{75}
@@ -3381,9 +3381,29 @@ shows the result.
 <h2 id="diffu:fd2:radial">Diffusion equation in axi-symmetric geometries</h2>
 
 <p>
-Suppose we have a diffusion process taking care in a straight tube
+Suppose we have a diffusion process taking place in a straight tube
 with radius \( R \). We assume axi-symmetry such that \( u \) is just a
-function of \( r \) and \( t \). A model problem is
+function of \( r \) and \( t \), \( r \) being the radial distance from the center 
+axis of the tube to a point. With such axi-symmetry it is
+advantageous to introduce <em>cylindrical coordinates</em> \( r \), \( \theta \), and
+\( z \), where \( z \) is in the direction of the tube and \( (r,\theta) \) are
+polar coordinates in a cross section. Axi-symmetry means that all
+quantities are independent of \( \theta \). From the relations \( x=\cos\theta \),
+\( y=\sin\theta \), and \( z=z \), between Cartesian and cylindrical coordinates,
+one can (with some effort) derive the diffusion equation in cylindrical
+coordinates, which with axi-symmetry takes the form
+
+$$
+\frac{\partial u}{\partial t} = \frac{1}{r}\frac{\partial}{\partial r}
+\left(r\dfc(r,z)\frac{\partial u}{\partial r}\right) + \frac{\partial}{\partial z}
+\left(\alpha(r,z)\frac{\partial u}{\partial z}\right) + f(r,z,t)\tp$$
+
+<p>
+Let us assume that \( u \) does not change along the tube axis so it
+suffices to compute variations in a cross section. Then \( \partial u/\partial
+z = 0 \) and the we have a 1D diffusion equation in the radial coordinate
+\( r \) and time \( t \). In particular, we shall address the initial-boundary
+value problem
 
 $$
 \begin{align}
@@ -3404,18 +3424,21 @@ at \( r=0 \), while <a href="#mjx-eqn-79">(79)</a> could be any Dirichlet
 or Neumann condition (or Robin condition in case of cooling or heating).
 
 <p>
-The finite difference approximation at \( r=0 \) of the spatial derivative term
-is the only new challenge in this problem. Let us in case of
-constant \( \dfc \) expand the derivative to
+The finite difference approximation will need the discretized version
+of the PDE for \( r=0 \) (just as we use the PDE at the boundary when
+implementing Neumann conditions). However, discretizing the PDE at
+\( r=0 \) poses a problem because of the \( 1/r \) factor. We therefore need
+to work out the PDE for discretization at \( r=0 \) with care.
+Let us, for the case of constant \( \dfc \), expand the spatial derivative term to
 
-$$ \frac{\partial^2 u}{\partial r^2} + \frac{1}{r}\frac{\partial u}{\partial r}\tp$$
+$$ \alpha\frac{\partial^2 u}{\partial r^2} + \alpha\frac{1}{r}\frac{\partial u}{\partial r}\tp$$
 
-The last term faces a difficulty at \( r=0 \) since it becomes a \( 0/0 \) expression
-because of the symmetry condition.
-L'Hosptial's rule can be used:
+The last term faces a difficulty at \( r=0 \), since it becomes a \( 0/0 \) expression
+caused by the symmetry condition at \( r=0 \).
+However, L'Hosptial's rule can be used:
 
 $$ \lim_{r\rightarrow 0} \frac{1}{r}\frac{\partial u}{\partial r}
-= \lim_{r\rightarrow 0} \frac{\partial^2 u}{\partial r^2}\tp$$
+= \frac{\partial^2 u}{\partial r^2}\tp$$
 
 The PDE at \( r=0 \) therefore becomes
 
@@ -3427,22 +3450,22 @@ $$
 \end{equation}
 $$
 
-For a variable coefficient \( \dfc(r) \) the expanded derivative reads
+For a variable coefficient \( \dfc(r) \) the expanded spatial derivative term reads
 
 $$ \dfc(r)\frac{\partial^2 u}{\partial r^2} +
 \frac{1}{r}(\dfc(r) + r\dfc'(r))\frac{\partial u}{\partial r}\tp$$
 
-We have that the <a href="https://en.wikibooks.org/wiki/Calculus/Proofs_of_Some_Basic_Limit_Rules" target="_self">limit of a product</a> is
+From the rules for the <a href="https://en.wikibooks.org/wiki/Calculus/Proofs_of_Some_Basic_Limit_Rules" target="_self">limit of a product</a> we have that
 
 $$ \lim_{r\rightarrow 0}
 \frac{1}{r}(\dfc(r) + r\dfc'(r))\frac{\partial u}{\partial r} =
 \lim_{r\rightarrow 0} (\dfc(r) + r\dfc'(r))\ 
-\lim_{x\rightarrow c}
+\lim_{x\rightarrow 0}
 \frac{1}{r}\frac{\partial u}{\partial r}\tp
 $$
 
-The second limit becomes as above, so the PDE at \( r=0 \),
-assuming \( (\dfc(0) + r\dfc'(0))\neq 0 \),
+The second limit was found above, so the PDE at \( r=0 \)
+<!-- assuming \( (\dfc(0) + r\dfc'(0))\neq 0 \), -->
 looks like
 
 $$
@@ -3455,7 +3478,9 @@ $$
 $$
 
 <p>
-The second-order derivative is discretized in the usual way.
+The second-order derivatives in <a href="#mjx-eqn-81">(81)</a>
+and <a href="#mjx-eqn-82">(82)</a>
+are discretized in the usual way.
 Consider first constant \( \dfc \):
 
 $$ 2\dfc\frac{\partial^2}{\partial r^2}u(r_0,t_n) \approx
@@ -3467,7 +3492,7 @@ symmetry condition
 
 $$ [D_{2r} u =0]^n_0 \quad\Rightarrow\quad u^n_{-1} = u^n_1,$$
 
-which then gives the modified approximation to the second-order derivative
+which then gives the modified approximation to the term with the second-order derivative
 of \( u \) in \( r \) at \( r=0 \):
 
 $$
@@ -3482,20 +3507,25 @@ With variable \( \dfc \) we simply get
 $$(2\dfc + r\dfc')2D_rD_r u]^n_0 =
 (2\dfc(0) + r\dfc'(0)) \frac{u^{n}_{1} - 2u^{n}_0 + u^n_{-1}}{\Delta r^2}\tp$$
 
+Also now we replace \( u^n_{-1} \) by \( u^n_{1} \) because of symmetry at \( r=0 \).
+
 <p>
-The discretization of the second-order derivative in \( r \) at another
+The discretization of the term with the second-order derivative in \( r \) at any
 internal mesh point is straightforward:
 
 $$
+\begin{align*}
 \left.\frac{1}{r}\frac{\partial}{\partial r}
 \left(r\dfc\frac{\partial u}{\partial r}\right)\right\vert_{r=r_i}^{t=t_n}
-\approx [r^{-1} D_r (r \dfc D_r u)]_i^n
-= \frac{1}{\Delta r^2}\left(
+& \approx [r^{-1} D_r (r \dfc D_r u)]_i^n\\ 
+&= \frac{1}{\Delta r^2}\left(
 r_{i+\half}\dfc_{i+\half}(u_{i+1}^n - u_i^n) - r_{i-\half}\dfc_{i-\half}(u_{i}^n - u_{i-1}^n)\right)\tp
+\end{align*}
 $$
 
 <p>
-\( \theta \)-rule in time...
+To complete the discretization, we need a scheme in time, but that can
+be done as before and does not interfere with the discretization in space.
 
 <h2 id="diffu:fd2:spherical">Diffusion equation in spherically-symmetric geometries</h2>
 
@@ -8065,9 +8095,9 @@ $$
 r\frac{\partial u}{\partial r}\right) + \beta(t),\quad
 & r\in [0,R],\ t\in (0,T],
 \tag{143}\\ 
-u(r,0) &= 0,\quad & r\in [0,R],
+u(r,0) &= I(r),\quad & r\in [0,R],
 \tag{144}\\ 
-u(R,0) &= 0,\quad & t\in (0,T],
+u(R,t) &= 0,\quad & t\in (0,T],
 \tag{145}\\ 
 \frac{\partial u}{\partial r}(0,t) &= 0,\quad & t\in (0,T].
 \tag{146}
