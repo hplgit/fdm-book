@@ -130,7 +130,7 @@ we can eliminate the fictitious value :math:`u_{-1}^n`. We see that
 can be used in :ref:`(37) <Eq:wave:pde1:Neumann:0:scheme>` to
 arrive at a modified scheme for the boundary point :math:`u_0^{n+1}`:
 
-.. _Eq:_auto13:
+.. _Eq:_auto11:
 
 .. math::
 
@@ -169,7 +169,7 @@ is discretized by a central difference
 Combined with the scheme for :math:`i=N_x` we get a modified scheme for
 the boundary value :math:`u_{N_x}^{n+1}`:
 
-.. _Eq:_auto14:
+.. _Eq:_auto12:
 
 .. math::
 
@@ -311,7 +311,7 @@ conventions:
 For the current problem setting in the :math:`x,t` plane, we work with
 the index sets
 
-.. _Eq:_auto15:
+.. _Eq:_auto13:
 
 .. math::
 
@@ -991,7 +991,7 @@ on the spatial location. We must therefore choose a :math:`\Delta t` that
 is small enough such that no mesh cell has :math:`\Delta x/c(x) >\Delta t`.
 That is, we must use the largest :math:`c` value in the criterion:
 
-.. _Eq:_auto16:
+.. _Eq:_auto14:
 
 .. math::
 
@@ -1033,7 +1033,7 @@ at the end point :math:`i=N_x` with :math:`u_{i+1}^n=u_{i-1}^n` results in
         u^{n+1}_i = - u_i^{n-1}  + 2u_i^n + \nonumber
         
 
-.. _Eq:_auto17:
+.. _Eq:_auto15:
 
 .. math::
 
@@ -1089,7 +1089,7 @@ Here we used the approximation
         \nonumber
         
 
-.. _Eq:_auto18:
+.. _Eq:_auto16:
 
 .. math::
 
@@ -1127,7 +1127,7 @@ The implications for the scheme are
         + \nonumber
         
 
-.. _Eq:_auto19:
+.. _Eq:_auto17:
 
 .. math::
 
@@ -1226,7 +1226,7 @@ with varying density, cf. |nbsp| (:ref:`wave:app:string`) with :math:`\varrho (x
 
 A natural scheme for :ref:`(58) <Eq:wave:pde2:var:c:pde2>` is
 
-.. _Eq:_auto20:
+.. _Eq:_auto18:
 
 .. math::
 
@@ -1242,7 +1242,7 @@ in front of a derivative. There is hence no need for any averaging
 of :math:`\varrho`. Often, :math:`\varrho` will be moved to the right-hand side,
 also without any difficulty:
 
-.. _Eq:_auto21:
+.. _Eq:_auto19:
 
 .. math::
 
@@ -1332,7 +1332,7 @@ targets the following initial-boundary value problem
         
         
 
-.. _Eq:_auto22:
+.. _Eq:_auto20:
 
 .. math::
 
@@ -1341,7 +1341,7 @@ targets the following initial-boundary value problem
         
         
 
-.. _Eq:_auto23:
+.. _Eq:_auto21:
 
 .. math::
 
@@ -1350,7 +1350,7 @@ targets the following initial-boundary value problem
         
         
 
-.. _Eq:_auto24:
+.. _Eq:_auto22:
 
 .. math::
 
@@ -1386,7 +1386,11 @@ time-varying Dirichlet conditions, as well as
 a variable wave velocity. The different code segments needed
 to make these extensions have been shown and commented upon in the
 preceding text. We refer to the ``solver`` function in the
-``wave1D_dn_vc.py`` file for all the details.
+``wave1D_dn_vc.py`` file for all the details. Note in that
+ ``solver`` function, however, that the technique of "hashing" is
+used to check whether a certain simulation has been run before, or not.
+This technique is further explained in Section
+ref to Appendix SW engineering.
 
 The vectorization is only applied inside the time loop, not for the
 initial condition or the first time steps, since this initial work
@@ -1398,14 +1402,13 @@ techniques applied in the general 1D wave equation solver.
 User action function as a class
 -------------------------------
 
-A useful feature in the ``wave1D_dn_vc.py`` program is the specification of
-the ``user_action`` function as a class. This part of the program may
+A useful feature in the ``wave1D_dn_vc.py`` program is the specification
+of the ``user_action`` function as a class. This part of the program may
 need some motivation and explanation. Although the ``plot_u_st``
-function (and the ``PlotMatplotlib`` class)
-in the ``wave1D_u0.viz`` function
-remembers the local variables in the ``viz`` function, it is a
-cleaner solution to store the needed variables together with
-the function, which is exactly what a class offers.
+function (and the ``PlotMatplotlib`` class) in the ``wave1D_u0.viz``
+function remembers the local variables in the ``viz`` function, it is a
+cleaner solution to store the needed variables together with the
+function, which is exactly what a class offers.
 
 The code
 ~~~~~~~~
@@ -1595,17 +1598,17 @@ flexibility with the building blocks we have already developed:
 
 .. code-block:: python
 
-        def pulse(C=1,            # aximum Courant number
+        def pulse(C=1,            # Maximum Courant number
                   Nx=200,         # spatial resolution
                   animate=True,
                   version='vectorized',
                   T=2,            # end time
                   loc='left',     # location of initial condition
                   pulse_tp='gaussian',  # pulse/init.cond. type
-                  slowness_factor=2, # wave vel. in right medium
+                  slowness_factor=2, # inverse of wave vel. in right medium
                   medium=[0.7, 0.9], # interval for right medium
                   skip_frame=1,      # skip frames in animations
-                  sigma=0.05,        # width measure of the pulse
+                  sigma=0.05         # width measure of the pulse
                   ):
             """
             Various peaked-shaped initial conditions on [0,1].
@@ -1662,12 +1665,17 @@ flexibility with the building blocks we have already developed:
             # Choose the stability limit with given Nx, worst case c
             # (lower C will then use this dt, but smaller Nx)
             dt = (L/Nx)/c_0
-            solver(I=I, V=None, f=None, c=c, U_0=None, U_L=None,
-                   L=L, dt=dt, C=C, T=T,
-                   user_action=action, version=version,
-                   stability_safety_factor=1)
-            action.make_movie_file()
-            action.file_close()
+            cpu, hashed_input = solver(I=I, V=None, f=None, c=c, 
+                                       U_0=None, U_L=None,
+                                       L=L, dt=dt, C=C, T=T,
+                                       user_action=action, 
+                                       version=version,
+                                       stability_safety_factor=1)
+        
+            if cpu > 0:  # did we generate new data?
+                action.close_file(hashed_input)
+                action.make_movie_file()        
+            print 'cpu (-1 means no new data generated):', cpu
 
 The ``PlotMediumAndSolution`` class used here is a subclass of
 ``PlotAndStoreSolution`` where the medium with reduced :math:`c` value,
@@ -1698,7 +1706,7 @@ The reader is encouraged to play around with the ``pulse`` function:
 .. code-block:: python
 
         >>> import wave1D_dn_vc as w
-        >>> w.pulse(loc='left', pulse_tp='cosinehat', Nx=50, every_frame=10)
+        >>> w.pulse(Nx=50, loc='left', pulse_tp='cosinehat', slowness_factor=2)
 
 To easily kill the graphics by Ctrl-C and restart a new simulation it might be
 easier to run the above two statements from the command line
@@ -1800,8 +1808,8 @@ is a solution.
 .. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
 
 **d)**
-If the code works correctly, the solution :math:`u(x,t) = x(L-x)(1+\frac{t}{2})` 
-should be reproduced exactly. Write a test function ``test_quadratic`` that 
+If the code works correctly, the solution :math:`u(x,t) = x(L-x)(1+\frac{t}{2})`
+should be reproduced exactly. Write a test function ``test_quadratic`` that
 checks whether this is the case. Simulate for :math:`x` in :math:`[0, \frac{L}{2}]` with
 a symmetry condition at the end :math:`x = \frac{L}{2}`.
 
@@ -1821,10 +1829,13 @@ Exercise 8: Send pulse waves through a layered medium
 Use the ``pulse`` function in ``wave1D_dn_vc.py`` to investigate
 sending a pulse, located with its peak at :math:`x=0`, through two
 media with different wave velocities. The (scaled) velocity in
-the left medium is 1 while it is :math:`s_f` in the right medium.
+the left medium is 1 while it is :math:`\frac{1}{s_f}` in the right medium.
 Report what happens with a Gaussian pulse, a "cosine hat" pulse,
 half a "cosine hat" pulse, and a plug pulse for resolutions
 :math:`N_x=40,80,160`, and :math:`s_f=2,4`. Simulate until :math:`T=2`.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
 Filename: ``pulse1D``.
 
 .. --- end exercise ---

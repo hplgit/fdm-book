@@ -1759,7 +1759,11 @@ time-varying Dirichlet conditions, as well as
 a variable wave velocity. The different code segments needed
 to make these extensions have been shown and commented upon in the
 preceding text. We refer to the <code>solver</code> function in the
-<code>wave1D_dn_vc.py</code> file for all the details.
+<code>wave1D_dn_vc.py</code> file for all the details. Note in that
+ <code>solver</code> function, however, that the technique of &quot;hashing&quot; is
+used to check whether a certain simulation has been run before, or not.
+This technique is further explained in Section
+ref to Appendix SW engineering.
 
 <p>
 The vectorization is only applied inside the time loop, not for the
@@ -1773,14 +1777,13 @@ techniques applied in the general 1D wave equation solver.
 <h2 id="___sec62">User action function as a class </h2>
 
 <p>
-A useful feature in the <code>wave1D_dn_vc.py</code> program is the specification of
-the <code>user_action</code> function as a class. This part of the program may
+A useful feature in the <code>wave1D_dn_vc.py</code> program is the specification
+of the <code>user_action</code> function as a class. This part of the program may
 need some motivation and explanation. Although the <code>plot_u_st</code>
-function (and the <code>PlotMatplotlib</code> class)
-in the <code>wave1D_u0.viz</code> function
-remembers the local variables in the <code>viz</code> function, it is a
-cleaner solution to store the needed variables together with
-the function, which is exactly what a class offers.
+function (and the <code>PlotMatplotlib</code> class) in the <code>wave1D_u0.viz</code>
+function remembers the local variables in the <code>viz</code> function, it is a
+cleaner solution to store the needed variables together with the
+function, which is exactly what a class offers.
 
 <h3 id="___sec63">The code </h3>
 
@@ -1929,7 +1932,7 @@ More details on storing the solution in files appear in
 in
 the document
 <a href="http://tinyurl.com/k3sdbuv/pub/softeng2" target="_self">Scientific software engineering; wave equation case</a>
-<a href="._wave-solarized010.html#Langtangen_deqbook_softeng2">[3]</a>.
+<a href="._wave-solarized008.html#Langtangen_deqbook_softeng2">[3]</a>.
 
 <h2 id="___sec65">Pulse propagation in two media </h2>
 
@@ -1974,17 +1977,17 @@ flexibility with the building blocks we have already developed:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
-<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%"><span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">pulse</span>(C=<span style="color: #B452CD">1</span>,            <span style="color: #228B22"># aximum Courant number</span>
+<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%"><span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">pulse</span>(C=<span style="color: #B452CD">1</span>,            <span style="color: #228B22"># Maximum Courant number</span>
           Nx=<span style="color: #B452CD">200</span>,         <span style="color: #228B22"># spatial resolution</span>
           animate=<span style="color: #658b00">True</span>,
           version=<span style="color: #CD5555">&#39;vectorized&#39;</span>,
           T=<span style="color: #B452CD">2</span>,            <span style="color: #228B22"># end time</span>
           loc=<span style="color: #CD5555">&#39;left&#39;</span>,     <span style="color: #228B22"># location of initial condition</span>
           pulse_tp=<span style="color: #CD5555">&#39;gaussian&#39;</span>,  <span style="color: #228B22"># pulse/init.cond. type</span>
-          slowness_factor=<span style="color: #B452CD">2</span>, <span style="color: #228B22"># wave vel. in right medium</span>
+          slowness_factor=<span style="color: #B452CD">2</span>, <span style="color: #228B22"># inverse of wave vel. in right medium</span>
           medium=[<span style="color: #B452CD">0.7</span>, <span style="color: #B452CD">0.9</span>], <span style="color: #228B22"># interval for right medium</span>
           skip_frame=<span style="color: #B452CD">1</span>,      <span style="color: #228B22"># skip frames in animations</span>
-          sigma=<span style="color: #B452CD">0.05</span>,        <span style="color: #228B22"># width measure of the pulse</span>
+          sigma=<span style="color: #B452CD">0.05</span>         <span style="color: #228B22"># width measure of the pulse</span>
           ):
     <span style="color: #CD5555">&quot;&quot;&quot;</span>
 <span style="color: #CD5555">    Various peaked-shaped initial conditions on [0,1].</span>
@@ -2041,12 +2044,17 @@ flexibility with the building blocks we have already developed:
     <span style="color: #228B22"># Choose the stability limit with given Nx, worst case c</span>
     <span style="color: #228B22"># (lower C will then use this dt, but smaller Nx)</span>
     dt = (L/Nx)/c_0
-    solver(I=I, V=<span style="color: #658b00">None</span>, f=<span style="color: #658b00">None</span>, c=c, U_0=<span style="color: #658b00">None</span>, U_L=<span style="color: #658b00">None</span>,
-           L=L, dt=dt, C=C, T=T,
-           user_action=action, version=version,
-           stability_safety_factor=<span style="color: #B452CD">1</span>)
-    action.make_movie_file()
-    action.file_close()
+    cpu, hashed_input = solver(I=I, V=<span style="color: #658b00">None</span>, f=<span style="color: #658b00">None</span>, c=c, 
+                               U_0=<span style="color: #658b00">None</span>, U_L=<span style="color: #658b00">None</span>,
+                               L=L, dt=dt, C=C, T=T,
+                               user_action=action, 
+                               version=version,
+                               stability_safety_factor=<span style="color: #B452CD">1</span>)
+
+    <span style="color: #8B008B; font-weight: bold">if</span> cpu &gt; <span style="color: #B452CD">0</span>:  <span style="color: #228B22"># did we generate new data?</span>
+        action.close_file(hashed_input)
+        action.make_movie_file()        
+    <span style="color: #8B008B; font-weight: bold">print</span> <span style="color: #CD5555">&#39;cpu (-1 means no new data generated):&#39;</span>, cpu
 </pre></div>
 <p>
 The <code>PlotMediumAndSolution</code> class used here is a subclass of
@@ -2080,7 +2088,7 @@ The reader is encouraged to play around with the <code>pulse</code> function:
 
 <!-- code=python (!bc ipy) typeset with pygments style "perldoc" -->
 <div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%">&gt;&gt;&gt; <span style="color: #8B008B; font-weight: bold">import</span> <span style="color: #008b45; text-decoration: underline">wave1D_dn_vc</span> <span style="color: #8B008B; font-weight: bold">as</span> <span style="color: #008b45; text-decoration: underline">w</span>
-&gt;&gt;&gt; w.pulse(loc=<span style="color: #CD5555">&#39;left&#39;</span>, pulse_tp=<span style="color: #CD5555">&#39;cosinehat&#39;</span>, Nx=<span style="color: #B452CD">50</span>, every_frame=<span style="color: #B452CD">10</span>)
+&gt;&gt;&gt; w.pulse(Nx=<span style="color: #B452CD">50</span>, loc=<span style="color: #CD5555">&#39;left&#39;</span>, pulse_tp=<span style="color: #CD5555">&#39;cosinehat&#39;</span>, slowness_factor=<span style="color: #B452CD">2</span>)
 </pre></div>
 <p>
 To easily kill the graphics by Ctrl-C and restart a new simulation it might be
@@ -2193,8 +2201,8 @@ is a solution.
  -->
 <p>
 <b>d)</b>
-If the code works correctly, the solution \( u(x,t) = x(L-x)(1+\frac{t}{2}) \) 
-should be reproduced exactly. Write a test function <code>test_quadratic</code> that 
+If the code works correctly, the solution \( u(x,t) = x(L-x)(1+\frac{t}{2}) \)
+should be reproduced exactly. Write a test function <code>test_quadratic</code> that
 checks whether this is the case. Simulate for \( x \) in \( [0, \frac{L}{2}] \) with
 a symmetry condition at the end \( x = \frac{L}{2} \).
 
@@ -2216,11 +2224,14 @@ Filename: <code>wave1D_symmetric</code>.
 Use the <code>pulse</code> function in <code>wave1D_dn_vc.py</code> to investigate
 sending a pulse, located with its peak at \( x=0 \), through two
 media with different wave velocities. The (scaled) velocity in
-the left medium is 1 while it is \( s_f \) in the right medium.
+the left medium is 1 while it is \( \frac{1}{s_f} \) in the right medium.
 Report what happens with a Gaussian pulse, a &quot;cosine hat&quot; pulse,
 half a &quot;cosine hat&quot; pulse, and a plug pulse for resolutions
 \( N_x=40,80,160 \), and \( s_f=2,4 \). Simulate until \( T=2 \).
-Filename: <code>pulse1D</code>.
+
+<p>
+<!-- removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+ -->Filename: <code>pulse1D</code>.
 
 <p>
 <!-- --- end exercise --- -->
