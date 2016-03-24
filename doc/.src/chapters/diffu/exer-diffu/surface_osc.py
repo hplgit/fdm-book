@@ -27,5 +27,8 @@ counter = 0
 for u0, u1 in zip(sol[0][2:], sol[1][2:]):
     x0 = sol[0][0]
     x1 = sol[1][0]
-    plt.plot(x0, u0, 'r-', x1, u1, 'b-', legend=['short', 'long'], savefig='tmp_%04d.png' % counter, axis=[x1[0], x1[-1], -1.1, 1.1])
+    plt.plot(x0, u0, 'r-', x1, u1, 'b-',
+             legend=['short', 'long'],
+             savefig='tmp_%04d.png' % counter,
+             axis=[x1[0], x1[-1], -1.1, 1.1])
     counter += 1
