@@ -675,6 +675,10 @@ goes like
             # Accept rate to 1 decimal place
             tol = 0.1
             assert abs(r[-1] - 2.0) < tol
+            # Test that adjusted w obtains 4th order convergence
+            r = convergence_rates(m=5, solver_function=solver_adjust_w, num_periods=8)
+            print 'adjust w rates:', r
+            assert abs(r[-1] - 4.0) < tol
 
 The complete code appears in the file ``vib_undamped.py``.
 
@@ -1319,6 +1323,8 @@ are more inaccurate.
 Analysis of the numerical scheme
 ================================
 
+.. _vib:ode1:analysis:solderiv:
+
 Deriving a solution of the numerical scheme
 -------------------------------------------
 
@@ -1419,16 +1425,20 @@ multiplying by :math:`2/\Delta t`, results in
         
         
 
-The first observation of :ref:`(18) <Eq:vib:ode1:tildeomega>` tells that
-there is a phase error since the numerical frequency :math:`\tilde\omega`
-never equals the exact frequency :math:`\omega`. But how good is
-the approximation :ref:`(18) <Eq:vib:ode1:tildeomega>`? That is, what
-is the error :math:`\omega - \tilde\omega` or :math:`\tilde\omega/\omega`?
-Taylor series expansion
-for small :math:`\Delta t` may give an expression that is easier to understand
+.. _vib:ode1:analysis:numfreq:
+
+The error in the numerical frequency
+------------------------------------
+
+The first observation of :ref:`(18) <Eq:vib:ode1:tildeomega>` tells that there
+is a phase error since the numerical frequency :math:`\tilde\omega` never
+equals the exact frequency :math:`\omega`. But how good is the approximation
+:ref:`(18) <Eq:vib:ode1:tildeomega>`? That is, what is the error :math:`\omega -
+\tilde\omega` or :math:`\tilde\omega/\omega`?  Taylor series expansion for
+small :math:`\Delta t` may give an expression that is easier to understand
 than the complicated function in :ref:`(18) <Eq:vib:ode1:tildeomega>`:
 
-.. code-block:: python
+.. code-block:: ipy
 
         >>> from sympy import *
         >>> dt, w = symbols('dt w')
@@ -1452,36 +1462,34 @@ This means that
         
         
 
-The error in the numerical frequency is of second-order in
-:math:`\Delta t`, and the error vanishes as :math:`\Delta t\rightarrow 0`.
-We see that :math:`\tilde\omega > \omega` since the term :math:`\omega^3\Delta t^2/24 >0`
-and this is by far the biggest term in the series expansion for small
-:math:`\omega\Delta t`. A numerical frequency that is too large gives an oscillating
-curve that oscillates too fast and therefore "lags behind" the exact
-oscillations, a feature that can be seen in the left plot in Figure
-:ref:`vib:ode1:2dt`.
+The error in the numerical frequency is of second-order in :math:`\Delta t`,
+and the error vanishes as :math:`\Delta t\rightarrow 0`.  We see that
+:math:`\tilde\omega > \omega` since the term :math:`\omega^3\Delta t^2/24 >0` and
+this is by far the biggest term in the series expansion for small
+:math:`\omega\Delta t`. A numerical frequency that is too large gives an
+oscillating curve that oscillates too fast and therefore "lags
+behind" the exact oscillations, a feature that can be seen in the
+left plot in Figure :ref:`vib:ode1:2dt`.
 
 Figure :ref:`vib:ode1:tildeomega:plot` plots the discrete frequency
-:ref:`(18) <Eq:vib:ode1:tildeomega>`
-and its approximation :ref:`(19) <Eq:vib:ode1:tildeomega:series>` for :math:`\omega =1` (based
-on the program `vib_plot_freq.py <http://tinyurl.com/nm5587k/vib/vib_plot_freq.py>`__).
+:ref:`(18) <Eq:vib:ode1:tildeomega>` and its approximation
+:ref:`(19) <Eq:vib:ode1:tildeomega:series>` for :math:`\omega =1` (based on the
+program `vib_plot_freq.py <http://tinyurl.com/nm5587k/vib/vib_plot_freq.py>`__).
 Although :math:`\tilde\omega` is a function of :math:`\Delta t` in
-:ref:`(19) <Eq:vib:ode1:tildeomega:series>`,
-it is misleading to think of :math:`\Delta t` as the important
-discretization parameter. It is the product :math:`\omega\Delta t` that is
-the key discretization parameter. This quantity reflects the
-*number of time steps per period* of the oscillations.
-To see this, we set :math:`P=N_P\Delta t`, where :math:`P` is the length of
-a period, and :math:`N_P` is the number of time steps during a period.
-Since :math:`P` and :math:`\omega` are related by :math:`P=2\pi/\omega`,
-we get that :math:`\omega\Delta t = 2\pi/N_P`, which shows that
-:math:`\omega\Delta t` is directly related to :math:`N_P`.
+:ref:`(19) <Eq:vib:ode1:tildeomega:series>`, it is misleading to think of
+:math:`\Delta t` as the important discretization parameter. It is the
+product :math:`\omega\Delta t` that is the key discretization
+parameter. This quantity reflects the *number of time steps per
+period* of the oscillations.  To see this, we set :math:`P=N_P\Delta t`,
+where :math:`P` is the length of a period, and :math:`N_P` is the number of time
+steps during a period.  Since :math:`P` and :math:`\omega` are related by
+:math:`P=2\pi/\omega`, we get that :math:`\omega\Delta t = 2\pi/N_P`, which shows
+that :math:`\omega\Delta t` is directly related to :math:`N_P`.
 
-The plot shows
-that at least :math:`N_P\sim 25-30` points per period are necessary for reasonable
-accuracy, but this depends on the length of the simulation (:math:`T`) as
-the total phase error due to the frequency error grows linearly with time
-(see :ref:`vib:exer:phase:err:growth`).
+The plot shows that at least :math:`N_P\sim 25-30` points per period are
+necessary for reasonable accuracy, but this depends on the length of
+the simulation (:math:`T`) as the total phase error due to the frequency
+error grows linearly with time (see :ref:`vib:exer:phase:err:growth`).
 
 .. _vib:ode1:tildeomega:plot:
 
@@ -1489,6 +1497,30 @@ the total phase error due to the frequency error grows linearly with time
    :width: 400
 
    *Exact discrete frequency and its second-order series expansion*
+
+Empirical convergence rates and adjusted :math:`\omega`
+-------------------------------------------------------
+
+The expression :ref:`(19) <Eq:vib:ode1:tildeomega:series>` suggest that
+adjusting omega to
+
+.. math::
+         \omega\left( 1 - \frac{1}{24}\omega^2\Delta t^2\right),
+
+could have effect on the *convergence rate* of the global error in :math:`u`
+(cf. the section :ref:`vib:ode1:verify`). With the ``convergence_rates`` function
+in ``vib_undamped.py`` we can easily check this. A special solver, with
+adjusted :math:`w`, is available as the function ``solver_adjust_w``. A
+call to ``convergence_rates`` with this solver reveals that the rate is
+4.0! With the original, physical :math:`\omega` the rate is 2.0  - as expected
+from using second-order finite difference approximations,
+as expected from the forthcoming derivation of the global error,
+and as expected from truncation error analysis
+analysis.
+
+Adjusting :math:`\omega` is an ideal trick for this simple problem, but when
+adding damping and nonlinear terms, we have no simple formula for the
+impact on :math:`\omega`, and therefore we cannot use the trick.
 
 .. _vib:ode1:analysis:sol:
 
@@ -1535,8 +1567,8 @@ rewrite :math:`e^n` so the expression is easier to interpret:
         
         
 
-The error mesh function is ideal for verification purposes
-and you are strongly encouraged to make a test based on :ref:`(20) <Eq:vib:ode1:un:exact>`
+The error mesh function is ideal for verification purposes and you are
+strongly encouraged to make a test based on :ref:`(20) <Eq:vib:ode1:un:exact>`
 by doing :ref:`vib:exer:discrete:omega`.
 
 .. _vib:ode1:analysis:conv:
@@ -1545,11 +1577,10 @@ Convergence
 -----------
 
 We can use :ref:`(19) <Eq:vib:ode1:tildeomega:series>`, :ref:`(21) <Eq:vib:ode1:en>`, or
-:ref:`(22) <Eq:vib:ode1:en2>` to show *convergence* of the
-numerical scheme, i.e., :math:`e^n\rightarrow 0` as :math:`\Delta t\rightarrow 0`,
-which implies that the numerical solution approaches the exact solution
-as :math:`\Delta t` approaches to zero.
-We have that
+:ref:`(22) <Eq:vib:ode1:en2>` to show *convergence* of the numerical scheme,
+i.e., :math:`e^n\rightarrow 0` as :math:`\Delta t\rightarrow 0`, which implies
+that the numerical solution approaches the exact solution as :math:`\Delta
+t` approaches to zero.  We have that
 
 .. math::
         
@@ -1580,12 +1611,12 @@ The global error
 .. index::
    single: error; global
 
-To achieve more analytical insight into the nature of the global error,
-we can Taylor expand the error mesh function :ref:`(21) <Eq:vib:ode1:en>`.
-Since :math:`\tilde\omega` in :ref:`(18) <Eq:vib:ode1:tildeomega>`
-contains :math:`\Delta t` in the denominator we use the series expansion
-for :math:`\tilde\omega` inside the cosine function. A relevant ``sympy``
-session is
+To achieve more analytical insight into the nature of the global
+error, we can Taylor expand the error mesh function
+:ref:`(21) <Eq:vib:ode1:en>`.  Since :math:`\tilde\omega` in
+:ref:`(18) <Eq:vib:ode1:tildeomega>` contains :math:`\Delta t` in the denominator we
+use the series expansion for :math:`\tilde\omega` inside the cosine
+function. A relevant ``sympy`` session is
 
 .. code-block:: python
 
@@ -1606,10 +1637,9 @@ prevents further calculations with the series. We can use the
         >>> w_tilde_series
         dt**2*w**3/24 + w
 
-Using this ``w_tilde_series`` expression
-for :math:`\tilde w` in :ref:`(21) <Eq:vib:ode1:en>`,
-dropping :math:`I` (which is a common factor), and performing a series
-expansion of the error yields
+Using this ``w_tilde_series`` expression for :math:`\tilde w` in
+:ref:`(21) <Eq:vib:ode1:en>`, dropping :math:`I` (which is a common factor), and
+performing a series expansion of the error yields
 
 .. code-block:: python
 
@@ -1640,10 +1670,9 @@ bound the leading-order expression to its maximum value
 
 This is the dominating term of the error *at a point*.
 
-We are interested in the accumulated global error, which can
-be taken as the :math:`\ell^2` norm of :math:`e^n`.
-The norm is simply computed by summing contributions from all mesh
-points:
+We are interested in the accumulated global error, which can be taken
+as the :math:`\ell^2` norm of :math:`e^n`.  The norm is simply computed by summing
+contributions from all mesh points:
 
 .. math::
          ||e^n||_{\ell^2}^2 = \Delta t\sum_{n=0}^{N_t} \frac{1}{24^2}n^2\omega^6\Delta t^6
@@ -1657,8 +1686,10 @@ the square root gives the expression
          ||e^n||_{\ell^2} = \frac{1}{24}\sqrt{\frac{T^3}{3}}\omega^3\Delta t^2{\thinspace .}
 
 This is our expression for the global (or integrated) error.
-The main result from this expression is that the global error
+A primary result from this expression is that the global error
 is proportional to :math:`\Delta t^2`.
+
+[**hpl 3**: Are dimensions correctly preserved in these derivations? Seems that the error is not the dimension of :math:`u`...]
 
 Stability
 ---------
@@ -1666,21 +1697,20 @@ Stability
 Looking at :ref:`(20) <Eq:vib:ode1:un:exact>`, it appears that the numerical
 solution has constant and correct amplitude, but an error in the
 angular frequency. A constant amplitude is not necessarily the case,
-however! To see this, note that if only :math:`\Delta t` is large
-enough, the magnitude of the argument to :math:`\sin^{-1}` in
-:ref:`(18) <Eq:vib:ode1:tildeomega>` may be larger than 1, i.e.,
-:math:`\omega\Delta t/2 > 1`. In this case, :math:`\sin^{-1}(\omega\Delta t/2)`
-has a complex value and therefore :math:`\tilde\omega` becomes complex.
-Type, for example, ``asin(x)`` in
-`wolframalpha.com <http://www.wolframalpha.com>`__ to see basic properties of :math:`\sin^{-1} (x)`).
+however! To see this, note that if only :math:`\Delta t` is large enough,
+the magnitude of the argument to :math:`\sin^{-1}` in
+:ref:`(18) <Eq:vib:ode1:tildeomega>` may be larger than 1, i.e., :math:`\omega\Delta
+t/2 > 1`. In this case, :math:`\sin^{-1}(\omega\Delta t/2)` has a complex
+value and therefore :math:`\tilde\omega` becomes complex.  Type, for
+example, ``asin(x)`` in `wolframalpha.com <http://www.wolframalpha.com>`__ to see basic properties of :math:`\sin^{-1}
+(x)`).
 
-A complex :math:`\tilde\omega` can be written :math:`\tilde\omega = \tilde\omega_r +
-i\tilde\omega_i`. Since :math:`\sin^{-1}(x)` has a *negative* imaginary part for
-:math:`x>1`, :math:`\tilde\omega_i < 0`, which means that
-:math:`e^{i\tilde\omega t}=e^{-\tilde\omega_i t}e^{i\tilde\omega_r t}`
-will lead to exponential growth in time because
-:math:`e^{-\tilde\omega_i t}` with :math:`\tilde\omega_i <0` has a positive
-exponent.
+A complex :math:`\tilde\omega` can be written :math:`\tilde\omega = \tilde\omega_r
++ i\tilde\omega_i`. Since :math:`\sin^{-1}(x)` has a *negative* imaginary
+part for :math:`x>1`, :math:`\tilde\omega_i < 0`, which means that
+:math:`e^{i\tilde\omega t}=e^{-\tilde\omega_i t}e^{i\tilde\omega_r t}` will
+lead to exponential growth in time because :math:`e^{-\tilde\omega_i t}`
+with :math:`\tilde\omega_i <0` has a positive exponent.
 
 .. index:: stability criterion
 
@@ -1722,39 +1752,36 @@ which is slightly above the critical value: :math:`\Delta t =\pi^{-1} + 9.01\cdo
 About the accuracy at the stability limit
 -----------------------------------------
 
-An interesting question is whether the stability condition
-:math:`\Delta t < 2/\omega` is unfortunate, or more precisely:
-would it be meaningful to take larger time steps to speed up computations?
-The answer is a clear no. At the stability limit, we have that
-:math:`\sin^{-1}\omega\Delta t/2 = \sin^{-1} 1 = \pi/2`, and therefore
-:math:`\tilde\omega = \pi/\Delta t`. (Note that the approximate formula
-:ref:`(19) <Eq:vib:ode1:tildeomega:series>` is very inaccurate for this
-value of :math:`\Delta t` as it predicts :math:`\tilde\omega = 2.34/pi`, which is
-a 25 percent reduction.) The corresponding
-period of the numerical solution
+An interesting question is whether the stability condition :math:`\Delta t <
+2/\omega` is unfortunate, or more precisely: would it be meaningful to
+take larger time steps to speed up computations?  The answer is a
+clear no. At the stability limit, we have that :math:`\sin^{-1}\omega\Delta
+t/2 = \sin^{-1} 1 = \pi/2`, and therefore :math:`\tilde\omega = \pi/\Delta
+t`. (Note that the approximate formula
+:ref:`(19) <Eq:vib:ode1:tildeomega:series>` is very inaccurate for this value of
+:math:`\Delta t` as it predicts :math:`\tilde\omega = 2.34/pi`, which is a 25
+percent reduction.) The corresponding period of the numerical solution
 is :math:`\tilde P=2\pi/\tilde\omega = 2\Delta t`, which means that there is
-just one time step :math:`\Delta t` between a peak (maximum)
-and a `through <https://simple.wikipedia.org/wiki/Wave_(physics)>`__
-(minimum) in the
-numerical solution. This is the shortest possible wave that can be
-represented in the mesh! In other words, it is not meaningful to
-use a larger time step than the stability limit.
+just one time step :math:`\Delta t` between a peak (maximum) and a
+`through <https://simple.wikipedia.org/wiki/Wave_(physics)>`__
+(minimum) in the numerical solution. This is the shortest possible
+wave that can be represented in the mesh! In other words, it is not
+meaningful to use a larger time step than the stability limit.
 
-Also, the error in angular frequency
-when :math:`\Delta t = 2/\omega` is severe: Figure
-:ref:`vib:ode1:dt:stablimit` shows a comparison of the numerical and
-analytical solution with :math:`\omega = 2\pi` and
-:math:`\Delta t = 2/\omega = \pi^{-1}`. Already after one period, the
-numerical solution has a through while the exact solution has a peak (!).
-The error in frequency when :math:`\Delta t` is at the stability limit
-becomes :math:`\omega - \tilde\omega = \omega(1-\pi/2)\approx -0.57\omega`.
-The corresponding error in the period is :math:`P - \tilde P \approx 0.36P`.
-The error after :math:`m` periods is then :math:`0.36mP`. This error has reached
-half a period when :math:`m=1/(2\cdot 0.36)\approx 1.38`, which theoretically
-confirms the observations in Figure :ref:`vib:ode1:dt:stablimit`
-that the numerical solution is a through ahead of a peak already after
-one and a half period. Consequently, :math:`\Delta t` should be chosen much
-less than the stability limit to achieve meaningful numerical computations.
+Also, the error in angular frequency when :math:`\Delta t = 2/\omega` is
+severe: Figure :ref:`vib:ode1:dt:stablimit` shows a comparison of the
+numerical and analytical solution with :math:`\omega = 2\pi` and :math:`\Delta t =
+2/\omega = \pi^{-1}`. Already after one period, the numerical solution
+has a through while the exact solution has a peak (!).  The error in
+frequency when :math:`\Delta t` is at the stability limit becomes :math:`\omega -
+\tilde\omega = \omega(1-\pi/2)\approx -0.57\omega`.  The corresponding
+error in the period is :math:`P - \tilde P \approx 0.36P`.  The error after
+:math:`m` periods is then :math:`0.36mP`. This error has reached half a period
+when :math:`m=1/(2\cdot 0.36)\approx 1.38`, which theoretically confirms the
+observations in Figure :ref:`vib:ode1:dt:stablimit` that the numerical
+solution is a through ahead of a peak already after one and a half
+period. Consequently, :math:`\Delta t` should be chosen much less than the
+stability limit to achieve meaningful numerical computations.
 
 .. _vib:ode1:dt:stablimit:
 
@@ -1794,10 +1821,9 @@ less than the stability limit to achieve meaningful numerical computations.
 Alternative schemes based on 1st-order equations
 ================================================
 
-A standard technique for solving second-order ODEs is
-to rewrite them as a system of first-order ODEs and then choose a
-solution strategy from the
-vast collection of methods for first-order ODE systems.
+A standard technique for solving second-order ODEs is to rewrite them
+as a system of first-order ODEs and then choose a solution strategy
+from the vast collection of methods for first-order ODE systems.
 Given the second-order ODE problem
 
 .. math::
@@ -1831,8 +1857,7 @@ The Forward Euler scheme
 ------------------------
 
 A Forward Euler approximation to our :math:`2\times 2` system of ODEs
-:ref:`(24) <Eq:vib:model2x2:ueq>`-:ref:`(25) <Eq:vib:model2x2:veq>`
-becomes
+:ref:`(24) <Eq:vib:model2x2:ueq>`-:ref:`(25) <Eq:vib:model2x2:veq>` becomes
 
 .. _Eq:_auto9:
 
@@ -1865,10 +1890,10 @@ or written out,
         {\thinspace .}
         
 
-Let us briefly compare this Forward Euler method with the
-centered difference scheme for the second-order differential
-equation. We have from :ref:`(27) <Eq:vib:undamped:FE1>` and
-:ref:`(28) <Eq:vib:undamped:FE2>` applied at levels :math:`n` and :math:`n-1` that
+Let us briefly compare this Forward Euler method with the centered
+difference scheme for the second-order differential equation. We have
+from :ref:`(27) <Eq:vib:undamped:FE1>` and :ref:`(28) <Eq:vib:undamped:FE2>` applied at
+levels :math:`n` and :math:`n-1` that
 
 .. math::
          u^{n+1} = u^n + \Delta t v^n = u^n + \Delta t (v^{n-1} -\Delta t \omega^2 u^{n-1}){\thinspace .}
@@ -1883,17 +1908,15 @@ it follows that
 .. math::
          u^{n+1} = 2u^n - u^{n-1} -\Delta t^2\omega^2 u^{n-1},
 
-which is very close to the centered difference scheme, but
-the last term is evaluated at :math:`t_{n-1}` instead of :math:`t_n`.
-Rewriting, so that :math:`\Delta t^2\omega^2u^{n-1}` appears alone on the
-right-hand side, and then dividing
-by :math:`\Delta t^2`, the new left-hand side is an approximation to
-:math:`u^{\prime\prime}` at :math:`t_n`, while the right-hand side is sampled at :math:`t_{n-1}`.
-All terms should be sampled at the same mesh point, so using
-:math:`\omega^2 u^{n-1}` instead of :math:`\omega^2 u^n` points to a kind of
-mathematical error in the derivation of the scheme. This error
-turns out to be rather
-crucial for the accuracy of
+which is very close to the centered difference scheme, but the last
+term is evaluated at :math:`t_{n-1}` instead of :math:`t_n`.  Rewriting, so that
+:math:`\Delta t^2\omega^2u^{n-1}` appears alone on the right-hand side, and
+then dividing by :math:`\Delta t^2`, the new left-hand side is an
+approximation to :math:`u^{\prime\prime}` at :math:`t_n`, while the right-hand
+side is sampled at :math:`t_{n-1}`.  All terms should be sampled at the same
+mesh point, so using :math:`\omega^2 u^{n-1}` instead of :math:`\omega^2 u^n`
+points to a kind of mathematical error in the derivation of the
+scheme. This error turns out to be rather crucial for the accuracy of
 the Forward Euler method applied to vibration problems (the section :ref:`vib:model2x2:compare` has examples).
 
 The reasoning above does not imply that the Forward Euler scheme is not
@@ -1947,15 +1970,13 @@ This becomes a coupled system for :math:`u^{n+1}` and :math:`v^{n+1}`:
         
 
 We can compare :ref:`(31) <Eq:vib:undamped:BE1>`-:ref:`(32) <Eq:vib:undamped:BE2>` with
-the centered scheme :ref:`(7) <Eq:vib:ode1:step4>`
-for the second-order differential equation.
-To this end, we eliminate :math:`v^{n+1}` in :ref:`(31) <Eq:vib:undamped:BE1>`
-using :ref:`(32) <Eq:vib:undamped:BE2>` solved with respect to :math:`v^{n+1}`.
-Thereafter, we eliminate :math:`v^n` using :ref:`(31) <Eq:vib:undamped:BE1>`
-solved with respect to :math:`v^{n+1}` and also replacing :math:`n+1` by :math:`n` and
-:math:`n` by :math:`n-1`.
-The resulting equation involving only :math:`u^{n+1}`, :math:`u^n`, and :math:`u^{n-1}`
-can be ordered as
+the centered scheme :ref:`(7) <Eq:vib:ode1:step4>` for the second-order
+differential equation.  To this end, we eliminate :math:`v^{n+1}` in
+:ref:`(31) <Eq:vib:undamped:BE1>` using :ref:`(32) <Eq:vib:undamped:BE2>` solved with
+respect to :math:`v^{n+1}`.  Thereafter, we eliminate :math:`v^n` using
+:ref:`(31) <Eq:vib:undamped:BE1>` solved with respect to :math:`v^{n+1}` and also
+replacing :math:`n+1` by :math:`n` and :math:`n` by :math:`n-1`.  The resulting equation
+involving only :math:`u^{n+1}`, :math:`u^n`, and :math:`u^{n-1}` can be ordered as
 
 .. math::
          \frac{u^{n+1}-2u^n+u^{n-1}}{\Delta t^2} = -\omega^2 u^{n+1},
@@ -2173,35 +2194,33 @@ Crank-Nicolson schemes is done like this:
 
 .. index:: phase plane plot
 
-The ``vib_undamped_odespy.py``
-program makes two plots of the computed solutions with the various
-methods in the ``solvers`` list: one plot with :math:`u(t)` versus :math:`t`, and
-one *phase plane plot* where :math:`v` is plotted against :math:`u`.
-That is, the phase plane plot is the curve :math:`(u(t),v(t))` parameterized
-by :math:`t`. Analytically, :math:`u=I\cos(\omega t)` and :math:`v=u^{\prime}=-\omega I\sin(\omega t)`.
-The exact curve :math:`(u(t),v(t))` is therefore an ellipse, which often
-looks like a circle in a plot if the axes are automatically scaled. The
-important feature, however, is that the exact curve :math:`(u(t),v(t))` is
-closed and repeats itself for every period. Not all numerical schemes
-are capable of doing that, meaning that the amplitude instead shrinks or
-grows with time.
+The ``vib_undamped_odespy.py`` program makes two plots of the computed
+solutions with the various methods in the ``solvers`` list: one plot
+with :math:`u(t)` versus :math:`t`, and one *phase plane plot* where :math:`v` is
+plotted against :math:`u`.  That is, the phase plane plot is the curve
+:math:`(u(t),v(t))` parameterized by :math:`t`. Analytically, :math:`u=I\cos(\omega t)`
+and :math:`v=u^{\prime}=-\omega I\sin(\omega t)`.  The exact curve
+:math:`(u(t),v(t))` is therefore an ellipse, which often looks like a circle
+in a plot if the axes are automatically scaled. The important feature,
+however, is that the exact curve :math:`(u(t),v(t))` is closed and repeats
+itself for every period. Not all numerical schemes are capable of
+doing that, meaning that the amplitude instead shrinks or grows with
+time.
 
-Figure
-:ref:`vib:ode1:1st:odespy:theta:phaseplane` show the results. Note that
-Odespy applies the label MidpointImplicit for what we have specified
-as ``CrankNicolson`` in the code (``CrankNicolson`` is just a synonym for
-class ``MidpointImplicit`` in the Odespy code).
-The Forward Euler scheme in Figure
+Figure :ref:`vib:ode1:1st:odespy:theta:phaseplane` show the
+results. Note that Odespy applies the label MidpointImplicit for what
+we have specified as ``CrankNicolson`` in the code (``CrankNicolson`` is
+just a synonym for class ``MidpointImplicit`` in the Odespy code).  The
+Forward Euler scheme in Figure
 :ref:`vib:ode1:1st:odespy:theta:phaseplane` has a pronounced spiral
 curve, pointing to the fact that the amplitude steadily grows, which
-is also evident in Figure :ref:`vib:ode1:1st:odespy:theta`.
-The Backward Euler scheme has a similar feature, except that the
-spriral goes inward and the amplitude is significantly damped.  The
-changing amplitude and the sprial form decreases with decreasing time
-step.  The Crank-Nicolson scheme looks much more
-accurate.  In fact, these plots tell that the Forward and Backward
-Euler schemes are not suitable for solving our ODEs with oscillating
-solutions.
+is also evident in Figure :ref:`vib:ode1:1st:odespy:theta`.  The
+Backward Euler scheme has a similar feature, except that the spriral
+goes inward and the amplitude is significantly damped.  The changing
+amplitude and the sprial form decreases with decreasing time step.
+The Crank-Nicolson scheme looks much more accurate.  In fact, these
+plots tell that the Forward and Backward Euler schemes are not
+suitable for solving our ODEs with oscillating solutions.
 
 .. _vib:ode1:1st:odespy:theta:phaseplane:
 
@@ -2220,11 +2239,11 @@ solutions.
 Runge-Kutta methods
 -------------------
 
-We may run two other popular standard methods for first-order ODEs, the 2nd-
-and 4th-order Runge-Kutta methods, to see how they perform. Figures
-:ref:`vib:ode1:1st:odespy:RK:phaseplane` and
-:ref:`vib:ode1:1st:odespy:RK` show the solutions with larger :math:`\Delta
-t` values than what was used in the previous two plots.
+We may run two other popular standard methods for first-order ODEs,
+the 2nd- and 4th-order Runge-Kutta methods, to see how they
+perform. Figures :ref:`vib:ode1:1st:odespy:RK:phaseplane` and
+:ref:`vib:ode1:1st:odespy:RK` show the solutions with larger :math:`\Delta t`
+values than what was used in the previous two plots.
 
 .. _vib:ode1:1st:odespy:RK:phaseplane:
 
@@ -2240,19 +2259,20 @@ t` values than what was used in the previous two plots.
 
    *Comparison of Runge-Kutta schemes*
 
-The visual impression is that the
-4th-order Runge-Kutta method is very accurate, under all circumstances
-in these tests, while the 2nd-order scheme suffers from amplitude errors
-unless the time step is very small.
+The visual impression is that the 4th-order Runge-Kutta method is very
+accurate, under all circumstances in these tests, while the 2nd-order
+scheme suffers from amplitude errors unless the time step is very
+small.
 
 The corresponding results for the Crank-Nicolson scheme are shown in
-Figure :ref:`vib:ode1:1st:odespy:CN:long:phaseplane`.
-It is clear that the Crank-Nicolson
-scheme outperforms the 2nd-order Runge-Kutta method. Both schemes have
-the same order of accuracy :math:`{\mathcal{O}(\Delta t^2)}`, but their differences
-in the accuracy that matters in a real physical application is very
-clearly pronounced in this example.  :ref:`vib:exer:undamped:odespy` invites you to investigate how the amplitude
-is computed by a series of famous methods for first-order ODEs.
+Figure :ref:`vib:ode1:1st:odespy:CN:long:phaseplane`.  It is clear that
+the Crank-Nicolson scheme outperforms the 2nd-order Runge-Kutta
+method. Both schemes have the same order of accuracy :math:`\Oof{\Delta
+t^2}`, but their differences in the accuracy that matters in a real
+physical application is very clearly pronounced in this example.
+:ref:`vib:exer:undamped:odespy` invites you to investigate how
+the amplitude is computed by a series of famous methods for
+first-order ODEs.
 
 .. _vib:ode1:1st:odespy:CN:long:phaseplane:
 
@@ -2264,12 +2284,11 @@ is computed by a series of famous methods for first-order ODEs.
 Analysis of the Forward Euler scheme
 ------------------------------------
 
-We may try to find exact solutions of the discrete
-equations :ref:`(27) <Eq:vib:undamped:FE1>`-:ref:`(28) <Eq:vib:undamped:FE2>`
-in the Forward Euler method to better understand why this
-otherwise useful method has so bad performance for vibration
-ODEs. An "ansatz" for the solution of the discrete equations
-is
+We may try to find exact solutions of the discrete equations
+:ref:`(27) <Eq:vib:undamped:FE1>`-:ref:`(28) <Eq:vib:undamped:FE2>` in the Forward Euler
+method to better understand why this otherwise useful method has so
+bad performance for vibration ODEs. An "ansatz" for the solution of
+the discrete equations is
 
 .. math::
         
@@ -2303,15 +2322,13 @@ which gives
 .. math::
          A = 1 \pm \Delta t i\omega{\thinspace .}
 
-We shall take the real part of :math:`A^n` as the solution. The two
-values of :math:`A` are complex conjugates, and the real part of
-:math:`A^n` will be the same for both roots. This is easy to realize if
-we rewrite the complex numbers in polar form,
-which is also convenient
-for further analysis and understanding.
-The polar form :math:`re^{i\theta}` of a complex number :math:`x+iy` has
-:math:`r=\sqrt{x^2+y^2}` and :math:`\theta = \tan^{-1}(y/x)`.
-Hence, the polar form of the two values for :math:`A` becomes
+We shall take the real part of :math:`A^n` as the solution. The two values
+of :math:`A` are complex conjugates, and the real part of :math:`A^n` will be the
+same for both roots. This is easy to realize if we rewrite the complex
+numbers in polar form, which is also convenient for further analysis
+and understanding.  The polar form :math:`re^{i\theta}` of a complex number
+:math:`x+iy` has :math:`r=\sqrt{x^2+y^2}` and :math:`\theta = \tan^{-1}(y/x)`.  Hence,
+the polar form of the two values for :math:`A` becomes
 
 .. math::
          1 \pm \Delta t i\omega = \sqrt{1+\omega^2\Delta t^2}e^{\pm i\tan^{-1}(\omega\Delta t)}{\thinspace .}
@@ -2325,11 +2342,10 @@ Since :math:`\cos (\theta n) = \cos (-\theta n)`, the real parts of the two
 numbers become the same. We therefore continue with the solution that has
 the plus sign.
 
-The general solution is :math:`u^n = CA^n`, where
-:math:`C` is a constant determined from the initial condition:
-:math:`u^0=C=I`. We have :math:`u^n=IA^n` and
-:math:`v^n=qIA^n`. The final solutions
-are just the real part of the expressions in polar form:
+The general solution is :math:`u^n = CA^n`, where :math:`C` is a constant
+determined from the initial condition: :math:`u^0=C=I`. We have :math:`u^n=IA^n`
+and :math:`v^n=qIA^n`. The final solutions are just the real part of the
+expressions in polar form:
 
 .. _Eq:_auto16:
 
@@ -2533,6 +2549,20 @@ is constant:
         {\thinspace .}
         
 
+Growth of energy in the Forward Euler scheme
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The energy at time level :math:`n+1` in the Forward Euler scheme is
+
+.. math::
+        
+        E^{n+1} &= \frac{1}{2}(v^{n+1})^2 + \frac{1}{2}\omega^2 (u^{n+1})^2\\ 
+        &= \frac{1}{2}(v^n - \omega^2\Delta t u^n)^2 + \frac{1}{2}\omega^2(u^n + \Delta t(v^))^2
+        &= (1 + \Delta t\omega^2)E^n,
+        
+
+showing that the energy increases from one time level to the next.
+
 .. _vib:model1:energy:measure:
 
 An error measure based on energy
@@ -2557,13 +2587,11 @@ where
 .. math::
          E(0) = {\frac{1}{2}}V^2 + \frac{1}{2}\omega^2I^2,
 
-if :math:`u(0)=I` and :math:`u^{\prime}(0)=V`. Note that we have used
-a centered approximation to :math:`u^{\prime}`: :math:`u^{\prime}(t_n)\approx
-[D_{2t}u]^n`.
+if :math:`u(0)=I` and :math:`u^{\prime}(0)=V`. Note that we have used a centered
+approximation to :math:`u^{\prime}`: :math:`u^{\prime}(t_n)\approx [D_{2t}u]^n`.
 
-A useful norm of the mesh function :math:`e_E^n`
-for the discrete mechanical energy
-can be the maximum absolute value of :math:`e_E^n`:
+A useful norm of the mesh function :math:`e_E^n` for the discrete mechanical
+energy can be the maximum absolute value of :math:`e_E^n`:
 
 .. math::
          ||e_E^n||_{\ell^\infty} = \max_{1\leq n <N_t} |e_E^n|{\thinspace .}
@@ -2583,16 +2611,15 @@ A vectorized Python implementation of :math:`e_E^n` takes the form
         e_E = E - E0
         e_E_norm = np.abs(e_E).max()
 
-The convergence rates of the quantity ``e_E_norm`` can be used for verification.
-The value of ``e_E_norm`` is also useful for comparing schemes
-through their ability to preserve energy. Below is a table demonstrating
-the relative error in total energy for various schemes
-(computed by the `vib_undamped_odespy.py <http://tinyurl.com/nm5587k/vib/vib_undamped_odespy.py>`__
-program). The test problem is :math:`u^{\prime\prime} + 4\pi^2 u =0`
-with :math:`u(0)=1` and :math:`u'(0)=0`, so the period is 1 and
-:math:`E(t)\approx 4.93`. We clearly see that
-the Crank-Nicolson and the Runge-Kutta schemes are superior to
-the Forward and Backward Euler schemes already after one period.
+The convergence rates of the quantity ``e_E_norm`` can be used for
+verification.  The value of ``e_E_norm`` is also useful for comparing
+schemes through their ability to preserve energy. Below is a table
+demonstrating the relative error in total energy for various schemes
+(computed by the `vib_undamped_odespy.py <http://tinyurl.com/nm5587k/vib/vib_undamped_odespy.py>`__ program). The test problem is
+:math:`u^{\prime\prime} + 4\pi^2 u =0` with :math:`u(0)=1` and :math:`u'(0)=0`, so the
+period is 1 and :math:`E(t)\approx 4.93`. We clearly see that the
+Crank-Nicolson and the Runge-Kutta schemes are superior to the Forward
+and Backward Euler schemes already after one period.
 
 =====================  =========  ================  ==============================================  
         Method         :math:`T`  :math:`\Delta t`  :math:`\max \left\vert e_E^n\right\vert/e_E^0`  
@@ -2616,9 +2643,9 @@ Runge-Kutta 2nd-order  :math:`10`  :math:`0.025`     :math:`6.250\cdot 10^{-2}`
 Runge-Kutta 4th-order  :math:`10`  :math:`0.025`     :math:`8.288\cdot 10^{-3}`                      
 =====================  ==========  ================  ==============================================  
 
-The Runge-Kutta and Crank-Nicolson methods hardly change their
-energy error with :math:`T`, while the error in the Forward Euler method grows
-to huge levels and a relative error of 1 in the Backward Euler method
+The Runge-Kutta and Crank-Nicolson methods hardly change their energy
+error with :math:`T`, while the error in the Forward Euler method grows to
+huge levels and a relative error of 1 in the Backward Euler method
 points to :math:`E(t)\rightarrow 0` as :math:`t` grows large.
 
 Running multiple values of :math:`\Delta t`, we can get some insight into
@@ -2646,14 +2673,14 @@ Runge-Kutta 4th-order  :math:`10`  :math:`0.0125`    :math:`2.058\cdot 10^{-3}`
 
 A striking fact from this table is that the error of the Forward Euler
 method is reduced by the same factor as :math:`\Delta t` is reduced by,
-while the error in the
-Crank-Nicolson method has a reduction proportional to :math:`\Delta t^2` (we cannot
-say anything for the Backward Euler method). However, for the RK2
-method, halving :math:`\Delta t` reduces the error by almost a factor of 10
-(!), and for the RK4 method the reduction seems proportional to
-:math:`\Delta t^2` only (and the trend is confirmed by running smaller time
-steps, so for :math:`\Delta t = 3.9\cdot 10^{-4}` the relative error of RK2
-is a factor 10 smaller than that of RK4!).
+while the error in the Crank-Nicolson method has a reduction
+proportional to :math:`\Delta t^2` (we cannot say anything for the Backward
+Euler method). However, for the RK2 method, halving :math:`\Delta t` reduces
+the error by almost a factor of 10 (!), and for the RK4 method the
+reduction seems proportional to :math:`\Delta t^2` only (and the trend is
+confirmed by running smaller time steps, so for :math:`\Delta t = 3.9\cdot
+10^{-4}` the relative error of RK2 is a factor 10 smaller than that of
+RK4!).
 
 .. Should build a verification test on the energy error.
 
@@ -2666,14 +2693,12 @@ is a factor 10 smaller than that of RK4!).
 The Euler-Cromer method
 =======================
 
-While the Runge-Kutta methods and the
-Crank-Nicolson scheme work well for the vibration equation modeled as a
-first-order ODE system,
-both were inferior to the straightforward centered
-difference scheme for the second-order equation
-:math:`u^{\prime\prime}+\omega^2u=0`. However, there is a similarly successful scheme
-available for the first-order system :math:`u^{\prime}=v`, :math:`v'=-\omega^2u`, to be
-presented next.
+While the Runge-Kutta methods and the Crank-Nicolson scheme work well
+for the vibration equation modeled as a first-order ODE system, both
+were inferior to the straightforward centered difference scheme for
+the second-order equation :math:`u^{\prime\prime}+\omega^2u=0`. However,
+there is a similarly successful scheme available for the first-order
+system :math:`u^{\prime}=v`, :math:`v'=-\omega^2u`, to be presented next.
 
 .. index:: forward-backward Euler-Cromer scheme
 
@@ -2681,8 +2706,8 @@ Forward-backward discretization
 -------------------------------
 
 The idea is to apply a Forward Euler discretization to the first
-equation and a Backward Euler discretization to the second. In operator
-notation this is stated as
+equation and a Backward Euler discretization to the second. In
+operator notation this is stated as
 
 .. _Eq:_auto19:
 
@@ -2729,8 +2754,8 @@ We realize that after :math:`u^{n+1}` has been computed from
 in
 :ref:`(52) <Eq:vib:model2x2:EulerCromer:veq1>` to compute :math:`v^{n+1}`.
 
-In physics, it is more common to update the :math:`v` equation first, with
-a forward difference, and thereafter the :math:`u` equation, with a backward
+In physics, it is more common to update the :math:`v` equation first, with a
+forward difference, and thereafter the :math:`u` equation, with a backward
 difference that applies the most recently computed :math:`v` value:
 
 .. _Eq:vib:model2x2:EulerCromer:veq1b:
@@ -2753,9 +2778,8 @@ difference that applies the most recently computed :math:`v` value:
 
 The advantage of ordering the ODEs as in
 :ref:`(53) <Eq:vib:model2x2:EulerCromer:veq1b>`-:ref:`(54) <Eq:vib:model2x2:EulerCromer:ueq1b>`
-becomes evident
-when considering complicated models. Such models are included if
-we write our vibration ODE more generally as
+becomes evident when considering complicated models. Such models are
+included if we write our vibration ODE more generally as
 
 .. math::
          u^{\prime\prime} + g(u, u^{\prime}, t)=0{\thinspace .}
@@ -2789,16 +2813,17 @@ algebraic equations to be solved at each time level.
 
 The scheme
 :ref:`(53) <Eq:vib:model2x2:EulerCromer:veq1b>`-:ref:`(54) <Eq:vib:model2x2:EulerCromer:ueq1b>`
-goes under several names: forward-backward scheme, `semi-implicit Euler method <http://en.wikipedia.org/wiki/Semi-implicit_Euler_method>`__, semi-explicit Euler,
-symplectic Euler,
+goes under several names: forward-backward scheme, `semi-implicit
+Euler method <http://en.wikipedia.org/wiki/Semi-implicit_Euler_method>`__,
+semi-explicit Euler, symplectic Euler,
 Newton-Stormer-Verlet,
-and Euler-Cromer.
-We shall stick to the latter name.
-Since both time discretizations are based on first-order difference
-approximation, one may think that the scheme is only of first-order,
-but this is not true: the use of a forward and then a backward
-difference make errors cancel so that the overall error in the scheme
-is :math:`{\mathcal{O}(\Delta t^2)}`. This is explained below.
+and Euler-Cromer.  We shall stick to the latter name.
+Since both time
+discretizations are based on first-order difference approximation, one
+may think that the scheme is only of first-order, but this is not
+true: the use of a forward and then a backward difference make errors
+cancel so that the overall error in the scheme is :math:`\Oof{\Delta
+t^2}`. This is explained below. [**hpl 4**: This is not correct!]
 
 How does the Euler-Cromer method preserve the total energy?
 We may run the example from the section :ref:`vib:model1:energy:measure`:
@@ -2858,21 +2883,20 @@ and when this is inserted in :ref:`(55) <Eq:vib:model2x2:EulerCromer:elim1>` we 
         
         
 
-which is nothing but the centered scheme :ref:`(7) <Eq:vib:ode1:step4>`!
-The two seemingly different numerical methods are mathematically
-equivalent. Consequently,
-the previous analysis of
-:ref:`(7) <Eq:vib:ode1:step4>` also applies to the Euler-Cromer
-method. In particular, the amplitude is constant, given that the stability
+which is nothing but the centered scheme :ref:`(7) <Eq:vib:ode1:step4>`!  The
+two seemingly different numerical methods are mathematically
+equivalent. Consequently, the previous analysis of
+:ref:`(7) <Eq:vib:ode1:step4>` also applies to the Euler-Cromer method. In
+particular, the amplitude is constant, given that the stability
 criterion is fulfilled, but there is always an angular frequency error
-:ref:`(19) <Eq:vib:ode1:tildeomega:series>`. :ref:`vib:exer:EulerCromer:analysis`
-gives guidance on how to derive the exact discrete solution of
-the two equations in the Euler-Cromer method.
+:ref:`(19) <Eq:vib:ode1:tildeomega:series>`. :ref:`vib:exer:EulerCromer:analysis` gives guidance on how to derive the
+exact discrete solution of the two equations in the Euler-Cromer
+method.
 
-Although the Euler-Cromer scheme and the method :ref:`(7) <Eq:vib:ode1:step4>` are
-equivalent, there could be differences in the way they handle
-the initial conditions. Let is look into this topic.
-The initial condition :math:`u^{\prime}=0` means :math:`u^{\prime}=v=0`.  From
+Although the Euler-Cromer scheme and the method :ref:`(7) <Eq:vib:ode1:step4>`
+are equivalent, there could be differences in the way they handle the
+initial conditions. Let is look into this topic.  The initial
+condition :math:`u^{\prime}=0` means :math:`u^{\prime}=v=0`.  From
 :ref:`(53) <Eq:vib:model2x2:EulerCromer:veq1b>` we get
 
 .. math::
@@ -2885,38 +2909,37 @@ it follows that
 .. math::
          u^1=u^0 + \Delta t v^1 = u^0 - \omega^2\Delta t^2 u^0{\thinspace .}
 
-When we previously used
-a centered approximation of :math:`u^{\prime}(0)=0` combined with
-the discretization :ref:`(7) <Eq:vib:ode1:step4>` of the second-order ODE, we
-got a slightly different result:
-:math:`u^1=u^0 - \frac{1}{2}\omega^2\Delta t^2 u^0`. The difference is
+When we previously used a centered approximation of :math:`u^{\prime}(0)=0`
+combined with the discretization :ref:`(7) <Eq:vib:ode1:step4>` of the
+second-order ODE, we got a slightly different result: :math:`u^1=u^0 -
+\frac{1}{2}\omega^2\Delta t^2 u^0`. The difference is
 :math:`\frac{1}{2}\omega^2\Delta t^2 u^0`, which is of second order in
 :math:`\Delta t`, seemingly consistent with the overall error in the scheme
 for the differential equation model.
 
-A different view can also be taken.
-If we approximate :math:`u^{\prime}(0)=0` by a backward difference,
-:math:`(u^0-u^{-1})/\Delta t =0`, we get :math:`u^{-1}=u^0`, and when combined
-with :ref:`(7) <Eq:vib:ode1:step4>`, it results in
-:math:`u^1=u^0 - \omega^2\Delta t^2 u^0`. This means that
-the Euler-Cromer method based on
+A different view can also be taken.  If we approximate
+:math:`u^{\prime}(0)=0` by a backward difference, :math:`(u^0-u^{-1})/\Delta t
+=0`, we get :math:`u^{-1}=u^0`, and when combined with
+:ref:`(7) <Eq:vib:ode1:step4>`, it results in :math:`u^1=u^0 - \omega^2\Delta t^2
+u^0`. This means that the Euler-Cromer method based on
 :ref:`(54) <Eq:vib:model2x2:EulerCromer:ueq1b>`-:ref:`(53) <Eq:vib:model2x2:EulerCromer:veq1b>`
-corresponds to using only a first-order approximation to the initial condition
-in the method from the section :ref:`vib:ode1:fdm`.
+corresponds to using only a first-order approximation to the initial
+condition in the method from the section :ref:`vib:ode1:fdm`.
 
 Correspondingly, using the formulation
 :ref:`(51) <Eq:vib:model2x2:EulerCromer:ueq1>`-:ref:`(52) <Eq:vib:model2x2:EulerCromer:veq1>`
-with :math:`v^n=0` leads to :math:`u^1=u^0`, which can be interpreted as using
-a forward difference approximation for the initial condition :math:`u^{\prime}(0)=0`.
-Both Euler-Cromer formulations lead to slightly different values for
-:math:`u^1` compared to the method in the section :ref:`vib:ode1:fdm`.
-The error is :math:`\frac{1}{2}\omega^2\Delta t^2 u^0` and of the same order
-as the overall scheme.
+with :math:`v^n=0` leads to :math:`u^1=u^0`, which can be interpreted as using a
+forward difference approximation for the initial condition
+:math:`u^{\prime}(0)=0`.  Both Euler-Cromer formulations lead to slightly
+different values for :math:`u^1` compared to the method in the section :ref:`vib:ode1:fdm`.  The error is :math:`\frac{1}{2}\omega^2\Delta t^2 u^0`.
 
 .. _vib:model2x2:EulerCromer:impl:
 
 Implementation          (2)
 ---------------------------
+
+Solver function
+~~~~~~~~~~~~~~~
 
 The function below, found in `vib_EulerCromer.py <http://tinyurl.com/nm5587k/vib/vib_EulerCromer.py>`__, implements the Euler-Cromer scheme
 :ref:`(53) <Eq:vib:model2x2:EulerCromer:veq1b>`-:ref:`(54) <Eq:vib:model2x2:EulerCromer:ueq1b>`:
@@ -2943,6 +2966,9 @@ The function below, found in `vib_EulerCromer.py <http://tinyurl.com/nm5587k/vib
                 u[n+1] = u[n] + dt*v[n+1]
             return u, v, t
 
+Verification          (2)
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Since the Euler-Cromer scheme is equivalent to the finite difference
 method for the second-order ODE :math:`u^{\prime\prime}+\omega^2u=0` (see the section :ref:`vib:model2x2:EulerCromer:equiv`), the performance of the above
 ``solver`` function is the same as for the ``solver`` function in the section :ref:`vib:impl1`. The only difference is the formula for the first time
@@ -2950,15 +2976,13 @@ step, as discussed above.  This deviation in the Euler-Cromer scheme
 means that the discrete solution listed in the section :ref:`vib:ode1:analysis:sol` is not a solution of the Euler-Cromer
 scheme!
 
-To verify the implementation of the Euler-Cromer method we
-can adjust ``v[1]`` so that the computer-generated values can be
-compared with the formula
-:ref:`(20) <Eq:vib:ode1:un:exact>` from in the section :ref:`vib:ode1:analysis:sol`. This
-adjustment is done in an alternative solver function, ``solver_ic_fix``
-in ``vib_EulerCromer.py``. Since we now have an exact solution of the
-discrete equations available, we can write a test function
-``test_solver`` for checking the equality of computed values with the
-formula :ref:`(20) <Eq:vib:ode1:un:exact>`:
+To verify the implementation of the Euler-Cromer method we can adjust
+``v[1]`` so that the computer-generated values can be compared with the
+formula :ref:`(20) <Eq:vib:ode1:un:exact>` from in the section :ref:`vib:ode1:analysis:sol`. This adjustment is done in an alternative
+solver function, ``solver_ic_fix`` in ``vib_EulerCromer.py``. Since we now
+have an exact solution of the discrete equations available, we can
+write a test function ``test_solver`` for checking the equality of
+computed values with the formula :ref:`(20) <Eq:vib:ode1:un:exact>`:
 
 .. code-block:: python
 
@@ -2976,16 +3000,18 @@ formula :ref:`(20) <Eq:vib:ode1:un:exact>`:
             tol = 1E-14
             assert error < tol
 
-Another function, ``demo``,
-visualizes the difference between the Euler-Cromer scheme and the scheme
-:ref:`(7) <Eq:vib:ode1:step4>`
-for the second-oder ODE, arising from the mismatch in the first time level.
+Another function, ``demo``, visualizes the difference between the
+Euler-Cromer scheme and the scheme :ref:`(7) <Eq:vib:ode1:step4>` for the
+second-oder ODE, arising from the mismatch in the first time level.
 
-The Euler-Cromer method is also available in the Odespy package.
-The important thing to remember is that we must order the unknowns as
-:math:`v` and :math:`u`, so the ``u`` vector at each time level consists of the
-velocity :math:`v` as first component and the displacement :math:`u` as
-second component:
+Using Odespy
+~~~~~~~~~~~~
+
+The Euler-Cromer method is also available in the Odespy package.  The
+important thing to remember, when using this implementation, is that
+we must order the unknowns as :math:`v` and :math:`u`, so the ``u`` vector at each
+time level consists of the velocity :math:`v` as first component and the
+displacement :math:`u` as second component:
 
 .. code-block:: python
 
@@ -3013,30 +3039,42 @@ second component:
         u, t = solver.solve(t_mesh)
         u = u[:,1]  # Extract displacement
 
+Convergence rates
+~~~~~~~~~~~~~~~~~
+
+We may use the ``convergence_rates`` function in the file ``vib_undamped.py``
+to investigate the convergence rate of the Euler-Cromer method,
+see the ``convergence_rate`` function in the file ``vib_undamped_EulerCromer.py``.
+Since we could eliminate :math:`v` to get a scheme for :math:`u` that
+is equivalent to the finite difference method for the second-order equation
+in :math:`u`, we would expect the convergence rates to be the same, i.e.,
+:math:`\mathcal{O}(\Delta t^2)`. However, measuring the convergence rate of :math:`u`
+in the Euler-Cromer scheme shows that it is :math:`\mathcal{O}(\Delta t)`!
+Adjusting the initial condition does not change the rate. Adjusting
+:math:`\omega`, as outlined in the section :ref:`vib:ode1:analysis:numfreq`, gives
+a 4th-order method there, while there is no increase in the measured rate
+in the Euler-Cromer scheme. It is obvious that the Euler-Cromer scheme
+is dramatically much better than the two other first-order methods,
+Forward Euler and Backward Euler, but this is not reflected in the
+convergence rate of :math:`u`.
+
 .. is anything really gained? is v of higher order compared
 
 .. with differentiating u in the 2nd order ODE? most likely,
 
 .. v is 2nd order, v from 2nd-order ODE is 1st order
 
-.. make exercises:
-
-.. investigate how important the u^1 wrong formula really is on
-
-.. convergence rate
-
-.. new file: genealizations, systems,
-
-.. new file: apps
-
-.. exercise: damping analysis, see geophysics book first...
-
 The velocity Verlet algorithm
 -----------------------------
 
-Another very popular algorithm for vibration problems :math:`u^{\prime\prime}+\omega^2u=0`
-can be derived as follows. First, we step :math:`u` forward from :math:`t_n` to
-:math:`t_{n+1}` using a three-term Taylor series,
+[**hpl 5**: Tie velocity Verlet better to Euler-Cromer. They are very related, at last if using staggered grids.]
+
+.. See velverlet_EulerCromer_....pdf for discussion.
+
+Another very popular algorithm for vibration problems
+:math:`u^{\prime\prime}+\omega^2u=0` can be derived as follows. First, we
+step :math:`u` forward from :math:`t_n` to :math:`t_{n+1}` using a three-term Taylor
+series,
 
 .. math::
          u(t_{n+1}) = u(t_n) + u^{\prime}(t_n)\Delta t + \frac{1}{2}u^{\prime\prime}(t_n)\Delta t^2{\thinspace .}
@@ -3051,8 +3089,8 @@ Second, the first-order equation for :math:`v`,
 .. math::
          v'=-\omega^2u,
 
-is discretized by a centered difference
-in a Crank-Nicolson fashion at :math:`t_{n+\frac{1}{2}}`:
+is discretized by a centered difference in a Crank-Nicolson fashion at
+:math:`t_{n+\frac{1}{2}}`:
 
 .. math::
          \frac{v^{n+1}-v^n}{\Delta t} = -\omega^2\frac{1}{2}(u^n + u^{n+1}){\thinspace .}

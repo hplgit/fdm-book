@@ -170,7 +170,7 @@ $$
 <center>[2] <b>Department of Informatics, University of Oslo</b></center>
 <br>
 <p>&nbsp;<br>
-<center><h4>Mar 10, 2016</h4></center> <!-- date -->
+<center><h4>Mar 31, 2016</h4></center> <!-- date -->
 <br>
 </section>
 
@@ -418,6 +418,23 @@ $$
     <span style="color: #8B008B; font-weight: bold">for</span> n <span style="color: #8B008B">in</span> <span style="color: #658b00">range</span>(<span style="color: #B452CD">1</span>, Nt):
         u[n+<span style="color: #B452CD">1</span>] = <span style="color: #B452CD">2</span>*u[n] - u[n-<span style="color: #B452CD">1</span>] - dt**<span style="color: #B452CD">2</span>*w**<span style="color: #B452CD">2</span>*u[n]
     <span style="color: #8B008B; font-weight: bold">return</span> u, t
+
+<span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">solver_adjust_w</span>(I, w, dt, T, adjust_w=<span style="color: #658b00">True</span>):
+    <span style="color: #CD5555">&quot;&quot;&quot;</span>
+<span style="color: #CD5555">    Solve u&#39;&#39; + w**2*u = 0 for t in (0,T], u(0)=I and u&#39;(0)=0,</span>
+<span style="color: #CD5555">    by a central finite difference method with time step dt.</span>
+<span style="color: #CD5555">    &quot;&quot;&quot;</span>
+    dt = <span style="color: #658b00">float</span>(dt)
+    Nt = <span style="color: #658b00">int</span>(<span style="color: #658b00">round</span>(T/dt))
+    u = np.zeros(Nt+<span style="color: #B452CD">1</span>)
+    t = np.linspace(<span style="color: #B452CD">0</span>, Nt*dt, Nt+<span style="color: #B452CD">1</span>)
+    w_adj = w*(<span style="color: #B452CD">1</span> - w**<span style="color: #B452CD">2</span>*dt**<span style="color: #B452CD">2</span>/<span style="color: #B452CD">24.</span>) <span style="color: #8B008B; font-weight: bold">if</span> adjust_w <span style="color: #8B008B; font-weight: bold">else</span> w
+
+    u[<span style="color: #B452CD">0</span>] = I
+    u[<span style="color: #B452CD">1</span>] = u[<span style="color: #B452CD">0</span>] - <span style="color: #B452CD">0.5</span>*dt**<span style="color: #B452CD">2</span>*w_adj**<span style="color: #B452CD">2</span>*u[<span style="color: #B452CD">0</span>]
+    <span style="color: #8B008B; font-weight: bold">for</span> n <span style="color: #8B008B">in</span> <span style="color: #658b00">range</span>(<span style="color: #B452CD">1</span>, Nt):
+        u[n+<span style="color: #B452CD">1</span>] = <span style="color: #B452CD">2</span>*u[n] - u[n-<span style="color: #B452CD">1</span>] - dt**<span style="color: #B452CD">2</span>*w_adj**<span style="color: #B452CD">2</span>*u[n]
+    <span style="color: #8B008B; font-weight: bold">return</span> u, t
 </pre></div>
 </section>
 
@@ -610,6 +627,10 @@ Use final <code>r[-1]</code> in a unit test:
     <span style="color: #228B22"># Accept rate to 1 decimal place</span>
     tol = <span style="color: #B452CD">0.1</span>
     <span style="color: #8B008B; font-weight: bold">assert</span> <span style="color: #658b00">abs</span>(r[-<span style="color: #B452CD">1</span>] - <span style="color: #B452CD">2.0</span>) &lt; tol
+    <span style="color: #228B22"># Test that adjusted w obtains 4th order convergence</span>
+    r = convergence_rates(m=<span style="color: #B452CD">5</span>, solver_function=solver_adjust_w, num_periods=<span style="color: #B452CD">8</span>)
+    <span style="color: #8B008B; font-weight: bold">print</span> <span style="color: #CD5555">&#39;adjust w rates:&#39;</span>, r
+    <span style="color: #8B008B; font-weight: bold">assert</span> <span style="color: #658b00">abs</span>(r[-<span style="color: #B452CD">1</span>] - <span style="color: #B452CD">4.0</span>) &lt; tol
 </pre></div>
 <p>
 Complete code in <a href="http://tinyurl.com/nm5587k/vib/vib_undamped.py" target="_self"><tt>vib_undamped.py</tt></a>.
@@ -899,7 +920,7 @@ for small \( \Delta t \) gives a formula that is easier to understand:
 
 <p>
 
-<!-- code=python (!bc ipy) typeset with pygments style "perldoc" -->
+<!-- code=ipy (!bc ipy) typeset with pygments style "perldoc" -->
 <div class="highlight" style="background: #eeeedd"><pre style="font-size: 80%; line-height: 125%">&gt;&gt;&gt; <span style="color: #8B008B; font-weight: bold">from</span> <span style="color: #008b45; text-decoration: underline">sympy</span> <span style="color: #8B008B; font-weight: bold">import</span> *
 &gt;&gt;&gt; dt, w = symbols(<span style="color: #CD5555">&#39;dt w&#39;</span>)
 &gt;&gt;&gt; w_tilde = asin(w*dt/<span style="color: #B452CD">2</span>).series(dt, <span style="color: #B452CD">0</span>, <span style="color: #B452CD">4</span>)*<span style="color: #B452CD">2</span>/dt
@@ -1276,9 +1297,9 @@ Note: CrankNicolson in Odespy leads to the name MidpointImplicit in plots.
 <h2 id="___sec45">Plain solution curves </h2>
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="vib:model1:1st:odespy:theta"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 1:  Comparison of classical schemes. <div id="vib:model1:1st:odespy:theta"></div> </p></center>
+<center><p class="caption">Figure 1:  Comparison of classical schemes.  <!-- caption label: vib:model1:1st:odespy:theta --> </p></center>
 <p><img src="fig-vib/vib_theta_1_u.png" align="bottom" width=800></p>
 </center>
 </section>

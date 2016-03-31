@@ -170,7 +170,7 @@ $$
 <center>[2] <b>Department of Informatics, University of Oslo</b></center>
 <br>
 <p>&nbsp;<br>
-<center><h4>Mar 10, 2016</h4></center> <!-- date -->
+<center><h4>Mar 31, 2016</h4></center> <!-- date -->
 <br>
 </section>
 
@@ -418,6 +418,23 @@ $$
     <span style="color: #6ab825; font-weight: bold">for</span> <span style="color: #d0d0d0">n</span> <span style="color: #6ab825; font-weight: bold">in</span> <span style="color: #24909d">range</span><span style="color: #d0d0d0">(</span><span style="color: #3677a9">1</span><span style="color: #d0d0d0">,</span> <span style="color: #d0d0d0">Nt):</span>
         <span style="color: #d0d0d0">u[n+</span><span style="color: #3677a9">1</span><span style="color: #d0d0d0">]</span> <span style="color: #d0d0d0">=</span> <span style="color: #3677a9">2</span><span style="color: #d0d0d0">*u[n]</span> <span style="color: #d0d0d0">-</span> <span style="color: #d0d0d0">u[n-</span><span style="color: #3677a9">1</span><span style="color: #d0d0d0">]</span> <span style="color: #d0d0d0">-</span> <span style="color: #d0d0d0">dt**</span><span style="color: #3677a9">2</span><span style="color: #d0d0d0">*w**</span><span style="color: #3677a9">2</span><span style="color: #d0d0d0">*u[n]</span>
     <span style="color: #6ab825; font-weight: bold">return</span> <span style="color: #d0d0d0">u,</span> <span style="color: #d0d0d0">t</span>
+
+<span style="color: #6ab825; font-weight: bold">def</span> <span style="color: #447fcf">solver_adjust_w</span><span style="color: #d0d0d0">(I,</span> <span style="color: #d0d0d0">w,</span> <span style="color: #d0d0d0">dt,</span> <span style="color: #d0d0d0">T,</span> <span style="color: #d0d0d0">adjust_w=</span><span style="color: #24909d">True</span><span style="color: #d0d0d0">):</span>
+    <span style="color: #ed9d13">&quot;&quot;&quot;</span>
+<span style="color: #ed9d13">    Solve u&#39;&#39; + w**2*u = 0 for t in (0,T], u(0)=I and u&#39;(0)=0,</span>
+<span style="color: #ed9d13">    by a central finite difference method with time step dt.</span>
+<span style="color: #ed9d13">    &quot;&quot;&quot;</span>
+    <span style="color: #d0d0d0">dt</span> <span style="color: #d0d0d0">=</span> <span style="color: #24909d">float</span><span style="color: #d0d0d0">(dt)</span>
+    <span style="color: #d0d0d0">Nt</span> <span style="color: #d0d0d0">=</span> <span style="color: #24909d">int</span><span style="color: #d0d0d0">(</span><span style="color: #24909d">round</span><span style="color: #d0d0d0">(T/dt))</span>
+    <span style="color: #d0d0d0">u</span> <span style="color: #d0d0d0">=</span> <span style="color: #d0d0d0">np.zeros(Nt+</span><span style="color: #3677a9">1</span><span style="color: #d0d0d0">)</span>
+    <span style="color: #d0d0d0">t</span> <span style="color: #d0d0d0">=</span> <span style="color: #d0d0d0">np.linspace(</span><span style="color: #3677a9">0</span><span style="color: #d0d0d0">,</span> <span style="color: #d0d0d0">Nt*dt,</span> <span style="color: #d0d0d0">Nt+</span><span style="color: #3677a9">1</span><span style="color: #d0d0d0">)</span>
+    <span style="color: #d0d0d0">w_adj</span> <span style="color: #d0d0d0">=</span> <span style="color: #d0d0d0">w*(</span><span style="color: #3677a9">1</span> <span style="color: #d0d0d0">-</span> <span style="color: #d0d0d0">w**</span><span style="color: #3677a9">2</span><span style="color: #d0d0d0">*dt**</span><span style="color: #3677a9">2</span><span style="color: #d0d0d0">/</span><span style="color: #3677a9">24.</span><span style="color: #d0d0d0">)</span> <span style="color: #6ab825; font-weight: bold">if</span> <span style="color: #d0d0d0">adjust_w</span> <span style="color: #6ab825; font-weight: bold">else</span> <span style="color: #d0d0d0">w</span>
+
+    <span style="color: #d0d0d0">u[</span><span style="color: #3677a9">0</span><span style="color: #d0d0d0">]</span> <span style="color: #d0d0d0">=</span> <span style="color: #d0d0d0">I</span>
+    <span style="color: #d0d0d0">u[</span><span style="color: #3677a9">1</span><span style="color: #d0d0d0">]</span> <span style="color: #d0d0d0">=</span> <span style="color: #d0d0d0">u[</span><span style="color: #3677a9">0</span><span style="color: #d0d0d0">]</span> <span style="color: #d0d0d0">-</span> <span style="color: #3677a9">0.5</span><span style="color: #d0d0d0">*dt**</span><span style="color: #3677a9">2</span><span style="color: #d0d0d0">*w_adj**</span><span style="color: #3677a9">2</span><span style="color: #d0d0d0">*u[</span><span style="color: #3677a9">0</span><span style="color: #d0d0d0">]</span>
+    <span style="color: #6ab825; font-weight: bold">for</span> <span style="color: #d0d0d0">n</span> <span style="color: #6ab825; font-weight: bold">in</span> <span style="color: #24909d">range</span><span style="color: #d0d0d0">(</span><span style="color: #3677a9">1</span><span style="color: #d0d0d0">,</span> <span style="color: #d0d0d0">Nt):</span>
+        <span style="color: #d0d0d0">u[n+</span><span style="color: #3677a9">1</span><span style="color: #d0d0d0">]</span> <span style="color: #d0d0d0">=</span> <span style="color: #3677a9">2</span><span style="color: #d0d0d0">*u[n]</span> <span style="color: #d0d0d0">-</span> <span style="color: #d0d0d0">u[n-</span><span style="color: #3677a9">1</span><span style="color: #d0d0d0">]</span> <span style="color: #d0d0d0">-</span> <span style="color: #d0d0d0">dt**</span><span style="color: #3677a9">2</span><span style="color: #d0d0d0">*w_adj**</span><span style="color: #3677a9">2</span><span style="color: #d0d0d0">*u[n]</span>
+    <span style="color: #6ab825; font-weight: bold">return</span> <span style="color: #d0d0d0">u,</span> <span style="color: #d0d0d0">t</span>
 </pre></div>
 </section>
 
@@ -610,6 +627,10 @@ Use final <code>r[-1]</code> in a unit test:
     <span style="color: #999999; font-style: italic"># Accept rate to 1 decimal place</span>
     <span style="color: #d0d0d0">tol</span> <span style="color: #d0d0d0">=</span> <span style="color: #3677a9">0.1</span>
     <span style="color: #6ab825; font-weight: bold">assert</span> <span style="color: #24909d">abs</span><span style="color: #d0d0d0">(r[-</span><span style="color: #3677a9">1</span><span style="color: #d0d0d0">]</span> <span style="color: #d0d0d0">-</span> <span style="color: #3677a9">2.0</span><span style="color: #d0d0d0">)</span> <span style="color: #d0d0d0">&lt;</span> <span style="color: #d0d0d0">tol</span>
+    <span style="color: #999999; font-style: italic"># Test that adjusted w obtains 4th order convergence</span>
+    <span style="color: #d0d0d0">r</span> <span style="color: #d0d0d0">=</span> <span style="color: #d0d0d0">convergence_rates(m=</span><span style="color: #3677a9">5</span><span style="color: #d0d0d0">,</span> <span style="color: #d0d0d0">solver_function=solver_adjust_w,</span> <span style="color: #d0d0d0">num_periods=</span><span style="color: #3677a9">8</span><span style="color: #d0d0d0">)</span>
+    <span style="color: #6ab825; font-weight: bold">print</span> <span style="color: #ed9d13">&#39;adjust w rates:&#39;</span><span style="color: #d0d0d0">,</span> <span style="color: #d0d0d0">r</span>
+    <span style="color: #6ab825; font-weight: bold">assert</span> <span style="color: #24909d">abs</span><span style="color: #d0d0d0">(r[-</span><span style="color: #3677a9">1</span><span style="color: #d0d0d0">]</span> <span style="color: #d0d0d0">-</span> <span style="color: #3677a9">4.0</span><span style="color: #d0d0d0">)</span> <span style="color: #d0d0d0">&lt;</span> <span style="color: #d0d0d0">tol</span>
 </pre></div>
 <p>
 Complete code in <a href="http://tinyurl.com/nm5587k/vib/vib_undamped.py" target="_self"><tt>vib_undamped.py</tt></a>.
@@ -899,7 +920,7 @@ for small \( \Delta t \) gives a formula that is easier to understand:
 
 <p>
 
-<!-- code=python (!bc ipy) typeset with pygments style "native" -->
+<!-- code=ipy (!bc ipy) typeset with pygments style "native" -->
 <div class="highlight" style="background: #202020"><pre style="font-size: 80%; line-height: 125%"><span style="color: #d0d0d0">&gt;&gt;&gt;</span> <span style="color: #6ab825; font-weight: bold">from</span> <span style="color: #447fcf; text-decoration: underline">sympy</span> <span style="color: #6ab825; font-weight: bold">import</span> <span style="color: #d0d0d0">*</span>
 <span style="color: #d0d0d0">&gt;&gt;&gt;</span> <span style="color: #d0d0d0">dt,</span> <span style="color: #d0d0d0">w</span> <span style="color: #d0d0d0">=</span> <span style="color: #d0d0d0">symbols(</span><span style="color: #ed9d13">&#39;dt w&#39;</span><span style="color: #d0d0d0">)</span>
 <span style="color: #d0d0d0">&gt;&gt;&gt;</span> <span style="color: #d0d0d0">w_tilde</span> <span style="color: #d0d0d0">=</span> <span style="color: #d0d0d0">asin(w*dt/</span><span style="color: #3677a9">2</span><span style="color: #d0d0d0">).series(dt,</span> <span style="color: #3677a9">0</span><span style="color: #d0d0d0">,</span> <span style="color: #3677a9">4</span><span style="color: #d0d0d0">)*</span><span style="color: #3677a9">2</span><span style="color: #d0d0d0">/dt</span>
@@ -1276,9 +1297,9 @@ Note: CrankNicolson in Odespy leads to the name MidpointImplicit in plots.
 <h2 id="___sec45">Plain solution curves </h2>
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="vib:model1:1st:odespy:theta"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 1:  Comparison of classical schemes. <div id="vib:model1:1st:odespy:theta"></div> </p></center>
+<center><p class="caption">Figure 1:  Comparison of classical schemes.  <!-- caption label: vib:model1:1st:odespy:theta --> </p></center>
 <p><img src="fig-vib/vib_theta_1_u.png" align="bottom" width=800></p>
 </center>
 </section>

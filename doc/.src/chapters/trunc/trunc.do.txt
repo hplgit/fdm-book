@@ -1369,7 +1369,16 @@ a slightly smaller $\omega$ since the numerics will make it larger:
 !et
 Expanding the squared term and omitting the higher-order term $\Delta t^4$
 gives exactly the ODE (ref{trunc:vib:undamped:corr:ode}). Experiments
-show that $u^n$ is computed to 4th order in $\Delta t$.
+show that $u^n$ is computed to 4th order in $\Delta t$. You can confirm
+this by running a little program in the `vib` directory:
+
+!bc pycod
+from vib_undamped import convergence_rates, solver_adjust_w
+
+r = convergence_rates(
+      m=5, solver_function=solver_adjust_w, num_periods=8)
+!ec
+One will see that the rates `r` lie around 4.
 
 
 ===== Model with damping and nonlinearity =====
@@ -1489,7 +1498,6 @@ The truncation error is defined through
 
 We start with expressing the truncation error of the geometric mean.
 According to (ref{trunc:table:avg:geom:eq})-(ref{trunc:table:avg:geom}),
-[hpl: Should it be $\uex'$ instead of $u'$ below?]
 
 !bt
 \begin{align*}
@@ -1561,32 +1569,69 @@ explicit update of $v$ first, then $u$. If we cannot really explain
 who terms cancel to get second-order accuracy, should we not just
 focus on the staggered scheme? Everything below mest be rewritten.]
 
-=== The forward-backward scheme ===
+=== The Euler-Cromer scheme ===
 
 The discretization is based on the idea of stepping
-(ref{trunc:vib:gen:2x2model:ode:u}) forward in time and then
-using a backward difference in (ref{trunc:vib:gen:2x2model:ode:v})
-with the recently computed (and therefore known) $u$:
+(ref{trunc:vib:gen:2x2model:ode:v}) forward in time and then using a
+backward difference in (ref{trunc:vib:gen:2x2model:ode:u}) with the
+recently computed $v^{n+1}$:
 
 !bt
 \begin{align}
-\lbrack D_t^+ u &= v \rbrack^n,
-label{trunc:vib:gen:2x2model:ode:u:fw} \\
-\lbrack D_t^-v &= \frac{1}{m}( F(t) - \beta |v|v - s(u)) \rbrack^{n+1}\tp
-label{trunc:vib:gen:2x2model:ode:v:bw}
+\lbrack D_t^+v &= \frac{1}{m}( F(t) - \beta |v|v - s(u)) \rbrack^{n+1}\tp
+label{trunc:vib:gen:2x2model:ode:v:fw}\\
+\lbrack D_t^- u &= v \rbrack^{n+1},
+label{trunc:vib:gen:2x2model:ode:u:bw}
 \end{align}
 !et
-The term $|v|v$ gives rise to a nonlinearity $|v^{n+1}|v^{n+1}$,
-which can be linearized as $|v^{n}|v^{n+1}$:
+For a truncation error analysis, we rewrite the system in vector-matrix
+form. Consider the linear case without damping,
 
 !bt
-\begin{align}
-\lbrack D_t^+ u &= v \rbrack^n,
-label{trunc:vib:gen:2x2model:ode:u:fw2} \\
-\lbrack D_t^-v \rbrack^{n+1} &= \frac{1}{m}( F(t_{n+1}) - \beta |v^n|v^{n+1} - s(u^{n+1}))\tp
-label{trunc:vib:gen:2x2model:ode:v:bw2}
-\end{align}
+\[ v^{n+1} = v^n -\Delta t\omega^2u^n,\quad u^{n+1} = u^n + \Delta t v^{n+1}\tp\]
 !et
+We introduce the vector $w=(v,u)$ and write the system as
+
+!bt
+\[ Aw^{n+1} = Bw^n,
+\quad A = \left\lbrack\begin{array}{ll} 1 & 0\\ 1 & -\Delta t\end{array}\right\rbrack,
+\quad B = \left\lbrack\begin{array}{ll}
+1 & -\Delta t\omega^2\\
+0 & 1\end{array}\right\rbrack\tp
+\]
+!et
+The exact solution $\wex$ satisfies
+
+!bt
+\[ A\wex^{n+1} = Bw^n + \Delta t R^n,\]
+!et
+where $R^n is the residual, which has to be multiplied by $\Delta t$ since
+we have already done that in the discrete equation.
+
+The corresponding differential equation in $w$ becomes
+
+!bt
+\[
+\frac{dw}{dt} = Cw,\quad C = \left\lbrack\begin{array}{ll} 0 & -\omega^2\\ 1 & 0\end{array}\right\rbrack\tp\]
+!et
+We realize that $d^2w = C^2 w$, and in general $d^mw=C^w$.
+Using these formulas to get rid of the derivatives in a Taylor
+explansion of $\wex^{n+1}$ around $t_n$ gives
+
+!bt
+\[ A(\wex^n + \Delta t C\wex^n + \half \Delta t^2 C^2 \wex^n + \cdots)
+= B\wex^n + \Delta t R^n\tp\]
+!et
+From this we get
+
+!bt
+\begin{align*}
+R^n &= \frac{1}{\Delta t}(A - B + \Delta t AC + \half\Delta t^2 AC^2 +\cdots)\wex^n\\
+&\sim \mathcal(1)
+\end{align*}
+!et
+
+----------------
 
 
 Each ODE will have a truncation error when inserting the exact

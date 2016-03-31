@@ -41,6 +41,22 @@ def solver_ic_fix(I, w, dt, T):
         u[n+1] = u[n] + dt*v[n+1]
     return u, v, t
 
+def solver_adjust_w(I, w, dt, T, adjust_w=True):
+    """As solver, but adjust w to fourth order accuracy."""
+    dt = float(dt)
+    Nt = int(round(T/dt))
+    u = np.zeros(Nt+1)
+    v = np.zeros(Nt+1)
+    t = np.linspace(0, Nt*dt, Nt+1)
+    w_adj = w*(1 - w**2*dt**2/24.) if adjust_w else w
+
+    v[0] = 0
+    u[0] = I
+    for n in range(0, Nt):
+        v[n+1] = v[n] - dt*w_adj**2*u[n]
+        u[n+1] = u[n] + dt*v[n+1]
+    return u, v, t
+
 def test_solver():
     """
     Test solver with fixed initial condition against
@@ -76,6 +92,35 @@ def demo():
         plt.savefig('ECvs2nd_%d' % k + '.png')
         plt.savefig('ECvs2nd_%d' % k + '.pdf')
 
+def convergence_rate():
+    """What is the convergence rate of the Euler-Cromer method?"""
+    from vib_undamped import convergence_rates
+    def solver_wrapper(I, w, dt, T):
+        # convergence_rates demands a solver that returns u, t
+        u, v, t = solver(I, w, dt, T)
+        return u, t
+
+    def solver_ic_fix_wrapper(I, w, dt, T):
+        # convergence_rates demands a solver that returns u, t
+        u, v, t = solver(I, w, dt, T)
+        return u, t
+
+    def solver_adjust_w_wrapper(I, w, dt, T):
+        # convergence_rates demands a solver that returns u, t
+        u, v, t = solver_adjust_w(I, w, dt, T, True)
+        return u, t
+
+    # Plain Euler-Cromer
+    r = convergence_rates(8, solver_wrapper)
+    print round(r[-1], 1)
+    # Does it help to fix the initia condition?
+    r = convergence_rates(8, solver_ic_fix_wrapper)
+    print round(r[-1], 1)
+    # Adjusted w
+    r = convergence_rates(8, solver_adjust_w_wrapper)
+    print round(r[-1], 1)
+
 if __name__ == '__main__':
     test_solver()
-    demo()
+    #demo()
+    convergence_rate()

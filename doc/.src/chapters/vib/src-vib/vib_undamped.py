@@ -17,6 +17,23 @@ def solver(I, w, dt, T):
         u[n+1] = 2*u[n] - u[n-1] - dt**2*w**2*u[n]
     return u, t
 
+def solver_adjust_w(I, w, dt, T, adjust_w=True):
+    """
+    Solve u'' + w**2*u = 0 for t in (0,T], u(0)=I and u'(0)=0,
+    by a central finite difference method with time step dt.
+    """
+    dt = float(dt)
+    Nt = int(round(T/dt))
+    u = np.zeros(Nt+1)
+    t = np.linspace(0, Nt*dt, Nt+1)
+    w_adj = w*(1 - w**2*dt**2/24.) if adjust_w else w
+
+    u[0] = I
+    u[1] = u[0] - 0.5*dt**2*w_adj**2*u[0]
+    for n in range(1, Nt):
+        u[n+1] = 2*u[n] - u[n-1] - dt**2*w_adj**2*u[n]
+    return u, t
+
 def u_exact(t, I, w):
     return I*np.cos(w*t)
 
@@ -80,6 +97,10 @@ def test_convergence_rates():
     # Accept rate to 1 decimal place
     tol = 0.1
     assert abs(r[-1] - 2.0) < tol
+    # Test that adjusted w obtains 4th order convergence
+    r = convergence_rates(m=5, solver_function=solver_adjust_w, num_periods=8)
+    print 'adjust w rates:', r
+    assert abs(r[-1] - 4.0) < tol
 
 def main(solver_function=solver):
     import argparse
