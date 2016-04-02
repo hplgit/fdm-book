@@ -1,3 +1,5 @@
+import sys, os
+sys.path.insert(0, os.path.join(os.pardir, os.pardir, 'vib', 'src-vib'))
 from numpy import zeros, linspace
 
 def solver_v1(I, w, dt, T):
@@ -48,7 +50,6 @@ def solver(I, w, dt, T):
     u[0] = I
     v[0+half] = 0 - 0.5*dt*w**2*u[0]
     for n in range(1, Nt+1):
-        print n, n+half, n-half
         u[n] = u[n-1] + dt*v[n-half]
         v[n+half] = v[n-half] - dt*w**2*u[n]
     return u, t, v, t_v
@@ -62,5 +63,17 @@ def test_staggered():
     tol = 1E-14
     assert error < tol
 
+def test_convergence():
+    """Verify 2nd-order convergence."""
+    from vib_undamped import convergence_rates
+    def wrapped_solver(I, w, dt, T):
+        u, t, v, t_v = solver(I, w, dt, T)
+        return u, t
+
+    r = convergence_rates(8, wrapped_solver, 8)
+    print r
+    assert abs(r[-1] - 2) < 1E-5
+
 if __name__ == '__main__':
     test_staggered()
+    test_convergence()
