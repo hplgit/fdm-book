@@ -38,8 +38,8 @@ from numpy import linspace, zeros, random, array
 import time, sys
 
 
-def solver_theta(I, a, L, Nx, D, T, theta=0.5, u_L=1, u_R=0,
-                 user_action=None):
+def solver(I, a, f, L, Nx, D, T, theta=0.5, u_L=1, u_R=0,
+           user_action=None):
     """
     The a variable is an array of length Nx+1 holding the values of
     a(x) at the mesh points.
@@ -66,6 +66,8 @@ def solver_theta(I, a, L, Nx, D, T, theta=0.5, u_L=1, u_R=0,
     Nt = int(round(T/float(dt)))
     t = linspace(0, T, Nt+1)   # mesh points in time
 
+    if isinstance(a, (float,int)):
+        a = zeros(Nx+1) + a
     if isinstance(u_L, (float,int)):
         u_L_ = float(u_L)  # must take copy of u_L number
         u_L = lambda t: u_L_
@@ -124,7 +126,9 @@ def solver_theta(I, a, L, Nx, D, T, theta=0.5, u_L=1, u_R=0,
     for n in range(0, Nt):
         b[1:-1] = u_1[1:-1] + Dr*(
             (a[2:] + a[1:-1])*(u_1[2:] - u_1[1:-1]) -
-            (a[1:-1] + a[0:-2])*(u_1[1:-1] - u_1[:-2]))
+            (a[1:-1] + a[0:-2])*(u_1[1:-1] - u_1[:-2])) + \
+            dt*theta*f(x[1:-1], t[n+1]) + \
+            dt*(1-theta)*f(x[1:-1], t[n])
         # Boundary conditions
         b[0]  = u_L(t[n+1])
         b[-1] = u_R(t[n+1])
@@ -141,7 +145,7 @@ def solver_theta(I, a, L, Nx, D, T, theta=0.5, u_L=1, u_R=0,
     return t1-t0
 
 
-def viz(I, a, L, Nx, D, T, umin, umax, theta, u_L, u_R,
+def viz(I, a, f, L, Nx, D, T, umin, umax, theta, u_L, u_R,
         animate=True, store_u=False):
 
     from scitools.std import plot
@@ -160,8 +164,8 @@ def viz(I, a, L, Nx, D, T, umin, umax, theta, u_L, u_R,
                 solutions.append(u.copy())
             #time.sleep(0.1)
 
-    cpu = solver_theta(
-        I, a, L, Nx, D, T, theta, u_L, u_R, user_action=process_u)
+    cpu = solver(
+        I, a, f, L, Nx, D, T, theta, u_L, u_R, user_action=process_u)
     return cpu, array(solutions)
 
 def fill_a(a_consts, L, Nx):

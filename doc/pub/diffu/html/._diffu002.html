@@ -7,7 +7,7 @@ Automatically generated HTML file from DocOnce source
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="DocOnce: https://github.com/hplgit/doconce/" />
 <meta name="description" content="Finite difference methods for diffusion processes">
-<meta name="keywords" content="diffusion equation, 1D,heat equation, 1D,stationary solution,explicit discretization methods,Forward Euler scheme,implicit discretization methods,amplification factor,sparse matrix,Jacobi method,Gauss-Seidel method,SOR method,red-black numbering,LU factorization,Cholesky factorization,preconditioning,random walk,vectorization,seed (random numbers),verification,diffusion limit of random walk,interrupt a program by Ctrl+c,stochastic difference equation,stochastic ODE,Fokker-Planck equation,Wiener process,energy estimates (diffusion),Richardson iteration,preconditioning">
+<meta name="keywords" content="diffusion equation, 1D,heat equation, 1D,diffusion coefficient,stationary solution,Laplace equation,initial boundary value problem,initial condition,boundary condition,source term,explicit discretization methods,Forward Euler scheme,domain,mesh points,mesh function,forward difference approximation,central difference approximation,discrete equations,Fourier number,mesh Fourier number,dimensionless number,implicit discretization methods,amplification factor,sparse matrix,Jacobi method,Gauss-Seidel method,SOR method,red-black numbering,LU factorization,Cholesky factorization,preconditioning,random walk,vectorization,seed (random numbers),verification,diffusion limit of random walk,interrupt a program by Ctrl+c,stochastic difference equation,stochastic ODE,Fokker-Planck equation,Wiener process,energy estimates (diffusion),Richardson iteration,preconditioning">
 
 <title>Finite difference methods for diffusion processes</title>
 
@@ -165,11 +165,11 @@ code { color: inherit; background-color: transparent; }
                2,
                'diffu:varcoeff:impl:piecewise',
                'diffu:varcoeff:impl:piecewise'),
-              ('Diffusion equation in axi-symmetric geometries',
+              ('Axi-symmetric diffusion',
                2,
                'diffu:fd2:radial',
                'diffu:fd2:radial'),
-              ('Diffusion equation in spherically-symmetric geometries',
+              ('Spherically-symmetric diffusion',
                2,
                'diffu:fd2:spherical',
                'diffu:fd2:spherical'),
@@ -316,6 +316,13 @@ code { color: inherit; background-color: transparent; }
                'diffu:app:substance',
                'diffu:app:substance'),
               ('Heat conduction', 2, 'diffu:app:heat', 'diffu:app:heat'),
+              ('Porous media flow',
+               2,
+               'diffu:app:porous',
+               'diffu:app:porous'),
+              ('Potential fluid flow', 2, None, '___sec109'),
+              ('Streamlines for 2D fluid flow', 2, None, '___sec110'),
+              ('The potential of an electric field', 2, None, '___sec111'),
               ('Development of flow between two flat plates',
                2,
                'diffu:app:Couette',
@@ -324,12 +331,12 @@ code { color: inherit; background-color: transparent; }
                2,
                'diffu:app:pipeflow',
                'diffu:app:pipeflow'),
-              ('Tribology: thin film fluid flow', 2, None, '___sec110'),
+              ('Tribology: thin film fluid flow', 2, None, '___sec114'),
               ('Propagation of electrical signals in the brain',
                2,
                None,
-               '___sec111'),
-              ('Exercises', 1, None, '___sec112'),
+               '___sec115'),
+              ('Exercises', 1, None, '___sec116'),
               ('Exercise 6: Stabilizing the Crank-Nicolson method by Rannacher time stepping',
                2,
                'diffu:exer:CN:Rannacher',
@@ -342,15 +349,23 @@ code { color: inherit; background-color: transparent; }
                2,
                'diffu:exer:splitting_prec',
                'diffu:exer:splitting_prec'),
-              ('Exercise 9: Oscillating surface temperature of the earth',
+              ('Problem 9: Oscillating surface temperature of the earth',
                2,
                'diffu:exer:earthosc',
                'diffu:exer:earthosc'),
-              ('Exercise 10: Oscillating and pulsating flow in tubes',
+              ('Problem 10: Oscillating and pulsating flow in tubes',
                2,
                'diffu:exer:bloodflow',
                'diffu:exer:bloodflow'),
-              ('Bibliography', 1, None, '___sec118')]}
+              ('Problem 11: Scaling a welding problem',
+               2,
+               'diffu:exer:welding',
+               'diffu:exer:welding'),
+              ('Exercise 12: Implement a Forward Euler scheme for axi-symmetric diffusion',
+               2,
+               'diffu:exer:axisymm',
+               'diffu:exer:axisymm'),
+              ('Bibliography', 1, None, '___sec124')]}
 end of tocinfo -->
 
 <body>
@@ -381,8 +396,10 @@ $$
 \newcommand{\Oof}[1]{\mathcal{O}(#1)}
 \newcommand{\x}{\boldsymbol{x}}
 \renewcommand{\u}{\boldsymbol{u}}
+\renewcommand{\v}{\boldsymbol{v}}
 \newcommand{\f}{\boldsymbol{f}}
 \newcommand{\q}{\boldsymbol{q}}
+\newcommand{\g}{\boldsymbol{g}}
 \newcommand{\dfc}{\alpha}  % diffusion coefficient
 \newcommand{\ii}{\boldsymbol{i}}
 \newcommand{\jj}{\boldsymbol{j}}
@@ -458,8 +475,8 @@ $$
      <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:varcoeff:stationary" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Stationary solution</a></li>
      <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:varcoeff:piecewise" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Piecewise constant medium</a></li>
      <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:varcoeff:impl:piecewise" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Implementation of diffusion in a piecewise constant medium</a></li>
-     <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:fd2:radial" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Diffusion equation in axi-symmetric geometries</a></li>
-     <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:fd2:spherical" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Diffusion equation in spherically-symmetric geometries</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:fd2:radial" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Axi-symmetric diffusion</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:fd2:spherical" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Spherically-symmetric diffusion</a></li>
      <!-- navigation toc: --> <li><a href="._diffu001.html#___sec49" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Discretization in spherical coordinates</a></li>
      <!-- navigation toc: --> <li><a href="._diffu001.html#___sec50" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Discretization in Cartesian coordinates</a></li>
      <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:2D" style="font-size: 80%;"><b>Diffusion in 2D</b></a></li>
@@ -519,17 +536,23 @@ $$
      <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:app" style="font-size: 80%;"><b>Applications</b></a></li>
      <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:app:substance" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Diffusion of a substance</a></li>
      <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:app:heat" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Heat conduction</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:app:porous" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Porous media flow</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu001.html#___sec109" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Potential fluid flow</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu001.html#___sec110" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Streamlines for 2D fluid flow</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu001.html#___sec111" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;The potential of an electric field</a></li>
      <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:app:Couette" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Development of flow between two flat plates</a></li>
      <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:app:pipeflow" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Flow in a straight tube</a></li>
-     <!-- navigation toc: --> <li><a href="._diffu001.html#___sec110" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Tribology: thin film fluid flow</a></li>
-     <!-- navigation toc: --> <li><a href="._diffu001.html#___sec111" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Propagation of electrical signals in the brain</a></li>
-     <!-- navigation toc: --> <li><a href="._diffu001.html#___sec112" style="font-size: 80%;"><b>Exercises</b></a></li>
+     <!-- navigation toc: --> <li><a href="._diffu001.html#___sec114" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Tribology: thin film fluid flow</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu001.html#___sec115" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Propagation of electrical signals in the brain</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu001.html#___sec116" style="font-size: 80%;"><b>Exercises</b></a></li>
      <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:exer:CN:Rannacher" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Exercise 6: Stabilizing the Crank-Nicolson method by Rannacher time stepping</a></li>
      <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:exer:energy:estimates" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Project 7: Energy estimates for diffusion problems</a></li>
      <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:exer:splitting_prec" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Exercise 8: Splitting methods and preconditioning</a></li>
-     <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:exer:earthosc" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Exercise 9: Oscillating surface temperature of the earth</a></li>
-     <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:exer:bloodflow" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Exercise 10: Oscillating and pulsating flow in tubes</a></li>
-     <!-- navigation toc: --> <li><a href="#___sec118" style="font-size: 80%;"><b>Bibliography</b></a></li>
+     <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:exer:earthosc" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Problem 9: Oscillating surface temperature of the earth</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:exer:bloodflow" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Problem 10: Oscillating and pulsating flow in tubes</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:exer:welding" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Problem 11: Scaling a welding problem</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu001.html#diffu:exer:axisymm" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Exercise 12: Implement a Forward Euler scheme for axi-symmetric diffusion</a></li>
+     <!-- navigation toc: --> <li><a href="#___sec124" style="font-size: 80%;"><b>Bibliography</b></a></li>
 
         </ul>
       </li>
@@ -545,7 +568,7 @@ $$
 <a name="part0002"></a>
 <!-- !split -->
 
-<h1 id="___sec118">Bibliography </h1>
+<h1 id="___sec124">Bibliography </h1>
 
 <p>
 <!-- begin bibliography -->
@@ -553,19 +576,24 @@ $$
 <ol>
  <li> <div id="Langtangen_scaling"></div> <b>H. P. Langtangen and G. K. Pedersen</b>. 
     <em>Scaling of Differential Equations</em>,
-    2015,
+    <em>Simula Springer Brief Series</em>,
+    Springer,
+    2016,
+    \urlhttp://tinyurl.com/qfjgxmf/web,
     <a href="http://tinyurl.com/qfjgxmf/web" target="_self"><tt>http://tinyurl.com/qfjgxmf/web</tt></a>.</li>
  <li> <div id="Saad_2003"></div> <b>Y. Saad</b>. 
     <em>Iterative Methods for Sparse Linear Systems</em>,
     second edition,
     SIAM,
     2003,
+    \urlhttp://www-users.cs.umn.edu/~saad/IterMethBook_2ndEd.pdf,
     <a href="http://www-users.cs.umn.edu/~saad/IterMethBook_2ndEd.pdf" target="_self"><tt>http://www-users.cs.umn.edu/~saad/IterMethBook_2ndEd.pdf</tt></a>.</li>
  <li> <div id="Templates_LA"></div> <b>R. Barrett, M. Berry, T. F. Chan, J. Demmel, J. Donato, J. Dongarra, V. Eijkhout, R. Pozo, C. Romine and H. V. d. Vorst</b>. 
     <em>Templates for the Solution of Linear Systems: Building Blocks for Iterative Methods</em>,
     second edition,
     SIAM,
     1994,
+    \urlhttp://www.netlib.org/linalg/html_templates/Templates.html,
     <a href="http://www.netlib.org/linalg/html_templates/Templates.html" target="_self"><tt>http://www.netlib.org/linalg/html_templates/Templates.html</tt></a>.</li>
  <li> <div id="Greif_Ascher_2011"></div> <b>C. Greif and U. M. Ascher</b>. 
     <em>A First Course in Numerical Methods</em>,

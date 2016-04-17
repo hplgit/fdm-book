@@ -282,7 +282,7 @@ gives Jacobi and $M=\omega^{-1}D+L$ gives SOR. We have shown that we may
 view $M$ as a preconditioner of a simplest possible iteration method.
 !esol
 
-===== Exercise: Oscillating surface temperature of the earth =====
+===== Problem: Oscillating surface temperature of the earth =====
 label{diffu:exer:earthosc}
 
 Consider a day-and-night or seasonal variation in temperature at
@@ -413,9 +413,9 @@ MOVIE: [https://github.com/hplgit/fdm-book/raw/master/doc/pub/book/html/mov-diff
 
 
 
-===== Exercise: Oscillating and pulsating flow in tubes =====
+===== Problem: Oscillating and pulsating flow in tubes =====
 label{diffu:exer:bloodflow}
-file=axyiymm_flow
+file=axisymm_flow
 
 We consider flow in a straight tube with radius $R$ and straight walls.
 The flow is driven by a pressure gradient $\beta(t)$. The effect of
@@ -559,6 +559,274 @@ gently.]
 
 !esubex
 
+===== Problem: Scaling a welding problem =====
+label{diffu:exer:welding}
+file=welding
+
+Welding equipment makes a very localized heat source that moves
+in time. We shall investigate the heating due to welding and choose,
+for maximum simplicity, a one-dimensional heat equation with a
+fixed temperature at the ends, and we neglect melting.
+We shall scale the problem, and
+besides solving such a problem numerically, the aim is to investigate
+the appropriateness of alternative scalings.
+
+The governing PDE problem reads
+
+!bt
+\begin{align*}
+\varrho c\frac{\partial u}{\partial t} &= k\frac{\partial^2 u}{\partial x^2}
++ f, & x\in (0,L),\ t\in (0,T),\\
+u(x,0) &= U_s, & x\in [0,L],\\
+u(0,t) = u(L,t) &= 0, & t\in (0,T].
+\end{align*}
+!et
+Here, $u$ is the temperature, $\varrho$ the density of the material,
+$c$ a heat capacity, $k$ the heat conduction coefficient, $f$ is
+the heat source from the welding equipment, and $U_s$ is the
+initial constant (room) temperature in the material.
+
+A possible model for the heat source is a moving Gaussian function:
+
+!bt
+\[ f = A\exp{\left(-\frac{1}{2}\left(\frac{x-vt}{\sigma}\right)^2\right)},\]
+!et
+where $A$ is the strength, $\sigma$ is a parameter governing how
+peak-shaped (or localized in space) the heat source is, and
+$v$ is the velocity (in positive $x$ direction) of the source.
+
+!bsubex
+Let $x_c$, $t_c$, $u_c$, and $f_c$ be scales, i.e., characteristic
+sizes, of $x$, $t$, $u$, and $f$, respectively. The natural choice of
+$x_c$ and $f_c$ is $L$ and $A$, since these make the scaled $x$ and
+$f$ in the interval $[0,1]$.  If each of the three terms in the PDE
+are equally important, we can find $t_c$ and $u_c$ by demanding that
+the coefficients in the scaled PDE are all equal to unity.  Perform
+this scaling. Use scaled quantities in the arguments for the
+exponential function in $f$ too and show that
+
+!bt
+\[ \bar f= e^{-\frac{1}{2}\beta^2(\bar x -\gamma \bar t)^2},\]
+!et
+where $\beta$ and $\gamma$ are dimensionless numbers. Give an
+interpretation of $\beta$ and $\gamma$.
+
+!bsol
+We introduce
+
+!bt
+\[ \bar x=\frac{x}{L},\quad \bar t = \frac{t}{t_c},\quad \bar u = \frac{u-U_s}{u_c},
+\quad \bar f=\frac{f}{A}\tp\]
+!et
+Inserted in the PDE and dividing by $\varrho c u_c/t_c$ such that the
+coefficient in front of $\partial\bar u/\partial\bar t$ becomes unity, and
+thereby all terms become dimensionless, we
+get
+
+!bt
+\[ \frac{\partial\bar u}{\partial\bar t} =
+\frac{k t_c}{\varrho c L^2}\frac{\partial^2\bar u}{\partial\bar x^2}
++ \frac{A t_c}{\varrho c u_c}\bar f\tp
+\]
+!et
+Demanding that all three terms are equally important, it follows that
+
+!bt
+\[ \frac{k t_c}{\varrho c L^2} = 1,\quad \frac{A t_c}{\varrho c u_c}=1\tp\]
+!et
+These constraints imply the *diffusion time scale*
+
+!bt
+\[ t_c = \frac{\varrho cL^2}{k},\]
+!et
+and a scale for $u_c$,
+
+!bt
+\[ u_c = \frac{AL^2}{k}\tp\]
+!et
+The scaled PDE reads
+
+!bt
+\[ \frac{\partial\bar u}{\partial\bar t} =
+\frac{\partial^2\bar u}{\partial\bar x^2}
++ \bar f\tp\]
+!et
+
+Scaling $f$ results in
+
+!bt
+\begin{align*}
+\bar f &= \exp{\left(-\frac{1}{2}\left(\frac{x-vt}{\sigma}\right)^2\right)}\\
+&= \exp{\left(-\frac{1}{2}\frac{L^2}{\sigma^2}
+\left(\bar x- \frac{vt_c}{L}t\right)^2\right)}\\
+&= \exp{\left(-\frac{1}{2}\beta^2\left(\bar x-\gamma \bar t\right)^2\right)},
+\end{align*}
+!et
+where $\beta$ and $\gamma$ are dimensionless numbers:
+
+!bt
+\[ \beta = \frac{L}{\sigma},\quad
+\gamma = \frac{vt_c}{L} = \frac{v\varrho cL}{k}\tp\]
+!et
+The $\sigma$ parameter measures the width of the Gaussian peak, so
+$\beta$ is the ratio of the domain and the width of the heat source (large
+$\beta$ implies a very peak-formed heat source).  The $\gamma$
+parameter arises from $t_c/(L/v)$, which is the ratio of the diffusion
+time scale and the time it takes for the heat source to travel through
+the domain. Equivalently, we can multiply by $t_c/t_c$ to get $\gamma
+= v/(t_cL)$ as the ratio between the velocity of the heat source and
+the diffusion velocity.
+!esol
+!esubex
+
+!bsubex
+Argue that for large $\gamma$ we should base the time scale on the
+movement of the heat source. Show that this gives rise to the scaled
+PDE
+
+!bt
+\[ \frac{\partial\bar u}{\partial\bar t} =
+\gamma^{-1}\frac{\partial^2\bar u}{\partial\bar x^2}
++ \bar f,
+\]
+!et
+and
+
+!bt
+\[ \bar f = \exp{(-\frac{1}{2}\beta^2(\bar x - \bar t)^2)}\tp\]
+!et
+Discuss when the scalings in a) and b) are appropriate.
+
+!bsol
+We perform the scaling as in a), but this time we determine $t_c$ such
+that the heat source moves with unit velocity. This means that
+
+!bt
+\[ \frac{vt_c}{L} = 1\quad\Rightarrow\quad t_c = \frac{L}{v}\tp\]
+!et
+Scaling of the PDE gives, as before,
+
+!bt
+\[ \frac{\partial\bar u}{\partial\bar t} =
+\frac{k t_c}{\varrho c L^2}\frac{\partial^2\bar u}{\partial\bar x^2}
++ \frac{A t_c}{\varrho c u_c}\bar f\tp
+\]
+!et
+Inserting the expression for $t_c$, we have
+
+!bt
+\[ \frac{\partial\bar u}{\partial\bar t} =
+\frac{k L}{\varrho c L^2v}\frac{\partial^2\bar u}{\partial\bar x^2}
++ \frac{A L}{v\varrho c u_c}\bar f\tp
+\]
+!et
+We recognize the first coefficient as $\gamma^{-1}$, while $u_c$ can
+be determined from demanding the second coefficient to be unity:
+
+!bt
+\[ u_c = \frac{AL}{v\varrho c}\tp\]
+!et
+The scaled PDE is therefore
+
+!bt
+\[ \frac{\partial\bar u}{\partial\bar t} =
+\gamma^{-1}\frac{\partial^2\bar u}{\partial\bar x^2}
++ \bar f\tp\]
+!et
+If the heat source moves very fast, there is little time for the
+diffusion to transport the heat away from the source, and the heat
+conduction term becomes insignificant. This is reflected in the
+coefficient $\gamma^{-1}$, which is small when $\gamma$, the ratio of
+the heat source velocity and the diffusion velocity, is large.
+
+The scaling in a) is therefore appropriate if diffusion is a
+significant process, i.e., the welding equipment moves at a slow speed
+so heat can efficiently spread out by diffusion. For large $\gamma$,
+the scaling in b) is appropriate, and $t=1$ corresponds to having the
+heat source traveled through the domain (with the scaling in a), the
+heat source will leave the domain in short time).
+
+!esol
+!esubex
+
+!bsubex
+One aim with scaling is to get a solution that lies in the interval
+$[-1,1]$. This is not always the case when $u_c$ is based on a scale
+involving a source term, as we do in a) and b).  However, from the
+scaled PDE we realize that if we replace $\bar f$ with $\delta\bar f$,
+where $\delta$ is a dimensionless factor, this corresponds to
+replacing $u_c$ by $u_c/\delta$. So, if we observe that $\bar
+u\sim1/\delta$ in simulations, we can just replace $\bar f$ by $\delta
+\bar f$ in the scaled PDE.
+
+Use this trick and implement the two scaled models. Reuse software for
+the diffusion equation (e.g., the `solver` function in
+`diffu1D_vc.py`).  Make a function `run(gamma, beta=10, delta=40,
+scaling=1, animate=False)` that runs the model with the given
+$\gamma$, $\beta$, and $\delta$ parameters as well as an indicator
+`scaling` that is 1 for the scaling in a) and 2 for the scaling in
+b). The last argument can be used to turn screen animations on or off.
+
+Experiments show that with $\gamma=1$ and $\beta=10$, $\delta =20$
+is appropriate. Then $\max |\bar u|$ will be larger than 4 for $\gamma
+=40$, but that is acceptable.
+
+Equip the `run` function with visualization, both animation of $\bar u$
+and $\bar f$, and plots with $\bar u$ and $\bar f$ for $t=0.2$ and $t=0.5$.
+
+!bhint
+Since the amplitudes of $\bar u$ and $\bar f$ differs by a factor $\delta$,
+it is attractive to plot $\bar f/\delta$ together with $\bar u$.
+!ehint
+
+!bsol
+Here is a possible `run` function:
+
+@@@CODE exer-diffu/welding.py fromto: from diffu1D_vc import@def investigate
+Note that we have dropped the bar notation in the plots. It is common
+to drop the bars as soon as the scaled problem is established.
+!esol
+!esubex
+
+!bsubex
+Use the software in c) to investigate $\gamma=0.2,1,5,40$ for the
+two scalings. Discuss the results.
+
+!bsol
+For these investigations, we compare the two scalings for each of
+the different $\gamma$ values. An appropriate function for automating
+the tasks is
+
+@@@CODE exer-diffu/welding.py fromto: def investigate@if __name__
+We run here a Backward Euler scheme with $N_x=100$ and quite long
+time steps.
+
+Running the `investigate` function, we get the following plots:
+
+FIGURE: [fig-diffu/welding_gamma0_025, width=800 frac=1]
+
+FIGURE: [fig-diffu/welding_gamma0_2, width=800 frac=1]
+
+FIGURE: [fig-diffu/welding_gamma1, width=800 frac=1]
+
+FIGURE: [fig-diffu/welding_gamma5, width=800 frac=1]
+
+FIGURE: [fig-diffu/welding_gamma40, width=800 frac=1]
+
+For $\gamma\ll 1$ as in $\gamma = 0.025$, the heat source moves very
+slowly on the diffusion time scale and has hardly entered the medium,
+while the scaling in b) is not inappropriate, but a larger $\delta$ is
+needed to bring $\bar u$ around unity.  We see that for $\gamma=0.2$,
+each of the scalings work, but with the diffusion time scale, the heat
+source has not moved much into the domain. For $\gamma=1$, the
+mathematical problems are identical and hence the plots too. For
+$\gamma=5$, the time scale based on the source is clearly the best
+choice, and for $\gamma=40$, only this scale is appropriate.
+
+A conclusion is that the scaling in b) works well for a range of $\gamma$
+values, also in the case $\gamma\ll 1$.
+!esol
+!esubex
 
 #===== Exercise: Radial heat conduction out of offshore pipelines =====
 
@@ -570,3 +838,67 @@ gently.]
 # BCs on the inner wall because the gas suddenly has a different
 # temperature? Could be a good project perhaps; anyway, the theory
 # can be written up.
+
+===== Exercise: Implement a Forward Euler scheme for axi-symmetric diffusion =====
+label{diffu:exer:axisymm}
+file=FE_axisym
+
+Based on the discussion in Section ref{diffu:fd2:radial}, derive in detail
+the discrete equations for a Forward Euler in time, centered in space,
+finite difference method for axi-symmetric diffusion. The
+diffusion coefficient may be a function of the radial coordinate.
+At the outer boundary $r=R$, we may have either a Dirichlet or Robin
+condition.
+Implement this scheme. Construct appropriate test problems.
+
+!bsol
+We start with the equation at $r=0$. According to Section ref{diffu:fd2:radial},
+we get
+
+!bt
+\[ \frac{u^{n+1}_0-u^n_0}{\Delta t} = 4\dfc(0)\frac{u_1^n - u^n_0}{\Delta r^2}
++ f_0^n\tp\]
+!et
+For $i>0$, we have
+
+!bt
+\begin{align*}
+\frac{u^{n+1}_i-u^n_i}{\Delta t} &= \frac{1}{r_i\Delta r^2}(
+\half(r_i + r_{i+1})\half(\dfc_i + \dfc_{i+1})(u^n_{i+1} - u^n_i) -\\
+&\qquad\half(r_{i-1} + r_{i})\half(\dfc_{i-1} + \dfc_{i})(u^n_{i} - u^n_{i-1}))
++ f_i^n
+\end{align*}
+!et
+Solving with respect to $u^{n+1}_i$ and introducing $D=\Delta t/\Delta r^2$
+results in
+
+!bt
+\begin{align*}
+u^{n+1}_0 &= u^n_0 + 4D\dfc(0)(u_1^n - u^n_0)
++ f_0^n,\\
+u^{n+1}_i &= u^n_i + D\frac{1}{r_i}(
+\half(r_i + r_{i+1})\half(\dfc_i + \dfc_{i+1})(u^n_{i+1} - u^n_i) -\\
+&\qquad\half(r_{i-1} + r_{i})\half(\dfc_{i-1} + \dfc_{i})(u^n_{i} - u^n_{i-1}))
++ \Delta t f_i^n,\\
+&\qquad i = 1,\ldots,N_r-1,
+\end{align*}
+!et
+and $u^{n+1}_i$ at the end point $i=N_r$ is assumed known in case of
+a Dirichlet condition. A Robin condition
+
+!bt
+\[ -\dfc\frac{\partial u}{\partial n} = h_T(u-U_s),\]
+!et
+can be discretized at $i=N_r$ by
+
+!bt
+\[ -\alpha_i\frac{u_{i+1}^n-u_{i-1}^n}{2\Delta r} = h_T(u_i^n - U_s)\tp\]
+!et
+Solving with respect to the value at the fictitious point $i+1$ gives
+
+!bt
+\[ u_{i+1}^n = u_{i-1}^n - 2\Delta r \frac{h_T}{\alpha_i}(u_i^n - U_s)\tp\]
+!et
+This value is then inserted for $u_{i+1}^n$ in the discrete PDE at $i=N_r$.
+
+!esol

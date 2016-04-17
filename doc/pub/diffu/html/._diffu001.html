@@ -7,7 +7,7 @@ Automatically generated HTML file from DocOnce source
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="DocOnce: https://github.com/hplgit/doconce/" />
 <meta name="description" content="Finite difference methods for diffusion processes">
-<meta name="keywords" content="diffusion equation, 1D,heat equation, 1D,stationary solution,explicit discretization methods,Forward Euler scheme,implicit discretization methods,amplification factor,sparse matrix,Jacobi method,Gauss-Seidel method,SOR method,red-black numbering,LU factorization,Cholesky factorization,preconditioning,random walk,vectorization,seed (random numbers),verification,diffusion limit of random walk,interrupt a program by Ctrl+c,stochastic difference equation,stochastic ODE,Fokker-Planck equation,Wiener process,energy estimates (diffusion),Richardson iteration,preconditioning">
+<meta name="keywords" content="diffusion equation, 1D,heat equation, 1D,diffusion coefficient,stationary solution,Laplace equation,initial boundary value problem,initial condition,boundary condition,source term,explicit discretization methods,Forward Euler scheme,domain,mesh points,mesh function,forward difference approximation,central difference approximation,discrete equations,Fourier number,mesh Fourier number,dimensionless number,implicit discretization methods,amplification factor,sparse matrix,Jacobi method,Gauss-Seidel method,SOR method,red-black numbering,LU factorization,Cholesky factorization,preconditioning,random walk,vectorization,seed (random numbers),verification,diffusion limit of random walk,interrupt a program by Ctrl+c,stochastic difference equation,stochastic ODE,Fokker-Planck equation,Wiener process,energy estimates (diffusion),Richardson iteration,preconditioning">
 
 <title>Finite difference methods for diffusion processes</title>
 
@@ -165,11 +165,11 @@ code { color: inherit; background-color: transparent; }
                2,
                'diffu:varcoeff:impl:piecewise',
                'diffu:varcoeff:impl:piecewise'),
-              ('Diffusion equation in axi-symmetric geometries',
+              ('Axi-symmetric diffusion',
                2,
                'diffu:fd2:radial',
                'diffu:fd2:radial'),
-              ('Diffusion equation in spherically-symmetric geometries',
+              ('Spherically-symmetric diffusion',
                2,
                'diffu:fd2:spherical',
                'diffu:fd2:spherical'),
@@ -316,6 +316,13 @@ code { color: inherit; background-color: transparent; }
                'diffu:app:substance',
                'diffu:app:substance'),
               ('Heat conduction', 2, 'diffu:app:heat', 'diffu:app:heat'),
+              ('Porous media flow',
+               2,
+               'diffu:app:porous',
+               'diffu:app:porous'),
+              ('Potential fluid flow', 2, None, '___sec109'),
+              ('Streamlines for 2D fluid flow', 2, None, '___sec110'),
+              ('The potential of an electric field', 2, None, '___sec111'),
               ('Development of flow between two flat plates',
                2,
                'diffu:app:Couette',
@@ -324,12 +331,12 @@ code { color: inherit; background-color: transparent; }
                2,
                'diffu:app:pipeflow',
                'diffu:app:pipeflow'),
-              ('Tribology: thin film fluid flow', 2, None, '___sec110'),
+              ('Tribology: thin film fluid flow', 2, None, '___sec114'),
               ('Propagation of electrical signals in the brain',
                2,
                None,
-               '___sec111'),
-              ('Exercises', 1, None, '___sec112'),
+               '___sec115'),
+              ('Exercises', 1, None, '___sec116'),
               ('Exercise 6: Stabilizing the Crank-Nicolson method by Rannacher time stepping',
                2,
                'diffu:exer:CN:Rannacher',
@@ -342,15 +349,23 @@ code { color: inherit; background-color: transparent; }
                2,
                'diffu:exer:splitting_prec',
                'diffu:exer:splitting_prec'),
-              ('Exercise 9: Oscillating surface temperature of the earth',
+              ('Problem 9: Oscillating surface temperature of the earth',
                2,
                'diffu:exer:earthosc',
                'diffu:exer:earthosc'),
-              ('Exercise 10: Oscillating and pulsating flow in tubes',
+              ('Problem 10: Oscillating and pulsating flow in tubes',
                2,
                'diffu:exer:bloodflow',
                'diffu:exer:bloodflow'),
-              ('Bibliography', 1, None, '___sec118')]}
+              ('Problem 11: Scaling a welding problem',
+               2,
+               'diffu:exer:welding',
+               'diffu:exer:welding'),
+              ('Exercise 12: Implement a Forward Euler scheme for axi-symmetric diffusion',
+               2,
+               'diffu:exer:axisymm',
+               'diffu:exer:axisymm'),
+              ('Bibliography', 1, None, '___sec124')]}
 end of tocinfo -->
 
 <body>
@@ -381,8 +396,10 @@ $$
 \newcommand{\Oof}[1]{\mathcal{O}(#1)}
 \newcommand{\x}{\boldsymbol{x}}
 \renewcommand{\u}{\boldsymbol{u}}
+\renewcommand{\v}{\boldsymbol{v}}
 \newcommand{\f}{\boldsymbol{f}}
 \newcommand{\q}{\boldsymbol{q}}
+\newcommand{\g}{\boldsymbol{g}}
 \newcommand{\dfc}{\alpha}  % diffusion coefficient
 \newcommand{\ii}{\boldsymbol{i}}
 \newcommand{\jj}{\boldsymbol{j}}
@@ -458,8 +475,8 @@ $$
      <!-- navigation toc: --> <li><a href="#diffu:varcoeff:stationary" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Stationary solution</a></li>
      <!-- navigation toc: --> <li><a href="#diffu:varcoeff:piecewise" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Piecewise constant medium</a></li>
      <!-- navigation toc: --> <li><a href="#diffu:varcoeff:impl:piecewise" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Implementation of diffusion in a piecewise constant medium</a></li>
-     <!-- navigation toc: --> <li><a href="#diffu:fd2:radial" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Diffusion equation in axi-symmetric geometries</a></li>
-     <!-- navigation toc: --> <li><a href="#diffu:fd2:spherical" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Diffusion equation in spherically-symmetric geometries</a></li>
+     <!-- navigation toc: --> <li><a href="#diffu:fd2:radial" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Axi-symmetric diffusion</a></li>
+     <!-- navigation toc: --> <li><a href="#diffu:fd2:spherical" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Spherically-symmetric diffusion</a></li>
      <!-- navigation toc: --> <li><a href="#___sec49" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Discretization in spherical coordinates</a></li>
      <!-- navigation toc: --> <li><a href="#___sec50" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Discretization in Cartesian coordinates</a></li>
      <!-- navigation toc: --> <li><a href="#diffu:2D" style="font-size: 80%;"><b>Diffusion in 2D</b></a></li>
@@ -519,17 +536,23 @@ $$
      <!-- navigation toc: --> <li><a href="#diffu:app" style="font-size: 80%;"><b>Applications</b></a></li>
      <!-- navigation toc: --> <li><a href="#diffu:app:substance" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Diffusion of a substance</a></li>
      <!-- navigation toc: --> <li><a href="#diffu:app:heat" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Heat conduction</a></li>
+     <!-- navigation toc: --> <li><a href="#diffu:app:porous" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Porous media flow</a></li>
+     <!-- navigation toc: --> <li><a href="#___sec109" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Potential fluid flow</a></li>
+     <!-- navigation toc: --> <li><a href="#___sec110" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Streamlines for 2D fluid flow</a></li>
+     <!-- navigation toc: --> <li><a href="#___sec111" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;The potential of an electric field</a></li>
      <!-- navigation toc: --> <li><a href="#diffu:app:Couette" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Development of flow between two flat plates</a></li>
      <!-- navigation toc: --> <li><a href="#diffu:app:pipeflow" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Flow in a straight tube</a></li>
-     <!-- navigation toc: --> <li><a href="#___sec110" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Tribology: thin film fluid flow</a></li>
-     <!-- navigation toc: --> <li><a href="#___sec111" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Propagation of electrical signals in the brain</a></li>
-     <!-- navigation toc: --> <li><a href="#___sec112" style="font-size: 80%;"><b>Exercises</b></a></li>
+     <!-- navigation toc: --> <li><a href="#___sec114" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Tribology: thin film fluid flow</a></li>
+     <!-- navigation toc: --> <li><a href="#___sec115" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Propagation of electrical signals in the brain</a></li>
+     <!-- navigation toc: --> <li><a href="#___sec116" style="font-size: 80%;"><b>Exercises</b></a></li>
      <!-- navigation toc: --> <li><a href="#diffu:exer:CN:Rannacher" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Exercise 6: Stabilizing the Crank-Nicolson method by Rannacher time stepping</a></li>
      <!-- navigation toc: --> <li><a href="#diffu:exer:energy:estimates" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Project 7: Energy estimates for diffusion problems</a></li>
      <!-- navigation toc: --> <li><a href="#diffu:exer:splitting_prec" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Exercise 8: Splitting methods and preconditioning</a></li>
-     <!-- navigation toc: --> <li><a href="#diffu:exer:earthosc" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Exercise 9: Oscillating surface temperature of the earth</a></li>
-     <!-- navigation toc: --> <li><a href="#diffu:exer:bloodflow" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Exercise 10: Oscillating and pulsating flow in tubes</a></li>
-     <!-- navigation toc: --> <li><a href="._diffu002.html#___sec118" style="font-size: 80%;"><b>Bibliography</b></a></li>
+     <!-- navigation toc: --> <li><a href="#diffu:exer:earthosc" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Problem 9: Oscillating surface temperature of the earth</a></li>
+     <!-- navigation toc: --> <li><a href="#diffu:exer:bloodflow" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Problem 10: Oscillating and pulsating flow in tubes</a></li>
+     <!-- navigation toc: --> <li><a href="#diffu:exer:welding" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Problem 11: Scaling a welding problem</a></li>
+     <!-- navigation toc: --> <li><a href="#diffu:exer:axisymm" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Exercise 12: Implement a Forward Euler scheme for axi-symmetric diffusion</a></li>
+     <!-- navigation toc: --> <li><a href="._diffu002.html#___sec124" style="font-size: 80%;"><b>Bibliography</b></a></li>
 
         </ul>
       </li>
@@ -558,7 +581,7 @@ $$
  <li> Check if the material on diffusion equation with radial symmetry is
    okay.</li>
  <li> Implement a diffusion equation with axi-symmetry such we can solve
-   pulsating flow in a circular blood vessel, see <a href="#diffu:exer:bloodflow">Exercise 10: Oscillating and pulsating flow in tubes</a>.</li>
+   pulsating flow in a circular blood vessel, see <a href="#diffu:exer:bloodflow">Problem 10: Oscillating and pulsating flow in tubes</a>.</li>
 </ul>
 
 The famous <em>diffusion equation</em>, also known as the <em>heat equation</em>,
@@ -1242,23 +1265,23 @@ gives growing, non-physical instabilities,
 as seen in Figure <a href="#diffu:pde1:FE:fig:F=0.51">3</a>.
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:pde1:FE:fig:F=0.5"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 1:  Forward Euler scheme for \( F=0.5 \). <div id="diffu:pde1:FE:fig:F=0.5"></div> </p></center>
+<center><p class="caption">Figure 1:  Forward Euler scheme for \( F=0.5 \).  <!-- caption label: diffu:pde1:FE:fig:F=0.5 --> </p></center>
 <p><img src="fig-diffu/plug_FE_F05.png" align="bottom" width=800></p>
 </center>
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:pde1:FE:fig:F=0.25"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 2:  Forward Euler scheme for \( F=0.25 \). <div id="diffu:pde1:FE:fig:F=0.25"></div> </p></center>
+<center><p class="caption">Figure 2:  Forward Euler scheme for \( F=0.25 \).  <!-- caption label: diffu:pde1:FE:fig:F=0.25 --> </p></center>
 <p><img src="fig-diffu/plug_FE_F025.png" align="bottom" width=800></p>
 </center>
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:pde1:FE:fig:F=0.51"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 3:  Forward Euler scheme for \( F=0.51 \). <div id="diffu:pde1:FE:fig:F=0.51"></div> </p></center>
+<center><p class="caption">Figure 3:  Forward Euler scheme for \( F=0.51 \).  <!-- caption label: diffu:pde1:FE:fig:F=0.51 --> </p></center>
 <p><img src="fig-diffu/plug_FE_F051.png" align="bottom" width=800></p>
 </center>
 
@@ -1286,9 +1309,9 @@ if (!!(window.safari)) {
 </script>
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:pde1:FE:fig:gauss:F=0.5"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 4:  Forward Euler scheme for \( F=0.5 \). <div id="diffu:pde1:FE:fig:gauss:F=0.5"></div> </p></center>
+<center><p class="caption">Figure 4:  Forward Euler scheme for \( F=0.5 \).  <!-- caption label: diffu:pde1:FE:fig:gauss:F=0.5 --> </p></center>
 <p><img src="fig-diffu/gaussian_FE_F05.png" align="bottom" width=800></p>
 </center>
 
@@ -1301,7 +1324,7 @@ important observations:
  <li> \( I(x) \) as a discontinuous plug leads to a saw tooth-like noise
    for \( F=\half \), which is absent for \( F\leq\frac{1}{4} \).</li>
  <li> The smooth Gaussian initial function leads to a smooth solution
-   for all relevant \( F \) values (\( F\geq \half \)).</li>
+   for all relevant \( F \) values (\( F\leq \half \)).</li>
 </ul>
 
 <h1 id="diffu:pde1:implicit">Implicit methods for the 1D diffusion equation</h1>
@@ -1806,15 +1829,23 @@ condition. We can also verify that we can have \( F>\half \),
 which allows larger time steps than in the Forward Euler method.
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:pde1:BE:fig:F=0.5"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 5:  Backward Euler scheme for \( F=0.5 \). <div id="diffu:pde1:BE:fig:F=0.5"></div> </p></center>
+<center><p class="caption">Figure 5:  Backward Euler scheme for \( F=0.5 \).  <!-- caption label: diffu:pde1:BE:fig:F=0.5 --> </p></center>
 <p><img src="fig-diffu/plug_BE_F05.png" align="bottom" width=800></p>
 </center>
 
 <p>
 The Backward Euler scheme always produces smooth solutions for any \( F \).
 Figure <a href="#diffu:pde1:BE:fig:F=0.5">5</a> shows one example.
+Note that the mathematical discontinuity at \( t=0 \) leads to a linear
+variation on a mesh, but the approximation to a jump becomes better
+as \( N_x \) increases. In our simulation we specify \( \Delta t \) and \( F \),
+and \( N_x \) is set to \( L/\sqrt(\dfc\Delta t/F) \). Since \( N_x\sim\sqrt{F} \),
+the discontinuity looks sharper in the Crank-Nicolson
+simulations with larger \( F \).
+
+<p>
 The Crank-Nicolson method produces smooth solutions for small \( F \),
 \( F\leq\half \), but small noise is more and more evident as \( F \)
 increases. Figures <a href="#diffu:pde1:CN:fig:F=3">6</a> and <a href="#diffu:pde1:CN:fig:F=10">7</a>
@@ -1822,16 +1853,16 @@ demonstrates the effect for \( F=3 \) and \( F=10 \), respectively.
 The section <a href="#diffu:pde1:analysis">Analysis of schemes for the diffusion equation</a> explains why such noise occur.
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:pde1:CN:fig:F=3"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 6:  Crank-Nicolson scheme for \( F=3 \). <div id="diffu:pde1:CN:fig:F=3"></div> </p></center>
+<center><p class="caption">Figure 6:  Crank-Nicolson scheme for \( F=3 \).  <!-- caption label: diffu:pde1:CN:fig:F=3 --> </p></center>
 <p><img src="fig-diffu/plug_CN_F3.png" align="bottom" width=800></p>
 </center>
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:pde1:CN:fig:F=10"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 7:  Crank-Nicolson scheme for \( F=10 \). <div id="diffu:pde1:CN:fig:F=10"></div> </p></center>
+<center><p class="caption">Figure 7:  Crank-Nicolson scheme for \( F=10 \).  <!-- caption label: diffu:pde1:CN:fig:F=10 --> </p></center>
 <p><img src="fig-diffu/plug_CN_F10.png" align="bottom" width=800></p>
 </center>
 
@@ -1889,15 +1920,15 @@ This section presents a mathematical analysis that explains the
 observed behavior and arrives at criteria for obtaining numerical
 solutions that reproduce the qualitative properties of the exact
 solutions. In short, we shall explain what is observed in
-Figures
-<a href="#diffu:pde1:FE:fig:F=0.5">1</a>,
-<a href="#diffu:pde1:FE:fig:F=0.25">2</a>,
-<a href="#diffu:pde1:FE:fig:F=0.51">3</a>,
-<a href="#diffu:pde1:FE:fig:gauss:F=0.5">4</a>,
-<a href="#diffu:pde1:BE:fig:F=0.5">5</a>,
-<a href="#diffu:pde1:CN:fig:F=3">6</a>,
-and
-<a href="#diffu:pde1:CN:fig:F=10">7</a>.
+Figures <a href="#diffu:pde1:FE:fig:F=0.5">1</a>-<a href="#diffu:pde1:CN:fig:F=10">7</a>.
+<!-- <a href="#diffu:pde1:FE:fig:F=0.5">1</a>, -->
+<!-- <a href="#diffu:pde1:FE:fig:F=0.25">2</a>, -->
+<!-- <a href="#diffu:pde1:FE:fig:F=0.51">3</a>, -->
+<!-- <a href="#diffu:pde1:FE:fig:gauss:F=0.5">4</a>, -->
+<!-- <a href="#diffu:pde1:BE:fig:F=0.5">5</a>, -->
+<!-- <a href="#diffu:pde1:CN:fig:F=3">6</a>, -->
+<!-- and -->
+<!-- <a href="#diffu:pde1:CN:fig:F=10">7</a>. -->
 
 <h2 id="diffu:pde1:analysis:uex">Properties of the solution</h2>
 
@@ -2050,7 +2081,8 @@ faster dampened than slow oscillations in space, corresponding to small
 \( k \). This feature leads to a smoothing of the initial condition with time.
 
 <p>
-The following example illustrates the damping properties of <a href="#mjx-eqn-49">(49)</a>. We consider the specific problem
+The following example illustrate the damping properties of
+<a href="#mjx-eqn-49">(49)</a>. We consider the specific problem
 
 $$
 \begin{align*}
@@ -2081,9 +2113,9 @@ until \( t\sim 0.5 \) before the amplitude of the long wave \( \sin (\pi x) \)
 becomes very small.
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:pde1:fig:damping"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 8:  Evolution of the solution of a diffusion problem: initial condition (upper left), 1/100 reduction of the small waves (upper right), 1/10 reduction of the long wave (lower left), and 1/100 reduction of the long wave (lower right). <div id="diffu:pde1:fig:damping"></div> </p></center>
+<center><p class="caption">Figure 8:  Evolution of the solution of a diffusion problem: initial condition (upper left), 1/100 reduction of the small waves (upper right), 1/10 reduction of the long wave (lower left), and 1/100 reduction of the long wave (lower right).  <!-- caption label: diffu:pde1:fig:damping --> </p></center>
 <p><img src="fig-diffu/diffusion_damping.png" align="bottom" width=800></p>
 </center>
 
@@ -2169,6 +2201,9 @@ $$
 
 where the amplification factor \( A \)
 must be determined by inserting the component into an actual scheme.
+Note that \( A^n \) means \( A \) raised to the power of \( n \), \( n \) being the
+index in the time mesh, while the superscript \( n \) in \( u^n_q \) just
+denotes \( u \) at time \( t_n \).
 
 <h3 id="___sec20">Stability </h3>
 
@@ -2465,23 +2500,23 @@ as all schemes are stable, the amplification factor is positive,
 except for Crank-Nicolson when \( F>0.5 \).
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:pde1:fig:A:err:C20"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 9:  Amplification factors for large time steps. <div id="diffu:pde1:fig:A:err:C20"></div> </p></center>
+<center><p class="caption">Figure 9:  Amplification factors for large time steps.  <!-- caption label: diffu:pde1:fig:A:err:C20 --> </p></center>
 <p><img src="fig-diffu/diffusion_A_F20_F2.png" align="bottom" width=800></p>
 </center>
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:pde1:fig:A:err:C0.5"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 10:  Amplification factors for time steps around the Forward Euler stability limit. <div id="diffu:pde1:fig:A:err:C0.5"></div> </p></center>
+<center><p class="caption">Figure 10:  Amplification factors for time steps around the Forward Euler stability limit.  <!-- caption label: diffu:pde1:fig:A:err:C0.5 --> </p></center>
 <p><img src="fig-diffu/diffusion_A_F05_F025.png" align="bottom" width=800></p>
 </center>
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:pde1:fig:A:err:C0.1"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 11:  Amplification factors for small time steps. <div id="diffu:pde1:fig:A:err:C0.1"></div> </p></center>
+<center><p class="caption">Figure 11:  Amplification factors for small time steps.  <!-- caption label: diffu:pde1:fig:A:err:C0.1 --> </p></center>
 <p><img src="fig-diffu/diffusion_A_F01_F001.png" align="bottom" width=800></p>
 </center>
 
@@ -2490,14 +2525,13 @@ The effect of negative amplification factors is that \( A^n \) changes
 sign from one time level to the next, thereby giving rise to
 oscillations in time in an animation of the solution. We see from
 Figure <a href="#diffu:pde1:fig:A:err:C20">9</a> that for \( F=20 \), waves with
-\( p\geq \pi/2 \) undergo a damping close to \( -1 \), which means that the
+\( p\geq \pi/4 \) undergo a damping close to \( -1 \), which means that the
 amplitude does not decay and that the wave component jumps up and down
-(flips amplitude)
-in time. For \( F=2 \) we have a damping of a factor of 0.5 from one time
-level to the next, which is very much smaller than the exact
-damping. Short waves will therefore fail to be effectively dampened.
-These waves will manifest themselves as high frequency oscillatory
-noise in the solution.
+(flips amplitude) in time. For \( F=2 \) we have a damping of a factor of
+0.5 from one time level to the next, which is very much smaller than
+the exact damping. Short waves will therefore fail to be effectively
+dampened.  These waves will manifest themselves as high frequency
+oscillatory noise in the solution.
 
 <p>
 A value \( p=\pi/4 \) corresponds to four mesh points per wave length of
@@ -2506,16 +2540,12 @@ which is the smallest number of points we can have to represent the
 wave on the mesh.
 
 <p>
-To demonstrate the oscillatory behavior of the Crank-Nicolson scheme, we
-choose an initial condition that leads to short waves with
+To demonstrate the oscillatory behavior of the Crank-Nicolson scheme,
+we choose an initial condition that leads to short waves with
 significant amplitude. A discontinuous \( I(x) \) will in particular serve
-this purpose.
-
-<p>
-
-<!-- begin inline comment -->
-<font color="red">(<b>hpl 4</b>: Run example!!)</font>
-<!-- end inline comment -->
+this purpose: Figures <a href="#diffu:pde1:CN:fig:F=3">6</a> and
+<a href="#diffu:pde1:CN:fig:F=10">7</a> corresponds to \( F=3 \) and \( F=10 \),
+respectively, and we see how short waves pollute the overall solution.
 
 <h2 id="diffu:2D:analysis">Analysis of the 2D diffusion equation</h2>
 
@@ -3205,10 +3235,10 @@ $$
 <h2 id="diffu:varcoeff:piecewise">Piecewise constant medium</h2>
 
 <p>
-Consider a medium built of \( M \) layers. The layer boundaries 
+Consider a medium built of \( M \) layers. The layer boundaries
 are denoted by \( b_0, \ldots, b_M \),
 where \( b_0=0 \) and \( b_M=L \).
-If the layers potentially have different material properties, but 
+If the layers potentially have different material properties, but
 these properties are constant within each layer, we can express \( \alpha \) as a
 <em>piecewise constant function</em> according to
 
@@ -3263,8 +3293,6 @@ functions like <a href="#mjx-eqn-75">(75)</a> and expressions like
 <a href="#mjx-eqn-76">(76)</a>. These utilities not only represent
 piecewise constant functions, but also <em>smoothed</em> versions of them
 where the discontinuities can be smoothed out in a controlled fashion.
-This is advantageous in many computational contexts (although seldom
-for pure finite difference computations of the solution \( u \)).
 
 <p>
 The <code>PiecewiseConstant</code> class is created by sending in the domain as a
@@ -3359,9 +3387,9 @@ a <span style="color: #666666">=</span> [<span style="color: #666666">0.2</span>
 U_0 <span style="color: #666666">=</span> <span style="color: #666666">0.5</span>;  U_L <span style="color: #666666">=</span> <span style="color: #666666">5</span>     <span style="color: #408080; font-style: italic"># boundary conditions</span>
 </pre></div>
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:fd2:pde:st:sol:pc:fig1"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 12:  Solution of the stationary diffusion equation corresponding to a piecewise constant diffusion coefficient. <div id="diffu:fd2:pde:st:sol:pc:fig1"></div> </p></center>
+<center><p class="caption">Figure 12:  Solution of the stationary diffusion equation corresponding to a piecewise constant diffusion coefficient.  <!-- caption label: diffu:fd2:pde:st:sol:pc:fig1 --> </p></center>
 <p><img src="fig-diffu/flow_in_layers_case1.png" align="bottom" width=400></p>
 </center>
 
@@ -3372,18 +3400,18 @@ the (small) impact on \( u \). Figure <a href="#diffu:fd2:pde:st:sol:pc:fig2">13
 shows the result.
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:fd2:pde:st:sol:pc:fig2"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 13:  Solution of the stationary diffusion equation corresponding to a <em>smoothed</em> piecewise constant diffusion coefficient. <div id="diffu:fd2:pde:st:sol:pc:fig2"></div> </p></center>
+<center><p class="caption">Figure 13:  Solution of the stationary diffusion equation corresponding to a <em>smoothed</em> piecewise constant diffusion coefficient.  <!-- caption label: diffu:fd2:pde:st:sol:pc:fig2 --> </p></center>
 <p><img src="fig-diffu/flow_in_layers_case1_eps.png" align="bottom" width=400></p>
 </center>
 
-<h2 id="diffu:fd2:radial">Diffusion equation in axi-symmetric geometries</h2>
+<h2 id="diffu:fd2:radial">Axi-symmetric diffusion</h2>
 
 <p>
 Suppose we have a diffusion process taking place in a straight tube
 with radius \( R \). We assume axi-symmetry such that \( u \) is just a
-function of \( r \) and \( t \), \( r \) being the radial distance from the center 
+function of \( r \) and \( t \), \( r \) being the radial distance from the center
 axis of the tube to a point. With such axi-symmetry it is
 advantageous to introduce <em>cylindrical coordinates</em> \( r \), \( \theta \), and
 \( z \), where \( z \) is in the direction of the tube and \( (r,\theta) \) are
@@ -3455,33 +3483,34 @@ For a variable coefficient \( \dfc(r) \) the expanded spatial derivative term re
 $$ \dfc(r)\frac{\partial^2 u}{\partial r^2} +
 \frac{1}{r}(\dfc(r) + r\dfc'(r))\frac{\partial u}{\partial r}\tp$$
 
-From the rules for the <a href="https://en.wikibooks.org/wiki/Calculus/Proofs_of_Some_Basic_Limit_Rules" target="_self">limit of a product</a> we have that
+We are interested in this expression for \( r=0 \). A necessary condition
+for \( u \) to be axi-symmetric is that all input data, including \( \alpha \),
+must also be axi-symmetric, implying that \( \alpha'(0)=0 \) (the second
+term vanishes anyway because of \( r=0 \)). The limit of interest is
 
 $$ \lim_{r\rightarrow 0}
-\frac{1}{r}(\dfc(r) + r\dfc'(r))\frac{\partial u}{\partial r} =
-\lim_{r\rightarrow 0} (\dfc(r) + r\dfc'(r))\ 
-\lim_{x\rightarrow 0}
-\frac{1}{r}\frac{\partial u}{\partial r}\tp
+\frac{1}{r}\dfc(r)\frac{\partial u}{\partial r} =
+\dfc(0)\frac{\partial^2 u}{\partial r^2}\tp
 $$
 
-The second limit was found above, so the PDE at \( r=0 \)
-<!-- assuming \( (\dfc(0) + r\dfc'(0))\neq 0 \), -->
-looks like
+The PDE at \( r=0 \) now looks like
 
 $$
 \begin{equation}
-\frac{\partial u}{\partial t} = (2\dfc + r\dfc')
+\frac{\partial u}{\partial t} = 2\dfc(0)
 \frac{\partial^2 u}{\partial r^2}
-+ f(t)\tp
++ f(t),
 \tag{82}
 \end{equation}
 $$
 
+so there is no essential difference between the constant coefficient
+and variable coefficient cases.
+
 <p>
-The second-order derivatives in <a href="#mjx-eqn-81">(81)</a>
+The second-order derivative in <a href="#mjx-eqn-81">(81)</a>
 and <a href="#mjx-eqn-82">(82)</a>
-are discretized in the usual way.
-Consider first constant \( \dfc \):
+is discretized in the usual way.
 
 $$ 2\dfc\frac{\partial^2}{\partial r^2}u(r_0,t_n) \approx
 [2\dfc 2D_rD_r u]^n_0 =
@@ -3502,23 +3531,16 @@ $$
 \end{equation}
 $$
 
-With variable \( \dfc \) we simply get
-
-$$(2\dfc + r\dfc')2D_rD_r u]^n_0 =
-(2\dfc(0) + r\dfc'(0)) \frac{u^{n}_{1} - 2u^{n}_0 + u^n_{-1}}{\Delta r^2}\tp$$
-
-Also now we replace \( u^n_{-1} \) by \( u^n_{1} \) because of symmetry at \( r=0 \).
-
 <p>
 The discretization of the term with the second-order derivative in \( r \) at any
 internal mesh point is straightforward:
 
 $$
 \begin{align*}
-\left.\frac{1}{r}\frac{\partial}{\partial r}
-\left(r\dfc\frac{\partial u}{\partial r}\right)\right\vert_{r=r_i}^{t=t_n}
+\left[\frac{1}{r}\frac{\partial}{\partial r}
+\left(r\dfc\frac{\partial u}{\partial r}\right)\right]_i^n
 & \approx [r^{-1} D_r (r \dfc D_r u)]_i^n\\ 
-&= \frac{1}{\Delta r^2}\left(
+&= \frac{1}{r_i}\frac{1}{\Delta r^2}\left(
 r_{i+\half}\dfc_{i+\half}(u_{i+1}^n - u_i^n) - r_{i-\half}\dfc_{i-\half}(u_{i}^n - u_{i-1}^n)\right)\tp
 \end{align*}
 $$
@@ -3527,12 +3549,12 @@ $$
 To complete the discretization, we need a scheme in time, but that can
 be done as before and does not interfere with the discretization in space.
 
-<h2 id="diffu:fd2:spherical">Diffusion equation in spherically-symmetric geometries</h2>
+<h2 id="diffu:fd2:spherical">Spherically-symmetric diffusion</h2>
 
 <h3 id="___sec49">Discretization in spherical coordinates </h3>
 
 <p>
-Let us now pose the problem from the section <a href="#diffu:fd2:radial">Diffusion equation in axi-symmetric geometries</a>
+Let us now pose the problem from the section <a href="#diffu:fd2:radial">Axi-symmetric diffusion</a>
 in spherical coordinates, where \( u \) only depends on the radial coordinate
 \( r \) and time \( t \). That is, we have spherical symmetry.
 For simplicity we restrict the diffusion coefficient \( \dfc \) to be
@@ -3554,7 +3576,7 @@ in <a href="#mjx-eqn-77">(77)</a>-<a href="#mjx-eqn-80">(80)</a>.
 
 <p>
 Since the PDE in spherical coordinates has the same form as the PDE
-in the section <a href="#diffu:fd2:radial">Diffusion equation in axi-symmetric geometries</a>, just with the \( \gamma \) parameter
+in the section <a href="#diffu:fd2:radial">Axi-symmetric diffusion</a>, just with the \( \gamma \) parameter
 being different, we can use the same discretization approach.
 At the origin \( r=0 \) we get problems with the term
 
@@ -3590,24 +3612,42 @@ the Cartesian counterpart by introducing
 
 $$ v(r,t) = ru(r,t)\tp$$
 
-Inserting \( u=v/r \) in the PDE yields
+Inserting \( u=v/r \) in
 
 $$ \frac{1}{r^2}\frac{\partial}{\partial r}
 \left(\dfc(r)r^2\frac{\partial u}{\partial r}\right), $$
 
-and then
+yields
 
-$$ r\left(\frac{d c^2}{dr}\frac{\partial v}{\partial r} +
-\dfc\frac{\partial^2 v}{\partial r^2}\right) - \frac{d c^2}{dr}v
+$$ r\left(\frac{d \dfc}{dr}\frac{\partial v}{\partial r} +
+\dfc\frac{\partial^2 v}{\partial r^2}\right) - \frac{d \dfc}{dr}v
 \tp
 $$
 
 The two terms in the parenthesis can be combined to
-$$ r\frac{\partial}{\partial r}\left( \dfc\frac{\partial v}{\partial r}\right),
+$$ r\frac{\partial}{\partial r}\left( \dfc\frac{\partial v}{\partial r}\right)\tp
 $$
 
-which is recognized as the variable-coefficient Laplace operator in
-one Cartesian coordinate.
+The PDE for \( v \) takes the form
+
+$$
+\begin{equation}
+\frac{\partial v}{\partial t} = \frac{\partial}{\partial r}\left( \dfc
+\frac{\partial v}{\partial r}\right) - \frac{1}{r}\frac{d\dfc}{dr}v + rf(r,t),
+\quad r\in (0,R),\ t\in (0,T]\tp
+\tag{87}
+\end{equation}
+$$
+
+For \( \alpha \) constant we immediately realize that we can reuse a
+solver in Cartesian coordinates to compute \( v \). With variable \( \alpha \),
+a &quot;reaction&quot; term \( v/r \) needs to be added to the Cartesian solver.
+The boundary condition \( \partial u/\partial r=0 \) at \( r=0 \), implied
+by symmetry, forces \( v(0,t)=0 \), because
+
+$$ \frac{\partial u}{\partial r} = \frac{1}{r^2}\left(
+r\frac{\partial v}{\partial r} - v\right) = 0,\quad r=0\tp
+$$
 
 <h1 id="diffu:2D">Diffusion in 2D</h1>
 
@@ -3619,7 +3659,7 @@ $$
 \frac{\partial u}{\partial t} & = \dfc\left(
 \frac{\partial^2 u}{\partial x^2} +
 \frac{\partial^2 u}{\partial x^2}\right) + f(x,y),
-\tag{87}
+\tag{88}
 \end{align}
 $$
 
@@ -3642,7 +3682,7 @@ $$
 \lbrack D_t u\rbrack^{n+\half} &=
 \theta \lbrack \dfc (D_xD_x u + D_yD_yu) + f\rbrack^{n+1} + \nonumber\\ 
 &\quad (1-\theta)\lbrack \dfc (D_xD_x u + D_yD_y u) + f\rbrack^{n}\tp
-\tag{88}
+\tag{89}
 \end{align}
 $$
 
@@ -3660,7 +3700,7 @@ f^{n+1}_{i,j})
 (\frac{u^{n}_{i-1,j} - 2^{n}_{i,j} + u^{n}_{i+1,j}}{\Delta x^2} +
 \frac{u^{n}_{i,j-1} - 2^{n}_{i,j} + u^{n}_{i,j+1}}{\Delta y^2}) +
 f^{n}_{i,j})
-\tag{89}
+\tag{90}
 \end{align}
 $$
 
@@ -3682,7 +3722,7 @@ F_x
 F_y
 (u^{n}_{i,j-1} - 2^{n}_{i,j} + u^{n}_{i,j+1})\right) + \nonumber\\ 
 &\qquad \theta \Delta t f^{n+1}_{i,j} + (1-\theta) \Delta t f^{n}_{i,j},
-\tag{90}
+\tag{91}
 \end{align}
 $$
 
@@ -3693,9 +3733,9 @@ $$ F_x = \frac{\dfc\Delta t}{\Delta x^2},\quad F_y = \frac{\dfc\Delta t}{\Delta 
 are the Fourier numbers in \( x \) and \( y \) direction, respectively.
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:2D:fig:mesh3x2"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 14:  3x2 2D mesh. <div id="diffu:2D:fig:mesh3x2"></div> </p></center>
+<center><p class="caption">Figure 14:  3x2 2D mesh.  <!-- caption label: diffu:2D:fig:mesh3x2 --> </p></center>
 <p><img src="fig-diffu/mesh3x2.png" align="bottom" width=500></p>
 </center>
 
@@ -3703,7 +3743,7 @@ are the Fourier numbers in \( x \) and \( y \) direction, respectively.
 
 <p>
 <!-- Nx=3, Ny=2 -->
-The equations <a href="#mjx-eqn-90">(90)</a> are coupled at the new
+The equations <a href="#mjx-eqn-91">(91)</a> are coupled at the new
 time level \( n+1 \). That is, we must solve a system of (linear) algebraic
 equations, which we will write as \( Ac=b \), where \( A \) is the coefficient
 matrix, \( c \) is the vector of unknowns, and \( b \) is the right-hand side.
@@ -3781,7 +3821,7 @@ $$
 $$
 
 That is, we number the points along the \( x \) axis, starting with \( y=0 \),
-and then progress one horizontal mesh line at a time.
+and then progress one &quot;horizontal&quot; mesh line at a time.
 In Figure <a href="#diffu:2D:fig:mesh3x2">14</a> you can see that the \( (i,j) \) and the
 corresponding single index (\( p \)) are listed for each mesh point.
 
@@ -3853,16 +3893,16 @@ $$
 A_{m(i,j),m(i,j)} = A_{p,p} &=
 1 +
 \theta (F_x + F_y),
-\tag{91}\\ 
-A_{p, m(i-1,j)} = A_{p,p-1} &= -\theta F_x,
 \tag{92}\\ 
-A_{p, m(i+1,j)} = A_{p,p+1} &= -\theta F_x,
+A_{p, m(i-1,j)} = A_{p,p-1} &= -\theta F_x,
 \tag{93}\\ 
-A_{p, m(i,j-1)} = A_{p, p-(N_x+1)} &= -\theta F_y,
+A_{p, m(i+1,j)} = A_{p,p+1} &= -\theta F_x,
 \tag{94}\\ 
-A_{p, m(i,j+1)} = A_{p, p+(N_x+1)} &= -\theta F_y,
+A_{p, m(i,j-1)} = A_{p, p-(N_x+1)} &= -\theta F_y,
 \tag{95}\\ 
-\tag{96}
+A_{p, m(i,j+1)} = A_{p, p+(N_x+1)} &= -\theta F_y,
+\tag{96}\\ 
+\tag{97}
 \end{align}
 $$
 
@@ -3928,16 +3968,16 @@ for \( i=1,\ldots,N_x-1 \), \( j=1,\ldots,N_y-1 \).
 <p>
 
 <!-- begin inline comment -->
-<font color="red">(<b>hpl 5</b>: Fill in details.)</font>
+<font color="red">(<b>hpl 4</b>: Fill in details.)</font>
 <!-- end inline comment -->
 
 <p>
 <!-- Nx=4, Ny=3 -->
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:2D:fig:mesh4x3"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 15:  4x3 2D mesh. <div id="diffu:2D:fig:mesh4x3"></div> </p></center>
+<center><p class="caption">Figure 15:  4x3 2D mesh.  <!-- caption label: diffu:2D:fig:mesh4x3 --> </p></center>
 <p><img src="fig-diffu/mesh4x3.png" align="bottom" width=700></p>
 </center>
 
@@ -4770,7 +4810,7 @@ More precisely, with \( b=N_x+1 \) as the <em>bandwidth</em> of the matrix
 <p>
 
 <!-- begin inline comment -->
-<font color="red">(<b>hpl 6</b>: Problem: if \( N_x\gg N_y \) one should number the unknowns in \( y \) direction to get a smaller bandwidth.)</font>
+<font color="red">(<b>hpl 5</b>: Problem: if \( N_x\gg N_y \) one should number the unknowns in \( y \) direction to get a smaller bandwidth.)</font>
 <!-- end inline comment -->
 
 <p>
@@ -4797,13 +4837,12 @@ the section <a href="#diffu:2D:verify">Verification: exact numerical solution</a
 <h2 id="___sec64">The Jacobi iterative method </h2>
 
 <p>
-So far we have created a matrix and
-right-hand side of a linear system \( Ac=b \)
-and solved the system for \( c \) by calling an exact algorithm
+So far we have created a matrix and right-hand side of a linear system
+\( Ac=b \) and solved the system for \( c \) by calling an exact algorithm
 based on Gaussian elimination. A much simpler implementation, which
 requires no memory for the coefficient matrix \( A \), arises if we solve
-the system by <em>iterative</em> methods. These methods are only approximate, and
-the core algorithm is repeated many times until the solution is
+the system by <em>iterative</em> methods. These methods are only approximate,
+and the core algorithm is repeated many times until the solution is
 considered to be converged.
 
 <h3 id="___sec65">Numerical scheme and linear system </h3>
@@ -4821,7 +4860,7 @@ F_x
 F_y
 (u^{n+1}_{i,j-1} - 2u^{n+1}_{i,j} + u^{n+1}_{i,j+1})\right)
 = \nonumber\\ &\qquad u^n_{i,j} + \Delta t f^{n+1}_{i,j}
-\tag{97}
+\tag{98}
 \end{align}
 $$
 
@@ -4848,7 +4887,7 @@ F_y
 (u^{n+1}_{i,j-1} + u^{n+1}_{i,j+1})\right) +
 \nonumber\\ &\qquad
 u^n_{i,j} + \Delta t f^{n+1}_{i,j}
-\tag{98}
+\tag{99}
 \end{align}
 $$
 
@@ -4865,7 +4904,7 @@ F_y
 (u^{n+1,r}_{i,j-1} + u^{n+1,r}_{i,j+1})) +
 \nonumber\\ &\qquad
 u^n_{i,j} + \Delta t f^{n+1}_{i,j})
-\tag{99}
+\tag{100}
 \end{align}
 $$
 
@@ -4877,7 +4916,7 @@ We start the iteration with the computed values at the previous time level:
 $$
 \begin{equation}
 u^{n+1,0}_{i,j} = u^{n}_{i,j},\quad i=0,\ldots,N_x,\ j=0,\ldots,N_y\tp
-\tag{100}
+\tag{101}
 \end{equation}
 $$
 
@@ -4887,13 +4926,13 @@ $$
 A common technique in iterative methods is to introduce a <em>relaxation</em>,
 which means that the new approximation is a weighted mean of the
 approximation as suggested by the algorithm and the previous approximation.
-Naming the quantity on the left-hand side of <a href="#mjx-eqn-99">(99)</a>
+Naming the quantity on the left-hand side of <a href="#mjx-eqn-100">(100)</a>
 as \( u^{n+1,*}_{i,j} \), a new approximation based on relaxation reads
 
 $$
 \begin{equation}
 u^{n+1,r+1} = \omega u^{n+1,*}_{i,j} + (1-\omega) u^{n+1,r}_{i,j}\tp
-\tag{101}
+\tag{102}
 \end{equation}
 $$
 
@@ -4910,7 +4949,7 @@ $$
 \begin{equation}
 \max_{i,j}\left\vert u^{n+1,r+1}_{i,j}-u^{n+1,r}_{i,j}
 \right\vert \leq \epsilon,
-\tag{102}
+\tag{103}
 \end{equation}
 $$
 
@@ -4920,7 +4959,7 @@ $$
 \begin{equation}
 \left(\Delta x\Delta y\sum_{i,j} (u^{n+1,r+1}_{i,j}-u^{n+1,r}_{i,j})^2
 \right)^{\half} \leq \epsilon\tp
-\tag{103}
+\tag{104}
 \end{equation}
 $$
 
@@ -4937,7 +4976,7 @@ R_{i,j} &= u^{n+1,r+1}_{i,j} -
 &\quad\quad F_y(u^{n+1,r+1}_{i,j-1} - 2u^{n+1,r+1}_{i,j} + u^{n+1,r+1}_{i,j+1}))
 - \nonumber\\ 
 &\qquad u^n_{i,j} -  \Delta t f^{n+1}_{i,j}
-\tag{104}
+\tag{105}
 \end{align}
 $$
 
@@ -4948,7 +4987,7 @@ $$
 \begin{equation}
 \left(\Delta x\Delta y\sum_{i,j} R_{i,j}^2
 \right)^{\half} \leq \epsilon\tp
-\tag{105}
+\tag{106}
 \end{equation}
 $$
 
@@ -4962,7 +5001,7 @@ notation for \( u^{n+1,r}_{i,j} \), and \( u^{(s)}_{i,j} \) denotes
 \( u^{n+1-s}_{i,j} \).  That is, \( u_{i,j} \) is the unknown, \( u^{-}_{i,j} \)
 is its most recently computed approximation, and \( s \) counts time
 levels backwards in time. The Jacobi method
-(ref<a href="#mjx-eqn-99">(99)</a>) takes the following form with the new
+(ref<a href="#mjx-eqn-100">(100)</a>) takes the following form with the new
 notation:
 
 $$
@@ -4974,7 +5013,7 @@ F_y
 (u^{n+1,r}_{i,j-1} + u^{n+1,r}_{i,j+1})) +
 \nonumber\\ &\qquad
 u^{(1)}_{i,j} + \Delta t f^{n+1}_{i,j})
-\tag{106}
+\tag{107}
 \end{align}
 $$
 
@@ -4997,7 +5036,7 @@ u^{(1)}_{i,j} + \theta \Delta t f^{n+1}_{i,j}
 &\qquad (1-\theta)(
 F_x(u^{(1)}_{i-1,j}-2u^{(1)}_{i,j} + u^{(1)}_{i+1,j}) +
 F_y(u^{(1)}_{i,j-1}-2u^{(1)}_{i,j} + u^{(1)}_{i,j+1})))\tp
-\tag{107}
+\tag{108}
 \end{align}
 $$
 
@@ -5081,7 +5120,7 @@ once one has an understanding of how a standard 2D finite stencil
 is vectorized.
 
 <!-- begin inline comment -->
-<font color="red">(<b>hpl 7</b>: Make references to 1D and 2D wave equation vectorization.)</font>
+<font color="red">(<b>hpl 6</b>: Make references to 1D and 2D wave equation vectorization.)</font>
 <!-- end inline comment -->
 
 <p>
@@ -5133,7 +5172,7 @@ $$
 \begin{equation}
 \uex = Ae^{-\dfc\pi^2(L_x^{-2} + L_y^{-2})}
 \sin\left(\frac{\pi}{L_x}x\right)\sin\left(\frac{\pi}{L_y}y\right),
-\tag{108}
+\tag{109}
 \end{equation}
 $$
 
@@ -5162,7 +5201,7 @@ solution \( \uex \) of the problem.
 What about \( E_\Delta \)? If we use the maximum value as a measure of the
 error, we have in fact analytical insight into the approximation error in this
 particular problem. According to the section <a href="#diffu:2D:analysis">Analysis of the 2D diffusion equation</a>, the exact
-solution <a href="#mjx-eqn-108">(108)</a> of the PDE problem is
+solution <a href="#mjx-eqn-109">(109)</a> of the PDE problem is
 also an exact solution of the discrete equations, except that the
 damping factor in time is different. More precisely,
 <a href="#mjx-eqn-66">(66)</a> and
@@ -5284,7 +5323,7 @@ SOR method, which is treated next.
 
 <p>
 If we update the mesh points according to the
-Jacobi method <a href="#mjx-eqn-98">(98)</a>
+Jacobi method <a href="#mjx-eqn-99">(99)</a>
 for a Backward Euler discretization with a loop over
 \( i=1,\ldots,N_x-1 \) and \( j=1,\ldots,Ny-1 \), we realize that
 when \( u^{n+1,r+1}_{i,j} \) is computed, \( u^{n+1,r+1}_{i-1,j} \)
@@ -5294,7 +5333,7 @@ values can be used rather than
 in the formula for \( u^{n+1,r+1}_{i,j} \).
 This idea gives rise to the <em>Gauss-Seidel</em> iteration method,
 which mathematically is just a small adjustment of
-<a href="#mjx-eqn-98">(98)</a>:
+<a href="#mjx-eqn-99">(99)</a>:
 
 $$
 \begin{align}
@@ -5304,12 +5343,12 @@ F_x
 F_y
 (u^{n+1,r+1}_{i,j-1} + u^{n+1,r}_{i,j+1})) +
 u^n_{i,j} + \Delta t f^{n+1}_{i,j})\tp
-\tag{109}
+\tag{110}
 \end{align}
 $$
 
 Observe that the way we access the mesh points in the formula
-<a href="#mjx-eqn-109">(109)</a> is important: points with \( i-1 \) must be computed
+<a href="#mjx-eqn-110">(110)</a> is important: points with \( i-1 \) must be computed
 before points with \( i \), and points with \( j-1 \) must be computed
 before points with \( j \). Any sequence of mesh points can be used
 in the Gauss-Seidel method, but the particular math
@@ -5318,7 +5357,7 @@ already visited points in the current iteration and the points not
 yet visited.
 
 <p>
-The idea of relaxation <a href="#mjx-eqn-101">(101)</a> can equally
+The idea of relaxation <a href="#mjx-eqn-102">(102)</a> can equally
 well be applied to the Gauss-Seidel method. Actually, the Gauss-Seidel
 method with an arbitrary \( 0 < \omega\leq 2 \) has its own name: the
 <em>Successive Over-Relaxation</em> method, abbreviated as SOR.
@@ -5340,13 +5379,13 @@ u^{(1)}_{i,j} + \theta \Delta t f^{n+1}_{i,j}
 &\qquad (1-\theta)(
 F_x(u^{(1)}_{i-1,j}-2u^{(1)}_{i,j} + u^{(1)}_{i+1,j}) +
 F_y(u^{(1)}_{i,j-1}-2u^{(1)}_{i,j} + u^{(1)}_{i,j+1}))),
-\tag{110}\\ 
+\tag{111}\\ 
 u_{i,j} &= \omega u^{*}_{i,j} + (1-\omega)u^{-}_{i,j}
-\tag{111}
+\tag{112}
 \end{align}
 $$
 
-The sequence of mesh points in <a href="#mjx-eqn-110">(110)</a> is
+The sequence of mesh points in <a href="#mjx-eqn-111">(111)</a> is
 \( i=1,\ldots,N_x-1 \), \( j=1,\ldots,N_y-1 \) (but whether \( i \) runs faster
 or slower than \( j \) does not matter).
 
@@ -5605,7 +5644,7 @@ and <code>jp1</code>, respectively.
 </pre></div>
 <p>
 The formula returned from <code>update</code> is to be compared with
-<a href="#mjx-eqn-110">(110)</a>.
+<a href="#mjx-eqn-111">(111)</a>.
 
 <p>
 The relaxed Jacobi iteration can be implemented by
@@ -5681,7 +5720,7 @@ explained above.
 <p>
 
 <!-- begin inline comment -->
-<font color="red">(<b>hpl 8</b>: Experiments with SOR, benefits. Rerun the Jacobi experiments. Just mention the most important conclusions. We can have more comprehensive experiments with comparison of all methods in a later section, after CG with preconditioning.)</font>
+<font color="red">(<b>hpl 7</b>: Experiments with SOR, benefits. Rerun the Jacobi experiments. Just mention the most important conclusions. We can have more comprehensive experiments with comparison of all methods in a later section, after CG with preconditioning.)</font>
 <!-- end inline comment -->
 
 <h2 id="diffu:2D:direct_vs_iter">Direct versus iterative methods</h2>
@@ -5815,7 +5854,7 @@ a Poisson problem as
 $$
 \begin{equation}
 \omega_{o} = \frac{2}{1 + \sqrt{1-\varrho^2}},\quad \varrho = \frac{\cos(\pi/N_x) + (\Delta x/\Delta y)^2\cos(\pi/N_y)}{1 + (\Delta x/\Delta y)^2}\tp
-\tag{112}
+\tag{113}
 \end{equation}
 $$
 
@@ -5838,7 +5877,7 @@ new sweep but visiting the points in reverse order.
 <p>
 
 <!-- begin inline comment -->
-<font color="red">(<b>hpl 9</b>: Line Jacobi/SOR?)</font>
+<font color="red">(<b>hpl 8</b>: Line Jacobi/SOR?)</font>
 <!-- end inline comment -->
 
 <h2 id="diffu:2D:CG">The Conjugate gradient method</h2>
@@ -6051,9 +6090,9 @@ Figure <a href="#diffu:randomwalk:1D:fig:ensemble">16</a> shows four different
 random walks with \( N=200 \).
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:randomwalk:1D:fig:ensemble"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 16:  Ensemble of 4 random walks, each with 200 steps. <div id="diffu:randomwalk:1D:fig:ensemble"></div> </p></center>
+<center><p class="caption">Figure 16:  Ensemble of 4 random walks, each with 200 steps.  <!-- caption label: diffu:randomwalk:1D:fig:ensemble --> </p></center>
 <p><img src="fig-diffu/rw1D_ensemble4.png" align="bottom" width=800></p>
 </center>
 
@@ -6062,7 +6101,7 @@ random walks with \( N=200 \).
 <p>
 
 <!-- begin inline comment -->
-<font color="red">(<b>hpl 10</b>: Need to distinguish between scaled and unscaled position in the notation here!)</font>
+<font color="red">(<b>hpl 9</b>: Need to distinguish between scaled and unscaled position in the notation here!)</font>
 <!-- end inline comment -->
 
 <p>
@@ -6122,12 +6161,12 @@ to record are \( \sum_i \bar x_{i,k} \) and \( \sum_i \bar x_{i,k}^2 \).
 <h3 id="___sec86">Scalar code </h3>
 
 <p>
-Python has a <code>random</code> module for drawing random numbers, and a function
-<code>uniform(a, b)</code> for drawing a uniformly distributed
-random number in the interval \( [a,b) \).
-If an event happens with probability \( p \), we can simulate this on
-the computer by drawing a random number \( r \) in \( [0,1) \), because then \( r\leq p \)
-with probability \( p \) and \( r>p \) with probability \( 1-p \):
+Python has a <code>random</code> module for drawing random numbers, and this
+module has a function <code>uniform(a, b)</code> for drawing a uniformly
+distributed random number in the interval \( [a,b) \).  If an event
+happens with probability \( p \), we can simulate this on the computer by
+drawing a random number \( r \) in \( [0,1) \), because then \( r\leq p \) with
+probability \( p \) and \( r>p \) with probability \( 1-p \):
 
 <p>
 
@@ -6249,9 +6288,9 @@ the plot to the right.
 <!-- demo_random_walk1D produced the plots -->
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:randomwalk:1D:code1:fig1"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 17:  1,000 (left) and 50,000 (right) steps of a random walk. <div id="diffu:randomwalk:1D:code1:fig1"></div> </p></center>
+<center><p class="caption">Figure 17:  1,000 (left) and 50,000 (right) steps of a random walk.  <!-- caption label: diffu:randomwalk:1D:code1:fig1 --> </p></center>
 <p><img src="fig-diffu/rw1D_1sample.png" align="bottom" width=800></p>
 </center>
 
@@ -6330,7 +6369,7 @@ right (\( i+1,n) \). Both has probability \( \half \) (if we assume
 $$
 \begin{equation}
 P^{n+1}_i = \half P^{n}_{i-1} + \half P^{n}_{i+1}\tp
-\tag{113}
+\tag{114}
 \end{equation}
 $$
 
@@ -6377,7 +6416,7 @@ $$
 \begin{equation}
 \frac{\partial P}{\partial\bar t} = \frac{1}{2}
 \frac{\partial^2 P}{\partial \bar x^2},
-\tag{114}
+\tag{115}
 \end{equation}
 $$
 
@@ -6386,7 +6425,7 @@ or the diffusion equation
 $$
 \begin{equation}
 \frac{\partial P}{\partial t} = D\frac{\partial^2 P}{\partial x^2},
-\tag{115}
+\tag{116}
 \end{equation}
 $$
 
@@ -6403,13 +6442,13 @@ for the local probability \( P^n_i \).
 <p>
 Suppose all the random walks start at the origin. Then the initial
 condition for the probability distribution is the Dirac delta
-function \( \delta(x) \). The solution of <a href="#mjx-eqn-114">(114)</a>
+function \( \delta(x) \). The solution of <a href="#mjx-eqn-115">(115)</a>
 can be shown to be
 
 $$
 \begin{equation}
 \bar P(\bar x,\bar t) = \frac{1}{\sqrt{4\pi\dfc t}}e^{-\frac{x^2}{4\dfc t}},
-\tag{116}
+\tag{117}
 \end{equation}
 $$
 
@@ -6854,30 +6893,30 @@ process become so much less visible in the variance plots.  The
 probability of finding a particle at a certain position at time (or
 step) 800 is shown in Figure
 <a href="#diffu:randomwalk:1D:fig:demo1:HistX">20</a>. The dashed red line is the
-theoretical distribution <a href="#mjx-eqn-116">(116)</a>
+theoretical distribution <a href="#mjx-eqn-117">(117)</a>
 arising from solving the diffusion equation
-<a href="#mjx-eqn-114">(114)</a> instead. As always, we realize
+<a href="#mjx-eqn-115">(115)</a> instead. As always, we realize
 that one needs significantly more statistical samples to estimate a
 histogram accurately than the expectation or variance.
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:randomwalk:1D:fig:demo1:EX"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 18:  Estimated expected value for 1000 steps, using 100 walks (upper left), 10,000 (upper right), 100,000 (lower left), and 1,000,000 (lower right). <div id="diffu:randomwalk:1D:fig:demo1:EX"></div> </p></center>
+<center><p class="caption">Figure 18:  Estimated expected value for 1000 steps, using 100 walks (upper left), 10,000 (upper right), 100,000 (lower left), and 1,000,000 (lower right).  <!-- caption label: diffu:randomwalk:1D:fig:demo1:EX --> </p></center>
 <p><img src="fig-diffu/rw1D_EX_100_10000_100000_1000000.png" align="bottom" width=800></p>
 </center>
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:randomwalk:1D:fig:demo1:VarX"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 19:  Estimated variance over 1000 steps, using 100 walks (upper left), 10,000 (upper right), 100,000 (lower left), and 1,000,000 (lower right). <div id="diffu:randomwalk:1D:fig:demo1:VarX"></div> </p></center>
+<center><p class="caption">Figure 19:  Estimated variance over 1000 steps, using 100 walks (upper left), 10,000 (upper right), 100,000 (lower left), and 1,000,000 (lower right).  <!-- caption label: diffu:randomwalk:1D:fig:demo1:VarX --> </p></center>
 <p><img src="fig-diffu/rw1D_VarX_100_10000_100000_1000000.png" align="bottom" width=800></p>
 </center>
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:randomwalk:1D:fig:demo1:HistX"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 20:  Estimated probability distribution at step 800, using 100 walks (upper left), 10,000 (upper right), 100,000 (lower left), and 1,000,000 (lower right). <div id="diffu:randomwalk:1D:fig:demo1:HistX"></div> </p></center>
+<center><p class="caption">Figure 20:  Estimated probability distribution at step 800, using 100 walks (upper left), 10,000 (upper right), 100,000 (lower left), and 1,000,000 (lower right).  <!-- caption label: diffu:randomwalk:1D:fig:demo1:HistX --> </p></center>
 <p><img src="fig-diffu/rw1D_HistX_100_10000_100000_1000000.png" align="bottom" width=800></p>
 </center>
 
@@ -6950,8 +6989,10 @@ The output looks typically like
 </pre></div>
 <p>
 Positions beyond the limits of the \( x \) axis appear with a value.
-<a href="https://github.com/hplgit/fdm-book/blob/master/doc/.src/chapters/diffu/fig-diffu/rw_ascii.txt" target="_self">A file</a> contains the complete ascii plot corresponding to the
+<a href="http://bit.ly/1UbULeH" target="_self">A file</a>.
+contains the complete ascii plot corresponding to the
 function <code>run_random_walk</code> above.
+<!-- "https://github.com/hplgit/fdm-book/blob/master/doc/.src/chapters/diffu/fig-diffu/rw_ascii.txt" -->
 
 <h2 id="diffu:randomwalk:1D:ode">Random walk as a stochastic equation</h2>
 
@@ -6962,7 +7003,7 @@ a stochastic difference equation:
 $$
 \begin{equation}
 \bar X_k = \bar X_{k-1} + s, \quad x_0=0,
-\tag{117}
+\tag{118}
 \end{equation}
 $$
 
@@ -6998,7 +7039,7 @@ standardized Gaussian variable (zero mean, unit variance).
 <!-- x_k = \Delta x\bar x_k,\] -->
 <!-- !et -->
 <!-- such that we take steps of length \( \Delta x \). -->
-Dividing <a href="#mjx-eqn-117">(117)</a> by \( \Delta t \) gives
+Dividing <a href="#mjx-eqn-118">(118)</a> by \( \Delta t \) gives
 
 $$ \frac{\bar X_k - \bar X_{k-1}}{\Delta t} = \frac{1}{\Delta t} s\tp$$
 
@@ -7011,7 +7052,7 @@ we formally get the stochastic differential equation
 $$
 \begin{equation}
 d\bar X = dW,
-\tag{118}
+\tag{119}
 \end{equation}
 $$
 
@@ -7019,7 +7060,7 @@ where \( W(t) \) is a <a href="https://en.wikipedia.org/wiki/Wiener_process" tar
 Wiener process. It follows from the stochastic ODE \( dX=dW \) that the
 probability distribution of \( X \) is given by the <a href="https://en.wikipedia.org/wiki/Fokker-Planck_equation" target="_self">Fokker-Planck
 equation</a>
-<a href="#mjx-eqn-114">(114)</a>.  In other words, the key
+<a href="#mjx-eqn-115">(115)</a>.  In other words, the key
 results for random walk we found earlier can alternatively be
 derived via a stochastic ordinary differential equation and its
 related Fokker-Planck equation.
@@ -7062,9 +7103,9 @@ mesh point \( (i,j) \) to one of its four neighbors in the rectangular direction
 \( (i+1,j) \), \( (i-1,j) \), \( (i,j+1) \), or \( (i,j-1) \).
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:randomwalk:2D:fig:rect_vs_diag"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 21:  Random walks in 2D with 200 steps: rectangular mesh (left) and diagonal mesh (right). <div id="diffu:randomwalk:2D:fig:rect_vs_diag"></div> </p></center>
+<center><p class="caption">Figure 21:  Random walks in 2D with 200 steps: rectangular mesh (left) and diagonal mesh (right).  <!-- caption label: diffu:randomwalk:2D:fig:rect_vs_diag --> </p></center>
 <p><img src="fig-diffu/rw2D_sample200.png" align="bottom" width=800></p>
 </center>
 
@@ -7141,9 +7182,9 @@ filled in the <code>position</code> array:
     <span style="color: #008000; font-weight: bold">return</span> position
 </pre></div>
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:randomwalk:2D:fig:samples"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 22:  Four random walks with 5000 steps in 2D. <div id="diffu:randomwalk:2D:fig:samples"></div> </p></center>
+<center><p class="caption">Figure 22:  Four random walks with 5000 steps in 2D.  <!-- caption label: diffu:randomwalk:2D:fig:samples --> </p></center>
 <p><img src="fig-diffu/rw2D_samples_5000.png" align="bottom" width=800></p>
 </center>
 
@@ -7154,6 +7195,9 @@ As we did in 1D, we extend one single walk to a number of walks (<code>num_walks
 in the code).
 
 <h3 id="___sec103">Scalar code </h3>
+
+<p>
+As always, we start with implementing the scalar case:
 
 <p>
 
@@ -7188,6 +7232,11 @@ in the code).
 </pre></div>
 
 <h3 id="___sec104">Vectorized code </h3>
+
+<p>
+Significant speed-ups can be obtained by vectorization. We can get rid of
+the loops in the previous function and arrive at the following vectorized
+code.
 
 <p>
 
@@ -7228,37 +7277,35 @@ in the code).
 <p>
 
 <!-- begin inline comment -->
-<font color="red">(<b>hpl 11</b>: Remaining: comment on boundary conditions for diffusion of substance and heat conduction (include Robin/cooling).)</font>
+<font color="red">(<b>hpl 10</b>: Remaining: comment on boundary conditions for diffusion of substance and heat conduction (include Robin/cooling).)</font>
 <!-- end inline comment -->
 
 <h2 id="diffu:app:substance">Diffusion of a substance</h2>
 
 <p>
-The first process to be considered is a substance that gets transported
-through a fluid at rest by pure diffusion. We consider an arbitrary
-volume \( V \) of this fluid, containing the substance with concentration
-function \( c(\x,t) \). Physically, we can think of a
-very small volume with centroid \( \x \) at time \( t \) and assign the ratio
-of the volume of the substance and the total volume to \( c(\x, t) \).
-This means that the mass of the substance in a
-small volume \( \Delta V \) is approximately
-\( \varrho c\Delta V \), where \( \varrho \) is the density
-of the substance. Consequently, the total mass of the substance inside the volume
-\( V \) is the sum of all \( \varrho c\Delta V \), which becomes the
-volume integral \( \int_V\varrho cdV \).
+The first process to be considered is a substance that gets
+transported through a fluid at rest by pure diffusion. We consider an
+arbitrary volume \( V \) of this fluid, containing the substance with
+concentration function \( c(\x,t) \). Physically, we can think of a very
+small volume with centroid \( \x \) at time \( t \) and assign the ratio of
+the volume of the substance and the total volume to \( c(\x, t) \).  This
+means that the mass of the substance in a small volume \( \Delta V \) is
+approximately \( \varrho c\Delta V \), where \( \varrho \) is the density of
+the substance. Consequently, the total mass of the substance inside
+the volume \( V \) is the sum of all \( \varrho c\Delta V \), which becomes
+the volume integral \( \int_V\varrho cdV \).
 
 <p>
 Let us reason how the mass of the substance changes and thereby derive
-a PDE governing the concentration \( c \).
-Suppose the substance flows out of \( V \) with a flux \( \q \).
-If \( \Delta S \) is a small part of the boundary \( \partial V \) of \( V \),
-the volume of the substance flowing out through \( dS \) in a small
-time interval \( \Delta t \) is \( \varrho \q\cdot\normalvec \Delta t \Delta S \),
-where \( \normalvec \) is an outward unit
-normal to the boundary \( \partial V \), see Figure <a href="#diffu:app:substance:fig1">23</a>.
-We realize that only the normal component of \( \q \) is able to transport mass
-in and out of \( V \).
-The total outflow of the mass of the substance in a small time interval
+a PDE governing the concentration \( c \).  Suppose the substance flows
+out of \( V \) with a flux \( \q \).  If \( \Delta S \) is a small part of the
+boundary \( \partial V \) of \( V \), the volume of the substance flowing out
+through \( dS \) in a small time interval \( \Delta t \) is \( \varrho
+\q\cdot\normalvec \Delta t \Delta S \), where \( \normalvec \) is an outward
+unit normal to the boundary \( \partial V \), see Figure
+<a href="#diffu:app:substance:fig1">23</a>.  We realize that only the normal
+component of \( \q \) is able to transport mass in and out of \( V \).  The
+total outflow of the mass of the substance in a small time interval
 \( \Delta t \) becomes the surface integral
 
 $$ \int\limits_{\partial V} \varrho\q\cdot\normalvec \Delta t\,  dS\tp$$
@@ -7294,7 +7341,7 @@ $$
 \begin{equation}
 \int\limits_V \varrho \frac{\partial c}{\partial t}dV +
 \int\limits_{\partial V} \varrho\q\cdot\normalvec\, dS = 0\tp
-\tag{119}
+\tag{120}
 \end{equation}
 $$
 
@@ -7307,52 +7354,51 @@ $$
 \nabla\cdot(\varrho \q))dV = 0\tp
 $$
 
-Since \( \varrho \) is constant, we can divide by this quantity.
-If the integral is to vanish for an arbitrary volume \( V \),
-the integrand must vanish too,
-and we get the mass conservation PDE for the substance:
+Since \( \varrho \) is constant, we can divide by this quantity.  If the
+integral is to vanish for an arbitrary volume \( V \), the integrand must
+vanish too, and we get the mass conservation PDE for the substance:
 
 $$
 \begin{equation}
 \frac{\partial c}{\partial t} +
 \nabla\cdot \q = 0\tp
-\tag{120}
+\tag{121}
 \end{equation}
 $$
 
 <p>
-<center> <!-- figure -->
+<center> <!-- figure label: --> <div id="diffu:app:substance:fig1"></div> <!-- FIGURE -->
 <hr class="figure">
-<center><p class="caption">Figure 23:  An arbitrary volume of a fluid. <div id="diffu:app:substance:fig1"></div> </p></center>
+<center><p class="caption">Figure 23:  An arbitrary volume of a fluid.  <!-- caption label: diffu:app:substance:fig1 --> </p></center>
 <p><img src="fig-diffu/continuum.png" align="bottom" width=200></p>
 </center>
 
 <p>
 A fundamental problem is that this is a scalar PDE for four unknowns:
 \( c \) and the three components of \( \q \). We therefore need additional
-equations. Here, Fick's law comes at rescue: it models how the flux \( \q \)
-of the substance is related to the concentration \( c \). Diffusion is
-recognized by mass flowing from regions with high concentration to regions
-of low concentration. This principle suggests that \( \q \) is proportional
-to the negative gradient of \( c \):
+equations. Here, Fick's law comes at rescue: it models how the flux
+\( \q \) of the substance is related to the concentration \( c \). Diffusion
+is recognized by mass flowing from regions with high concentration to
+regions of low concentration. This principle suggests that \( \q \) is
+proportional to the negative gradient of \( c \):
 
 $$
 \begin{equation}
 \q = -\dfc\nabla c,
-\tag{121}
+\tag{122}
 \end{equation}
 $$
 
 where \( \dfc \) is an empirically determined constant.
-The relation <a href="#mjx-eqn-121">(121)</a> is known as Fick's law.
-Inserting <a href="#mjx-eqn-121">(121)</a> in
-<a href="#mjx-eqn-120">(120)</a> gives a scalar PDE for the
+The relation <a href="#mjx-eqn-122">(122)</a> is known as Fick's law.
+Inserting <a href="#mjx-eqn-122">(122)</a> in
+<a href="#mjx-eqn-121">(121)</a> gives a scalar PDE for the
 concentration \( c \):
 
 $$
 \begin{equation}
 \frac{\partial c}{\partial t} = \dfc\nabla^2 c\tp
-\tag{122}
+\tag{123}
 \end{equation}
 $$
 
@@ -7361,9 +7407,9 @@ $$
 <p>
 Heat conduction is a well-known diffusion process. The governing PDE
 is in this case based on the first law of thermodynamics: the increase
-in energy of a system is equal to the work done on the system, plus the
-supplied heat. Here, we shall media at rest and neglect the work done
-on the system. The principle then reduces to a balance between
+in energy of a system is equal to the work done on the system, plus
+the supplied heat. Here, we shall media at rest and neglect the work
+done on the system. The principle then reduces to a balance between
 increase in internal energy and the supplied heat flow by conduction.
 
 <p>
@@ -7426,17 +7472,16 @@ and we have the PDE
 $$
 \begin{equation}
 \varrho \frac{\partial e}{\partial t} = -\nabla\cdot\q\tp
-\tag{123}
+\tag{124}
 \end{equation}
 $$
 
 <p>
 Sometimes the supplied heat can come from the medium itself. This is
-the case, for instance, when radioactive rock generates heat.
-Let us add this effect. If \( f(\x,t) \) is the supplied heat
-per unit volume per unit time, the heat supplied in a small volume
-is \( f\Delta t\Delta V \), and inside an arbitrary volume \( V \) the
-supplied generated heat becomes
+the case, for instance, when radioactive rock generates heat.  Let us
+add this effect. If \( f(\x,t) \) is the supplied heat per unit volume per
+unit time, the heat supplied in a small volume is \( f\Delta t\Delta V \),
+and inside an arbitrary volume \( V \) the supplied generated heat becomes
 
 $$ \int\limits_V f\Delta t dV\tp$$
 
@@ -7446,7 +7491,7 @@ thermodynamics, and continuing the derivation, leads to the PDE
 $$
 \begin{equation}
 \varrho \frac{\partial e}{\partial t} = -\nabla\cdot\q + f\tp
-\tag{124}
+\tag{125}
 \end{equation}
 $$
 
@@ -7473,9 +7518,9 @@ constant is a good approximation in many applications.
 
 <p>
 The term \( \partial e/\partial V \) models effects due to compressibility
-and volume expansion. These effects are often small and can be neglected.
-We shall do so here. Using \( \partial e/\partial t = c_v\partial T/\partial t \)
-in the PDE gives
+and volume expansion. These effects are often small and can be
+neglected.  We shall do so here. Using \( \partial e/\partial t =
+c_v\partial T/\partial t \) in the PDE gives
 
 $$ \varrho c_v\frac{\partial T}{\partial t} = -\nabla\cdot\q + f\tp$$
 
@@ -7499,19 +7544,151 @@ We have now one scalar PDE for the unknown temperature field \( T(\x,t) \):
 $$
 \begin{equation}
 \varrho  c_v\frac{\partial T}{\partial t} = \nabla\cdot(k\nabla T) + f\tp
-\tag{125}
+\tag{126}
 \end{equation}
 $$
+
+<h2 id="diffu:app:porous">Porous media flow</h2>
+
+<p>
+The requirement of mass balance for
+flow of a single, incompressible fluid through a deformable (elastic) porous
+medium leads to the equation
+
+$$
+S\frac{\partial p}{\partial t} + \nabla\cdot(\q - \alpha\frac{\partial\u}{\partial t}) = 0,
+$$
+
+where \( p \) is the fluid pressure, \( \q \) is the fluid velocity, \( \u \)
+is the displacement (deformation) of the medium, \( S \) is the storage
+coefficient of the medium (related to the compressibility of the
+fluid and the material in the medium), and \( \alpha \) is another coefficient.
+In many circumstances, the last term with \( \u \) can be neglected,
+an assumption that decouples the equation above from a model for
+the deformation of the medium. The famous Darcy's law relates
+\( \q \) to \( p \):
+
+$$ \q = -\frac{K}{mu}(\nabla p - \varrho\g),$$
+
+where \( K \) is the permeability of the medium, \( \mu \) is the dynamic
+viscosity of the fluid, \( \varrho \) is the density of the fluid, and \( \g \)
+is the acceleration of gravity, here taken as \( \g = -g\kk \).
+Combining the two equations results in the diffusion model
+
+$$
+\begin{equation}
+S\frac{\partial p}{\partial t} = \mu^{-1}\nabla(K\nabla p) + \frac{\varrho g}{\mu}\frac{\partial K}{\partial z}\tp
+\tag{127}
+\end{equation}
+$$
+
+Boundary conditions consist of specifying \( p \) or \( \q\cdot\normalvec \) at
+(normal velocity) each point of the boundary.
+
+<h2 id="___sec109">Potential fluid flow </h2>
+
+<p>
+Let \( \v \) be the velocity of a fluid. The condition \( \nabla\times\v =0 \)
+is relevant for many flows, especially in geophysics when viscous effects
+are negligible. From vector calculus it is known
+that \( \nabla\times\v 0 \) implies that \( v \) can be derived
+from a scalar potential field \( \phi \): \( \v = \nabla\phi \). If the
+fluid is incompressible, \( \nabla\cdot\v = 0 \), it follows that
+\( \nabla\cdot\nabla\phi = 0 \), or
+
+$$
+\begin{equation}
+\nabla^2\phi = 0\tp
+\tag{128}
+\end{equation}
+$$
+
+This Laplace equation is sufficient for determining \( \phi \) and thereby
+describe the fluid motion. This type of flow is known as
+<a href="https://en.wikipedia.org/wiki/Potential_flow" target="_self">potential flow</a>.
+One very important application where potential flow is a good model
+is water waves.
+As boundary condition we must prescribe
+\( \v\cdot\normalvec =\partial\phi/\partial n \).
+
+<h2 id="___sec110">Streamlines for 2D fluid flow </h2>
+
+<p>
+The streamlines in a two-dimensional
+stationary fluid flow are lines tangential to the flow.
+The <a href="https://en.wikipedia.org/wiki/Stream_function" target="_self">stream function</a>
+\( \psi \) is often introduced in two-dimensional
+such that its contour
+lines, \( \psi = \hbox{const} \), gives the streamlines. The relation
+between \( \psi \) and the velocity field \( \v=(u,v) \) is
+
+$$ u = \frac{\partial\psi}{\partial y},\quad v = -
+\frac{\partial\psi}{\partial x}\tp$$
+
+It follows that \( \nabla\v = \psi_{yx} - \psi{xy}=0 \), so the stream function
+can be only be used for incompressible flows.
+Since
+
+$$\nabla\times\v = \left(\frac{\partial v}{\partial y} - \frac{\partial u}{\partial x}\right)\kk \equiv \omega\kk,$$
+
+we can derive the relation
+
+$$
+\begin{equation}
+\nabla^2\psi = -\omega,
+\tag{129}
+\end{equation}
+$$
+
+which is a governing equation for the stream function \( \psi(x,y) \)
+if the vorticity \( \omega \) is known.
+
+<h2 id="___sec111">The potential of an electric field </h2>
+
+<p>
+Under the assumption of time independence, Maxwell's equations
+for the electric field \( \boldsymbol{E} \) becomes
+
+$$
+\begin{align*}
+\nabla\cdot\boldsymbol{E} &= \frac{\rho}{\epsilon_0},\\ 
+\nabla\times\boldsymbol{E} &= 0,
+\end{align*}
+$$
+
+where \( \rho \) is the electric charge density and \( \epsilon_0 \) is
+the permittivity of free space.
+Since \( \nabla\times\boldsymbol{E}=0 \), \( \boldsymbol{E} \) can be derived from a potential
+\( \varphi \), \( \boldsymbol{E} = \nabla\varphi \). The electric field potential is
+therefore governed by the Poisson equation
+
+$$
+\begin{equation}
+\nabla^2\varphi = \frac{\rho}{\epsilon_0}\tp
+\tag{130}
+\end{equation}
+$$
+
+<p>
+
+<!-- begin inline comment -->
+<font color="red">(<b>hpl 11</b>: What are appropriate boundary conditions?)</font>
+<!-- end inline comment -->
+
+
+<!-- begin inline comment -->
+<font color="red">(<b>hpl 12</b>: Svein, can you get this generalized to electric field inside some heterogeneous medium? Think we get some variable coefficient equation in that case (anisotropic conduction?). Can you figure it out?)</font>
+<!-- end inline comment -->
 
 <h2 id="diffu:app:Couette">Development of flow between two flat plates</h2>
 
 <p>
 Diffusion equations may also arise as simplified versions of other
-mathematical models, especially in fluid flow. Consider a fluid flowing
-between two flat, parallel plates. The velocity is uni-directional, say
-along the \( z \) axis, and depends
-only on the distance \( x \) from the plates; \( \u = u(x,t)\kk \).
-The flow is governed by the Navier-Stokes equations,
+mathematical models, especially in fluid flow. Consider a fluid
+flowing between two flat, parallel plates. The velocity is
+uni-directional, say along the \( z \) axis, and depends only on the
+distance \( x \) from the plates; \( \u = u(x,t)\kk \).  The flow is governed
+by the Navier-Stokes equations,
 
 $$
 \begin{align*}
@@ -7577,7 +7754,7 @@ $$ u(L,t) = U_L(t)\tp$$
 <p>
 
 <!-- begin inline comment -->
-<font color="red">(<b>hpl 12</b>: Exercises based on this diffusion model.)</font>
+<font color="red">(<b>hpl 13</b>: Exercises based on this diffusion model.)</font>
 <!-- end inline comment -->
 
 <h2 id="diffu:app:pipeflow">Flow in a straight tube</h2>
@@ -7600,14 +7777,14 @@ $$
 \mu\frac{1}{r}\frac{\partial}{\partial r}\left(
 r\frac{\partial u}{\partial r}\right) + \beta(t) + \varrho\gamma g,\quad
 r\in [0,R],\ t\in (0,T]\tp
-\tag{126}
+\tag{131}
 \end{equation}
 $$
 
 Here, \( \beta(t) = -\partial p/\partial x \) is the pressure gradient along
 the tube. The associated boundary condition is \( u(R,t)=0 \).
 
-<h2 id="___sec110">Tribology: thin film fluid flow </h2>
+<h2 id="___sec114">Tribology: thin film fluid flow </h2>
 
 <p>
 Thin fluid films are extremely important inside machinery to reduce friction
@@ -7660,7 +7837,7 @@ $$
 \nabla\cdot\left(\frac{h^3}{12\mu}\nabla p\right) =
 \half\frac{\partial}{\partial x}(hU)
 + \half\frac{\partial}{\partial x}(hV)\tp
-\tag{127}
+\tag{132}
 \end{equation}
 $$
 
@@ -7669,10 +7846,10 @@ The boundary conditions must involve \( p \) or \( \q \) at the boundary.
 <p>
 
 <!-- begin inline comment -->
-<font color="red">(<b>hpl 13</b>: Exercise!)</font>
+<font color="red">(<b>hpl 14</b>: Exercise!)</font>
 <!-- end inline comment -->
 
-<h2 id="___sec111">Propagation of electrical signals in the brain </h2>
+<h2 id="___sec115">Propagation of electrical signals in the brain </h2>
 
 <p>
 <!-- <a href="http://icwww.epfl.ch/~gerstner/SPNM/node17.html" target="_self"><tt>http://icwww.epfl.ch/~gerstner/SPNM/node17.html</tt></a> -->
@@ -7701,7 +7878,7 @@ The boundary conditions are often taken as \( V=0 \) at a short circuit or open 
 \( \partial V/\partial x=0 \) at a sealed end, or \( \partial V/\partial x \propto
 V \) where there is an injection of current.
 
-<h1 id="___sec112">Exercises </h1>
+<h1 id="___sec116">Exercises </h1>
 
 <p>
 <!-- --- begin exercise --- -->
@@ -7756,11 +7933,11 @@ conditions:
 $$
 \begin{align}
 u_t &= \alpha u_xx, & x\in \Omega =(0,L),\ t\in (0,T],
-\tag{128} \\ 
+\tag{133} \\ 
 u(0,t) = u(L,t) &= 0, & t\in (0,T],
-\tag{129}\\ 
+\tag{134}\\ 
 u(x,0) &= I(x), & x\in [0,L]
-\tag{130}
+\tag{135}
 \tp
 \end{align}
 $$
@@ -7770,7 +7947,7 @@ The energy estimate for this problem reads
 $$
 \begin{equation}
 ||u||_{L^2} \leq ||I||_{L^2},
-\tag{131}
+\tag{136}
 \end{equation}
 $$
 
@@ -7779,7 +7956,7 @@ where the \( ||\cdot ||_{L^2} \) norm is defined by
 $$
 \begin{equation}
 ||g||_{L^2} = \sqrt{\int_0^L g^2dx}\tp
-\tag{132}
+\tag{137}
 \end{equation}
 $$
 
@@ -7789,19 +7966,19 @@ energy of the system. A mathematical tradition has introduced the
 notion <em>energy</em> in this context.
 
 <p>
-The estimate <a href="#mjx-eqn-131">(131)</a> says that the
+The estimate <a href="#mjx-eqn-136">(136)</a> says that the
 &quot;size of $u$&quot; never exceeds that of the initial condition,
 or more precisely, it says that the area under the \( u \) curve decreases
 with time.
 
 <p>
-To show <a href="#mjx-eqn-131">(131)</a>, multiply the PDE
+To show <a href="#mjx-eqn-136">(136)</a>, multiply the PDE
 by \( u \) and integrate from \( 0 \) to \( L \). Use that \( uu_t \) can be
 expressed as the time derivative of \( u^2 \) and that \( u_xxu \) can
 integrated by parts to form an integrand \( u_x^2 \). Show that
 the time derivative of \( ||u||_{L^2}^2 \) must be less than or equal
 to zero. Integrate this expression and derive
-<a href="#mjx-eqn-131">(131)</a>.
+<a href="#mjx-eqn-136">(136)</a>.
 
 <p>
 <!-- <a href="http://www.ann.jussieu.fr/~frey/cours/UdC/ma691/ma691_ch6.pdf" target="_self"><tt>http://www.ann.jussieu.fr/~frey/cours/UdC/ma691/ma691_ch6.pdf</tt></a> -->
@@ -7813,11 +7990,11 @@ Now we address a slightly different problem,
 $$
 \begin{align}
 u_t &= \alpha u_xx + f(x,t), & x\in \Omega =(0,L),\ t\in (0,T],
-\tag{133} \\ 
+\tag{138} \\ 
 u(0,t) = u(L,t) &= 0, & t\in (0,T],
-\tag{134}\\ 
+\tag{139}\\ 
 u(x,0) &= 0, & x\in [0,L]
-\tag{135}
+\tag{140}
 \tp
 \end{align}
 $$
@@ -7827,7 +8004,7 @@ The associated energy estimate is
 $$
 \begin{equation}
 ||u||_{L^2} \leq ||f||_{L^2}\tp
-\tag{136}
+\tag{141}
 \end{equation}
 $$
 
@@ -7840,51 +8017,51 @@ a right-hand side \( f(x,t) \):
 $$
 \begin{align}
 u_t &= \alpha u_xx + f(x,t), & x\in \Omega =(0,L),\ t\in (0,T],
-\tag{137} \\ 
+\tag{142} \\ 
 u(0,t) = u(L,t) &= 0, & t\in (0,T],
-\tag{138}\\ 
+\tag{143}\\ 
 u(x,0) &= I(x), & x\in [0,L]
-\tag{139}
+\tag{144}
 \tp
 \end{align}
 $$
 
 Show that if \( w_1 \) fulfills
-<a href="#mjx-eqn-128">(128)</a>-<a href="#mjx-eqn-130">(130)</a>
+<a href="#mjx-eqn-133">(133)</a>-<a href="#mjx-eqn-135">(135)</a>
 and \( w_2 \) fulfills
-<a href="#mjx-eqn-133">(133)</a>-<a href="#mjx-eqn-135">(135)</a>,
+<a href="#mjx-eqn-138">(138)</a>-<a href="#mjx-eqn-140">(140)</a>,
 then \( u=w_1 + w_2 \) is the solution of
-<a href="#mjx-eqn-137">(137)</a>-<a href="#mjx-eqn-139">(139)</a>.
+<a href="#mjx-eqn-142">(142)</a>-<a href="#mjx-eqn-144">(144)</a>.
 Using the triangle inequality for norms,
 
 $$ ||a + b|| \leq ||a|| + ||b||,$$
 
 show that the energy estimate for
-<a href="#mjx-eqn-137">(137)</a>-<a href="#mjx-eqn-139">(139)</a>
+<a href="#mjx-eqn-142">(142)</a>-<a href="#mjx-eqn-144">(144)</a>
 becomes
 
 $$
 \begin{equation}
 ||u||_{L^2} \leq ||I||_{L^2} + ||f||_{L^2}\tp
-\tag{140}
+\tag{145}
 \end{equation}
 $$
 
 <p>
 <b>c)</b>
-One application of <a href="#mjx-eqn-140">(140)</a> is to prove uniqueness
+One application of <a href="#mjx-eqn-145">(145)</a> is to prove uniqueness
 of the solution.
 Suppose \( u_1 \) and \( u_2 \) both fulfill
-<a href="#mjx-eqn-137">(137)</a>-<a href="#mjx-eqn-139">(139)</a>.
+<a href="#mjx-eqn-142">(142)</a>-<a href="#mjx-eqn-144">(144)</a>.
 Show that \( u=u_1 - u_2 \) then fulfills
-<a href="#mjx-eqn-137">(137)</a>-<a href="#mjx-eqn-139">(139)</a>
-with \( f=0 \) and \( I=0 \). Use <a href="#mjx-eqn-140">(140)</a>
+<a href="#mjx-eqn-142">(142)</a>-<a href="#mjx-eqn-144">(144)</a>
+with \( f=0 \) and \( I=0 \). Use <a href="#mjx-eqn-145">(145)</a>
 to deduce that the energy must be zero for all times and therefore
 that \( u_1=u_2 \), which proves that the solution is unique.
 
 <p>
 <b>d)</b>
-Generalize <a href="#mjx-eqn-140">(140)</a> to a 2D/3D
+Generalize <a href="#mjx-eqn-145">(145)</a> to a 2D/3D
 diffusion equation \( u_t = \nabla\cdot (\alpha \nabla u) \) for \( x\in\Omega \).
 
 <p>
@@ -7930,7 +8107,7 @@ $$
 \begin{equation}
 \int_{\Omega} u\dx = \int_{\Omega} I\dx
 \tp
-\tag{141}
+\tag{146}
 \end{equation}
 $$
 
@@ -7941,13 +8118,13 @@ source term \( f \), initial condition \( I \), and zero Dirichlet or
 Neumann conditions on the whole boundary.
 
 <p>
-We can use <a href="#mjx-eqn-140">(140)</a>
-and <a href="#mjx-eqn-141">(141)</a> as a partial verification
+We can use <a href="#mjx-eqn-145">(145)</a>
+and <a href="#mjx-eqn-146">(146)</a> as a partial verification
 of the code. Choose some functions \( f \) and \( I \) and
-check that <a href="#mjx-eqn-140">(140)</a> is obeyed at any
+check that <a href="#mjx-eqn-145">(145)</a> is obeyed at any
 time when zero Dirichlet conditions are used.
 Iterate over the same \( I \) functions and check that
-<a href="#mjx-eqn-141">(141)</a> is fulfilled
+<a href="#mjx-eqn-146">(146)</a> is fulfilled
 when using zero Neumann conditions.
 
 <p>
@@ -7957,7 +8134,7 @@ in arrays, failure to set the correct boundary conditions,
 evaluation of a term at a wrong time level, and similar.
 For each of the bugs, see if the verification tests from the previous
 subexercise pass or fail. This investigation shows how strong
-the energy estimates and the estimate <a href="#mjx-eqn-141">(141)</a>
+the energy estimates and the estimate <a href="#mjx-eqn-146">(146)</a>
 are for pointing out errors in the implementation.
 
 <p>
@@ -7984,15 +8161,15 @@ matrix. Show that this choice corresponds to the iteration
 $$
 \begin{equation}
 u^k = u^{k-1} + r^{k-1},\quad r^{k-1} = b - Au^{k-1},
-\tag{142}
+\tag{147}
 \end{equation}
 $$
 
 where \( r^{k-1} \) is the residual in the linear system in iteration
-\( k-1 \). The formula <a href="#mjx-eqn-142">(142)</a> is known
+\( k-1 \). The formula <a href="#mjx-eqn-147">(147)</a> is known
 as Richardson's iteration.
 Show that if we apply the simple iteration method
-<a href="#mjx-eqn-142">(142)</a> to the <em>preconditioned</em>
+<a href="#mjx-eqn-147">(147)</a> to the <em>preconditioned</em>
 system \( M^{-1}Au=M^{-1}b \), we arrive at the Jacobi method by choosing
 \( M=D \) (the diagonal of \( A \)) as preconditioner and the SOR method by
 choosing \( M=\omega^{-1}D + L \) (\( L \) being the lower triangular part of
@@ -8008,7 +8185,7 @@ Jacobi or SOR method as preconditioner.
 <p>
 <!-- --- begin exercise --- -->
 
-<h2 id="diffu:exer:earthosc">Exercise 9: Oscillating surface temperature of the earth</h2>
+<h2 id="diffu:exer:earthosc">Problem 9: Oscillating surface temperature of the earth</h2>
 
 <p>
 Consider a day-and-night or seasonal variation in temperature at
@@ -8081,7 +8258,7 @@ with \( \bar L=4 \) and \( \bar L=8 \), respectively (keep \( \Delta x \) the sa
 <p>
 <!-- --- begin exercise --- -->
 
-<h2 id="diffu:exer:bloodflow">Exercise 10: Oscillating and pulsating flow in tubes</h2>
+<h2 id="diffu:exer:bloodflow">Problem 10: Oscillating and pulsating flow in tubes</h2>
 
 <p>
 We consider flow in a straight tube with radius \( R \) and straight walls.
@@ -8094,13 +8271,13 @@ $$
 \mu\frac{1}{r}\frac{\partial}{\partial r}\left(
 r\frac{\partial u}{\partial r}\right) + \beta(t),\quad
 & r\in [0,R],\ t\in (0,T],
-\tag{143}\\ 
+\tag{148}\\ 
 u(r,0) &= I(r),\quad & r\in [0,R],
-\tag{144}\\ 
+\tag{149}\\ 
 u(R,t) &= 0,\quad & t\in (0,T],
-\tag{145}\\ 
+\tag{150}\\ 
 \frac{\partial u}{\partial r}(0,t) &= 0,\quad & t\in (0,T].
-\tag{146}
+\tag{151}
 \end{align}
 $$
 
@@ -8109,7 +8286,7 @@ We consider two models for \( \beta(t) \). One plain, sinusoidal oscillation:
 $$
 \begin{equation}
 \beta = A\sin(\omega t),
-\tag{147}
+\tag{152}
 \end{equation}
 $$
 
@@ -8118,7 +8295,7 @@ and one with periodic pulses,
 $$
 \begin{equation}
 \beta = A\sin^{16}(\omega t),
-\tag{148}
+\tag{153}
 \end{equation}
 $$
 
@@ -8187,6 +8364,152 @@ make an animation for \( m=1,16 \) and \( \alpha = 10 \).
 <!-- removed !bsol ... !esol environment (because of the command-line option --without_solutions)
  -->
 <p>
+Filename: <code>axisymm_flow</code>.
+
+<p>
+<!-- --- end exercise --- -->
+
+<p>
+<!-- --- begin exercise --- -->
+
+<h2 id="diffu:exer:welding">Problem 11: Scaling a welding problem</h2>
+
+<p>
+Welding equipment makes a very localized heat source that moves
+in time. We shall investigate the heating due to welding and choose,
+for maximum simplicity, a one-dimensional heat equation with a
+fixed temperature at the ends, and we neglect melting.
+We shall scale the problem, and
+besides solving such a problem numerically, the aim is to investigate
+the appropriateness of alternative scalings.
+
+<p>
+The governing PDE problem reads
+
+$$
+\begin{align*}
+\varrho c\frac{\partial u}{\partial t} &= k\frac{\partial^2 u}{\partial x^2}
++ f, & x\in (0,L),\ t\in (0,T),\\ 
+u(x,0) &= 0, & x\in [0,L],\\ 
+u(0,t) = u(L,t) &= 0, & t\in (0,T].
+\end{align*}
+$$
+
+Here, \( u \) is the temperature, \( \varrho \) the density of the material,
+\( c \) a heat capacity, \( k \) the heat conduction coefficient, and \( f \) is
+the heat source from the welding equipment.
+
+<p>
+A possible model for the heat source is a moving Gaussian function:
+
+$$ f = A\exp{\left(-\frac{1}{2}\left(\frac{x-vt}{\sigma}\right)^2\right)},$$
+
+where \( A \) is the strength, \( \sigma \) is a parameter governing how
+peak-shaped (or localized in space) the heat source is, and
+\( v \) is the velocity (in positive \( x \) direction) of the source.
+
+<p>
+<b>a)</b>
+Let \( x_c \), \( t_c \), \( u_c \), and \( f_c \) be scales, i.e., characteristic
+sizes, of \( x \), \( t \), \( u \), and \( f \), respectively. The natural choice of
+\( x_c \) and \( f_c \) is \( L \) and \( A \), since these make the scaled \( x \) and
+\( f \) in the interval \( [0,1] \).  If each of the three terms in the PDE
+are equally important, we can find \( t_c \) and \( u_c \) by demanding that
+the coefficients in the scaled PDE are all equal to unity.  Perform
+this scaling. Use scaled quantities in the arguments for the
+exponential function in \( f \) too and show that
+
+$$ \bar f= e^{-\frac{1}{2}\beta^2(\bar x -\gamma \bar t)^2},$$
+
+where \( \beta \) and \( \gamma \) are dimensionless numbers. Give an
+interpretation of \( \beta \) and \( \gamma \).
+
+<p>
+<!-- removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+ -->
+<p>
+<b>b)</b>
+Argue that for large \( \gamma \) we should base the time scale on the
+movement of the heat source. Show that this gives rise to the scaled
+PDE
+
+$$ \frac{\partial\bar u}{\partial\bar t} =
+\gamma^{-1}\frac{\partial^2\bar u}{\partial\bar x^2}
++ \bar f,
+$$
+
+and
+
+$$ \bar f = \exp{(-\frac{1}{2}\beta^2(\bar x - \bar t)^2)}\tp$$
+
+Discuss when the scalings in a) and b) are appropriate.
+
+<p>
+<!-- removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+ -->
+<p>
+<b>c)</b>
+One aim with scaling is to get a solution that lies in the interval
+\( [-1,1] \). This is not always the case when \( u_c \) is based on a scale
+involving a source term, as we do in a) and b).  However, from the
+scaled PDE we realize that if we replace \( \bar f \) with \( \delta\bar f \),
+where \( \delta \) is a dimensionless factor, this corresponds to
+replacing \( u_c \) by \( u_c/\delta \). So, if we observe that \( \bar
+u\sim1/\delta \) in simulations, we can just replace \( \bar f \) by \( \delta
+\bar f \) in the scaled PDE.
+
+<p>
+Use this trick and implement the two scaled models. Reuse software for
+the diffusion equation (e.g., the <code>solver</code> function in
+<code>diffu1D_vc.py</code>).  Make a function <code>run(gamma, beta=10, delta=40,
+scaling=1, animate=False)</code> that runs the model with the given
+\( \gamma \), \( \beta \), and \( \delta \) parameters as well as an indicator
+<code>scaling</code> that is 1 for the scaling in a) and 2 for the scaling in
+b). The last argument can be used to turn screen animations on or off.
+
+<p>
+Experiments show that with \( \gamma=1 \) and \( \beta=10 \), \( \delta =20 \)
+is appropriate. Then \( \max |\bar u| \) will be larger than 4 for \( \gamma
+=40 \), but that is acceptable.
+
+<p>
+Equip the <code>run</code> function with visualization, both animation of \( \bar u \)
+and \( \bar f \), and plots with \( \bar u \) and \( \bar f \) for \( t=0.2 \) and \( t=0.5 \).
+
+<p>
+<!-- --- begin hint in exercise --- -->
+
+<p>
+<a class="glyphicon glyphicon-hand-right showdetails" data-toggle="collapse"
+ data-target="#exer_11_1" style="font-size: 80%;"></a>
+<b>Hint.</b>
+<div class="collapse-group">
+<p><div class="collapse" id="exer_11_1">
+
+<p>
+Since the amplitudes of \( \bar u \) and \( \bar f \) differs by a factor \( \delta \),
+it is attractive to plot \( \bar f/\delta \) together with \( \bar u \).
+
+<p>
+</div></p>
+</div>
+</p>
+
+<p>
+<!-- --- end hint in exercise --- -->
+
+<p>
+<!-- removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+ -->
+<p>
+<b>d)</b>
+Use the software in c) to investigate \( \gamma=0.2,1,5,40 \) for the
+two scalings. Discuss the results.
+
+<p>
+<!-- removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+ -->
+<p>
 <!-- ===== Exercise: Radial heat conduction out of offshore pipelines ===== -->
 
 <p>
@@ -8200,7 +8523,28 @@ make an animation for \( m=1,16 \) and \( \alpha = 10 \).
 <!-- can be written up. -->
 
 <p>
-Filename: <code>axyiymm_flow</code>.
+Filename: <code>welding</code>.
+
+<p>
+<!-- --- end exercise --- -->
+
+<p>
+<!-- --- begin exercise --- -->
+
+<h2 id="diffu:exer:axisymm">Exercise 12: Implement a Forward Euler scheme for axi-symmetric diffusion</h2>
+
+<p>
+Based on the discussion in the section <a href="#diffu:fd2:radial">Axi-symmetric diffusion</a>, derive in detail
+the discrete equations for a Forward Euler in time, centered in space,
+finite difference method for axi-symmetric diffusion. The
+diffusion coefficient may be a function of the radial coordinate.
+At the outer boundary \( r=R \), we may have either a Dirichlet or Robin
+condition.
+Implement this scheme. Construct appropriate test problems.
+
+<p>
+<!-- removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+ -->Filename: <code>FE_axisym</code>.
 
 <p>
 <!-- --- end exercise --- -->
