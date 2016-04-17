@@ -1556,15 +1556,24 @@ formulated as a first-order system,
 
 !bt
 \begin{align}
-u' &= v,
-label{trunc:vib:gen:2x2model:ode:u} \\
-v' &= \frac{1}{m}\left( F(t) - \beta |v|v - s(u)\right)\tp
-label{trunc:vib:gen:2x2model:ode:v}
+v' &= \frac{1}{m}\left( F(t) - \beta |v|v - s(u)\right),
+label{trunc:vib:gen:2x2model:ode:v}\\
+u' &= v\tp
+label{trunc:vib:gen:2x2model:ode:u}
 \end{align}
 !et
-The system (ref{trunc:vib:gen:2x2model:ode:u})-(ref{trunc:vib:gen:2x2model:ode:u}) can be solved either by a forward-backward scheme or a centered
+The system (ref{trunc:vib:gen:2x2model:ode:u})-(ref{trunc:vib:gen:2x2model:ode:u}) can be solved either by a forward-backward scheme (the Euler-Cromer
+method) or a centered
 scheme on a staggered mesh.
 
+[hpl: A basic problem at this stage is to show that Euler-Cromer is only
+of first order. Well, that follows from each individual equation, but
+the scheme is equivalent to a second-order scheme if we eliminate $v$.
+Why? The staggered scheme has only 2nd-order approximations so that is
+easy. I have not found any literature on the Euler-Cromer scheme
+and its truncation error, except for the result (1st order).]
+
+# #ifdef EXTRA
 [hpl: The next section is wrong. Use Euler-Cromer so we get away with
 explicit update of $v$ first, then $u$. If we cannot really explain
 who terms cancel to get second-order accuracy, should we not just
@@ -1606,7 +1615,7 @@ The exact solution $\wex$ satisfies
 !bt
 \[ A\wex^{n+1} = Bw^n + \Delta t R^n,\]
 !et
-where $R^n is the residual, which has to be multiplied by $\Delta t$ since
+where $R^n$ is the residual, which has to be multiplied by $\Delta t$ since
 we have already done that in the discrete equation.
 
 The corresponding differential equation in $w$ becomes
@@ -1617,7 +1626,7 @@ The corresponding differential equation in $w$ becomes
 !et
 We realize that $d^2w = C^2 w$, and in general $d^mw=C^w$.
 Using these formulas to get rid of the derivatives in a Taylor
-explansion of $\wex^{n+1}$ around $t_n$ gives
+expansion of $\wex^{n+1}$ around $t_n$ gives
 
 !bt
 \[ A(\wex^n + \Delta t C\wex^n + \half \Delta t^2 C^2 \wex^n + \cdots)
@@ -1700,6 +1709,7 @@ accurate. However, this analysis is misleading: the building blocks
 play together in a way that makes the scheme second-order accurate.
 This is shown by considering an alternative, yet equivalent, formulation
 of the above scheme.
+# #endif
 
 === A centered scheme on a staggered mesh ===
 
@@ -1769,6 +1779,7 @@ in both equations:
 \[ R_u^{n-\half}= \Oof{\Delta t^2}, \quad R_v^n = \Oof{\Delta t^2}\tp\]
 !et
 
+# #ifdef NOTCORRECT
 Comparing
 (ref{trunc:vib:gen:2x2model:ode:u:staggered2})-(ref{trunc:vib:gen:2x2model:ode:v:staggered2})
 with
@@ -1778,7 +1789,7 @@ becomes clear when we implement both).  The obvious advantage with the
 staggered mesh approach is that we can all the way use second-order
 accurate building blocks and in this way convince ourselves that the
 resulting scheme has an error of $\Oof{\Delta t^2}$.
-
+# #endif
 
 !split
 ======= Truncation errors in wave equations =======
