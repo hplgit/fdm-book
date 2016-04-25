@@ -7,7 +7,7 @@ Automatically generated HTML file from DocOnce source
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="DocOnce: https://github.com/hplgit/doconce/" />
 <meta name="description" content="Finite difference methods for diffusion processes">
-<meta name="keywords" content="diffusion equation, 1D,heat equation, 1D,diffusion coefficient,stationary solution,Laplace equation,initial boundary value problem,initial condition,boundary condition,source term,explicit discretization methods,Forward Euler scheme,domain,mesh points,mesh function,forward difference approximation,central difference approximation,discrete equations,Fourier number,mesh Fourier number,dimensionless number,implicit discretization methods,amplification factor,sparse matrix,Jacobi method,Gauss-Seidel method,SOR method,red-black numbering,LU factorization,Cholesky factorization,preconditioning,random walk,vectorization,seed (random numbers),verification,diffusion limit of random walk,interrupt a program by Ctrl+c,stochastic difference equation,stochastic ODE,Fokker-Planck equation,Wiener process,energy estimates (diffusion),Richardson iteration,preconditioning">
+<meta name="keywords" content="diffusion equation 1D,heat equation,diffusion coefficient,diffusion equation diffusion coefficient,diffusion equation stationary solution,stationary solution,Laplace equation,initial boundary value problem,diffusion equation initial condition,diffusion equation boundary condition,diffusion equation source term,explicit discretization methods,diffusion equation Forward Euler scheme,domain,mesh points,mesh function,forward difference approximation,central difference approximation,diffusion equation discrete equations,diffusion equation Fourier number,diffusion equation mesh Fourier number,dimensionless number,implicit discretization methods,amplification factor,sparse matrix,Jacobi method,Gauss-Seidel method,SOR method,red-black numbering,LU factorization,Cholesky factorization,preconditioning,random walk,vectorization,seed (random numbers),verification,diffusion limit of random walk,interrupt a program by Ctrl+c,stochastic difference equation,stochastic ODE,Fokker-Planck equation,Wiener process,energy estimates (diffusion),Richardson iteration,preconditioning">
 
 <title>Finite difference methods for diffusion processes</title>
 
@@ -1087,6 +1087,13 @@ time interval:
 We emphasize that the value <code>F=0.5</code> is critical: the tests above
 will fail if <code>F</code> has a larger value (this is because the Forward
 Euler scheme is unstable for \( F>1/2 \)).
+
+<p>
+For more complicated situations we may not be able to fulfill the 
+Forward Euler scheme exactly, for example when the diffusion coefficient is non-constant.
+We will meet such cases later, and in such cases, we must compute and check convergence rates 
+as we have seen before for the wave equation. For the 2D diffusion equation, expressions for the
+numerical error with the theta rule is derived and commented in the section <a href="#diffu:2D:convrate">Verification: convergence rates</a>.
 
 <h2 id="diffu:pde1:FE:experiments">Numerical experiments</h2>
 
@@ -6054,9 +6061,9 @@ gradient function as an alternative solver.
 </pre></div>
 <p>
 The number of iterations in the Conjugate gradient method is of interest,
-but unfortunately not available from the <code>cg</code> function, so
+but is unfortunately not available from the <code>cg</code> function. Therefore,
 we perform a trick: in each iteration a user function <code>CG_callback</code>
-is called where we accumulate the number of iteration in a list
+is called where we accumulate the number of iterations in a list
 <code>CG_iter</code>.
 
 <h1 id="diffu:randomwalk">Random walk</h1>
@@ -8597,6 +8604,332 @@ in time and centered differences in space.
 We need to take into account extensions below: a coefficient in front of
 the viscous term, and an extra source term.
 
+<p>
+A preliminary and unfinished code:
+
+<p>
+
+<!-- code=python (!bc pypro) typeset with pygments style "default" -->
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">Solve the diffusion equation for axi-symmetric case:</span>
+
+<span style="color: #BA2121; font-style: italic">    u_t = 1/r * (r*a(r)*u_r)_r + f(r,t)</span>
+
+<span style="color: #BA2121; font-style: italic">on (0,R) with boundary conditions u(0,t)_r = 0 and u(R,t) = 0,</span>
+<span style="color: #BA2121; font-style: italic">for t in (0,T]. Initial condition: u(r,0) = I(r). </span>
+<span style="color: #BA2121; font-style: italic">Pressure gradient f.</span>
+
+<span style="color: #BA2121; font-style: italic">The following naming convention of variables are used.</span>
+
+<span style="color: #BA2121; font-style: italic">===== ==========================================================</span>
+<span style="color: #BA2121; font-style: italic">Name  Description</span>
+<span style="color: #BA2121; font-style: italic">===== ==========================================================</span>
+<span style="color: #BA2121; font-style: italic">Nx    The total number of mesh cells; mesh points are numbered</span>
+<span style="color: #BA2121; font-style: italic">      from 0 to Nx.</span>
+<span style="color: #BA2121; font-style: italic">T     The stop time for the simulation.</span>
+<span style="color: #BA2121; font-style: italic">I     Initial condition (Python function of x).</span>
+<span style="color: #BA2121; font-style: italic">a     Variable coefficient (constant).</span>
+<span style="color: #BA2121; font-style: italic">R     Length of the domain ([0,R]).</span>
+<span style="color: #BA2121; font-style: italic">r     Mesh points in space.</span>
+<span style="color: #BA2121; font-style: italic">t     Mesh points in time.</span>
+<span style="color: #BA2121; font-style: italic">n     Index counter in time.</span>
+<span style="color: #BA2121; font-style: italic">u     Unknown at current/new time level.</span>
+<span style="color: #BA2121; font-style: italic">u_1   u at the previous time level.</span>
+<span style="color: #BA2121; font-style: italic">dr    Constant mesh spacing in r.</span>
+<span style="color: #BA2121; font-style: italic">dt    Constant mesh spacing in t.</span>
+<span style="color: #BA2121; font-style: italic">===== ==========================================================</span>
+
+<span style="color: #BA2121; font-style: italic">``user_action`` is a function of ``(u, r, t, n)``, ``u[i]`` is the</span>
+<span style="color: #BA2121; font-style: italic">solution at spatial mesh point ``r[i]`` at time ``t[n]``, where the</span>
+<span style="color: #BA2121; font-style: italic">calling code can add visualization, error computations, data analysis,</span>
+<span style="color: #BA2121; font-style: italic">store solutions, etc.</span>
+<span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">scipy.sparse</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">scipy.sparse.linalg</span>
+<span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">import</span> linspace, zeros, random, array, ones, <span style="color: #008000">sum</span>, log, sqrt
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">time</span><span style="color: #666666">,</span> <span style="color: #0000FF; font-weight: bold">sys</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">sympy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">sym</span>    
+
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solver_theta</span>(I, a, R, Nr, D, T, theta<span style="color: #666666">=0.5</span>, u_L<span style="color: #666666">=</span><span style="color: #008000">None</span>, u_R<span style="color: #666666">=0</span>,
+                 user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>, f<span style="color: #666666">=0</span>):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    The array a has length Nr+1 and holds the values of</span>
+<span style="color: #BA2121; font-style: italic">    a(x) at the mesh points.</span>
+
+<span style="color: #BA2121; font-style: italic">    Method: (implicit) theta-rule in time.</span>
+
+<span style="color: #BA2121; font-style: italic">    Nr is the total number of mesh cells; mesh points are numbered</span>
+<span style="color: #BA2121; font-style: italic">    from 0 to Nr.</span>
+<span style="color: #BA2121; font-style: italic">    D = dt/dr**2 and implicitly specifies the time step.</span>
+<span style="color: #BA2121; font-style: italic">    T is the stop time for the simulation.</span>
+<span style="color: #BA2121; font-style: italic">    I is a function of r.</span>
+<span style="color: #BA2121; font-style: italic">    u_L = None implies du/dr = 0, i.e. a symmetry condition </span>
+<span style="color: #BA2121; font-style: italic">    f(r,t) is pressure gradient with radius.</span>
+
+<span style="color: #BA2121; font-style: italic">    user_action is a function of (u, x, t, n) where the calling code</span>
+<span style="color: #BA2121; font-style: italic">    can add visualization, error computations, data analysis,</span>
+<span style="color: #BA2121; font-style: italic">    store solutions, etc.</span>
+<span style="color: #BA2121; font-style: italic">    </span>
+<span style="color: #BA2121; font-style: italic">    r*alpha is needed midway between spatial mesh points, - use</span>
+<span style="color: #BA2121; font-style: italic">    arithmetic mean of successive mesh values (i.e. of r_i*alpha_i)</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">time</span>
+    t0 <span style="color: #666666">=</span> time<span style="color: #666666">.</span>clock()
+
+    r <span style="color: #666666">=</span> linspace(<span style="color: #666666">0</span>, R, Nr<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># mesh points in space</span>
+    dr <span style="color: #666666">=</span> r[<span style="color: #666666">1</span>] <span style="color: #666666">-</span> r[<span style="color: #666666">0</span>]
+    dt <span style="color: #666666">=</span> D<span style="color: #666666">*</span>dr<span style="color: #666666">**2</span>   
+    Nt <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(T<span style="color: #666666">/</span><span style="color: #008000">float</span>(dt)))
+    t <span style="color: #666666">=</span> linspace(<span style="color: #666666">0</span>, T, Nt<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># mesh points in time</span>
+
+    <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">isinstance</span>(u_L, (<span style="color: #008000">float</span>,<span style="color: #008000">int</span>)):
+        u_L_ <span style="color: #666666">=</span> <span style="color: #008000">float</span>(u_L)  <span style="color: #408080; font-style: italic"># must take copy of u_L number</span>
+        u_L <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> t: u_L_
+    <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">isinstance</span>(u_R, (<span style="color: #008000">float</span>,<span style="color: #008000">int</span>)):
+        u_R_ <span style="color: #666666">=</span> <span style="color: #008000">float</span>(u_R)  <span style="color: #408080; font-style: italic"># must take copy of u_R number</span>
+        u_R <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> t: u_R_
+    <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">isinstance</span>(f, (<span style="color: #008000">float</span>,<span style="color: #008000">int</span>)):
+        f_ <span style="color: #666666">=</span> <span style="color: #008000">float</span>(f)  <span style="color: #408080; font-style: italic"># must take copy of f number</span>
+        f <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> r, t: f_
+
+    ra <span style="color: #666666">=</span> r<span style="color: #666666">*</span>a    <span style="color: #408080; font-style: italic"># help array in scheme</span>
+
+    inv_r <span style="color: #666666">=</span> zeros(<span style="color: #008000">len</span>(r)<span style="color: #666666">-2</span>)    <span style="color: #408080; font-style: italic"># needed for inner mesh points</span>
+    inv_r <span style="color: #666666">=</span> <span style="color: #666666">1.0/</span>r[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>]
+
+    u   <span style="color: #666666">=</span> zeros(Nr<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># solution array at t[n+1]</span>
+    u_1 <span style="color: #666666">=</span> zeros(Nr<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># solution at t[n]</span>
+
+    Dl <span style="color: #666666">=</span> <span style="color: #666666">0.5*</span>D<span style="color: #666666">*</span>theta
+    Dr <span style="color: #666666">=</span> <span style="color: #666666">0.5*</span>D<span style="color: #666666">*</span>(<span style="color: #666666">1-</span>theta)
+
+    <span style="color: #408080; font-style: italic"># Representation of sparse matrix and right-hand side</span>
+    diagonal <span style="color: #666666">=</span> zeros(Nr<span style="color: #666666">+1</span>)
+    lower    <span style="color: #666666">=</span> zeros(Nr)
+    upper    <span style="color: #666666">=</span> zeros(Nr)
+    b        <span style="color: #666666">=</span> zeros(Nr<span style="color: #666666">+1</span>)
+
+    <span style="color: #408080; font-style: italic"># Precompute sparse matrix (scipy format)</span>
+    diagonal[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>] <span style="color: #666666">=</span> <span style="color: #666666">1</span> <span style="color: #666666">+</span> Dl<span style="color: #666666">*</span>(ra[<span style="color: #666666">2</span>:] <span style="color: #666666">+</span> <span style="color: #666666">2*</span>ra[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>] <span style="color: #666666">+</span> ra[:<span style="color: #666666">-2</span>])<span style="color: #666666">*</span>inv_r
+    lower[:<span style="color: #666666">-1</span>] <span style="color: #666666">=</span> <span style="color: #666666">-</span>Dl<span style="color: #666666">*</span>(ra[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>] <span style="color: #666666">+</span> ra[:<span style="color: #666666">-2</span>])<span style="color: #666666">*</span>inv_r
+    upper[<span style="color: #666666">1</span>:]  <span style="color: #666666">=</span> <span style="color: #666666">-</span>Dl<span style="color: #666666">*</span>(ra[<span style="color: #666666">2</span>:] <span style="color: #666666">+</span> ra[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>])<span style="color: #666666">*</span>inv_r
+    <span style="color: #408080; font-style: italic"># Insert boundary conditions</span>
+    <span style="color: #008000; font-weight: bold">if</span> u_L <span style="color: #666666">==</span> <span style="color: #008000">None</span>:     <span style="color: #408080; font-style: italic"># symmetry axis, du/dr = 0</span>
+        diagonal[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> <span style="color: #666666">1</span> <span style="color: #666666">+</span> <span style="color: #666666">8*</span>a[<span style="color: #666666">0</span>]<span style="color: #666666">*</span>Dl
+        upper[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> <span style="color: #666666">-8*</span>a[<span style="color: #666666">0</span>]<span style="color: #666666">*</span>Dl
+    <span style="color: #008000; font-weight: bold">else</span>:
+        diagonal[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> <span style="color: #666666">1</span>
+        upper[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> <span style="color: #666666">0</span>
+    diagonal[Nr] <span style="color: #666666">=</span> <span style="color: #666666">1</span>
+    lower[<span style="color: #666666">-1</span>] <span style="color: #666666">=</span> <span style="color: #666666">0</span>
+
+    A <span style="color: #666666">=</span> scipy<span style="color: #666666">.</span>sparse<span style="color: #666666">.</span>diags(
+        diagonals<span style="color: #666666">=</span>[diagonal, lower, upper],
+        offsets<span style="color: #666666">=</span>[<span style="color: #666666">0</span>, <span style="color: #666666">-1</span>, <span style="color: #666666">1</span>],
+        shape<span style="color: #666666">=</span>(Nr<span style="color: #666666">+1</span>, Nr<span style="color: #666666">+1</span>),
+        format<span style="color: #666666">=</span><span style="color: #BA2121">&#39;csr&#39;</span>)
+    <span style="color: #408080; font-style: italic">#print A.todense()</span>
+
+    <span style="color: #408080; font-style: italic"># Set initial condition</span>
+    <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>,Nr<span style="color: #666666">+1</span>):
+        u_1[i] <span style="color: #666666">=</span> I(r[i])
+
+    <span style="color: #008000; font-weight: bold">if</span> user_action <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000">None</span>:
+        user_action(u_1, r, t, <span style="color: #666666">0</span>)
+
+    <span style="color: #408080; font-style: italic"># Time loop</span>
+    <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, Nt):
+        b[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>] <span style="color: #666666">=</span> u_1[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>] <span style="color: #666666">+</span> Dr<span style="color: #666666">*</span>(
+            (ra[<span style="color: #666666">2</span>:] <span style="color: #666666">+</span> ra[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>])<span style="color: #666666">*</span>(u_1[<span style="color: #666666">2</span>:] <span style="color: #666666">-</span> u_1[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>]) <span style="color: #666666">-</span>
+            (ra[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>] <span style="color: #666666">+</span> ra[<span style="color: #666666">0</span>:<span style="color: #666666">-2</span>])<span style="color: #666666">*</span>(u_1[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>] <span style="color: #666666">-</span> u_1[:<span style="color: #666666">-2</span>]))<span style="color: #666666">*</span>inv_r <span style="color: #666666">+</span> \
+            dt<span style="color: #666666">*</span>theta<span style="color: #666666">*</span>f(r[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>], t[n<span style="color: #666666">+1</span>]) <span style="color: #666666">+</span> \
+            dt<span style="color: #666666">*</span>(<span style="color: #666666">1-</span>theta)<span style="color: #666666">*</span>f(r[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>], t[n])
+            
+        <span style="color: #408080; font-style: italic"># Boundary conditions</span>
+        <span style="color: #008000; font-weight: bold">if</span> u_L <span style="color: #666666">==</span> <span style="color: #008000">None</span>:     <span style="color: #408080; font-style: italic"># symmetry axis, du/dr = 0</span>
+            b[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> u_1[<span style="color: #666666">0</span>] <span style="color: #666666">+</span> <span style="color: #666666">8*</span>a[<span style="color: #666666">0</span>]<span style="color: #666666">*</span>Dr<span style="color: #666666">*</span>(u_1[<span style="color: #666666">1</span>] <span style="color: #666666">-</span> u_1[<span style="color: #666666">0</span>]) <span style="color: #666666">+</span> \
+                   dt<span style="color: #666666">*</span>theta<span style="color: #666666">*</span>f(<span style="color: #666666">0</span>, (n<span style="color: #666666">+1</span>)<span style="color: #666666">*</span>dt) <span style="color: #666666">+</span> \
+                   dt<span style="color: #666666">*</span>(<span style="color: #666666">1</span> <span style="color: #666666">-</span> theta)<span style="color: #666666">*</span>f(<span style="color: #666666">0</span>, n<span style="color: #666666">*</span>dt)
+        <span style="color: #008000; font-weight: bold">else</span>:               
+            b[<span style="color: #666666">0</span>]  <span style="color: #666666">=</span> u_L(t[n<span style="color: #666666">+1</span>])        
+        b[<span style="color: #666666">-1</span>] <span style="color: #666666">=</span> u_R(t[n<span style="color: #666666">+1</span>])
+        <span style="color: #408080; font-style: italic">#print b        </span>
+        
+        <span style="color: #408080; font-style: italic"># Solve</span>
+        u[:] <span style="color: #666666">=</span> scipy<span style="color: #666666">.</span>sparse<span style="color: #666666">.</span>linalg<span style="color: #666666">.</span>spsolve(A, b)
+        
+        <span style="color: #008000; font-weight: bold">if</span> user_action <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000">None</span>:
+            user_action(u, r, t, n<span style="color: #666666">+1</span>)
+
+        <span style="color: #408080; font-style: italic"># Switch variables before next step</span>
+        u_1, u <span style="color: #666666">=</span> u, u_1
+
+    t1 <span style="color: #666666">=</span> time<span style="color: #666666">.</span>clock()
+    <span style="color: #408080; font-style: italic"># return u_1, since u and u_1 are switched</span>
+    <span style="color: #008000; font-weight: bold">return</span> u_1, t, t1<span style="color: #666666">-</span>t0
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">compute_rates</span>(h_values, E_values):
+    m <span style="color: #666666">=</span> <span style="color: #008000">len</span>(h_values)
+    q <span style="color: #666666">=</span> [log(E_values[i<span style="color: #666666">+1</span>]<span style="color: #666666">/</span>E_values[i])<span style="color: #666666">/</span>
+         log(h_values[i<span style="color: #666666">+1</span>]<span style="color: #666666">/</span>h_values[i])
+         <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, m<span style="color: #666666">-1</span>, <span style="color: #666666">1</span>)]
+    q <span style="color: #666666">=</span> [<span style="color: #008000">round</span>(q_, <span style="color: #666666">2</span>) <span style="color: #008000; font-weight: bold">for</span> q_ <span style="color: #AA22FF; font-weight: bold">in</span> q]
+    <span style="color: #008000; font-weight: bold">return</span> q
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">make_a</span>(alpha, r):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    alpha is a func, generally of r, - but may be constant.</span>
+<span style="color: #BA2121; font-style: italic">    Note: when solution is to be axi-symmetric, alpha</span>
+<span style="color: #BA2121; font-style: italic">    must be so too.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    a <span style="color: #666666">=</span> alpha(r)<span style="color: #666666">*</span>ones(<span style="color: #008000">len</span>(r))
+    <span style="color: #008000; font-weight: bold">return</span> a
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">tests_with_alpha_and_u_exact</span>():
+    <span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;</span>
+<span style="color: #BA2121; font-style: italic">    Test solver performance when alpha is either const or </span>
+<span style="color: #BA2121; font-style: italic">    a fu of r, combined with a manufactured sol u_exact </span>
+<span style="color: #BA2121; font-style: italic">    that is either a fu of r only, or a fu of both r and t.</span>
+<span style="color: #BA2121; font-style: italic">    Note: alpha and u_e are defined as symb expr here, since </span>
+<span style="color: #BA2121; font-style: italic">    test_solver_symmetric needs to automatically generate </span>
+<span style="color: #BA2121; font-style: italic">    the source term f. After that, test_solver_symmetric</span>
+<span style="color: #BA2121; font-style: italic">    redefines alpha, u_e and f as num functions.</span>
+<span style="color: #BA2121; font-style: italic">    &#39;&#39;&#39;</span>
+    R, r, t <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>symbols(<span style="color: #BA2121">&#39;R r t&#39;</span>)
+
+    <span style="color: #408080; font-style: italic"># alpha const ...</span>
+    
+    <span style="color: #408080; font-style: italic"># ue = const</span>
+    <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Testing with alpha = 1.5 and u_e = R**2 - r**2...&#39;</span>
+    test_solver_symmetric(alpha<span style="color: #666666">=1.5</span>, u_exact<span style="color: #666666">=</span>R<span style="color: #666666">**2</span> <span style="color: #666666">-</span> r<span style="color: #666666">**2</span>)
+    
+    <span style="color: #408080; font-style: italic"># ue = ue(t)</span>
+    <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Testing with alpha = 1.5 and u_e = 5*t*(R**2 - r**2)...&#39;</span>
+    test_solver_symmetric(alpha<span style="color: #666666">=1.5</span>, u_exact<span style="color: #666666">=5*</span>t<span style="color: #666666">*</span>(R<span style="color: #666666">**2</span> <span style="color: #666666">-</span> r<span style="color: #666666">**2</span>))
+    
+    <span style="color: #408080; font-style: italic"># alpha function of r ...</span>
+    
+    <span style="color: #408080; font-style: italic"># ue = const </span>
+    <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Testing with alpha = 1 + r**2 and u_e = R**2 - r**2...&#39;</span>
+    test_solver_symmetric(alpha<span style="color: #666666">=1+</span>r<span style="color: #666666">**2</span>, u_exact<span style="color: #666666">=</span>R<span style="color: #666666">**2</span> <span style="color: #666666">-</span> r<span style="color: #666666">**2</span>)
+    
+    <span style="color: #408080; font-style: italic"># ue = ue(t)</span>
+    <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Testing with alpha = 1+r**2 and u_e = 5*t*(R**2 - r**2)...&#39;</span>
+    test_solver_symmetric(alpha<span style="color: #666666">=1+</span>r<span style="color: #666666">**2</span>, u_exact<span style="color: #666666">=5*</span>t<span style="color: #666666">*</span>(R<span style="color: #666666">**2</span> <span style="color: #666666">-</span> r<span style="color: #666666">**2</span>))
+
+
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_solver_symmetric</span>(alpha, u_exact):
+    <span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;</span>
+<span style="color: #BA2121; font-style: italic">    Test solver performance for manufactured solution</span>
+<span style="color: #BA2121; font-style: italic">    given in the function u_exact. Parameter alpha is </span>
+<span style="color: #BA2121; font-style: italic">    either a const or a function of r. In the latter </span>
+<span style="color: #BA2121; font-style: italic">    case, an &quot;exact&quot; sol can not be achieved, so then</span>
+<span style="color: #BA2121; font-style: italic">    testing switches to conv. rates.</span>
+<span style="color: #BA2121; font-style: italic">    R is tube radius and T is duration of simulation.</span>
+<span style="color: #BA2121; font-style: italic">    alpha constant:</span>
+<span style="color: #BA2121; font-style: italic">        Compares the manufactured solution with the </span>
+<span style="color: #BA2121; font-style: italic">        solution from the solver at each time step. </span>
+<span style="color: #BA2121; font-style: italic">    alpha function of r:</span>
+<span style="color: #BA2121; font-style: italic">        convergence rates are tested (using the sol</span>
+<span style="color: #BA2121; font-style: italic">        at the final point in time only).</span>
+<span style="color: #BA2121; font-style: italic">    &#39;&#39;&#39;</span>   
+    
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">compare</span>(u, r, t, n):      <span style="color: #408080; font-style: italic"># user_action function</span>
+        <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Compare exact and computed solution.&quot;&quot;&quot;</span>
+        u_e <span style="color: #666666">=</span> u_exact(r, t[n])
+        diff <span style="color: #666666">=</span> <span style="color: #008000">abs</span>(u_e <span style="color: #666666">-</span> u)<span style="color: #666666">.</span>max()
+        <span style="color: #408080; font-style: italic">#print diff</span>
+        tol <span style="color: #666666">=</span> <span style="color: #666666">1E-12</span>
+        <span style="color: #008000; font-weight: bold">assert</span> diff <span style="color: #666666">&lt;</span> tol, <span style="color: #BA2121">&#39;max diff: </span><span style="color: #BB6688; font-weight: bold">%g</span><span style="color: #BA2121">&#39;</span> <span style="color: #666666">%</span> diff
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">pde_source_term</span>(a, u):
+        <span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;Return the terms in the PDE that the source term</span>
+<span style="color: #BA2121; font-style: italic">        must balance, here du/dt - (1/r) * d/dr(r*a*du/dr).</span>
+<span style="color: #BA2121; font-style: italic">        a, i.e. alpha, is either const or a fu of r.</span>
+<span style="color: #BA2121; font-style: italic">        u is a symbolic Python function of r and t.&#39;&#39;&#39;</span>
+        
+        <span style="color: #008000; font-weight: bold">return</span> sym<span style="color: #666666">.</span>diff(u, t) <span style="color: #666666">-</span> \
+               (<span style="color: #666666">1.0/</span>r)<span style="color: #666666">*</span>sym<span style="color: #666666">.</span>diff(r<span style="color: #666666">*</span>a<span style="color: #666666">*</span>sym<span style="color: #666666">.</span>diff(u, r), r)
+               
+    R, r, t <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>symbols(<span style="color: #BA2121">&#39;R r t&#39;</span>)
+
+    <span style="color: #408080; font-style: italic"># fit source term</span>
+    f <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>simplify(pde_source_term(alpha, u_exact))  
+
+    R <span style="color: #666666">=</span> <span style="color: #666666">1.0</span>     <span style="color: #408080; font-style: italic"># radius of tube</span>
+    T <span style="color: #666666">=</span> <span style="color: #666666">2.0</span>     <span style="color: #408080; font-style: italic"># duration of simulation </span>
+   
+    <span style="color: #008000; font-weight: bold">if</span> sym<span style="color: #666666">.</span>diff(alpha, r) <span style="color: #666666">==</span> <span style="color: #666666">0</span>:  
+        alpha_is_const <span style="color: #666666">=</span> <span style="color: #008000">True</span>
+    <span style="color: #008000; font-weight: bold">else</span>:
+        alpha_is_const <span style="color: #666666">=</span> <span style="color: #008000">False</span>        
+
+    <span style="color: #408080; font-style: italic"># make alpha, f and u_exact numerical functions</span>
+    alpha <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>lambdify([r], alpha, modules<span style="color: #666666">=</span><span style="color: #BA2121">&#39;numpy&#39;</span>)             
+    f <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>lambdify([r, t], f<span style="color: #666666">.</span>subs(<span style="color: #BA2121">&#39;R&#39;</span>, R), modules<span style="color: #666666">=</span><span style="color: #BA2121">&#39;numpy&#39;</span>)             
+    u_exact <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>lambdify(
+        [r, t], u_exact<span style="color: #666666">.</span>subs(<span style="color: #BA2121">&#39;R&#39;</span>, R), modules<span style="color: #666666">=</span><span style="color: #BA2121">&#39;numpy&#39;</span>)             
+
+    I <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> r: u_exact(r, <span style="color: #666666">0</span>)
+
+    <span style="color: #408080; font-style: italic"># some help variables</span>
+    FE <span style="color: #666666">=</span> <span style="color: #666666">0</span>      <span style="color: #408080; font-style: italic"># Forward Euler method</span>
+    BE <span style="color: #666666">=</span> <span style="color: #666666">1</span>      <span style="color: #408080; font-style: italic"># Backward Euler method</span>
+    CN <span style="color: #666666">=</span> <span style="color: #666666">0.5</span>    <span style="color: #408080; font-style: italic"># Crank-Nicolson method</span>
+
+    <span style="color: #408080; font-style: italic"># test all three schemes </span>
+    <span style="color: #008000; font-weight: bold">for</span> theta <span style="color: #AA22FF; font-weight: bold">in</span> (FE, BE, CN):
+        <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;theta: &#39;</span>, theta
+        E_values <span style="color: #666666">=</span> []
+        dt_values <span style="color: #666666">=</span> []
+        <span style="color: #008000; font-weight: bold">for</span> Nr <span style="color: #AA22FF; font-weight: bold">in</span> (<span style="color: #666666">2</span>, <span style="color: #666666">4</span>, <span style="color: #666666">8</span>, <span style="color: #666666">16</span>, <span style="color: #666666">32</span>, <span style="color: #666666">64</span>):
+            <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Nr:&#39;</span>, Nr
+            r <span style="color: #666666">=</span> linspace(<span style="color: #666666">0</span>, R, Nr<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># mesh points in space</span>
+            dr <span style="color: #666666">=</span> r[<span style="color: #666666">1</span>] <span style="color: #666666">-</span> r[<span style="color: #666666">0</span>]
+            a_values <span style="color: #666666">=</span> make_a(alpha, r)   
+            <span style="color: #008000; font-weight: bold">if</span> theta <span style="color: #666666">==</span> CN:
+                dt <span style="color: #666666">=</span> dr
+            <span style="color: #008000; font-weight: bold">else</span>:   <span style="color: #408080; font-style: italic"># either FE or BE</span>
+                <span style="color: #408080; font-style: italic"># use most conservative dt as decided by FE</span>
+                K <span style="color: #666666">=</span> <span style="color: #666666">1.0/</span>(<span style="color: #666666">4*</span>a_values<span style="color: #666666">.</span>max())              
+                dt <span style="color: #666666">=</span> K<span style="color: #666666">*</span>dr<span style="color: #666666">**2</span>                 
+            D <span style="color: #666666">=</span> dt<span style="color: #666666">/</span>dr<span style="color: #666666">**2</span>
+
+            <span style="color: #008000; font-weight: bold">if</span> alpha_is_const:  
+                u, t, cpu <span style="color: #666666">=</span> solver_theta(
+                        I, a_values, R, Nr, D, T, 
+                        theta, u_L<span style="color: #666666">=</span><span style="color: #008000">None</span>, u_R<span style="color: #666666">=0</span>,
+                        user_action<span style="color: #666666">=</span>compare, f<span style="color: #666666">=</span>f)   
+            <span style="color: #008000; font-weight: bold">else</span>:   <span style="color: #408080; font-style: italic"># alpha depends on r</span>
+                u, t, cpu <span style="color: #666666">=</span> solver_theta(
+                        I, a_values, R, Nr, D, T, 
+                        theta, u_L<span style="color: #666666">=</span><span style="color: #008000">None</span>, u_R<span style="color: #666666">=0</span>,
+                        user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>, f<span style="color: #666666">=</span>f)   
+                        
+                <span style="color: #408080; font-style: italic"># compute L2 error at t = T</span>
+                u_e <span style="color: #666666">=</span> u_exact(r, t[<span style="color: #666666">-1</span>])
+                e <span style="color: #666666">=</span> u_e <span style="color: #666666">-</span> u
+                E <span style="color: #666666">=</span> sqrt(dr<span style="color: #666666">*</span><span style="color: #008000">sum</span>(e<span style="color: #666666">**2</span>))
+                E_values<span style="color: #666666">.</span>append(E)
+                dt_values<span style="color: #666666">.</span>append(dt)
+            
+        <span style="color: #008000; font-weight: bold">if</span> alpha_is_const <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #008000">False</span>:  
+            q <span style="color: #666666">=</span> compute_rates(dt_values, E_values)        
+            <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;theta=</span><span style="color: #BB6688; font-weight: bold">%g</span><span style="color: #BA2121">, q: </span><span style="color: #BB6688; font-weight: bold">%s</span><span style="color: #BA2121">&#39;</span> <span style="color: #666666">%</span> (theta, q)
+            expected_rate <span style="color: #666666">=</span> <span style="color: #666666">2</span> <span style="color: #008000; font-weight: bold">if</span> theta <span style="color: #666666">==</span> CN <span style="color: #008000; font-weight: bold">else</span> <span style="color: #666666">1</span>
+            tol <span style="color: #666666">=</span> <span style="color: #666666">0.1</span>
+            diff <span style="color: #666666">=</span> <span style="color: #008000">abs</span>(expected_rate <span style="color: #666666">-</span> q[<span style="color: #666666">-1</span>])
+            <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;diff:&#39;</span>, diff
+            <span style="color: #008000; font-weight: bold">assert</span> diff <span style="color: #666666">&lt;</span> tol
+    
+    
+<span style="color: #008000; font-weight: bold">if</span> __name__ <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;__main__&#39;</span>:
+    tests_with_alpha_and_u_exact()        
+    <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;This is just a start. More remaining for this Exerc.&#39;</span>
+</pre></div>
 <p>
 </div></p>
 </div>
