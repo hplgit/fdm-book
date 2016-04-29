@@ -320,6 +320,9 @@ callback function, and a bit more complicated setting of the source
 label{diffu:pde1:FE:verify}
 idx{diffusion equation! 1D, verification (FE)}
 
+=== Exact solution of discrete equations ===
+label{diffu:pde1:FE:verify:exact}
+
 Before thinking about running the functions in the previous section,
 we need to construct a suitable test example for verification. It
 appears that a manufactured solution that is linear in time and at
@@ -434,11 +437,39 @@ We emphasize that the value `F=0.5` is critical: the tests above
 will fail if `F` has a larger value (this is because the Forward
 Euler scheme is unstable for $F>1/2$).
 
-For more complicated situations we may not be able to fulfill the 
-Forward Euler scheme exactly, for example when the diffusion coefficient is non-constant.
-We will meet such cases later, and in such cases, we must compute and check convergence rates 
-as we have seen before for the wave equation. For the 2D diffusion equation, expressions for the
-numerical error with the theta rule is derived and commented in Section ref{diffu:2D:convrate}.
+=== Checking convergence rates ===
+label{diffu:pde1:FE:verify:convrates}
+
+If our chosen exact solution does not satisfy the discrete equations 
+exactly, we are left with checking the convergence rates, just as we did 
+previously for the wave equation. However, with the Euler scheme here,
+we have different accuracies in time and space, since we use a second
+order approximation to the spatial derivative and a first order approximation
+to the time derivative. Thus, we must expect different convergence rates in 
+time and space. For the numerical error,
+
+!bt
+\[ E = C_t\Delta t^r + C_x\Delta x^p,\]
+!et
+we should get convergence rates $r=1$ and $p=2$ ($C_t$ and $C_x$ are unknown constants). 
+As previously, we simplify matters by introducing a single discretization parameter. 
+We introduce
+
+!bt
+\[ h = \Delta x^p,\quad h = K^{-1}\Delta t,\]
+!et
+where $K$ is a constant. The error formula then becomes
+
+!bt
+\[ E = C_t K^rh^r + C_xh^r = \tilde C h^r,\quad \tilde C = C_tK^r + C_x\tp\]
+!et
+where the computed rate $r$ should approach 1 with increasing resolution.
+It is tempting to choose $K=1$, but for the Forward Euler method, 
+stability requires $\Delta t = hK \leq h/(4\dfc)$, so $K\leq 1/(4\dfc)$.
+
+The alternative error measures are as outlined for the wave equation and
+convergence rate computations may follow what was described previously in
+Section ref{wave:pde2:fd:MMS}.
 
 
 ===== Numerical experiments =====
@@ -796,6 +827,12 @@ for n in range(0, Nt):
     u_1[:] = u
 !ec
 
+Regarding verification, the same considerations apply as for the 
+Forward Euler method (Section ref{diffu:pde1:FE:verify}).
+
+idx{diffusion equation! 1D, verification (BE)}
+
+
 ===== Sparse matrix implementation =====
 label{diffu:pde1:impl:sparse}
 idx{diffusion equation! 1D, tridiagonal matrix}
@@ -959,6 +996,28 @@ b_i &= u^{n-1}_i + \half(f_i^n + f_i^{n+1}),\quad i=1,\ldots,N_x-1,\\
 b_{N_x} &= 0 \tp  \end{align}
 !et
 
+When verifying some implementation of the Crank-Nicolson scheme by convergence rate testing, 
+one should note that the scheme is second order accurate in both space and time. The numerical
+error then reads
+
+!bt
+\[ E = C_t\Delta t^r + C_x\Delta x^r,\]
+!et
+where $r=2$ ($C_t$ and $C_x$ are unknown constants, as before). 
+When introducing a single discretization parameter, we may now simply choose
+
+!bt
+\[ h = \Delta x = \Delta t,\]
+!et
+which gives
+!bt
+\[ E = C_th^r + C_xh^r = (C_t + C_x)h^r,\]
+!et
+where $r$ should approach 2 as resolution is increased in the convergence rate computations.
+
+idx{diffusion equation! 1D, verification (CN)}
+
+
 ===== The unifying $\theta$ rule =====
 label{diffu:pde1:theta}
 idx{diffusion equation! 1D, theta rule}
@@ -1011,6 +1070,13 @@ while right-hand side entry $b_i$ is
 !et
 The corresponding entries for the boundary points are as in the Backward
 Euler and Crank-Nicolson schemes listed earlier.
+
+Note that convergence rate testing with implementations of the theta rule must
+adjust the error expression according to which of the underlying schemes is actually being run.
+That is, if $\theta=0$ (i.e., Forward Euler) or $\theta=1$ (i.e., Backward Euler), there should
+be first order convergence, whereas with $\theta=0.5$ (i.e., Crank-Nicolson), one should get 
+second order convergence (as outlined in previous sections). 
+
 
 # #ifdef EXTRA
 !bt

@@ -481,6 +481,11 @@ Verification          (1)
 .. index::
    single: diffusion equation;  1D, verification (FE)
 
+.. _diffu:pde1:FE:verify:exact:
+
+Exact solution of discrete equations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Before thinking about running the functions in the previous section,
 we need to construct a suitable test example for verification. It
 appears that a manufactured solution that is linear in time and at
@@ -593,11 +598,41 @@ We emphasize that the value ``F=0.5`` is critical: the tests above
 will fail if ``F`` has a larger value (this is because the Forward
 Euler scheme is unstable for :math:`F>1/2`).
 
-For more complicated situations we may not be able to fulfill the 
-Forward Euler scheme exactly, for example when the diffusion coefficient is non-constant.
-We will meet such cases later, and in such cases, we must compute and check convergence rates 
-as we have seen before for the wave equation. For the 2D diffusion equation, expressions for the
-numerical error with the theta rule is derived and commented in the section :ref:`diffu:2D:convrate`.
+.. _diffu:pde1:FE:verify:convrates:
+
+Checking convergence rates
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If our chosen exact solution does not satisfy the discrete equations 
+exactly, we are left with checking the convergence rates, just as we did 
+previously for the wave equation. However, with the Euler scheme here,
+we have different accuracies in time and space, since we use a second
+order approximation to the spatial derivative and a first order approximation
+to the time derivative. Thus, we must expect different convergence rates in 
+time and space. For the numerical error,
+
+.. math::
+         E = C_t\Delta t^r + C_x\Delta x^p,
+
+we should get convergence rates :math:`r=1` and :math:`p=2` (:math:`C_t` and :math:`C_x` are unknown constants). 
+As previously, we simplify matters by introducing a single discretization parameter. 
+We introduce
+
+.. math::
+         h = \Delta x^p,\quad h = K^{-1}\Delta t,
+
+where :math:`K` is a constant. The error formula then becomes
+
+.. math::
+         E = C_t K^rh^r + C_xh^r = \tilde C h^r,\quad \tilde C = C_tK^r + C_x{\thinspace .}
+
+where the computed rate :math:`r` should approach 1 with increasing resolution.
+It is tempting to choose :math:`K=1`, but for the Forward Euler method, 
+stability requires :math:`\Delta t = hK \leq h/(4{\alpha})`, so :math:`K\leq 1/(4{\alpha})`.
+
+The alternative error measures are as outlined for the wave equation and
+convergence rate computations may follow what was described previously in
+the section :ref:`wave:pde2:fd:MMS`.
 
 .. _diffu:pde1:FE:experiments:
 
@@ -1196,6 +1231,12 @@ with Python code:
             # Update u_1 before next step
             u_1[:] = u
 
+Regarding verification, the same considerations apply as for the 
+Forward Euler method (the section :ref:`diffu:pde1:FE:verify`).
+
+.. index::
+   single: diffusion equation;  1D, verification (BE)
+
 .. _diffu:pde1:impl:sparse:
 
 Sparse matrix implementation
@@ -1440,6 +1481,29 @@ The right-hand side :math:`b` has entries
     b_{N_x} = 0 {\thinspace .}   
         
 
+When verifying some implementation of the Crank-Nicolson scheme by convergence rate testing, 
+one should note that the scheme is second order accurate in both space and time. The numerical
+error then reads
+
+.. math::
+         E = C_t\Delta t^r + C_x\Delta x^r,
+
+where :math:`r=2` (:math:`C_t` and :math:`C_x` are unknown constants, as before). 
+When introducing a single discretization parameter, we may now simply choose
+
+.. math::
+         h = \Delta x = \Delta t,
+
+which gives
+
+.. math::
+         E = C_th^r + C_xh^r = (C_t + C_x)h^r,
+
+where :math:`r` should approach 2 as resolution is increased in the convergence rate computations.
+
+.. index::
+   single: diffusion equation;  1D, verification (CN)
+
 .. _diffu:pde1:theta:
 
 The unifying :math:`\theta` rule
@@ -1498,6 +1562,12 @@ while right-hand side entry :math:`b_i` is
 
 The corresponding entries for the boundary points are as in the Backward
 Euler and Crank-Nicolson schemes listed earlier.
+
+Note that convergence rate testing with implementations of the theta rule must
+adjust the error expression according to which of the underlying schemes is actually being run.
+That is, if :math:`\theta=0` (i.e., Forward Euler) or :math:`\theta=1` (i.e., Backward Euler), there should
+be first order convergence, whereas with :math:`\theta=0.5` (i.e., Crank-Nicolson), one should get 
+second order convergence (as outlined in previous sections). 
 
 .. _diffu:pde1:theta:experiments:
 
@@ -4261,17 +4331,16 @@ Verification: convergence rates
 .. index::
    single: diffusion equation; 2D, verification (conv. rates)
 
-For any manufactured solution of the PDE problem we can compute the
-numerical error and check that this error has the expected dependence
-on the discretization parameters. Truncation error analysis and other
-forms of error analysis point to a formula like
+For 2D verification with convergence rate computations, the expressions
+and computations just build naturally on what we saw for 1D diffusion.
+Truncation error analysis and other forms of error analysis point to a 
+numerical error formula like
 
 .. math::
-         E = C_t\Delta t^p + C_x\Delta x^2 + C_y\Delta y^2
+         E = C_t\Delta t^p + C_x\Delta x^2 + C_y\Delta y^2,
 
-for the error in a 2D problem, where :math:`p`, :math:`C_t`, :math:`C_x`, and :math:`C_y` are
-unknown constants. A Crank-Nicolson method has :math:`p=2`, while the Forward
-and Backward Euler schemes have :math:`p=1`.
+where :math:`p`, :math:`C_t`, :math:`C_x`, and :math:`C_y` are unknown constants. A Crank-Nicolson 
+method has :math:`p=2`, while the Forward and Backward Euler schemes have :math:`p=1`.
 
 When checking the error formula empirically, we need to reduce it to
 a form :math:`E=Ch^r` with a single discretization parameter :math:`h` and some
@@ -4287,9 +4356,8 @@ where :math:`K` is a constant. The error formula then becomes
 .. math::
          E = C_t Kh + C_xh + C_y = \tilde C h,\quad \tilde C = C_tK + C_x + C_y{\thinspace .}
 
-The simplest choice is :math:`K=1`, but if we consider
-the Forward Euler method instead, stability requires :math:`\Delta t = hK \leq
-h/(4{\alpha})`, so :math:`K\leq 1/(4{\alpha})`.
+The simplest choice is obviously :math:`K=1`. With the Forward Euler method, however,
+stability requires :math:`\Delta t = hK \leq h/(4{\alpha})`, so :math:`K\leq 1/(4{\alpha})`.
 
 For the Crank-Nicolson method, :math:`p=2`, and we can simply choose
 
