@@ -32,9 +32,10 @@ store solutions, etc.
 import time, glob, shutil, os
 import numpy as np
 
-def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
-           user_action=None, version='scalar',
-           stability_safety_factor=1.0):
+def solver(
+    I, V, f, c, U_0, U_L, L, dt, C, T,
+    user_action=None, version='scalar',
+    stability_safety_factor=1.0):
     """Solve u_tt=(c^2*u_x)_x + f on (0,L)x(0,T]."""
     Nt = int(round(T/dt))
     t = np.linspace(0, Nt*dt, Nt+1)      # Mesh points in time
@@ -233,12 +234,14 @@ def test_quadratic():
         tol = 1E-13
         assert diff < tol
 
-    solver(I, V, f, c, U_0, U_L, L/2, dt, C, T,
-           user_action=assert_no_error, version='scalar',
-           stability_safety_factor=1)
-    solver(I, V, f, c, U_0, U_L, L/2, dt, C, T,
-           user_action=assert_no_error, version='vectorized',
-           stability_safety_factor=1)
+    solver(
+        I, V, f, c, U_0, U_L, L/2, dt, C, T,
+        user_action=assert_no_error, version='scalar',
+        stability_safety_factor=1)
+    solver(
+        I, V, f, c, U_0, U_L, L/2, dt, C, T,
+        user_action=assert_no_error, version='vectorized',
+        stability_safety_factor=1)
 
 def test_plug():
     """Check that an initial plug is correct back after one period."""
@@ -409,7 +412,7 @@ class PlotAndStoreSolution:
         """
         # Make HTML movie in a subdirectory
         directory = self.casename
-               
+
         if os.path.isdir(directory):
             shutil.rmtree(directory)   # rm -rf directory
         os.mkdir(directory)            # mkdir directory
@@ -417,8 +420,8 @@ class PlotAndStoreSolution:
         for filename in glob.glob('frame_*.png'):
             os.rename(filename, os.path.join(directory, filename))
         os.chdir(directory)        # cd directory
-                
-        fps = 4 # frames per second
+
+        fps = 24 # frames per second
         if self.backend is not None:
             from scitools.std import movie
             movie('frame_*.png', encoder='html',
@@ -434,7 +437,7 @@ class PlotAndStoreSolution:
             cmd = '%(movie_program)s -r %(fps)d -i %(filespec)s '\
                   '-vcodec %(codec)s movie.%(ext)s' % vars()
             os.system(cmd)
-                        
+
         os.chdir(os.pardir)  # move back to parent directory
 
     def close_file(self, hashed_input):
@@ -493,8 +496,9 @@ def demo_BC_gaussian(C=1, Nx=80, T=4):
     if cpu > 0:  # did we generate new data?
         action.close_file(hashed_input)
 
-def moving_end(C=1, Nx=50, reflecting_right_boundary=True,
-               version='vectorized'):
+def moving_end(
+    C=1, Nx=50, reflecting_right_boundary=True,
+    version='vectorized'):
     # Scaled problem: L=1, c=1, max I=1
     L = 1.
     c = 1
@@ -593,7 +597,7 @@ class PlotMediumAndSolution(PlotAndStoreSolution):
             time.sleep(pause)
 
         self.plt.savefig('frame_%04d.png' % (n))
-        
+
         if n == (len(t) - 1):   # finished with this run, close plot
             self.plt.close()
 
@@ -603,18 +607,19 @@ def animate_multiple_solutions(*archives):
     # Assume the array names are the same in all archives
     raise NotImplementedError  # more to do...
 
-def pulse(C=1,            # Maximum Courant number
-          Nx=200,         # spatial resolution
-          animate=True,
-          version='vectorized',
-          T=2,            # end time
-          loc='left',     # location of initial condition
-          pulse_tp='gaussian',  # pulse/init.cond. type
-          slowness_factor=2, # inverse of wave vel. in right medium
-          medium=[0.7, 0.9], # interval for right medium
-          skip_frame=1,      # skip frames in animations
-          sigma=0.05         # width measure of the pulse
-          ):
+def pulse(
+    C=1,            # Maximum Courant number
+    Nx=200,         # spatial resolution
+    animate=True,
+    version='vectorized',
+    T=2,            # end time
+    loc='left',     # location of initial condition
+    pulse_tp='gaussian',  # pulse/init.cond. type
+    slowness_factor=2, # inverse of wave vel. in right medium
+    medium=[0.7, 0.9], # interval for right medium
+    skip_frame=1,      # skip frames in animations
+    sigma=0.05         # width measure of the pulse
+    ):
     """
     Various peaked-shaped initial conditions on [0,1].
     Wave velocity is decreased by the slowness_factor inside
@@ -670,17 +675,18 @@ def pulse(C=1,            # Maximum Courant number
     # Choose the stability limit with given Nx, worst case c
     # (lower C will then use this dt, but smaller Nx)
     dt = (L/Nx)/c_0
-    cpu, hashed_input = solver(I=I, V=None, f=None, c=c, 
-                               U_0=None, U_L=None,
-                               L=L, dt=dt, C=C, T=T,
-                               user_action=action, 
-                               version=version,
-                               stability_safety_factor=1)
+    cpu, hashed_input = solver(
+        I=I, V=None, f=None, c=c,
+        U_0=None, U_L=None,
+        L=L, dt=dt, C=C, T=T,
+        user_action=action,
+        version=version,
+        stability_safety_factor=1)
 
     if cpu > 0:  # did we generate new data?
         action.close_file(hashed_input)
-        action.make_movie_file()        
+        action.make_movie_file()
     print 'cpu (-1 means no new data generated):', cpu
-    
+
 if __name__ == '__main__':
     pass

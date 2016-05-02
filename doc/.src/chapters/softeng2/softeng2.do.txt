@@ -1179,6 +1179,48 @@ C++ array classes in the C++ code, if desired.
 
 ======= Exercises =======
 
+===== Exercise: Explore computational efficiency of `numpy.sum` versus built/in `sum`
+label{softeng2:exer:sum}
+file=sumn
+
+Using the task of computing the sum of the first `n` integers, we want to
+compare the efficiency of `numpy.sum` versus Python's built-in function
+`sum`. Use IPython's `%timeit` functionality to time these two functions
+applied to three diferent arguments: `range(n)`, `xrange(n)`, and
+`arange(n)`.
+
+!bsol
+Here are experiments in IPython:
+
+!bc ipy
+In [1]: a = np.arange(n)
+
+In [2]: %timeit sum(range(n))
+10 loops, best of 3: 25 ms per loop
+
+In [3]: %timeit sum(xrange(n))
+100 loops, best of 3: 9.91 ms per loop
+
+In [4]: %timeit np.sum(range(n))
+10 loops, best of 3: 73.7 ms per loop
+
+In [5]: %timeit np.sum(xrange(n))
+10 loops, best of 3: 119 ms per loop
+
+In [6]: %timeit np.sum(a)
+1000 loops, best of 3: 630 us per loop
+
+In [7]: %timeit sum(a)
+10 loops, best of 3: 95.5 ms per loop
+!ec
+We observe that `numpy.sum` applied to a `numpy` array is by far the
+fastest method. We also see that the plain `sum` function is slow
+when applied to arrays, but faster than `numpy.sum` when applied to
+the `range` list or the `xrange` sequence. There is almost a factor
+of 200 between the best and worst method!
+!esol
+
+
 ===== Exercise: Make an improved `numpy.savez` function =====
 label{softeng2:exer:savez}
 file=Savez
@@ -1235,3 +1277,41 @@ Here is the code:
 
 # Most of the code is taken from http://stackoverflow.com/questions/22712292/how-to-use-numpy-savez-in-a-loop-for-save-more-than-one-array
 !esol
+
+===== Exercise: Visualize the impact of the Courant number =====
+label{softeng2:exer:pulse1D:C}
+file=pulse1D_Courant
+
+Use the `pulse` function in the `wave1D_dn_vc.py` to simulate a pulse
+through two media with different wave velocities. The aim is to
+visualize the impact of the Courant number $C$ on the quality of the
+solution.  Set `slowness_factor=4` and `Nx=100`.
+
+Simulate for $C=1, 0.9, 0.75$ and make an animation comparing the
+three curves (use the `animate_archives.py` program to combine the
+curves and make animations on the screen and video files).  Perform
+the investigations for different types of initial profiles: a Gaussian
+pulse, a ``cosine hat'' pulse, half a ``cosine hat'' pulse, and a plug
+pulse.
+
+!bsol
+We make a little Python script for running one ``pulse'' simulation:
+
+@@@CODE exer-softeng2/pulse1D_Courant/pulse.py
+Then we can make another (Bash) script running through the different types
+of simulations and also making video files:
+
+@@@CODE exer-softeng2/pulse1D_Courant/pulse.sh
+Note that we make separate directories for the different type initial
+profiles.
+
+!esol
+
+===== Exercise: Visualize the impact of the resolution =====
+label{softeng2:exer:pulse1D:Nx}
+file=pulse1D_Nx
+
+We solve the same set of problem as in Exercise ref{softeng2:exer:pulse1D:C},
+except that we now fix $C=1$ and instead study the impact of
+$\Delta t$ and $\Delta x$ by varying the `Nx` parameter: 20, 40, 160.
+Make animations comparing three such curves.

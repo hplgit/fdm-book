@@ -25,7 +25,7 @@ function system {
   fi
 }
 
-rm tmp_*
+rm tmp_* *.dolog
 
 if [ $# -ge 1 ]; then
   spellcheck=$1

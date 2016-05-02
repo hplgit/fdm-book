@@ -323,14 +323,126 @@ by centered differences in space and forward difference in time is
 unsuccessful, but by adding some artificial diffusion $\nu u_{xx}$,
 the method becomes stable.
 
-===== A Crank-Nicolson discretization in time and centered differences in space =====
+===== Periodic boundary conditions =====
+
+So far, we have given then value of on the left boundary, $u_0^n$, and used
+the scheme to propagate the solution signal through the domain.
+Often, we want to follow such signals for long time series, and periodic
+boundary conditions are then relevant since then enable a signal that
+leaves the right boundary to immediately enter the left boundary and propagate
+through the domain again.
+
+The periodic boundary condition is
 
 !bt
-\[ A = \frac{1 - \half i C\sin p}{1 + \half i C\sin p}\tp\]
+\[ u(0,t) = u(L,t),\quad u_0^n = u_{N_x}^ntp\]
+!et
+It means that we in the first equation, involving $u_0^n$, insert $u_{N_x}$^n$,
+and that we in the last equation, involving $u^{n+1}_{N_x}$ insert $u^{n+1}_0$.
+Normally, we can do this in the simple way that `u_1[0]` is updated as
+`u_1[Nx]` at the beginning of a new time level.
+
+In some schemes we may need $u^{n}_{N_x+1}$ and $u^{n}_{-1}$. Periodicity
+then means that these values are equal to $u^n_1$ and $u^n_{N_x-1}$,
+respectively. For the upwind scheme it is sufficient to set
+`u_1[0]=u_1[Nx]` at a new time level before computing `u[1]`, which ensures
+that `u[1]` becomes right and at the next time level `u[0]` at the current
+time level is correctly updated.
+For the Leapfrog scheme we must update `u[0]` and `u[Nx]` using the scheme:
+
+!bc pycod
+if periodic_bc:
+    i = 0
+    u[i] = u_2[i] - C*(u_1[i+1] - u_1[Nx-1])
+for i in range(1, Nx):
+    u[i] = u_2[i] - C*(u_1[i+1] - u_1[i-1])
+if periodic_bc:
+    u[Nx] = u[0]
+!ec
+
+
+===== A Crank-Nicolson discretization in time and centered differences in space =====
+
+Another obvious candidate for time discretization is the Crank-Nicolson
+method combined with centered differences in space:
+
+!bt
+\[ [D_t u]^n_i + v\half([D_{2x} u]^{n+1}_i + [D_{2x} u]^{n}_i) = 0\tp\]
+!et
+It can be nice to include the Backward Euler scheme too, via the
+$\theta$-rule$,
+
+!bt
+\[ [D_t u]^n_i + v\theta [D_{2x} u]^{n+1}_i + v(1-\theta)[D_{2x} u]^{n}_i = 0\tp\]
+!et
+This gives rise to an *implicit* scheme,
+
+!bt
+\[ u^{n+1}_i + \frac{\theta}{2} C (u^{n+1}_{i+1} - u^{n+1}_{i-1})
+= u^n_i - \frac{1-\theta}{2} C (u^{n}_{i+1} - u^{n}_{i-1})\]
+!et
+for $i=1,\ldots,N_x-1$. At the boundaries we use periodic conditions:
+
+!bt
+\[ u^{n+1}_0 = u^{n+1}_{N_x},\]
+!et
+however, this destroys the tridiagonal structure of the coefficient matrix.
+We therefore try the rough approximation
+
+!bt
+\[ u^{n+1}_0 = u^{n}_{N_x},\quad u^{n+1}_{N_x}=u^n_0\tp\]
+!et
+Otherwise, we need to prescribe $u_0^{n+1}$ and $u_{N_x}^{n+1}$.
+
+The elements on the diagonal in the matrix become:
+
+!bt
+\[ A_{i,i} = 1,\quad i=0,\ldots,N_x\tp\]
+!et
+On the subdiagonal and superdiagonal we have
+
+!bt
+\[ A_{i-1,i} = -\frac{\theta}{2} C,\quad A_{i+1,i} = \frac{\theta}{2} C,\quad i=1,\ldots,N_x-1,\]
+!et
+with $A_{0,1}=0$ and $A_{N_x-1,N_x}=0$ due to the known boundary conditions.
+And finally, the right-hand side becomes
+
+!bt
+\begin{align*}
+b_0 &= u^n_{N_x}\\
+b_i &= u^n_i - \frac{1-\theta}{2} C (u^{n}_{i+1} - u^{n}_{i-1}),\quad i=1,\ldots,N_x-1\\
+b_{N_x} &= u^n_0
+\end{align*}
+!et
+
+The dispersion relation follows from inserting $u^n_i = A^ne^{ikx}$
+and using the formula (ref{form:exp:fd1c:center}) for the spatial
+differences:
+
+!bt
+\[ A = \frac{1 - (1-\theta) i C\sin p}{1 + theta i C\sin p}\tp\]
 !et
 
 ===== The Lax-Wendroff method =====
 
+The Lax-Wendroff method is based on three ideas:
+
+ o Express $u^{n+1}_i$ in terms of quantities at $t=t_n$ by
+   means of a Taylor polynomial of second degree.
+ o Replace time-derivatives at $t=t_n$ by spatial derivatives,
+   using the PDE.
+ o Discretize the spatial derivatives by second-order differences.
+
+Let us do this:
+
+!bt
+\[ u^{n+1} = u^n_i + \Delta t\left(\frac{\partial u}{\partial t}\right)^n_i
++ \frac{1}{2}\Delta t^2\left(\frac{\partial^2 u}{\partial t^2}\right)^n_i\tp\]
+!et
+From the PDE we have that
+
+!bt
+\[ \frac{\partial}
 !bt
 \[ A = 1 - iC\sin p - 2C^2\sin^2 (p/2)\tp\]
 !et
