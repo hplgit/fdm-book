@@ -1,6 +1,7 @@
 
 ======= Diffusion in 2D =======
 label{diffu:2D}
+idx{diffusion equation!2D}
 
 We now address a diffusion in two space dimensions:
 
@@ -82,6 +83,7 @@ FIGURE: [fig-diffu/mesh3x2, width=500 frac=0.7] 3x2 2D mesh. label{diffu:2D:fig:
 
 ===== Numbering of mesh points versus equations and unknowns =====
 label{diffu:2D:numbering}
+idx{diffusion equation!2D, numbering of mesh points}
 
 # Nx=3, Ny=2
 The equations (ref{diffu:2D:theta_scheme2}) are coupled at the new
@@ -220,7 +222,7 @@ It is clearly seen that most of the elements are zero. This is a general
 feature of coefficient matrices arising from discretizing PDEs by
 finite difference methods. We say that the matrix is *sparse*.
 
-idx{sparse matrix}
+idx{diffusion equation!2D, sparse matrix}
 
 Let $A_{p,q}$ be the value of element $(p,q)$ in the coefficient matrix $A$,
 where $p$ and $q$ now correspond to the numbering of the unknowns in the
@@ -338,6 +340,8 @@ with dots for zeros and bullets for non-zeroes looks as follows (values at bound
 \]
 !et
 
+idx{diffusion equation!2D, banded matrix}
+
 !bnotice The coefficient matrix is banded
 Besides being sparse, we observe that the coefficient matrix is *banded*:
 it has five distinct bands. We have the diagonal $A_{i,i}$, the
@@ -401,6 +405,7 @@ The right-hand side is set up as follows.
 
 ===== Implementation with a dense coefficient matrix =====
 label{diffu:2D:impl:dense}
+idx{diffusion equation!2D, implementation}
 
 The goal now is to map the algorithms in the previous section to
 Python code. One should for computational efficiency reasons take
@@ -596,6 +601,7 @@ callback function.
 
 ===== Verification: exact numerical solution =====
 label{diffu:2D:verify}
+idx{diffusion equation!2D, verification (exact num. sol.)}
 
 A good test example to start with is one that preserves the solution
 $u=0$, i.e., $f=0$ and $I(x,y)=0$. This trivial solution can uncover
@@ -665,18 +671,18 @@ def test_quadratic():
 
 ===== Verification: convergence rates =====
 label{diffu:2D:convrate}
+idx{diffusion equation!2D, verification (conv. rates)}
 
-For any manufactured solution of the PDE problem we can compute the
-numerical error and check that this error has the expected dependence
-on the discretization parameters. Truncation error analysis and other
-forms of error analysis point to a formula like
+For 2D verification with convergence rate computations, the expressions
+and computations just build naturally on what we saw for 1D diffusion.
+Truncation error analysis and other forms of error analysis point to a 
+numerical error formula like
 
 !bt
-\[ E = C_t\Delta t^p + C_x\Delta x^2 + C_y\Delta y^2\]
+\[ E = C_t\Delta t^p + C_x\Delta x^2 + C_y\Delta y^2,\]
 !et
-for the error in a 2D problem, where $p$, $C_t$, $C_x$, and $C_y$ are
-unknown constants. A Crank-Nicolson method has $p=2$, while the Forward
-and Backward Euler schemes have $p=1$.
+where $p$, $C_t$, $C_x$, and $C_y$ are unknown constants. A Crank-Nicolson 
+method has $p=2$, while the Forward and Backward Euler schemes have $p=1$.
 
 When checking the error formula empirically, we need to reduce it to
 a form $E=Ch^r$ with a single discretization parameter $h$ and some
@@ -692,9 +698,8 @@ where $K$ is a constant. The error formula then becomes
 !bt
 \[ E = C_t Kh + C_xh + C_y = \tilde C h,\quad \tilde C = C_tK + C_x + C_y\tp\]
 !et
-The simplest choice is $K=1$, but if we consider
-the Forward Euler method instead, stability requires $\Delta t = hK \leq
-h/(4\dfc)$, so $K\leq 1/(4\dfc)$.
+The simplest choice is obviously $K=1$. With the Forward Euler method, however,
+stability requires $\Delta t = hK \leq h/(4\dfc)$, so $K\leq 1/(4\dfc)$.
 
 For the Crank-Nicolson method, $p=2$, and we can simply choose
 
@@ -743,6 +748,7 @@ rate test. Two potential difficulties are important to be aware of:
 
 ===== Implementation with a sparse coefficient matrix =====
 label{diffu:2D:impl:sparse}
+idx{diffusion equation!2D, implementation (sparse)}
 
 We used a sparse matrix implementation in Section ref{diffu:pde1:impl:sparse}
 for a 1D problem with a tridiagonal matrix. The present matrix, arising
@@ -1004,7 +1010,7 @@ More precisely, with $b=N_x+1$ as the *bandwidth* of the matrix
 [[[
 
 [hpl: Problem: if $N_x\gg N_y$ one should number the unknowns in $y$
-direction to get a smaller bandwidth.]
+direction to get a smaller bandwidth. S: enough to just comment it?]
 
 The complete code is found in the `solver_sparse` function in the file
 "`diffu2D_u0.py`": "${src_diffu}/diffu2D_u0.py".
@@ -1106,6 +1112,8 @@ label{diffu:2D:iter:startvector}
 !et
 
 === Relaxation ===
+
+idx{relaxation}
 
 A common technique in iterative methods is to introduce a *relaxation*,
 which means that the new approximation is a weighted mean of the
@@ -1995,6 +2003,7 @@ new sweep but visiting the points in reverse order.
 
 ===== The Conjugate gradient method =====
 label{diffu:2D:CG}
+idx{conjugate gradient method}
 
 There is no simple intuitive derivation of the Conjugate gradient
 method, so we refer to the many excellent expositions in the
@@ -2134,7 +2143,7 @@ def solver_sparse(
         u_1, u = u, u_1
 !ec
 The number of iterations in the Conjugate gradient method is of interest,
-but unfortunately not available from the `cg` function, so
+but is unfortunately not available from the `cg` function. Therefore,
 we perform a trick: in each iteration a user function `CG_callback`
-is called where we accumulate the number of iteration in a list
+is called where we accumulate the number of iterations in a list
 `CG_iter`.
