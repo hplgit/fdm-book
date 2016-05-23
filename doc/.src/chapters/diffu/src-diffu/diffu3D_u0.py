@@ -36,7 +36,7 @@ z     Mesh points in z.
 t     Mesh points in time.
 n     Index counter in time.
 u     Unknown at current/new time level.
-u_1   u at the previous time level.
+u_n   u at the previous time level.
 dx    Constant mesh spacing in x.
 dy    Constant mesh spacing in y.
 dz    Constant mesh spacing in z.
@@ -97,7 +97,7 @@ def solver_sparse_CG(
     # unknown u at new time level
     u   = np.zeros((Nx+1, Ny+1, Nz+1)) 
     # u at the previous time level
-    u_1 = np.zeros((Nx+1, Ny+1, Nz+1)) 
+    u_n = np.zeros((Nx+1, Ny+1, Nz+1)) 
 
     Ix = range(0, Nx+1)
     Iy = range(0, Ny+1)
@@ -125,11 +125,11 @@ def solver_sparse_CG(
         _U_Lz = float(U_Lz)  # make copy of U_Lz
         U_Lz = lambda t: _U_Lz
 
-    # Load initial condition into u_1
+    # Load initial condition into u_n
     for i in Ix:
         for j in Iy:
             for k in Iz:
-                u_1[i,j,k] = I(x[i], y[j], z[k])
+                u_n[i,j,k] = I(x[i], y[j], z[k])
 
     # 3D coordinate arrays for vectorized function evaluations
     xv = x[:,np.newaxis,np.newaxis]
@@ -137,7 +137,7 @@ def solver_sparse_CG(
     zv = z[np.newaxis,np.newaxis,:]
 
     if user_action is not None:
-        user_action(u_1, x, xv, y, yv, z, zv, t, 0)
+        user_action(u_n, x, xv, y, yv, z, zv, t, 0)
 
     N = (Nx+1)*(Ny+1)*(Nz+1)
     main   = np.zeros(N)            	# diagonal
@@ -205,11 +205,11 @@ def solver_sparse_CG(
 
                 for i in Ix[1:-1]:           # interior nodes
                     p = m(i,j,k)                   
-                    b[p] = u_1[i,j,k] + \
+                    b[p] = u_n[i,j,k] + \
                       (1-theta)*(
-                      Fx*(u_1[i+1,j,k] - 2*u_1[i,j,k] + u_1[i-1,j,k]) +\
-                      Fy*(u_1[i,j+1,k] - 2*u_1[i,j,k] + u_1[i,j-1,k]) +
-                      Fz*(u_1[i,j,k+1] - 2*u_1[i,j,k] + u_1[i,j,k-1]))\
+                      Fx*(u_n[i+1,j,k] - 2*u_n[i,j,k] + u_n[i-1,j,k]) +\
+                      Fy*(u_n[i,j+1,k] - 2*u_n[i,j,k] + u_n[i,j-1,k]) +
+                      Fz*(u_n[i,j,k+1] - 2*u_n[i,j,k] + u_n[i,j,k-1]))\
                         + theta*dt*f(i*dx,j*dy,k*dz,(n+1)*dt) + \
                       (1-theta)*dt*f(i*dx,j*dy,k*dz,n*dt)
                 i = Nx;  p = m(i,j,k);  b[p] = U_Lx(t[n+1]) # boundary node
@@ -240,19 +240,19 @@ def solver_sparse_CG(
                 # Interior i points: i=1,...,N_x-1
                 imin = Ix[1]
                 imax = Ix[-1]  # for slice, max i index is Ix[-1]-1
-                b[m(imin,j,k):m(imax,j,k)] = u_1[imin:imax,j,k] + \
+                b[m(imin,j,k):m(imax,j,k)] = u_n[imin:imax,j,k] + \
                       (1-theta)*(Fx*(
-                  u_1[imin+1:imax+1,j,k] -
-                2*u_1[imin:imax,j,k] +
-                  u_1[imin-1:imax-1,j,k]) +
+                  u_n[imin+1:imax+1,j,k] -
+                2*u_n[imin:imax,j,k] +
+                  u_n[imin-1:imax-1,j,k]) +
                                  Fy*(
-                  u_1[imin:imax,j+1,k] -
-                2*u_1[imin:imax,j,k] +
-                  u_1[imin:imax,j-1,k]) + \
+                  u_n[imin:imax,j+1,k] -
+                2*u_n[imin:imax,j,k] +
+                  u_n[imin:imax,j-1,k]) + \
                                  Fz*(
-                  u_1[imin:imax,j,k+1] -
-                2*u_1[imin:imax,j,k] +
-                  u_1[imin:imax,j,k-1])) + \
+                  u_n[imin:imax,j,k+1] -
+                2*u_n[imin:imax,j,k] +
+                  u_n[imin:imax,j,k-1])) + \
                     theta*dt*f_a_np1[imin:imax,j,k] + \
                   (1-theta)*dt*f_a_n[imin:imax,j,k]
             j = Ny;  b[m(0,j,k):m(Nx+1,j,k)] = U_Ly(t[n+1]) # j=Ny, boundary mesh line
@@ -275,8 +275,8 @@ def solver_sparse_CG(
         if user_action is not None:
             user_action(u, x, xv, y, yv, z, zv, t, n+1)
 
-        # Update u_1 before next step
-        u_1, u = u, u_1
+        # Update u_n before next step
+        u_n, u = u, u_n
 
     t1 = time.clock()
 

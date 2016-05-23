@@ -29,6 +29,7 @@ with different spatial resolution is trivial,
 so it is easier to let $\Delta x$ vary in the simulations than $\Delta t$.
 
 ===== Callback function for user-specific actions =====
+label{wave:pde1:impl:useraction}
 
 idx{callback function}
 
@@ -56,6 +57,18 @@ to carry out special problem-dependent actions (like visualization),
 it is a common technique to leave those actions to user-supplied
 callback functions.
 
+The callback function can be used to terminate the solution process
+if the user returns `True`. For example,
+
+!bt
+def my_user_action_function(u, x, t, n):
+    return np.abs(u).max() > 10
+!et
+is a callback function that will terminate the solver function of the
+amplitude of the waves exceed 10, which is here considered as a numerical
+instability.
+
+
 ===== The solver function =====
 label{wave:pde1:impl:solver}
 
@@ -63,11 +76,17 @@ A first attempt at a solver function is listed below.
 
 @@@CODE src-wave/wave1D/wave1D_u0.py fromto: import numpy@def test_quad
 
-A remark on the computation of `dx` and `dt` is probably necessary.
-Although we give `dt` and compute `dx` via `C` and `c`, the resulting
-`t` and `x` meshes do not necessarily correspond exactly to these values
-because of rounding errors. To explicitly ensure that `dx` and `dt`
-correspond to the cell sizes in `x` and `t`, we recompute the values.
+A couple of remaks about the above code is perhaps necssary:
+
+ * Although we give `dt` and compute `dx` via `C` and `c`, the resulting
+   `t` and `x` meshes do not necessarily correspond exactly to these values
+   because of rounding errors. To explicitly ensure that `dx` and `dt`
+   correspond to the cell sizes in `x` and `t`, we recompute the values.
+ * According to the convention described in Section ref{wave:pde1:impl:useraction}, a true value returned from `user_action` should terminate the simulation, here implemented by a `break` statement inside the for loop in the solver.
+
+ * return with u_1, remark error if break out of user_action and return
+   (senere! vent til du ser det!)
+ * solver as a generator/iterator with yield u, x, t, n oppgave??
 
 #Too trivial here:
 #Checking that a solution $u^n_i$ stays constant throughout some
@@ -620,19 +639,19 @@ of times, we limit our vectorization efforts to this loop:
 
 !bc pycod
 for i in range(1, Nx):
-    u[i] = 2*u_1[i] - u_2[i] + \
-           C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1])
+    u[i] = 2*u_n[i] - u_nm1[i] + \
+           C2*(u_n[i-1] - 2*u_n[i] + u_n[i+1])
 !ec
 The vectorized version becomes
 
 !bc pycod
-u[1:-1] = - u_2[1:-1] + 2*u_1[1:-1] + \
-          C2*(u_1[:-2] - 2*u_1[1:-1] + u_1[2:])
+u[1:-1] = - u_nm1[1:-1] + 2*u_n[1:-1] + \
+          C2*(u_n[:-2] - 2*u_n[1:-1] + u_n[2:])
 !ec
 or
 !bc pycod
-u[1:Nx] = 2*u_1[1:Nx]- u_2[1:Nx] + \
-          C2*(u_1[0:Nx-1] - 2*u_1[1:Nx] + u_1[2:Nx+1])
+u[1:Nx] = 2*u_n[1:Nx]- u_nm1[1:Nx] + \
+          C2*(u_n[0:Nx-1] - 2*u_n[1:Nx] + u_n[2:Nx+1])
 !ec
 
 #We may vectorize the other loops regarding the initial condition and
@@ -780,77 +799,79 @@ $N_x/10$ times as fast as the scalar code!
 ===== Remark on the updating of arrays =====
 label{wave:pde1:impl:ref:switch}
 
-At the end of each time step we need to update the `u_2` and `u_1`
+At the end of each time step we need to update the `u_nm1` and `u_n`
 arrays such that they have the right content for the next time step:
 
 !bc pycod
-u_2[:] = u_1
-u_1[:] = u
+u_nm1[:] = u_n
+u_n[:] = u
 !ec
-The order here is important! (Updating `u_1` first, makes `u_2` equal
-to `u`, which is wrong.)
+The order here is important: updating `u_n` first, makes `u_nm1` equal
+to `u`, which is wrong!
 
-The assignment `u_1[:] = u` copies the content of the `u` array into
-the elements of the `u_1` array. Such copying takes time, but
+The assignment `u_n[:] = u` copies the content of the `u` array into
+the elements of the `u_n` array. Such copying takes time, but
 that time is negligible compared to the time needed for
 computing `u` from the finite difference formula,
 even when the formula has a vectorized implementation.
 However, efficiency of program code is a key topic when solving
 PDEs numerically (particularly when there are two or three
 space dimensions), so it must be mentioned that there exists a
-much more efficient way of making the arrays `u_2` and `u_1`
+much more efficient way of making the arrays `u_nm1` and `u_n`
 ready for the next time step. The idea is based on *switching
 references* and explained as follows.
 
 A Python variable is actually a reference to some object (C programmers
-may think of pointers). Instead of copying data, we can let `u_2`
-refer to the `u_1` object and `u_1` refer to the `u` object.
+may think of pointers). Instead of copying data, we can let `u_nm1`
+refer to the `u_n` object and `u_n` refer to the `u` object.
 This is a very efficient operation (like switching pointers in C).
 A naive implementation like
 
 !bc pycod
-u_2 = u_1
-u_1 = u
+u_nm1 = u_n
+u_n = u
 !ec
-will fail, however, because now `u_2` refers to the `u_1` object,
-but then the name `u_1` refers to `u`, so that this `u` object
-has two references, `u_1` and `u`, while our third array, originally
-referred to by `u_2`, has no more references and is lost.
-This means that the variables `u`, `u_1`, and `u_2` refer to two
+will fail, however, because now `u_nm1` refers to the `u_n` object,
+but then the name `u_n` refers to `u`, so that this `u` object
+has two references, `u_n` and `u`, while our third array, originally
+referred to by `u_nm1`, has no more references and is lost.
+This means that the variables `u`, `u_n`, and `u_nm1` refer to two
 arrays and not three. Consequently, the computations at the next
 time level will be messed up since updating the elements in
-`u` will imply updating the elements in `u_1` too so the solution
+`u` will imply updating the elements in `u_n` too so the solution
 at the previous time step, which is crucial in our formulas, is
 destroyed.
 
-While `u_2 = u_1` is fine, `u_1 = u` is problematic, so
+While `u_nm1 = u_n` is fine, `u_n = u` is problematic, so
 the solution to this problem is to ensure that `u`
-points to the `u_2` array. This is mathematically wrong, but
+points to the `u_nm1` array. This is mathematically wrong, but
 new correct values will be filled into `u` at the next time step
 and make it right.
 
 The correct switch of references is
 
 !bc pycod
-tmp = u_2
-u_2 = u_1
-u_1 = u
+tmp = u_nm1
+u_nm1 = u_n
+u_n = u
 u = tmp
 !ec
 We can get rid of the temporary reference `tmp` by writing
 
 !bc pycod
-u_2, u_1, u = u_1, u, u_2
+u_nm1, u_n, u = u_n, u, u_nm1
 !ec
 This switching of references for updating our arrays
 will be used in later implementations.
 
 !bwarning Caution:
-The update `u_2, u_1, u = u_1, u, u_2` leaves wrong content in `u`
+The update `u_nm1, u_n, u = u_n, u, u_nm1` leaves wrong content in `u`
 at the final time step. This means that if we return `u`, as we
-do in the example codes here, we actually return `u_2`, which is
+do in the example codes here, we actually return `u_nm1`, which is
 obviously wrong. It is therefore important to adjust the content
-of `u` to `u = u_1` before returning `u`.
+of `u` to `u = u_n` before returning `u`. (Note that
+the `user_action` function
+reduces the need to return the solution from the solver.)
 !ewarning
 
 
@@ -1045,6 +1066,51 @@ Modifying the code to store all solutions for each $C$ value and also each corre
 
 @@@CODE exer-wave/wave_numerics_comparison.py
 
+!esol
+
+===== Exercise: Implementing the solver function as a generator =====
+label{wave:exer:useraction:generator}
+file=wave1D_u0_generator
+
+The callback function `user_action(u, x, t, n)` is called from the
+`solver` function (in, e.g., `wave1D_u0.py`) at every time level and lets
+the user work perform desired actions with the solution, like plotting it
+on the screen. We have implemented the callback function in the typical
+way it would have been done in C and Fortran. Specifically, the code looks
+like
+
+!bc pycod
+if user_action is not None:
+    if user_action(u, x, t, n):
+        break
+!ec
+Many Python programmers, however, may claim that `solver` is an iterative
+process, and that iterative processes with callbacks to the user code is
+more elegantly implemented as *generators*. The rest of the text has little
+meaning unless you are familiar with Python generators and the `yield`
+statement.
+
+Instead of calling `user_action`, the `solver` function
+issues a `yield` statement, which is a kind of `return` statement:
+
+!bc pycod
+yield u, x, t, n
+!ec
+The program control is directed back to the calling code:
+
+!bc pycod
+for u, x, t, n in solver(...):
+    # Do something with u at t[n]
+!ec
+When the block is done, `solver` continues with the statement after `yield`.
+Note that the functionality of terminating the solution process if
+`user_action` returns a `True` value is not possible to implement in the
+generator case.
+
+Implement the `solver` function as a generator, and plot the solution
+at each time step.
+
+!bsol
 !esol
 
 ===== Project: Calculus with 1D mesh functions =====

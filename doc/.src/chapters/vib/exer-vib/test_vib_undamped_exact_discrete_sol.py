@@ -1,7 +1,8 @@
 """Verify exact solution of vib_undamped.solver function."""
+import os, sys
+sys.path.insert(0, os.path.join(os.pardir, 'src-vib'))
 from vib_undamped import solver
 from numpy import arcsin as asin, pi, cos, abs
-from scitools.std import plot
 
 def test_solver_exact_discrete_solution():
     def tilde_w(w, dt):
@@ -21,11 +22,14 @@ def test_solver_exact_discrete_solution():
     dt = P/N
     u, t = solver(I, w, dt, T)
     u_e = u_numerical_exact(t)
-    diff = abs(u_e - u).max()
+    error= abs(u_e - u).max()
     # Make a plot in a file, but not on the screen
+    from scitools.std import plot
     plot(t, u, 'bo', t, u_e, 'r-',
-         legend=('numerical', 'exact'), show=False, savefig='tmp.png')
+         legend=('numerical', 'exact'), show=False,
+         savefig='tmp.png')
 
-    assert diff < 1E-14
+    assert error < 1E-14
 
-test_solver_exact_discrete_solution()
+if __name__ == '__main__':
+    test_solver_exact_discrete_solution()

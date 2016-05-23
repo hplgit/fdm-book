@@ -17,12 +17,17 @@ oscillate in time, typically in a damped or undamped sinusoidal
 fashion.  Such solutions put certain demands on the numerical methods
 compared to other phenomena whose solutions are monotone or very smooth.
 Both the frequency and amplitude of the oscillations need to be
-accurately handled by the numerical schemes. Most of the reasoning and
-specific building blocks introduced in the forthcoming text can be
-reused to construct sound methods for partial differential equations
+accurately handled by the numerical schemes. The forthcoming text
+presents a range of different methods, from classical ones
+(Runge-Kutta and midpoint/Crank-Nicolson methods), to more
+modern and popular symplectic (geometric) integration schemes (Leapfrog,
+Euler-Cromer, and
+Stoermer-Verlet
+methods), but with a clear emphasis on the latter. Vibration problems
+occur throughout mechanics and physics, but the methods discussed
+in this text are also fundamental for constructing successful algorithms
+for partial differential equations
 of wave nature in multiple spatial dimensions.
-
-[**hpl 1**: Need to discuss errors also for the damped and nonlinear models. At least the frequency errors must be illustrated here as well and investigated numerically, either in text or exercises.]
 
 .. _vib:model1:
 
@@ -115,14 +120,17 @@ introducing a uniformly partitioned time mesh.
 The points in the mesh are :math:`t_n=n\Delta t`, :math:`n=0,1,\ldots,N_t`,
 where :math:`\Delta t = T/N_t` is the constant length of the time steps.
 We introduce a mesh function :math:`u^n` for :math:`n=0,1,\ldots,N_t`, which
-approximates the exact solution at the mesh points. The mesh
-function will be computed from algebraic equations derived from
+approximates the exact solution at the mesh points. (Note that
+:math:`n=0` is the known initial condition, so :math:`u^n` is identical to the mathematical
+:math:`u` at this point.) The mesh
+function :math:`u^n` will be computed from algebraic equations derived from
 the differential equation problem.
 
 Step 2: Fulfilling the equation at discrete time points
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ODE is to be satisfied at each mesh point:
+The ODE is to be satisfied at each mesh point where the solution
+must be found:
 
 .. _Eq:vib:ode1:step2:
 
@@ -187,8 +195,8 @@ Step 4: Formulating a recursive algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To formulate the computational algorithm, we assume that we
-have already computed :math:`u^{n-1}` and :math:`u^n` such that :math:`u^{n+1}` is the
-unknown value, which we can readily solve for:
+have already computed :math:`u^{n-1}` and :math:`u^n`, such that :math:`u^{n+1}` is the
+unknown value to be solved for:
 
 .. _Eq:vib:ode1:step4:
 
@@ -203,8 +211,11 @@ unknown value, which we can readily solve for:
 The computational algorithm is simply to apply :ref:`(7) <Eq:vib:ode1:step4>`
 successively for :math:`n=1,2,\ldots,N_t-1`. This numerical scheme sometimes
 goes under the name
-Stormer's
-method or `Verlet integration <http://en.wikipedia.org/wiki/Verlet_integration>`__.
+Stoermer's
+method, `Verlet integration <http://en.wikipedia.org/wiki/Verlet_integration>`__, or the Leapfrog method
+(one should note
+that Leapfrog is used for many quite different methods for quite
+different differential equations!).
 
 Computing the first step
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -249,14 +260,14 @@ The algorithm is more precisely expressed directly in Python:
 
 .. code-block:: python
 
-        t = linspace(0, T, Nt+1)  # mesh points in time
-        dt = t[1] - t[0]          # constant time step
-        u = zeros(Nt+1)           # solution
-        
-        u[0] = I
-        u[1] = u[0] - 0.5*dt**2*w**2*u[0]
-        for n in range(1, Nt):
-            u[n+1] = 2*u[n] - u[n-1] - dt**2*w**2*u[n]
+    t = linspace(0, T, Nt+1)  # mesh points in time
+    dt = t[1] - t[0]          # constant time step
+    u = zeros(Nt+1)           # solution
+    
+    u[0] = I
+    u[1] = u[0] - 0.5*dt**2*w**2*u[0]
+    for n in range(1, Nt):
+        u[n+1] = 2*u[n] - u[n-1] - dt**2*w**2*u[n]
 
 
 .. admonition:: Remark on using ``w`` for :math:`\omega` in computer code
@@ -342,24 +353,24 @@ input :math:`I`, :math:`\omega`, :math:`\Delta t`, and :math:`T`:
 
 .. code-block:: python
 
-        import numpy as np
-        import matplotlib.pyplot as plt
-        
-        def solver(I, w, dt, T):
-            """
-            Solve u'' + w**2*u = 0 for t in (0,T], u(0)=I and u'(0)=0,
-            by a central finite difference method with time step dt.
-            """
-            dt = float(dt)
-            Nt = int(round(T/dt))
-            u = np.zeros(Nt+1)
-            t = np.linspace(0, Nt*dt, Nt+1)
-        
-            u[0] = I
-            u[1] = u[0] - 0.5*dt**2*w**2*u[0]
-            for n in range(1, Nt):
-                u[n+1] = 2*u[n] - u[n-1] - dt**2*w**2*u[n]
-            return u, t
+    import numpy as np
+    import matplotlib.pyplot as plt
+    
+    def solver(I, w, dt, T):
+        """
+        Solve u'' + w**2*u = 0 for t in (0,T], u(0)=I and u'(0)=0,
+        by a central finite difference method with time step dt.
+        """
+        dt = float(dt)
+        Nt = int(round(T/dt))
+        u = np.zeros(Nt+1)
+        t = np.linspace(0, Nt*dt, Nt+1)
+    
+        u[0] = I
+        u[1] = u[0] - 0.5*dt**2*w**2*u[0]
+        for n in range(1, Nt):
+            u[n+1] = 2*u[n] - u[n-1] - dt**2*w**2*u[n]
+        return u, t
 
 We have imported ``numpy`` and ``matplotlib`` under the names ``np`` and ``plt``,
 respectively, as this is very common in the Python scientific
@@ -377,37 +388,37 @@ convenient to have:
 
 .. code-block:: python
 
-        def u_exact(t, I, w):
-            return I*np.cos(w*t)
-        
-        def visualize(u, t, I, w):
-            plt.plot(t, u, 'r--o')
-            t_fine = np.linspace(0, t[-1], 1001)  # very fine mesh for u_e
-            u_e = u_exact(t_fine, I, w)
-            plt.hold('on')
-            plt.plot(t_fine, u_e, 'b-')
-            plt.legend(['numerical', 'exact'], loc='upper left')
-            plt.xlabel('t')
-            plt.ylabel('u')
-            dt = t[1] - t[0]
-            plt.title('dt=%g' % dt)
-            umin = 1.2*u.min();  umax = -umin
-            plt.axis([t[0], t[-1], umin, umax])
-            plt.savefig('tmp1.png');  plt.savefig('tmp1.pdf')
+    def u_exact(t, I, w):
+        return I*np.cos(w*t)
+    
+    def visualize(u, t, I, w):
+        plt.plot(t, u, 'r--o')
+        t_fine = np.linspace(0, t[-1], 1001)  # very fine mesh for u_e
+        u_e = u_exact(t_fine, I, w)
+        plt.hold('on')
+        plt.plot(t_fine, u_e, 'b-')
+        plt.legend(['numerical', 'exact'], loc='upper left')
+        plt.xlabel('t')
+        plt.ylabel('u')
+        dt = t[1] - t[0]
+        plt.title('dt=%g' % dt)
+        umin = 1.2*u.min();  umax = -umin
+        plt.axis([t[0], t[-1], umin, umax])
+        plt.savefig('tmp1.png');  plt.savefig('tmp1.pdf')
 
 A corresponding main program calling these functions to simulate
 a given number of periods (``num_periods``) may take the form
 
 .. code-block:: python
 
-        I = 1
-        w = 2*pi
-        dt = 0.05
-        num_periods = 5
-        P = 2*pi/w    #  one period
-        T = P*num_periods
-        u, t = solver(I, w, dt, T)
-        visualize(u, t, I, w, dt)
+    I = 1
+    w = 2*pi
+    dt = 0.05
+    num_periods = 5
+    P = 2*pi/w    #  one period
+    T = P*num_periods
+    u, t = solver(I, w, dt, T)
+    visualize(u, t, I, w, dt)
 
 Adjusting some of the input parameters via the command line can be
 handy. Here is a code segment using the ``ArgumentParser`` tool in
@@ -416,14 +427,14 @@ pairs on the command line:
 
 .. code-block:: python
 
-        import argparse
-        parser = argparse.ArgumentParser()
-        parser.add_argument('--I', type=float, default=1.0)
-        parser.add_argument('--w', type=float, default=2*pi)
-        parser.add_argument('--dt', type=float, default=0.05)
-        parser.add_argument('--num_periods', type=int, default=5)
-        a = parser.parse_args()
-        I, w, dt, num_periods = a.I, a.w, a.dt, a.num_periods
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--I', type=float, default=1.0)
+    parser.add_argument('--w', type=float, default=2*pi)
+    parser.add_argument('--dt', type=float, default=0.05)
+    parser.add_argument('--num_periods', type=int, default=5)
+    a = parser.parse_args()
+    I, w, dt, num_periods = a.I, a.w, a.dt, a.num_periods
 
 Such parsing of the command line is explained in more detail in
  the
@@ -433,14 +444,16 @@ A typical execution goes like
 
 .. code-block:: text
 
-        Terminal> python vib_undamped.py --num_periods 20 --dt 0.1
+    Terminal> python vib_undamped.py --num_periods 20 --dt 0.1
+
+.. index:: vectorization
 
 Computing :math:`u^{\prime}`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In mechanical vibration applications one is often interested in
-computing the velocity :math:`v(t)=u^{\prime}(t)` after :math:`u(t)` has been computed.
-This can be done by a central difference,
+computing the velocity :math:`v(t)=u^{\prime}(t)` after :math:`u(t)` has been
+computed.  This can be done by a central difference,
 
 .. _Eq:_auto3:
 
@@ -463,29 +476,28 @@ Typical (scalar) code is
 
 .. code-block:: python
 
-        v = np.zeros_like(u)  # or v = np.zeros(len(u))
-        # Use central difference for internal points
-        for i in range(1, len(u)-1):
-            v[i] = (u[i+1] - u[i-1])/(2*dt)
-        # Use initial condition for u'(0) when i=0
-        v[0] = 0
-        # Use backward difference at the final mesh point
-        v[-1] = (u[-1] - u[-2])/dt
+    v = np.zeros_like(u)  # or v = np.zeros(len(u))
+    # Use central difference for internal points
+    for i in range(1, len(u)-1):
+        v[i] = (u[i+1] - u[i-1])/(2*dt)
+    # Use initial condition for u'(0) when i=0
+    v[0] = 0
+    # Use backward difference at the final mesh point
+    v[-1] = (u[-1] - u[-2])/dt
 
-Since the loop is slow for large :math:`N_t`, we
-can get rid of the loop by
-vectorizing the central difference. The above code segment
-goes as follows in its vectorized version (see the problem
-`Differentiate a function <http://hplgit.github.io/decay-book/doc/pub/book/sphinx/html/._decay-book005.html#decay:exer:dudt>`__ in
-`Finite Difference Computing with Exponential Decay Models <http://tinyurl.com/nclmcng/web>`__ [Ref1]_
-for explanation of details):
+Since the loop is slow for large :math:`N_t`, we can get rid of the loop by
+vectorizing the central difference. The above code segment goes as
+follows in its vectorized version (see the problem
+`Differentiate a function <http://hplgit.github.io/decay-book/doc/pub/book/sphinx/html/._decay-book005.html#decay:exer:dudt>`__ in `Finite
+Difference Computing with Exponential Decay Models <http://tinyurl.com/nclmcng/web>`__ [Ref1]_ for
+explanation of details):
 
 .. code-block:: python
 
-        v = np.zeros_like(u)
-        v[1:-1] = (u[2:] - u[:-2])/(2*dt)  # central difference
-        v[0] = 0                           # boundary condition u'(0)
-        v[-1] = (u[-1] - u[-2])/dt         # backward difference
+    v = np.zeros_like(u)
+    v[1:-1] = (u[2:] - u[:-2])/(2*dt)  # central difference
+    v[0] = 0                           # boundary condition u'(0)
+    v[-1] = (u[-1] - u[-2])/dt         # backward difference
 
 .. _vib:ode1:verify:
 
@@ -516,16 +528,16 @@ shows the details of how we use the hand calculations to test the code:
 
 .. code-block:: python
 
-        def test_three_steps():
-            from math import pi
-            I = 1;  w = 2*pi;  dt = 0.1;  T = 1
-            u_by_hand = np.array([1.000000000000000,
-                                  0.802607911978213,
-                                  0.288358920740053])
-            u, t = solver(I, w, dt, T)
-            diff = np.abs(u_by_hand - u[:3]).max()
-            tol = 1E-14
-            assert diff < tol
+    def test_three_steps():
+        from math import pi
+        I = 1;  w = 2*pi;  dt = 0.1;  T = 1
+        u_by_hand = np.array([1.000000000000000,
+                              0.802607911978213,
+                              0.288358920740053])
+        u, t = solver(I, w, dt, T)
+        diff = np.abs(u_by_hand - u[:3]).max()
+        tol = 1E-14
+        assert diff < tol
 
 This function is a proper *test function*,
 compliant with the pytest and nose testing
@@ -542,19 +554,20 @@ section `Unit tests and test functions <http://hplgit.github.io/decay-book/doc/p
 `Finite Difference Computing with Exponential Decay Models <http://tinyurl.com/nclmcng/web>`__ [Ref1]_
 for more details on how to construct test functions and utilize nose
 or pytest for automatic execution of tests. Our recommendation is to
-use pytest and run all test functions in ``vib_undamped.py`` by
+use pytest. With this choice, you can
+run all test functions in ``vib_undamped.py`` by
 
 .. code-block:: text
 
-        Terminal> py.test -s -v vib_undamped.py
-        ============================= test session starts ======...
-        platform linux2 -- Python 2.7.9 -- ...
-        collected 2 items
-        
-        vib_undamped.py::test_three_steps PASSED
-        vib_undamped.py::test_convergence_rates PASSED
-        
-        =========================== 2 passed in 0.19 seconds ===...
+    Terminal> py.test -s -v vib_undamped.py
+    ============================= test session starts ======...
+    platform linux2 -- Python 2.7.9 -- ...
+    collected 2 items
+    
+    vib_undamped.py::test_three_steps PASSED
+    vib_undamped.py::test_convergence_rates PASSED
+    
+    =========================== 2 passed in 0.19 seconds ===...
 
 .. index::
    single: verification; polynomial solutions
@@ -592,10 +605,10 @@ proceeding.
 
 In the present problem, computing convergence rates means that we must
 
- * perform :math:`m` simulations, halving the time steps as: :math:`\Delta t_i=2^{-i}\Delta t_0`, :math:`i=0,\ldots,m-1`,
+ * perform :math:`m` simulations, halving the time steps as: :math:`\Delta t_i=2^{-i}\Delta t_0`, :math:`i=1,\ldots,m-1`, and :math:`\Delta t_i` is the time step used in simulation :math:`i`;
 
  * compute the :math:`L^2` norm of the error,
-   :math:`E_i=\sqrt{\Delta t_i\sum_{n=0}^{N_t-1}(u^n-{u_{\small\mbox{e}}}(t_n))^2}` in each case,
+   :math:`E_i=\sqrt{\Delta t_i\sum_{n=0}^{N_t-1}(u^n-{u_{\small\mbox{e}}}(t_n))^2}` in each case;
 
  * estimate the convergence rates :math:`r_i` based on two consecutive
    experiments :math:`(\Delta t_{i-1}, E_{i-1})` and :math:`(\Delta t_{i}, E_{i})`,
@@ -609,7 +622,7 @@ The computed rates :math:`r_0,r_1,\ldots,r_{m-2}` hopefully converge to the
 number 2 in the present
 problem, because theory (from the section :ref:`vib:ode1:analysis`) shows
 that the error of the numerical method we use behaves like :math:`\Delta t^2`.
-The convergence of the sequence of rates :math:`r_0,r_1,\ldots,r_{m-2}`
+The convergence of the sequence :math:`r_0,r_1,\ldots,r_{m-2}`
 demands that the time steps
 :math:`\Delta t_i` are sufficiently small for the error model :math:`E_i=C(\Delta t_i)^r`
 to be valid.
@@ -619,40 +632,38 @@ All the implementational details of computing the sequence
 
 .. code-block:: python
 
-        def convergence_rates(m, solver_function, num_periods=8):
-            """
-            Return m-1 empirical estimates of the convergence rate
-            based on m simulations, where the time step is halved
-            for each simulation.
-            solver_function(I, w, dt, T) solves each problem, where T
-            is based on simulation for num_periods periods.
-            """
-            from math import pi
-            w = 0.35; I = 0.3       # just chosen values
-            P = 2*pi/w              # period
-            dt = P/30               # 30 time step per period 2*pi/w
-            T = P*num_periods
-        
-            dt_values = []
-            E_values = []
-            for i in range(m):
-                u, t = solver_function(I, w, dt, T)
-                u_e = u_exact(t, I, w)
-                E = np.sqrt(dt*np.sum((u_e-u)**2))
-                dt_values.append(dt)
-                E_values.append(E)
-                dt = dt/2
-        
-            r = [np.log(E_values[i-1]/E_values[i])/
-                 np.log(dt_values[i-1]/dt_values[i])
-                 for i in range(1, m, 1)]
-            return r
+    def convergence_rates(m, solver_function, num_periods=8):
+        """
+        Return m-1 empirical estimates of the convergence rate
+        based on m simulations, where the time step is halved
+        for each simulation.
+        solver_function(I, w, dt, T) solves each problem, where T
+        is based on simulation for num_periods periods.
+        """
+        from math import pi
+        w = 0.35; I = 0.3       # just chosen values
+        P = 2*pi/w              # period
+        dt = P/30               # 30 time step per period 2*pi/w
+        T = P*num_periods
+    
+        dt_values = []
+        E_values = []
+        for i in range(m):
+            u, t = solver_function(I, w, dt, T)
+            u_e = u_exact(t, I, w)
+            E = np.sqrt(dt*np.sum((u_e-u)**2))
+            dt_values.append(dt)
+            E_values.append(E)
+            dt = dt/2
+    
+        r = [np.log(E_values[i-1]/E_values[i])/
+             np.log(dt_values[i-1]/dt_values[i])
+             for i in range(1, m, 1)]
+        return r
 
 The error analysis in the section :ref:`vib:ode1:analysis` is quite
-detailed and results in :math:`r=2`, but other methods like truncation error
-analysis
-also points to :math:`r=2`,
-as well as the related quick reasoning that we have used a
+detailed and suggests in :math:`r=2`.
+It is also a intuitively reasonable result, since we used a
 second-order accurate finite difference approximation :math:`[D_tD_tu]^n` to
 the ODE and a second-order accurate finite difference formula for the
 initial condition for :math:`u^{\prime}`.
@@ -670,15 +681,15 @@ goes like
 
 .. code-block:: python
 
-        def test_convergence_rates():
-            r = convergence_rates(m=5, solver_function=solver, num_periods=8)
-            # Accept rate to 1 decimal place
-            tol = 0.1
-            assert abs(r[-1] - 2.0) < tol
-            # Test that adjusted w obtains 4th order convergence
-            r = convergence_rates(m=5, solver_function=solver_adjust_w, num_periods=8)
-            print 'adjust w rates:', r
-            assert abs(r[-1] - 4.0) < tol
+    def test_convergence_rates():
+        r = convergence_rates(m=5, solver_function=solver, num_periods=8)
+        # Accept rate to 1 decimal place
+        tol = 0.1
+        assert abs(r[-1] - 2.0) < tol
+        # Test that adjusted w obtains 4th order convergence
+        r = convergence_rates(m=5, solver_function=solver_adjust_w, num_periods=8)
+        print 'adjust w rates:', r
+        assert abs(r[-1] - 4.0) < tol
 
 The complete code appears in the file ``vib_undamped.py``.
 
@@ -709,7 +720,7 @@ This gives the dimensionless model
 .. math::
 
     \tag{13}
-    \frac{d^2\bar u}{\bar t^2} + 4\pi^2 \bar u = 0,\quad \bar u(0)=1,\ 
+    \frac{d^2\bar u}{d\bar t^2} + 4\pi^2 \bar u = 0,\quad \bar u(0)=1,\ 
         \bar u^{\prime}(0)=0{\thinspace .}
         
         
@@ -733,8 +744,8 @@ Choosing ``dt`` as ``1./M`` gives ``M`` time steps per period.
 
 .. _vib:ode1:longseries:
 
-Long time simulations
-=====================
+Visualization of long time simulations
+======================================
 
 Figure :ref:`vib:ode1:2dt` shows a comparison of the exact and numerical
 solution for the scaled model :ref:`(13) <Eq:vib:ode1:model:scaled>` with
@@ -743,7 +754,7 @@ From the plot we make the following observations:
 
  * The numerical solution seems to have correct amplitude.
 
- * There is a angular frequency error which is reduced by reducing the time step.
+ * There is an angular frequency error which is reduced by decreasing the time step.
 
  * The total angular frequency error grows with time.
 
@@ -751,7 +762,7 @@ By angular frequency error we mean that the numerical angular frequency differs
 from the exact :math:`\omega`. This is evident by looking
 at the peaks of the numerical solution: these have incorrect
 positions compared with the peaks of the exact cosine solution. The
-effect can be mathematical expressed by writing the numerical solution
+effect can be mathematically expressed by writing the numerical solution
 as :math:`I\cos\tilde\omega t`, where :math:`\tilde\omega` is not exactly
 equal to :math:`\omega`. Later, we shall mathematically
 quantify this numerical angular frequency :math:`\tilde\omega`.
@@ -775,55 +786,55 @@ the :math:`p` most recently computed periods of the solution. The
 a convenient tool for this: ``MovingPlotWindow``. Typing
 ``pydoc scitools.MovingPlotWindow`` shows a demo and a description of its use.
 The function below utilizes the moving plot window and is in fact
-called by the ``main`` function the ``vib_undamped`` module
+called by the ``main`` function in the ``vib_undamped`` module
 if the number of periods in the simulation exceeds 10.
 
 .. code-block:: python
 
-        def visualize_front(u, t, I, w, savefig=False, skip_frames=1):
-            """
-            Visualize u and the exact solution vs t, using a
-            moving plot window and continuous drawing of the
-            curves as they evolve in time.
-            Makes it easy to plot very long time series.
-            Plots are saved to files if savefig is True.
-            Only each skip_frames-th plot is saved (e.g., if
-            skip_frame=10, only each 10th plot is saved to file;
-            this is convenient if plot files corresponding to
-            different time steps are to be compared).
-            """
-            import scitools.std as st
-            from scitools.MovingPlotWindow import MovingPlotWindow
-            from math import pi
-        
-            # Remove all old plot files tmp_*.png
-            import glob, os
-            for filename in glob.glob('tmp_*.png'):
-                os.remove(filename)
-        
-            P = 2*pi/w  # one period
-            umin = 1.2*u.min();  umax = -umin
-            dt = t[1] - t[0]
-            plot_manager = MovingPlotWindow(
-                window_width=8*P,
-                dt=dt,
-                yaxis=[umin, umax],
-                mode='continuous drawing')
-            frame_counter = 0
-            for n in range(1,len(u)):
-                if plot_manager.plot(n):
-                    s = plot_manager.first_index_in_plot
-                    st.plot(t[s:n+1], u[s:n+1], 'r-1',
-                            t[s:n+1], I*cos(w*t)[s:n+1], 'b-1',
-                            title='t=%6.3f' % t[n],
-                            axis=plot_manager.axis(),
-                            show=not savefig) # drop window if savefig
-                    if savefig and n % skip_frames == 0:
-                        filename = 'tmp_%04d.png' % frame_counter
-                        st.savefig(filename)
-                        print 'making plot file', filename, 'at t=%g' % t[n]
-                        frame_counter += 1
-                plot_manager.update(n)
+    def visualize_front(u, t, I, w, savefig=False, skip_frames=1):
+        """
+        Visualize u and the exact solution vs t, using a
+        moving plot window and continuous drawing of the
+        curves as they evolve in time.
+        Makes it easy to plot very long time series.
+        Plots are saved to files if savefig is True.
+        Only each skip_frames-th plot is saved (e.g., if
+        skip_frame=10, only each 10th plot is saved to file;
+        this is convenient if plot files corresponding to
+        different time steps are to be compared).
+        """
+        import scitools.std as st
+        from scitools.MovingPlotWindow import MovingPlotWindow
+        from math import pi
+    
+        # Remove all old plot files tmp_*.png
+        import glob, os
+        for filename in glob.glob('tmp_*.png'):
+            os.remove(filename)
+    
+        P = 2*pi/w  # one period
+        umin = 1.2*u.min();  umax = -umin
+        dt = t[1] - t[0]
+        plot_manager = MovingPlotWindow(
+            window_width=8*P,
+            dt=dt,
+            yaxis=[umin, umax],
+            mode='continuous drawing')
+        frame_counter = 0
+        for n in range(1,len(u)):
+            if plot_manager.plot(n):
+                s = plot_manager.first_index_in_plot
+                st.plot(t[s:n+1], u[s:n+1], 'r-1',
+                        t[s:n+1], I*cos(w*t)[s:n+1], 'b-1',
+                        title='t=%6.3f' % t[n],
+                        axis=plot_manager.axis(),
+                        show=not savefig) # drop window if savefig
+                if savefig and n % skip_frames == 0:
+                    filename = 'tmp_%04d.png' % frame_counter
+                    st.savefig(filename)
+                    print 'making plot file', filename, 'at t=%g' % t[n]
+                    frame_counter += 1
+            plot_manager.update(n)
 
 We run the scaled problem (the default values for the command-line arguments
 ``--I`` and ``--w`` correspond to the scaled problem) for 40 periods with 20
@@ -831,11 +842,11 @@ time steps per period:
 
 .. code-block:: text
 
-        Terminal> python vib_undamped.py --dt 0.05 --num_periods 40
+    Terminal> python vib_undamped.py --dt 0.05 --num_periods 40
 
 The moving plot window is invoked, and we can follow the numerical and exact
 solutions as time progresses. From this demo we see that
-the angular frequency error is small in the beginning, but it becomes more
+the angular frequency error is small in the beginning, and that it becomes more
 prominent with time. A new run with :math:`\Delta t=0.1` (i.e., only 10 time steps per period)
 clearly shows that the phase errors become significant even earlier
 in the time series, deteriorating the solution further.
@@ -870,13 +881,15 @@ format is popular,
 
 .. code-block:: text
 
-        Terminal> ffmpeg -r 12 -i tmp_%04d.png -c:v flv movie.flv
+    Terminal> ffmpeg -r 25 -i tmp_%04d.png -c:v flv movie.flv
 
 The ``ffmpeg`` program can be replaced by the ``avconv`` program in
 the above command if desired (but at the time of this writing it seems
 to be more momentum in the ``ffmpeg`` project).
 The ``-r`` option should come first and
-describes the number of frames per second in the movie. The
+describes the number of frames per second in the movie (even if we
+would like to have slow movies, keep this number as large as 25,
+otherwise files are skipped from the movie). The
 ``-i`` option describes the name of the plot files.
 Other formats can be generated by changing the video codec
 and equipping the video file with the right extension:
@@ -897,17 +910,17 @@ The video file can be played by some video player like ``vlc``, ``mplayer``,
 
 .. code-block:: text
 
-        Terminal> vlc movie.webm
+    Terminal> vlc movie.webm
 
 A web page can also be used to play the movie. Today's standard is
 to use the HTML5 ``video`` tag:
 
 .. code-block:: html
 
-        <video autoplay loop controls
-               width='640' height='365' preload='none'>
-        <source src='movie.webm'  type='video/webm; codecs="vp8, vorbis"'>
-        </video>
+    <video autoplay loop controls
+           width='640' height='365' preload='none'>
+    <source src='movie.webm'  type='video/webm; codecs="vp8, vorbis"'>
+    </video>
 
 Modern browsers do not support all of the video formats.
 MP4 is needed to successfully play the videos on Apple devices
@@ -921,13 +934,13 @@ The proper HTML code reads
 
 .. code-block:: html
 
-        <video autoplay loop controls
-               width='640' height='365' preload='none'>
-        <source src='movie.mp4'   type='video/mp4;
-         codecs="avc1.42E01E, mp4a.40.2"'>
-        <source src='movie.webm'  type='video/webm;
-         codecs="vp8, vorbis"'>
-        </video>
+    <video autoplay loop controls
+           width='640' height='365' preload='none'>
+    <source src='movie.mp4'   type='video/mp4;
+     codecs="avc1.42E01E, mp4a.40.2"'>
+    <source src='movie.webm'  type='video/webm;
+     codecs="vp8, vorbis"'>
+    </video>
 
 The MP4 format should appear first to ensure that Apple devices will
 load the video correctly.
@@ -947,8 +960,8 @@ load the video correctly.
 
 
 
-Paying PNG files in a web browser
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Playing PNG files in a web browser
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. index:: scitools movie command
 
@@ -961,7 +974,7 @@ PNG files ``tmp_*.png`` goes like
 
 .. code-block:: text
 
-        Terminal> scitools movie output_file=vib.html fps=4 tmp_*.png
+    Terminal> scitools movie output_file=vib.html fps=4 tmp_*.png
 
 The ``fps`` argument controls the speed of the movie ("frames per second").
 
@@ -969,7 +982,7 @@ To watch the movie, load the video file ``vib.html`` into some browser, e.g.,
 
 .. code-block:: text
 
-        Terminal> google-chrome vib.html  # invoke web page
+    Terminal> google-chrome vib.html  # invoke web page
 
 Clicking on ``Start movie`` to see the result. Moving this movie to
 some other place requires moving ``vib.html`` *and all the PNG files*
@@ -977,9 +990,9 @@ some other place requires moving ``vib.html`` *and all the PNG files*
 
 .. code-block:: text
 
-        Terminal> mkdir vib_dt0.1
-        Terminal> mv tmp_*.png vib_dt0.1
-        Terminal> mv vib.html vib_dt0.1/index.html
+    Terminal> mkdir vib_dt0.1
+    Terminal> mv tmp_*.png vib_dt0.1
+    Terminal> mv vib.html vib_dt0.1/index.html
 
 Making animated GIF files
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -989,7 +1002,7 @@ used to produce animated GIF files from a set of PNG files:
 
 .. code-block:: text
 
-        Terminal> convert -delay 25 tmp_vib*.png tmp_vib.gif
+    Terminal> convert -delay 25 tmp_vib*.png tmp_vib.gif
 
 The ``-delay`` option needs an argument of the delay between each frame,
 measured in 1/100 s, so 4 frames/s here gives 25/100 s delay.
@@ -1001,12 +1014,10 @@ considered feasible. Animated GIFs are best suited for animations with
 not so many frames and where you want to see each frame and play them
 slowly.
 
-[**hpl 2**: Combine two simulations side by side!]
-
 Using Bokeh to compare graphs
 -----------------------------
 
-Instead of a moving plot frame, one can use tools that allows panning
+Instead of a moving plot frame, one can use tools that allow panning
 by the mouse. For example, we can show four periods of several signals in
 several plots and then scroll with the mouse through the rest of the
 simulation *simultaneously* in all the plot windows.
@@ -1032,93 +1043,94 @@ displaced :math:`t` axes!):
    :width: 800
 
 A function for creating a Bokeh plot, given a list of ``u`` arrays
-and corresponding ``t`` arrays, from different simulations, described
-compactly in a list of strings ``legends``, is implemented below.
+and corresponding ``t`` arrays, is implemented below.
+The code combines data fro different simulations, described
+compactly in a list of strings ``legends``.
 
 .. code-block:: python
 
-        def bokeh_plot(u, t, legends, I, w, t_range, filename):
-            """
-            Make plots for u vs t using the Bokeh library.
-            u and t are lists (several experiments can be compared).
-            legens contain legend strings for the various u,t pairs.
-            """
-            if not isinstance(u, (list,tuple)):
-                u = [u]  # wrap in list
-            if not isinstance(t, (list,tuple)):
-                t = [t]  # wrap in list
-            if not isinstance(legends, (list,tuple)):
-                legends = [legends]  # wrap in list
-        
-            import bokeh.plotting as plt
-            plt.output_file(filename, mode='cdn', title='Comparison')
-            # Assume that all t arrays have the same range
-            t_fine = np.linspace(0, t[0][-1], 1001)  # fine mesh for u_e
-            tools = 'pan,wheel_zoom,box_zoom,reset,'\ 
-                    'save,box_select,lasso_select'
-            u_range = [-1.2*I, 1.2*I]
-            font_size = '8pt'
-            p = []  # list of plot objects
-            # Make the first figure
+    def bokeh_plot(u, t, legends, I, w, t_range, filename):
+        """
+        Make plots for u vs t using the Bokeh library.
+        u and t are lists (several experiments can be compared).
+        legens contain legend strings for the various u,t pairs.
+        """
+        if not isinstance(u, (list,tuple)):
+            u = [u]  # wrap in list
+        if not isinstance(t, (list,tuple)):
+            t = [t]  # wrap in list
+        if not isinstance(legends, (list,tuple)):
+            legends = [legends]  # wrap in list
+    
+        import bokeh.plotting as plt
+        plt.output_file(filename, mode='cdn', title='Comparison')
+        # Assume that all t arrays have the same range
+        t_fine = np.linspace(0, t[0][-1], 1001)  # fine mesh for u_e
+        tools = 'pan,wheel_zoom,box_zoom,reset,'\ 
+                'save,box_select,lasso_select'
+        u_range = [-1.2*I, 1.2*I]
+        font_size = '8pt'
+        p = []  # list of plot objects
+        # Make the first figure
+        p_ = plt.figure(
+            width=300, plot_height=250, title=legends[0],
+            x_axis_label='t', y_axis_label='u',
+            x_range=t_range, y_range=u_range, tools=tools,
+            title_text_font_size=font_size)
+        p_.xaxis.axis_label_text_font_size=font_size
+        p_.yaxis.axis_label_text_font_size=font_size
+        p_.line(t[0], u[0], line_color='blue')
+        # Add exact solution
+        u_e = u_exact(t_fine, I, w)
+        p_.line(t_fine, u_e, line_color='red', line_dash='4 4')
+        p.append(p_)
+        # Make the rest of the figures and attach their axes to
+        # the first figure's axes
+        for i in range(1, len(t)):
             p_ = plt.figure(
-                width=300, plot_height=250, title=legends[0],
+                width=300, plot_height=250, title=legends[i],
                 x_axis_label='t', y_axis_label='u',
-                x_range=t_range, y_range=u_range, tools=tools,
+                x_range=p[0].x_range, y_range=p[0].y_range, tools=tools,
                 title_text_font_size=font_size)
-            p_.xaxis.axis_label_text_font_size=font_size
-            p_.yaxis.axis_label_text_font_size=font_size
-            p_.line(t[0], u[0], line_color='blue')
-            # Add exact solution
-            u_e = u_exact(t_fine, I, w)
+            p_.xaxis.axis_label_text_font_size = font_size
+            p_.yaxis.axis_label_text_font_size = font_size
+            p_.line(t[i], u[i], line_color='blue')
             p_.line(t_fine, u_e, line_color='red', line_dash='4 4')
             p.append(p_)
-            # Make the rest of the figures and attach their axes to
-            # the first figure's axes
-            for i in range(1, len(t)):
-                p_ = plt.figure(
-                    width=300, plot_height=250, title=legends[i],
-                    x_axis_label='t', y_axis_label='u',
-                    x_range=p[0].x_range, y_range=p[0].y_range, tools=tools,
-                    title_text_font_size=font_size)
-                p_.xaxis.axis_label_text_font_size = font_size
-                p_.yaxis.axis_label_text_font_size = font_size
-                p_.line(t[i], u[i], line_color='blue')
-                p_.line(t_fine, u_e, line_color='red', line_dash='4 4')
-                p.append(p_)
-        
-            # Arrange all plots in a grid with 3 plots per row
-            grid = [[]]
-            for i, p_ in enumerate(p):
-                grid[-1].append(p_)
-                if (i+1) % 3 == 0:
-                    # New row
-                    grid.append([])
-            plot = plt.gridplot(grid, toolbar_location='left')
-            plt.save(plot)
-            plt.show(plot)
+    
+        # Arrange all plots in a grid with 3 plots per row
+        grid = [[]]
+        for i, p_ in enumerate(p):
+            grid[-1].append(p_)
+            if (i+1) % 3 == 0:
+                # New row
+                grid.append([])
+        plot = plt.gridplot(grid, toolbar_location='left')
+        plt.save(plot)
+        plt.show(plot)
 
 A particular example using the ``bokeh_plot`` function appears below.
 
 .. code-block:: python
 
-        def demo_bokeh():
-            """Solve a scaled ODE u'' + u = 0."""
-            from math import pi
-            w = 1.0        # Scaled problem (frequency)
-            P = 2*np.pi/w  # Period
-            num_steps_per_period = [5, 10, 20, 40, 80]
-            T = 40*P       # Simulation time: 40 periods
-            u = []         # List of numerical solutions
-            t = []         # List of corresponding meshes
-            legends = []
-            for n in num_steps_per_period:
-                dt = P/n
-                u_, t_ = solver(I=1, w=w, dt=dt, T=T)
-                u.append(u_)
-                t.append(t_)
-                legends.append('# time steps per period: %d' % n)
-            bokeh_plot(u, t, legends, I=1, w=w, t_range=[0, 4*P],
-                       filename='tmp.html')
+    def demo_bokeh():
+        """Solve a scaled ODE u'' + u = 0."""
+        from math import pi
+        w = 1.0        # Scaled problem (frequency)
+        P = 2*np.pi/w  # Period
+        num_steps_per_period = [5, 10, 20, 40, 80]
+        T = 40*P       # Simulation time: 40 periods
+        u = []         # List of numerical solutions
+        t = []         # List of corresponding meshes
+        legends = []
+        for n in num_steps_per_period:
+            dt = P/n
+            u_, t_ = solver(I=1, w=w, dt=dt, T=T)
+            u.append(u_)
+            t.append(t_)
+            legends.append('# time steps per period: %d' % n)
+        bokeh_plot(u, t, legends, I=1, w=w, t_range=[0, 4*P],
+                   filename='tmp.html')
 
 Using a line-by-line ascii plotter
 ----------------------------------
@@ -1126,29 +1138,30 @@ Using a line-by-line ascii plotter
 Plotting functions vertically, line by line, in the terminal window
 using ascii characters only is a simple, fast, and convenient
 visualization technique for long time series. Note that the time
-axis then is positive downwards on the screen.
+axis then is positive downwards on the screen, so we can let the
+solution be visualized "forever".
 The tool
 ``scitools.avplotter.Plotter`` makes it easy to create such plots:
 
 .. code-block:: python
 
-        def visualize_front_ascii(u, t, I, w, fps=10):
-            """
-            Plot u and the exact solution vs t line by line in a
-            terminal window (only using ascii characters).
-            Makes it easy to plot very long time series.
-            """
-            from scitools.avplotter import Plotter
-            import time
-            from math import pi
-            P = 2*pi/w
-            umin = 1.2*u.min();  umax = -umin
-        
-            p = Plotter(ymin=umin, ymax=umax, width=60, symbols='+o')
-            for n in range(len(u)):
-                print p.plot(t[n], u[n], I*cos(w*t[n])), \ 
-                      '%.1f' % (t[n]/P)
-                time.sleep(1/float(fps))
+    def visualize_front_ascii(u, t, I, w, fps=10):
+        """
+        Plot u and the exact solution vs t line by line in a
+        terminal window (only using ascii characters).
+        Makes it easy to plot very long time series.
+        """
+        from scitools.avplotter import Plotter
+        import time
+        from math import pi
+        P = 2*pi/w
+        umin = 1.2*u.min();  umax = -umin
+    
+        p = Plotter(ymin=umin, ymax=umax, width=60, symbols='+o')
+        for n in range(len(u)):
+            print p.plot(t[n], u[n], I*cos(w*t[n])), \ 
+                  '%.1f' % (t[n]/P)
+            time.sleep(1/float(fps))
 
 The call ``p.plot`` returns a line of text, with the :math:`t` axis marked and
 a symbol ``+`` for the first function (``u``) and ``o`` for the second
@@ -1159,27 +1172,27 @@ looks like this:
 
 .. code-block:: text
 
-                                      |                       o+      14.0
-                                      |                      + o      14.0
-                                      |                  +    o       14.1
-                                      |             +     o           14.1
-                                      |     +        o                14.2
-                                     +|       o                       14.2
-                             +        |                               14.2
-                      +       o       |                               14.3
-                 +     o              |                               14.4
-              +   o                   |                               14.4
-             +o                       |                               14.5
-             o +                      |                               14.5
-              o    +                  |                               14.6
-                  o      +            |                               14.6
-                       o        +     |                               14.7
-                              o       | +                             14.7
-                                      |        +                      14.8
-                                      |       o       +               14.8
-                                      |              o     +          14.9
-                                      |                   o   +       14.9
-                                      |                       o+      15.0
+                                  |                       o+      14.0
+                                  |                      + o      14.0
+                                  |                  +    o       14.1
+                                  |             +     o           14.1
+                                  |     +        o                14.2
+                                 +|       o                       14.2
+                         +        |                               14.2
+                  +       o       |                               14.3
+             +     o              |                               14.4
+          +   o                   |                               14.4
+         +o                       |                               14.5
+         o +                      |                               14.5
+          o    +                  |                               14.6
+              o      +            |                               14.6
+                   o        +     |                               14.7
+                          o       | +                             14.7
+                                  |        +                      14.8
+                                  |       o       +               14.8
+                                  |              o     +          14.9
+                                  |                   o   +       14.9
+                                  |                       o+      15.0
 
 .. _vib:ode1:empirical:
 
@@ -1221,14 +1234,14 @@ In computer code this becomes
 
 .. code-block:: python
 
-        def minmax(t, u):
-            minima = []; maxima = []
-            for n in range(1, len(u)-1, 1):
-                if u[n-1] > u[n] < u[n+1]:
-                    minima.append((t[n], u[n]))
-                if u[n-1] < u[n] > u[n+1]:
-                    maxima.append((t[n], u[n]))
-            return minima, maxima
+    def minmax(t, u):
+        minima = []; maxima = []
+        for n in range(1, len(u)-1, 1):
+            if u[n-1] > u[n] < u[n+1]:
+                minima.append((t[n], u[n]))
+            if u[n-1] < u[n] > u[n+1]:
+                maxima.append((t[n], u[n]))
+        return minima, maxima
 
 Note that the two returned objects are lists of tuples.
 
@@ -1240,10 +1253,10 @@ With Python syntax this reads
 
 .. code-block:: python
 
-        def periods(maxima):
-            p = [extrema[n][0] - maxima[n-1][0]
-                 for n in range(1, len(maxima))]
-            return np.array(p)
+    def periods(maxima):
+        p = [extrema[n][0] - maxima[n-1][0]
+             for n in range(1, len(maxima))]
+        return np.array(p)
 
 The list ``p`` created by a list comprehension is converted to an array
 since we probably want to compute with it, e.g., find the corresponding
@@ -1255,10 +1268,10 @@ maximum points:
 
 .. code-block:: python
 
-        def amplitudes(minima, maxima):
-            a = [(abs(maxima[n][1] - minima[n][1]))/2.0
-                 for n in range(min(len(minima),len(maxima)))]
-            return np.array(a)
+    def amplitudes(minima, maxima):
+        a = [(abs(maxima[n][1] - minima[n][1]))/2.0
+             for n in range(min(len(minima),len(maxima)))]
+        return np.array(a)
 
 The code segments are found in the file `vib_empirical_analysis.py <http://tinyurl.com/nm5587k/vib/vib_empirical_analysis.py>`__.
 
@@ -1278,7 +1291,7 @@ A ready-made function
 
 .. code-block:: python
 
-        plot_empirical_freq_and_amplitude(u, t, I, w)
+    plot_empirical_freq_and_amplitude(u, t, I, w)
 
 computes the empirical amplitudes and periods, and creates a plot
 where the amplitudes and angular frequencies
@@ -1288,17 +1301,17 @@ for creating the plot:
 
 .. code-block:: python
 
-        from vib_undamped import solver, plot_empirical_freq_and_amplitude
-        from math import pi
-        dt_values = [0.1, 0.05, 0.01]
-        u_cases = []
-        t_cases = []
-        for dt in dt_values:
-            # Simulate scaled problem for 40 periods
-            u, t = solver(I=1, w=2*pi, dt=dt, T=40)
-            u_cases.append(u)
-            t_cases.append(t)
-        plot_empirical_freq_and_amplitude(u_cases, t_cases, I=1, w=2*pi)
+    from vib_undamped import solver, plot_empirical_freq_and_amplitude
+    from math import pi
+    dt_values = [0.1, 0.05, 0.01]
+    u_cases = []
+    t_cases = []
+    for dt in dt_values:
+        # Simulate scaled problem for 40 periods
+        u, t = solver(I=1, w=2*pi, dt=dt, T=40)
+        u_cases.append(u)
+        t_cases.append(t)
+    plot_empirical_freq_and_amplitude(u_cases, t_cases, I=1, w=2*pi)
 
 Figure :ref:`vib:ode1:fig:freq_ampl` shows the result: we clearly see that
 lowering :math:`\Delta t` improves the angular frequency significantly, while the
@@ -1306,7 +1319,7 @@ amplitude seems to be more accurate.
 The lines with
 :math:`\Delta t=0.01`, corresponding to 100 steps per period, can hardly be
 distinguished from the exact values. The next section shows how we
-can get mathematical insight into why amplitudes are good and frequencies
+can get mathematical insight into why amplitudes are good while frequencies
 are more inaccurate.
 
 .. _vib:ode1:fig:freq_ampl:
@@ -1314,7 +1327,7 @@ are more inaccurate.
 .. figure:: empirical_ampl_freq.png
    :width: 800
 
-   *Empirical amplitude and angular frequency for three cases of time steps*
+   *Empirical angular frequency (left) and amplitude (right) for three different time steps*
 
 .. Use it for very long time integration of CN! And of RK4!
 
@@ -1440,12 +1453,12 @@ than the complicated function in :ref:`(18) <Eq:vib:ode1:tildeomega>`:
 
 .. code-block:: ipy
 
-        >>> from sympy import *
-        >>> dt, w = symbols('dt w')
-        >>> w_tilde_e = 2/dt*asin(w*dt/2)
-        >>> w_tilde_series = w_tilde_e.series(dt, 0, 4)
-        >>> print w_tilde_series
-        w + dt**2*w**3/24 + O(dt**4)
+    >>> from sympy import *
+    >>> dt, w = symbols('dt w')
+    >>> w_tilde_e = 2/dt*asin(w*dt/2)
+    >>> w_tilde_series = w_tilde_e.series(dt, 0, 4)
+    >>> print w_tilde_series
+    w + dt**2*w**3/24 + O(dt**4)
 
 This means that
 
@@ -1595,15 +1608,14 @@ we could use the limit functionality in ``sympy``:
 
 .. code-block:: python
 
-        >>> import sympy as sym
-        >>> dt, w = sym.symbols('x w')
-        >>> sym.limit((2/dt)*sym.asin(w*dt/2), dt, 0, dir='+')
-        w
+    >>> import sympy as sym
+    >>> dt, w = sym.symbols('x w')
+    >>> sym.limit((2/dt)*sym.asin(w*dt/2), dt, 0, dir='+')
+    w
 
 Also :ref:`(19) <Eq:vib:ode1:tildeomega:series>` can be used to establish
-this result that
-:math:`\tilde\omega\rightarrow\omega`. It then follows from the expression(s)
-for :math:`e^n` that :math:`e^n\rightarrow 0`.
+that :math:`\tilde\omega\rightarrow\omega` when :math:`\Delta t\rightarrow 0`.
+It then follows from the expression(s) for :math:`e^n` that :math:`e^n\rightarrow 0`.
 
 The global error
 ----------------
@@ -1620,12 +1632,12 @@ function. A relevant ``sympy`` session is
 
 .. code-block:: python
 
-        >>> from sympy import *
-        >>> dt, w, t = symbols('dt w t')
-        >>> w_tilde_e = 2/dt*asin(w*dt/2)
-        >>> w_tilde_series = w_tilde_e.series(dt, 0, 4)
-        >>> w_tilde_series
-        w + dt**2*w**3/24 + O(dt**4)
+    >>> from sympy import *
+    >>> dt, w, t = symbols('dt w t')
+    >>> w_tilde_e = 2/dt*asin(w*dt/2)
+    >>> w_tilde_series = w_tilde_e.series(dt, 0, 4)
+    >>> w_tilde_series
+    w + dt**2*w**3/24 + O(dt**4)
 
 Series expansions in ``sympy`` have the inconvenient ``O()`` term that
 prevents further calculations with the series. We can use the
@@ -1633,9 +1645,9 @@ prevents further calculations with the series. We can use the
 
 .. code-block:: python
 
-        >>> w_tilde_series = w_tilde_series.removeO()
-        >>> w_tilde_series
-        dt**2*w**3/24 + w
+    >>> w_tilde_series = w_tilde_series.removeO()
+    >>> w_tilde_series
+    dt**2*w**3/24 + w
 
 Using this ``w_tilde_series`` expression for :math:`\tilde w` in
 :ref:`(21) <Eq:vib:ode1:en>`, dropping :math:`I` (which is a common factor), and
@@ -1643,9 +1655,9 @@ performing a series expansion of the error yields
 
 .. code-block:: python
 
-        >>> error = cos(w*t) - cos(w_tilde_series*t)
-        >>> error.series(dt, 0, 6)
-        dt**2*t*w**3*sin(t*w)/24 + dt**4*t**2*w**6*cos(t*w)/1152 + O(dt**6)
+    >>> error = cos(w*t) - cos(w_tilde_series*t)
+    >>> error.series(dt, 0, 6)
+    dt**2*t*w**3*sin(t*w)/24 + dt**4*t**2*w**6*cos(t*w)/1152 + O(dt**6)
 
 Since we are mainly interested in the leading-order term in
 such expansions (the term with lowest power in :math:`\Delta t`, which
@@ -1654,8 +1666,8 @@ construction to pick out this term:
 
 .. code-block:: python
 
-        >>> error.series(dt, 0, 6).as_leading_term(dt)
-        dt**2*t*w**3*sin(t*w)/24
+    >>> error.series(dt, 0, 6).as_leading_term(dt)
+    dt**2*t*w**3*sin(t*w)/24
 
 The last result
 means that the leading order global (true) error at a point :math:`t`
@@ -1688,8 +1700,6 @@ the square root gives the expression
 This is our expression for the global (or integrated) error.
 A primary result from this expression is that the global error
 is proportional to :math:`\Delta t^2`.
-
-[**hpl 3**: Are dimensions correctly preserved in these derivations? Seems that the error is not the dimension of :math:`u`...]
 
 Stability
 ---------
@@ -1846,7 +1856,7 @@ in terms of first-order derivatives of :math:`u` and :math:`v`:
 .. math::
 
     \tag{25}
-    v' = -\omega^2 u
+    v^{\prime} = -\omega^2 u
         
         {\thinspace .}
         
@@ -2160,27 +2170,27 @@ a sketch of the code.
 
 .. code-block:: python
 
-        import odespy
-        import numpy as np
-        
-        def f(u, t, w=1):
-            # v, u numbering for EulerCromer to work well
-            v, u = u  # u is array of length 2 holding our [v, u]
-            return [-w**2*u, v]
-        
-        def run_solvers_and_plot(solvers, timesteps_per_period=20,
-                                 num_periods=1, I=1, w=2*np.pi):
-            P = 2*np.pi/w  # duration of one period
-            dt = P/timesteps_per_period
-            Nt = num_periods*timesteps_per_period
-            T = Nt*dt
-            t_mesh = np.linspace(0, T, Nt+1)
-        
-            legends = []
-            for solver in solvers:
-                solver.set(f_kwargs={'w': w})
-                solver.set_initial_condition([0, I])
-                u, t = solver.solve(t_mesh)
+    import odespy
+    import numpy as np
+    
+    def f(u, t, w=1):
+        # v, u numbering for EulerCromer to work well
+        v, u = u  # u is array of length 2 holding our [v, u]
+        return [-w**2*u, v]
+    
+    def run_solvers_and_plot(solvers, timesteps_per_period=20,
+                             num_periods=1, I=1, w=2*np.pi):
+        P = 2*np.pi/w  # duration of one period
+        dt = P/timesteps_per_period
+        Nt = num_periods*timesteps_per_period
+        T = Nt*dt
+        t_mesh = np.linspace(0, T, Nt+1)
+    
+        legends = []
+        for solver in solvers:
+            solver.set(f_kwargs={'w': w})
+            solver.set_initial_condition([0, I])
+            u, t = solver.solve(t_mesh)
 
 There is quite some more code dealing with plots also, and we refer
 to the source file `vib_undamped_odespy.py <http://tinyurl.com/nm5587k/vib/vib_undamped_odespy.py>`__
@@ -2193,12 +2203,12 @@ Crank-Nicolson schemes is done like this:
 
 .. code-block:: python
 
-        solvers = [
-            odespy.ForwardEuler(f),
-            # Implicit methods must use Newton solver to converge
-            odespy.BackwardEuler(f, nonlinear_solver='Newton'),
-            odespy.CrankNicolson(f, nonlinear_solver='Newton'),
-            ]
+    solvers = [
+        odespy.ForwardEuler(f),
+        # Implicit methods must use Newton solver to converge
+        odespy.BackwardEuler(f, nonlinear_solver='Newton'),
+        odespy.CrankNicolson(f, nonlinear_solver='Newton'),
+        ]
 
 .. index:: phase plane plot
 
@@ -2281,8 +2291,6 @@ physical application is very clearly pronounced in this example.
 :ref:`vib:exer:undamped:odespy` invites you to investigate how
 the amplitude is computed by a series of famous methods for
 first-order ODEs.
-
-[**hpl 4**: Wrong aspact of scales in bottom left plot in Figure :ref:`vib:ode1:1st:odespy:CN:long:phaseplane`? Seems so.]
 
 .. _vib:ode1:1st:odespy:CN:long:phaseplane:
 
@@ -2385,12 +2393,12 @@ key variable and using ``sympy`` gives
 
 .. code-block:: python
 
-        >>> from sympy import *
-        >>> p = symbols('p', real=True)
-        >>> n = symbols('n', integer=True, positive=True)
-        >>> amplitude = (1 + p**2)**(n/2)
-        >>> amplitude.series(p, 0, 4)
-        1 + n*p**2/2 + O(p**4)
+    >>> from sympy import *
+    >>> p = symbols('p', real=True)
+    >>> n = symbols('n', integer=True, positive=True)
+    >>> amplitude = (1 + p**2)**(n/2)
+    >>> amplitude.series(p, 0, 4)
+    1 + n*p**2/2 + O(p**4)
 
 The amplitude goes like :math:`1 + \frac{1}{2} n\omega^2\Delta t^2`, clearly growing
 linearly in time (with :math:`n`).
@@ -2400,8 +2408,8 @@ series expansion:
 
 .. code-block:: python
 
-        >>> n*atan(p).series(p, 0, 4)
-        n*(p - p**3/3 + O(p**4))
+    >>> n*atan(p).series(p, 0, 4)
+    n*(p - p**3/3 + O(p**4))
 
 This means that the solution for :math:`u^n` can be written as
 
@@ -2613,12 +2621,12 @@ A vectorized Python implementation of :math:`e_E^n` takes the form
 
 .. code-block:: python
 
-        # import numpy as np and compute u, t
-        dt = t[1]-t[0]
-        E = 0.5*((u[2:] - u[:-2])/(2*dt))**2 + 0.5*w**2*u[1:-1]**2
-        E0 = 0.5*V**2 + 0.5**w**2*I**2
-        e_E = E - E0
-        e_E_norm = np.abs(e_E).max()
+    # import numpy as np and compute u, t
+    dt = t[1]-t[0]
+    E = 0.5*((u[2:] - u[:-2])/(2*dt))**2 + 0.5*w**2*u[1:-1]**2
+    E0 = 0.5*V**2 + 0.5**w**2*I**2
+    e_E = E - E0
+    e_E_norm = np.abs(e_E).max()
 
 The convergence rates of the quantity ``e_E_norm`` can be used for
 verification.  The value of ``e_E_norm`` is also useful for comparing
@@ -2707,9 +2715,14 @@ for the vibration equation modeled as a first-order ODE system, both
 were inferior to the straightforward centered difference scheme for
 the second-order equation :math:`u^{\prime\prime}+\omega^2u=0`. However,
 there is a similarly successful scheme available for the first-order
-system :math:`u^{\prime}=v`, :math:`v'=-\omega^2u`, to be presented next.
+system :math:`u^{\prime}=v`, :math:`v^{\prime}=-\omega^2u`, to be presented below.
+The ideas of the scheme and their further developments have become
+very popular in particle and rigid body dynamics and hence widely
+used by physicists.
 
 .. index:: forward-backward Euler-Cromer scheme
+
+.. index:: Euler-Cromer scheme
 
 Forward-backward discretization
 -------------------------------
@@ -2797,7 +2810,7 @@ We can rewrite this second-order ODE as two first-order ODEs,
 
 .. math::
         
-        v' &= -g(u,v,t),\\ 
+        v^{\prime} &= -g(u,v,t),\\ 
         u^{\prime} &= v{\thinspace .}
         
 
@@ -2820,19 +2833,21 @@ algebraic equations to be solved at each time level.
 
 .. allows :ref:`(52) <Eq:vib:model2x2:EulerCromer:ueq1>`
 
+.. index:: symplectic scheme
+
 The scheme
 :ref:`(54) <Eq:vib:model2x2:EulerCromer:veq1b>`-:ref:`(55) <Eq:vib:model2x2:EulerCromer:ueq1b>`
 goes under several names: forward-backward scheme, `semi-implicit
 Euler method <http://en.wikipedia.org/wiki/Semi-implicit_Euler_method>`__,
 semi-explicit Euler, symplectic Euler,
-Newton-Stormer-Verlet,
+Newton-Stoermer-Verlet,
 and Euler-Cromer.  We shall stick to the latter name.
 Since both time
 discretizations are based on first-order difference approximation, one
 may think that the scheme is only of first-order, but this is not
 true: the use of a forward and then a backward difference make errors
 cancel so that the overall error in the scheme is :math:`\Oof{\Delta
-t^2}`. This is explained below. [**hpl 5**: This is not correct!]
+t^2}`. This is explained below. 
 
 How does the Euler-Cromer method preserve the total energy?
 We may run the example from the section :ref:`vib:model1:energy:measure`:
@@ -2950,30 +2965,30 @@ Implementation          (2)
 Solver function
 ~~~~~~~~~~~~~~~
 
-The function below, found in `vib_EulerCromer.py <http://tinyurl.com/nm5587k/vib/vib_EulerCromer.py>`__, implements the Euler-Cromer scheme
+The function below, found in `vib_undamped_EulerCromer.py <http://tinyurl.com/nm5587k/vib/vib_undamped_EulerCromer.py>`__, implements the Euler-Cromer scheme
 :ref:`(54) <Eq:vib:model2x2:EulerCromer:veq1b>`-:ref:`(55) <Eq:vib:model2x2:EulerCromer:ueq1b>`:
 
 .. code-block:: python
 
-        import numpy as np
-        
-        def solver(I, w, dt, T):
-            """
-            Solve v' = - w**2*u, u'=v for t in (0,T], u(0)=I and v(0)=0,
-            by an Euler-Cromer method.
-            """
-            dt = float(dt)
-            Nt = int(round(T/dt))
-            u = np.zeros(Nt+1)
-            v = np.zeros(Nt+1)
-            t = np.linspace(0, Nt*dt, Nt+1)
-        
-            v[0] = 0
-            u[0] = I
-            for n in range(0, Nt):
-                v[n+1] = v[n] - dt*w**2*u[n]
-                u[n+1] = u[n] + dt*v[n+1]
-            return u, v, t
+    import numpy as np
+    
+    def solver(I, w, dt, T):
+        """
+        Solve v' = - w**2*u, u'=v for t in (0,T], u(0)=I and v(0)=0,
+        by an Euler-Cromer method.
+        """
+        dt = float(dt)
+        Nt = int(round(T/dt))
+        u = np.zeros(Nt+1)
+        v = np.zeros(Nt+1)
+        t = np.linspace(0, Nt*dt, Nt+1)
+    
+        v[0] = 0
+        u[0] = I
+        for n in range(0, Nt):
+            v[n+1] = v[n] - dt*w**2*u[n]
+            u[n+1] = u[n] + dt*v[n+1]
+        return u, v, t
 
 Verification          (2)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2995,19 +3010,19 @@ computed values with the formula :ref:`(20) <Eq:vib:ode1:un:exact>`:
 
 .. code-block:: python
 
-        def test_solver():
-            """
-            Test solver with fixed initial condition against
-            equivalent scheme for the 2nd-order ODE u'' + u = 0.
-            """
-            I = 1.2; w = 2.0; T = 5
-            dt = 2/w  # longest possible time step
-            u, v, t = solver_ic_fix(I, w, dt, T)
-            from vib_undamped import solver as solver2  # 2nd-order ODE
-            u2, t2 = solver2(I, w, dt, T)
-            error = np.abs(u - u2).max()
-            tol = 1E-14
-            assert error < tol
+    def test_solver():
+        """
+        Test solver with fixed initial condition against
+        equivalent scheme for the 2nd-order ODE u'' + u = 0.
+        """
+        I = 1.2; w = 2.0; T = 5
+        dt = 2/w  # longest possible time step
+        u, v, t = solver_ic_fix(I, w, dt, T)
+        from vib_undamped import solver as solver2  # 2nd-order ODE
+        u2, t2 = solver2(I, w, dt, T)
+        error = np.abs(u - u2).max()
+        tol = 1E-14
+        assert error < tol
 
 Another function, ``demo``, visualizes the difference between the
 Euler-Cromer scheme and the scheme :ref:`(7) <Eq:vib:ode1:step4>` for the
@@ -3024,48 +3039,48 @@ displacement :math:`u` as second component:
 
 .. code-block:: python
 
-        # Define ODE
-        def f(u, t, w=1):
-            v, u = u
-            return [-w**2*u, v]
-        
-        # Initialize solver
-        I = 1
-        w = 2*np.pi
-        import odespy
-        solver = odespy.EulerCromer(f, f_kwargs={'w': w})
-        solver.set_initial_condition([0, I])
-        
-        # Compute time mesh
-        P = 2*np.pi/w  # duration of one period
-        dt = P/timesteps_per_period
-        Nt = num_periods*timesteps_per_period
-        T = Nt*dt
-        import numpy as np
-        t_mesh = np.linspace(0, T, Nt+1)
-        
-        # Solve ODE
-        u, t = solver.solve(t_mesh)
-        u = u[:,1]  # Extract displacement
+    # Define ODE
+    def f(u, t, w=1):
+        v, u = u
+        return [-w**2*u, v]
+    
+    # Initialize solver
+    I = 1
+    w = 2*np.pi
+    import odespy
+    solver = odespy.EulerCromer(f, f_kwargs={'w': w})
+    solver.set_initial_condition([0, I])
+    
+    # Compute time mesh
+    P = 2*np.pi/w  # duration of one period
+    dt = P/timesteps_per_period
+    Nt = num_periods*timesteps_per_period
+    T = Nt*dt
+    import numpy as np
+    t_mesh = np.linspace(0, T, Nt+1)
+    
+    # Solve ODE
+    u, t = solver.solve(t_mesh)
+    u = u[:,1]  # Extract displacement
 
 Convergence rates
 ~~~~~~~~~~~~~~~~~
 
-We may use the ``convergence_rates`` function in the file ``vib_undamped.py``
-to investigate the convergence rate of the Euler-Cromer method,
-see the ``convergence_rate`` function in the file ``vib_undamped_EulerCromer.py``.
-Since we could eliminate :math:`v` to get a scheme for :math:`u` that
-is equivalent to the finite difference method for the second-order equation
-in :math:`u`, we would expect the convergence rates to be the same, i.e.,
-:math:`\mathcal{O}(\Delta t^2)`. However, measuring the convergence rate of :math:`u`
-in the Euler-Cromer scheme shows that it is :math:`\mathcal{O}(\Delta t)`!
-Adjusting the initial condition does not change the rate. Adjusting
-:math:`\omega`, as outlined in the section :ref:`vib:ode1:analysis:numfreq`, gives
-a 4th-order method there, while there is no increase in the measured rate
-in the Euler-Cromer scheme. It is obvious that the Euler-Cromer scheme
-is dramatically much better than the two other first-order methods,
-Forward Euler and Backward Euler, but this is not reflected in the
-convergence rate of :math:`u`.
+We may use the ``convergence_rates`` function in the file
+``vib_undamped.py`` to investigate the convergence rate of the
+Euler-Cromer method, see the ``convergence_rate`` function in the file
+``vib_undamped_EulerCromer.py``.  Since we could eliminate :math:`v` to get a
+scheme for :math:`u` that is equivalent to the finite difference method for
+the second-order equation in :math:`u`, we would expect the convergence
+rates to be the same, i.e., :math:`\mathcal{O}(\Delta t^2)`. However,
+measuring the convergence rate of :math:`u` in the Euler-Cromer scheme shows
+that it is :math:`\mathcal{O}(\Delta t)`!  Adjusting the initial condition
+does not change the rate. Adjusting :math:`\omega`, as outlined in the section :ref:`vib:ode1:analysis:numfreq`, gives a 4th-order method there, while
+there is no increase in the measured rate in the Euler-Cromer
+scheme. It is obvious that the Euler-Cromer scheme is dramatically
+much better than the two other first-order methods, Forward Euler and
+Backward Euler, but this is not reflected in the convergence rate of
+:math:`u`.
 
 .. is anything really gained? is v of higher order compared
 
@@ -3073,107 +3088,115 @@ convergence rate of :math:`u`.
 
 .. v is 2nd order, v from 2nd-order ODE is 1st order
 
-The velocity Verlet algorithm
+.. _vib:model2x2:StormerVerlet:
+
+The Stoermer-Verlet algorithm
 -----------------------------
 
-[**hpl 6**: Tie velocity Verlet better to Euler-Cromer. They are very related, at last if using staggered grids.]
+.. See velverlet_EulerCromer_....pdf for discussion and relation to EC
 
-.. See velverlet_EulerCromer_....pdf for discussion.
+.. index:: Stoermer-Verlet algorithm
 
-Another very popular algorithm for vibration problems
-:math:`u^{\prime\prime}+\omega^2u=0` can be derived as follows. First, we
-step :math:`u` forward from :math:`t_n` to :math:`t_{n+1}` using a three-term Taylor
-series,
+Another very popular algorithm for vibration problems, especially
+for long time simulations, is the
+Stoermer-Verlet
+algorithm. It has become *the* method among physicists
+for molecular simulations as well as particle and rigid body dynamics.
 
-.. math::
-         u(t_{n+1}) = u(t_n) + u^{\prime}(t_n)\Delta t + \frac{1}{2}u^{\prime\prime}(t_n)\Delta t^2{\thinspace .}
+The method can be derived by applying the Euler-Cromer idea
+twice, in a symmetric fashion, during the interval :math:`[t_n,t_{n+1}]`:
 
-Using :math:`u^{\prime}=v` and :math:`u^{\prime\prime}=-\omega^2u`, we get the updating formula
+1. solve :math:`v^{\prime}=-\omega u` by a Forward Euler step in :math:`[t_n,t_{n+\frac{1}{2}}]`
 
-.. math::
-         u^{n+1} = u^n + v^n\Delta t - \frac{1}{2}\Delta t^2\omega^2u^n{\thinspace .}
+2. solve :math:`u^{\prime}=v` by a Backward Euler step in :math:`[t_n,t_{n+\frac{1}{2}}]`
 
-Second, the first-order equation for :math:`v`,
+3. solve :math:`u^{\prime}=v` by a Forward Euler step in :math:`[t_{n+\frac{1}{2}}, t_{n+1}]`
 
-.. math::
-         v'=-\omega^2u,
+4. solve :math:`v^{\prime}=-\omega u` by a Backward Euler step in :math:`[t_{n+\frac{1}{2}}, t_{n+1}]`
 
-is discretized by a centered difference in a Crank-Nicolson fashion at
-:math:`t_{n+\frac{1}{2}}`:
+With mathematics,
 
 .. math::
-         \frac{v^{n+1}-v^n}{\Delta t} = -\omega^2\frac{1}{2}(u^n + u^{n+1}){\thinspace .}
+        
+        \frac{v^{n+\frac{1}{2}}-v^n}{\frac{1}{2}\Delta t} &= -\omega^2 u^n,\\ 
+        \frac{u^{n+\frac{1}{2}}-u^n}{\frac{1}{2}\Delta t} &= v^{n+\frac{1}{2}},\\ 
+        \frac{u^{n+1}-u^{n-\frac{1}{2}}}{\frac{1}{2}\Delta t} &= v^{n+\frac{1}{2}},\\ 
+        \frac{v^{n+1}-v^{n+\frac{1}{2}}}{\frac{1}{2}\Delta t} &= -\omega^2 u^{n+1}{\thinspace .}
+        
 
-To summarize, we have the scheme
+The two steps in the middle can be combined to
 
-.. _Eq:vib:model2x2:Verlet:dueq:
+.. math::
+         \frac{u^{n+1}-u^{n-1}}{\Delta t} = v^{n+\frac{1}{2}},
+
+and consequently
+
+.. _Eq:_auto23:
 
 .. math::
 
     \tag{58}
-    u^{n+1} = u^n + v^n\Delta t - \frac{1}{2}\Delta^2\omega^2u^n
-         
+    v^{n+\frac{1}{2}} = v^n - \frac{1}{2}\Delta t \omega^2 u^n,
+        
         
 
-.. _Eq:vib:model2x2:Verlet:dveq:
+.. _Eq:_auto24:
 
 .. math::
 
     \tag{59}
-    v^{n+1} = v^n -\frac{1}{2}\Delta t\omega^2 (u^n + u^{n+1}),
+    u^{n+1} = u^{n} + \Delta t v^{n+\frac{1}{2}},
         
         
 
-known as the *velocity Verlet* algorithm.
-Observe that this scheme is explicit since :math:`u^{n+1}` in
-:ref:`(59) <Eq:vib:model2x2:Verlet:dveq>` is already computed
-from :ref:`(58) <Eq:vib:model2x2:Verlet:dueq>`.
+.. _Eq:_auto25:
 
-The algorithm can be straightforwardly implemented as shown below (the
-code appears in the file `vib_undamped_velocity_Verlet.py <http://tinyurl.com/nm5587k/vib/vib_undamped_velocity_Verlet.py>`__).
+.. math::
 
-.. code-block:: python
-
-        from vib_undamped import convergence_rates, main
+    \tag{60}
+    v^{n+1} = v^{n+\frac{1}{2}} - \frac{1}{2}\Delta t \omega^2 u^{n+1}{\thinspace .}
         
-        def solver(I, w, dt, T, return_v=False):
-            """
-            Solve u'=v, v'=-w**2*u for t in (0,T], u(0)=I and v(0)=0,
-            by the velocity Verlet method with time step dt.
-            """
-            dt = float(dt)
-            Nt = int(round(T/dt))
-            u = np.zeros(Nt+1)
-            v = np.zeros(Nt+1)
-            t = np.linspace(0, Nt*dt, Nt+1)
         
-            u[0] = I
-            v[0] = 0
-            for n in range(Nt):
-                u[n+1] = u[n] + v[n]*dt - 0.5*dt**2*w**2*u[n]
-                v[n+1] = v[n] - 0.5*dt*w**2*(u[n] + u[n+1])
-            if return_v:
-                return u, v, t
-            else:
-                # Return just u and t as in the vib_undamped.py's solver
-                return u, t
 
-We provide the option that this ``solver`` function returns the same data
-as the ``solver`` function from the section :ref:`vib:impl1:solver` (if ``return_v``
-is ``False``), but alternatively, it may return ``v`` along with ``u`` and ``t``.
+Writing the last equation as :math:`v^n = v^{n-\frac{1}{2}} - \frac{1}{2}\Delta
+t\omega^2 u^n` and using this :math:`v^n` in the first equation gives
+:math:`v^{n+\frac{1}{2}} = v^{n-\frac{1}{2}} - \Delta t\omega^2 u^n`, and the scheme can
+be written as two steps:
 
-The error in the Taylor series expansion behind
-:ref:`(58) <Eq:vib:model2x2:Verlet:dueq>` is :math:`{\mathcal{O}(\Delta t^3)}`, while the error
-in the central difference for :math:`v` is :math:`{\mathcal{O}(\Delta t^2)}`.  The overall
-error is then no better than :math:`{\mathcal{O}(\Delta t^2)}`, which can be verified
-empirically using the ``convergence_rates`` function from
-:ref:`vib:ode1:verify`:
+.. _Eq:vib:model2x2:StormerVerlet:eqv:
 
-.. code-block:: python
+.. math::
 
-        >>> import vib_undamped_velocity_Verlet as m
-        >>> m.convergence_rates(4, solver_function=m.solver)
-        [2.0036366687367346, 2.0009497328124835, 2.000240105995295]
+    \tag{61}
+    v^{n+\frac{1}{2}} = v^{n-\frac{1}{2}} - \Delta t \omega^2 u^n,
+        
+        
 
-.. The output confirms that the overall convergence rate is 2.
+.. _Eq:vib:model2x2:StormerVerlet:equ:
+
+.. math::
+
+    \tag{62}
+    u^{n+1} = u^{n} + \Delta t v^{n+\frac{1}{2}},
+        
+        
+
+which is nothing but straightforward centered differences for the
+:math:`2\times 2` ODE system on a *staggered mesh*, see
+the section :ref:`vib:model2x2:staggered`. We have thus seen that
+four different reasonings (discretizing :math:`u^{\prime\prime}+\omega^2 u`
+directly, using Euler-Cromer, using
+Stoermer-Verlet,
+and using centered differences for the :math:`2times 2` system on a staggered
+mesh) all end up with the same equations! The main difference is that
+the traditional Euler-Cromer displays first-order convergence in :math:`\Delta t`
+(due to less symmetry in the way :math:`u` and :math:`v` are treated)
+while the others are :math:`{\mathcal{O}(\Delta t^2)}` schemes.
+
+The most numerical stable scheme, with respect to accumulation of
+rounding errors, is
+:ref:`(61) <Eq:vib:model2x2:StormerVerlet:eqv>`-:ref:`(62) <Eq:vib:model2x2:StormerVerlet:equ>`.
+It has, according to [Ref3]_, better
+properties in this regard than the direct scheme for the second-order
+ODE.
 

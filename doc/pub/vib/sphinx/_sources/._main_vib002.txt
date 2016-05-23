@@ -2,8 +2,8 @@
 
 .. _vib:model2:
 
-Generalization: damping, nonlinear spring, and external excitation
-==================================================================
+Generalization: damping, nonlinearities, and external excitation
+================================================================
 
 .. index:: nonlinear restoring force
 
@@ -20,7 +20,7 @@ some external excitation :math:`F(t)`:
 
 .. math::
 
-    \tag{60}
+    \tag{63}
     mu^{\prime\prime} + f(u^{\prime}) + s(u) = F(t),\quad u(0)=I,\ u^{\prime}(0)=V,\ t\in (0,T]
         {\thinspace .}
         
@@ -42,15 +42,15 @@ that acts as a spring with :math:`s(u)\sim \sin(u)`.
 A centered scheme for linear damping
 ------------------------------------
 
-Sampling :ref:`(60) <Eq:vib:ode2>` at a mesh point :math:`t_n`, replacing
+Sampling :ref:`(63) <Eq:vib:ode2>` at a mesh point :math:`t_n`, replacing
 :math:`u^{\prime\prime}(t_n)` by :math:`[D_tD_tu]^n`, and :math:`u^{\prime}(t_n)` by :math:`[D_{2t}u]^n` results
 in the discretization
 
-.. _Eq:_auto23:
+.. _Eq:_auto26:
 
 .. math::
 
-    \tag{61}
+    \tag{64}
     [mD_tD_t u + f(D_{2t}u) + s(u) = F]^n,
         
         
@@ -61,14 +61,14 @@ which written out means
 
 .. math::
 
-    \tag{62}
+    \tag{65}
     m\frac{u^{n+1}-2u^n + u^{n-1}}{\Delta t^2}
         + f(\frac{u^{n+1}-u^{n-1}}{2\Delta t}) + s(u^n) = F^n,
         
         
 
 where :math:`F^n` as usual means :math:`F(t)` evaluated at :math:`t=t_n`.
-Solving :ref:`(62) <Eq:vib:ode2:step3b>` with respect to the unknown
+Solving :ref:`(65) <Eq:vib:ode2:step3b>` with respect to the unknown
 :math:`u^{n+1}` gives a problem: the :math:`u^{n+1}` inside the :math:`f` function
 makes the equation *nonlinear* unless :math:`f(u^{\prime})` is a linear function,
 :math:`f(u^{\prime})=bu^{\prime}`. For now we shall assume that :math:`f` is linear in :math:`u^{\prime}`.
@@ -78,7 +78,7 @@ Then
 
 .. math::
 
-    \tag{63}
+    \tag{66}
     m\frac{u^{n+1}-2u^n + u^{n-1}}{\Delta t^2}
         + b\frac{u^{n+1}-u^{n-1}}{2\Delta t} + s(u^n) = F^n,
         
@@ -91,7 +91,7 @@ new time level:
 
 .. math::
 
-    \tag{64}
+    \tag{67}
     u^{n+1} = (2mu^n + (\frac{b}{2}\Delta t - m)u^{n-1} +
         \Delta t^2(F^n - s(u^n)))(m + \frac{b}{2}\Delta t)^{-1}
         
@@ -100,19 +100,19 @@ new time level:
 
 For the first time step we need to discretize :math:`u^{\prime}(0)=V`
 as :math:`[D_{2t}u = V]^0` and combine
-with :ref:`(64) <Eq:vib:ode2:step4>` for :math:`n=0`. The discretized initial condition
+with :ref:`(67) <Eq:vib:ode2:step4>` for :math:`n=0`. The discretized initial condition
 leads to
 
 .. _Eq:vib:ode2:ic:du:
 
 .. math::
 
-    \tag{65}
+    \tag{68}
     u^{-1} = u^{1} - 2\Delta t V,
         
         
 
-which inserted in :ref:`(64) <Eq:vib:ode2:step4>` for :math:`n=0` gives an equation
+which inserted in :ref:`(67) <Eq:vib:ode2:step4>` for :math:`n=0` gives an equation
 that can be solved for
 :math:`u^1`:
 
@@ -120,7 +120,7 @@ that can be solved for
 
 .. math::
 
-    \tag{66}
+    \tag{69}
     u^1 = u^0 + \Delta t\, V
         + \frac{\Delta t^2}{2m}(-bV - s(u^0) + F^0)
         {\thinspace .}
@@ -133,7 +133,7 @@ A centered scheme for quadratic damping
 ---------------------------------------
 
 When :math:`f(u^{\prime})=bu^{\prime}|u^{\prime}|`, we get a quadratic equation for :math:`u^{n+1}`
-in :ref:`(62) <Eq:vib:ode2:step3b>`. This equation can be straightforwardly
+in :ref:`(65) <Eq:vib:ode2:step3b>`. This equation can be straightforwardly
 solved by the well-known formula for the roots of a quadratic equation.
 However, we can also avoid the nonlinearity by introducing
 an approximation with an error of order no higher than what we
@@ -144,14 +144,14 @@ already have from replacing derivatives with finite differences.
 .. index::
    single: averaging; geometric
 
-We start with :ref:`(60) <Eq:vib:ode2>` and only replace
+We start with :ref:`(63) <Eq:vib:ode2>` and only replace
 :math:`u^{\prime\prime}` by :math:`D_tD_tu`, resulting in
 
 .. _Eq:vib:ode2:quad:idea1:
 
 .. math::
 
-    \tag{67}
+    \tag{70}
     [mD_tD_t u + bu^{\prime}|u^{\prime}| + s(u) = F]^n{\thinspace .}
         
         
@@ -180,18 +180,18 @@ the mesh points only. With the approximations
 
 .. math::
 
-    \tag{68}
+    \tag{71}
     u^{\prime}(t_{n+1/2})\approx [D_t u]^{n+\frac{1}{2}},\quad u^{\prime}(t_{n-1/2})\approx [D_t u]^{n-\frac{1}{2}},
         
         
 
 we get
 
-.. _Eq:_auto24:
+.. _Eq:_auto27:
 
 .. math::
 
-    \tag{69}
+    \tag{72}
     [u^{\prime}|u^{\prime}|]^n
         \approx [D_tu]^{n+\frac{1}{2}}|[D_tu]^{n-\frac{1}{2}}| = \frac{u^{n+1}-u^n}{\Delta t}
         \frac{|u^n-u^{n-1}|}{\Delta t}
@@ -199,13 +199,13 @@ we get
         
         
 
-The counterpart to :ref:`(62) <Eq:vib:ode2:step3b>` is then
+The counterpart to :ref:`(65) <Eq:vib:ode2:step3b>` is then
 
 .. _Eq:vib:ode2:step3b:quad:
 
 .. math::
 
-    \tag{70}
+    \tag{73}
     m\frac{u^{n+1}-2u^n + u^{n-1}}{\Delta t^2}
         + b\frac{u^{n+1}-u^n}{\Delta t}\frac{|u^n-u^{n-1}|}{\Delta t}
         + s(u^n) = F^n,
@@ -213,7 +213,7 @@ The counterpart to :ref:`(62) <Eq:vib:ode2:step3b>` is then
         
 
 which is linear in the unknown :math:`u^{n+1}`. Therefore, we can easily solve
-:ref:`(70) <Eq:vib:ode2:step3b:quad>`
+:ref:`(73) <Eq:vib:ode2:step3b:quad>`
 with respect to :math:`u^{n+1}` and achieve the explicit updating formula
 
 .. math::
@@ -225,7 +225,7 @@ with respect to :math:`u^{n+1}` and achieve the explicit updating formula
 
 .. math::
 
-    \tag{71}
+    \tag{74}
     \qquad \left(2m u^n - mu^{n-1} + bu^n|u^n-u^{n-1}| + \Delta t^2 (F^n - s(u^n))
         \right)
         {\thinspace .}
@@ -235,31 +235,31 @@ with respect to :math:`u^{n+1}` and achieve the explicit updating formula
 .. Make exercise to solve complicated u^1 equation with Bisection/Newton
 
 In the derivation of a special equation for the first
-time step we run into some trouble: inserting :ref:`(65) <Eq:vib:ode2:ic:du>`
-in :ref:`(71) <Eq:vib:ode2:step4:quad>` for :math:`n=0` results in a complicated nonlinear
+time step we run into some trouble: inserting :ref:`(68) <Eq:vib:ode2:ic:du>`
+in :ref:`(74) <Eq:vib:ode2:step4:quad>` for :math:`n=0` results in a complicated nonlinear
 equation for :math:`u^1`. By thinking differently about the problem we can
 easily get away with the nonlinearity again. We have for :math:`n=0` that
-:math:`b[u^{\prime}|u^{\prime}|]^0 = bV|V|`. Using this value in :ref:`(67) <Eq:vib:ode2:quad:idea1>`
+:math:`b[u^{\prime}|u^{\prime}|]^0 = bV|V|`. Using this value in :ref:`(70) <Eq:vib:ode2:quad:idea1>`
 gives
 
-.. _Eq:_auto25:
+.. _Eq:_auto28:
 
 .. math::
 
-    \tag{72}
+    \tag{75}
     [mD_tD_t u + bV|V| + s(u) = F]^0
         {\thinspace .}
         
         
 
-Writing this equation out and using :ref:`(65) <Eq:vib:ode2:ic:du>` results in the
+Writing this equation out and using :ref:`(68) <Eq:vib:ode2:ic:du>` results in the
 special equation for the first time step:
 
 .. _Eq:vib:ode2:step4b:quad:
 
 .. math::
 
-    \tag{73}
+    \tag{76}
     u^1 = u^0 + \Delta t V + \frac{\Delta t^2}{2m}\left(-bV|V| - s(u^0) + F^0\right)
         {\thinspace .}
         
@@ -283,7 +283,7 @@ mathematics,
 
 .. math::
 
-    \tag{74}
+    \tag{77}
     [\beta |u^{\prime}|u^{\prime}]^n \approx \beta |[D_t^-u]^n|[D_t^+ u]^n =
         \beta\left\vert\frac{u^n-u^{n-1}}{\Delta t}\right\vert
         \frac{u^{n+1}-u^n}{\Delta t}{\thinspace .}
@@ -294,12 +294,12 @@ The forward and backward differences have both an error proportional
 to :math:`\Delta t` so one may think the discretization above leads to
 a first-order scheme.
 However, by looking at the formulas, we realize that the forward-backward
-differences in :ref:`(74) <Eq:vib:ode2:nonlin:fbdiff>`
+differences in :ref:`(77) <Eq:vib:ode2:nonlin:fbdiff>`
 result in exactly the same scheme as in
-:ref:`(70) <Eq:vib:ode2:step3b:quad>` where we
+:ref:`(73) <Eq:vib:ode2:step3b:quad>` where we
 used a geometric mean and centered differences and committed errors
 of size :math:`{\mathcal{O}(\Delta t^2)}`. Therefore, the forward-backward
-differences in :ref:`(74) <Eq:vib:ode2:nonlin:fbdiff>`
+differences in :ref:`(77) <Eq:vib:ode2:nonlin:fbdiff>`
 act in a symmetric way and actually produce a second-order
 accurate discretization of the quadratic damping term.
 
@@ -313,10 +313,10 @@ and :ref:`vib:ode2:fdm:fquad` is very similar to the undamped case in
 the section :ref:`vib:ode1:fdm`. The difference is
 basically a question of different formulas for :math:`u^1` and
 :math:`u^{n+1}`. This is actually quite remarkable. The equation
-:ref:`(60) <Eq:vib:ode2>` is normally impossible to solve by pen and paper, but
+:ref:`(63) <Eq:vib:ode2>` is normally impossible to solve by pen and paper, but
 possible for some special choices of :math:`F`, :math:`s`, and :math:`f`. On the
 contrary, the complexity of the
-nonlinear generalized model :ref:`(60) <Eq:vib:ode2>` versus the
+nonlinear generalized model :ref:`(63) <Eq:vib:ode2>` versus the
 simple undamped model is not a big deal when we solve the
 problem numerically!
 
@@ -324,13 +324,13 @@ The computational algorithm takes the form
 
  1. :math:`u^0=I`
 
- 2. compute :math:`u^1` from :ref:`(66) <Eq:vib:ode2:step4b>` if linear
-    damping or :ref:`(73) <Eq:vib:ode2:step4b:quad>` if quadratic damping
+ 2. compute :math:`u^1` from :ref:`(69) <Eq:vib:ode2:step4b>` if linear
+    damping or :ref:`(76) <Eq:vib:ode2:step4b:quad>` if quadratic damping
 
  3. for :math:`n=1,2,\ldots,N_t-1`:
 
-   a. compute :math:`u^{n+1}` from :ref:`(64) <Eq:vib:ode2:step4>` if linear
-      damping or :ref:`(71) <Eq:vib:ode2:step4:quad>` if quadratic damping
+   a. compute :math:`u^{n+1}` from :ref:`(67) <Eq:vib:ode2:step4>` if linear
+      damping or :ref:`(74) <Eq:vib:ode2:step4:quad>` if quadratic damping
 
 Modifying the ``solver`` function for the undamped case is fairly
 easy, the big difference being many more terms and if tests on
@@ -338,36 +338,36 @@ the type of damping:
 
 .. code-block:: python
 
-        def solver(I, V, m, b, s, F, dt, T, damping='linear'):
-            """
-            Solve m*u'' + f(u') + s(u) = F(t) for t in (0,T],
-            u(0)=I and u'(0)=V,
-            by a central finite difference method with time step dt.
-            If damping is 'linear', f(u')=b*u, while if damping is
-            'quadratic', f(u')=b*u'*abs(u').
-            F(t) and s(u) are Python functions.
-            """
-            dt = float(dt); b = float(b); m = float(m) # avoid integer div.
-            Nt = int(round(T/dt))
-            u = np.zeros(Nt+1)
-            t = np.linspace(0, Nt*dt, Nt+1)
-        
-            u[0] = I
+    def solver(I, V, m, b, s, F, dt, T, damping='linear'):
+        """
+        Solve m*u'' + f(u') + s(u) = F(t) for t in (0,T],
+        u(0)=I and u'(0)=V,
+        by a central finite difference method with time step dt.
+        If damping is 'linear', f(u')=b*u, while if damping is
+        'quadratic', f(u')=b*u'*abs(u').
+        F(t) and s(u) are Python functions.
+        """
+        dt = float(dt); b = float(b); m = float(m) # avoid integer div.
+        Nt = int(round(T/dt))
+        u = np.zeros(Nt+1)
+        t = np.linspace(0, Nt*dt, Nt+1)
+    
+        u[0] = I
+        if damping == 'linear':
+            u[1] = u[0] + dt*V + dt**2/(2*m)*(-b*V - s(u[0]) + F(t[0]))
+        elif damping == 'quadratic':
+            u[1] = u[0] + dt*V + \ 
+                   dt**2/(2*m)*(-b*V*abs(V) - s(u[0]) + F(t[0]))
+    
+        for n in range(1, Nt):
             if damping == 'linear':
-                u[1] = u[0] + dt*V + dt**2/(2*m)*(-b*V - s(u[0]) + F(t[0]))
+                u[n+1] = (2*m*u[n] + (b*dt/2 - m)*u[n-1] +
+                          dt**2*(F(t[n]) - s(u[n])))/(m + b*dt/2)
             elif damping == 'quadratic':
-                u[1] = u[0] + dt*V + \ 
-                       dt**2/(2*m)*(-b*V*abs(V) - s(u[0]) + F(t[0]))
-        
-            for n in range(1, Nt):
-                if damping == 'linear':
-                    u[n+1] = (2*m*u[n] + (b*dt/2 - m)*u[n-1] +
-                              dt**2*(F(t[n]) - s(u[n])))/(m + b*dt/2)
-                elif damping == 'quadratic':
-                    u[n+1] = (2*m*u[n] - m*u[n-1] + b*u[n]*abs(u[n] - u[n-1])
-                              + dt**2*(F(t[n]) - s(u[n])))/\ 
-                              (m + b*abs(u[n] - u[n-1]))
-            return u, t
+                u[n+1] = (2*m*u[n] - m*u[n-1] + b*u[n]*abs(u[n] - u[n-1])
+                          + dt**2*(F(t[n]) - s(u[n])))/\ 
+                          (m + b*abs(u[n] - u[n-1]))
+        return u, t
 
 The complete code resides in the file `vib.py <http://tinyurl.com/nm5587k/vib/vib.py>`__.
 
@@ -388,8 +388,6 @@ of a constant vanishes (in particular, :math:`[D_{2t}I]^n=0`,
 the discrete equations. The constant should therefore be reproduced
 to machine precision. The function ``test_constant`` in ``vib.py``
 implements this test.
-
-[**hpl 7**: Add verification tests for constant, linear, quadratic. Check how many bugs that are caught by these tests.]
 
 Linear solution
 ~~~~~~~~~~~~~~~
@@ -426,6 +424,28 @@ Doing :ref:`vib:exer:verify:gen:linear` will reveal
 the details. One can fit :math:`F^n` in the discrete equations such that
 the quadratic polynomial is reproduced by the numerical method (to
 machine precision).
+
+Catching bugs
+~~~~~~~~~~~~~
+
+How good are the constant and quadratic solutions at catching
+bugs in the implementation?
+
+ * Use ``m`` instead of ``2*m`` in the denominator of ``u[1]``: constant
+   works, while quadratic fails.
+
+ * Use ``b*dt`` instead of ``b*dt/2`` in the updating formula for ``u[n+1]``
+   in case of linear damping: constant and quadratic fail.
+
+ * Use ``F[n+1]`` instead of ``F[n]`` in case of linear or quadratic damping:
+   constant solution works, quadratic fails.
+
+We realize that the constant solution is very useful to catch bugs because
+of its simplicity (easy to predict what the different terms in the
+formula should evaluate to), while it seems the quadratic solution is
+capable of detecting all other types of typos in the scheme (?).
+This results demonstrates why we focus so much on exact, simple polynomial
+solutions of the numerical schemes in these writings.
 
 .. More: classes, cases with pendulum approx u vs sin(u),
 
@@ -476,46 +496,46 @@ visualization technique.
 
 .. code-block:: python
 
-        def main():
-            import argparse
-            parser = argparse.ArgumentParser()
-            parser.add_argument('--I', type=float, default=1.0)
-            parser.add_argument('--V', type=float, default=0.0)
-            parser.add_argument('--m', type=float, default=1.0)
-            parser.add_argument('--c', type=float, default=0.0)
-            parser.add_argument('--s', type=str, default='u')
-            parser.add_argument('--F', type=str, default='0')
-            parser.add_argument('--dt', type=float, default=0.05)
-            parser.add_argument('--T', type=float, default=140)
-            parser.add_argument('--damping', type=str, default='linear')
-            parser.add_argument('--window_width', type=float, default=30)
-            parser.add_argument('--savefig', action='store_true')
-            a = parser.parse_args()
-            from scitools.std import StringFunction
-            s = StringFunction(a.s, independent_variable='u')
-            F = StringFunction(a.F, independent_variable='t')
-            I, V, m, c, dt, T, window_width, savefig, damping = \ 
-               a.I, a.V, a.m, a.c, a.dt, a.T, a.window_width, a.savefig, \ 
-               a.damping
-        
-            u, t = solver(I, V, m, c, s, F, dt, T)
-            num_periods = empirical_freq_and_amplitude(u, t)
-            if num_periods <= 15:
-                figure()
-                visualize(u, t)
-            else:
-                visualize_front(u, t, window_width, savefig)
-            show()
+    def main():
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--I', type=float, default=1.0)
+        parser.add_argument('--V', type=float, default=0.0)
+        parser.add_argument('--m', type=float, default=1.0)
+        parser.add_argument('--c', type=float, default=0.0)
+        parser.add_argument('--s', type=str, default='u')
+        parser.add_argument('--F', type=str, default='0')
+        parser.add_argument('--dt', type=float, default=0.05)
+        parser.add_argument('--T', type=float, default=140)
+        parser.add_argument('--damping', type=str, default='linear')
+        parser.add_argument('--window_width', type=float, default=30)
+        parser.add_argument('--savefig', action='store_true')
+        a = parser.parse_args()
+        from scitools.std import StringFunction
+        s = StringFunction(a.s, independent_variable='u')
+        F = StringFunction(a.F, independent_variable='t')
+        I, V, m, c, dt, T, window_width, savefig, damping = \ 
+           a.I, a.V, a.m, a.c, a.dt, a.T, a.window_width, a.savefig, \ 
+           a.damping
+    
+        u, t = solver(I, V, m, c, s, F, dt, T)
+        num_periods = empirical_freq_and_amplitude(u, t)
+        if num_periods <= 15:
+            figure()
+            visualize(u, t)
+        else:
+            visualize_front(u, t, window_width, savefig)
+        show()
 
 The program ``vib.py`` contains
 the above code snippets and can solve the model problem
-:ref:`(60) <Eq:vib:ode2>`. As a demo of ``vib.py``, we consider the case
+:ref:`(63) <Eq:vib:ode2>`. As a demo of ``vib.py``, we consider the case
 :math:`I=1`, :math:`V=0`, :math:`m=1`, :math:`c=0.03`, :math:`s(u)=\sin(u)`, :math:`F(t)=3\cos(4t)`,
 :math:`\Delta t = 0.05`, and :math:`T=140`. The relevant command to run is
 
 .. code-block:: text
 
-        Terminal> python vib.py --s 'sin(u)' --F '3*cos(4*t)' --c 0.03
+    Terminal> python vib.py --s 'sin(u)' --F '3*cos(4*t)' --c 0.03
 
 This results in a `moving window following the function <http://tinyurl.com/opdfafk/pub/mov-vib/vib_generalized_dt0.05/index.html>`__ on the screen.
 Figure :ref:`vib:ode2:fig:demo` shows a part of the time series.
@@ -527,20 +547,22 @@ Figure :ref:`vib:ode2:fig:demo` shows a part of the time series.
 
    *Damped oscillator excited by a sinusoidal function*
 
+.. _vib:ode2:EulerCromer:
+
 The Euler-Cromer scheme for the generalized model
 -------------------------------------------------
 
 The ideas of the Euler-Cromer method from the section :ref:`vib:model2x2:EulerCromer`
-carry over to the generalized model. We write :ref:`(60) <Eq:vib:ode2>`
+carry over to the generalized model. We write :ref:`(63) <Eq:vib:ode2>`
 as two equations for :math:`u` and :math:`v=u^{\prime}`. The first equation is taken as the
-one with :math:`v'` on the left-hand side:
+one with :math:`v^{\prime}` on the left-hand side:
 
 .. _Eq:vib:ode2:EulerCromer:veq:
 
 .. math::
 
-    \tag{75}
-    v' = \frac{1}{m}(F(t)-s(u)-f(v)),
+    \tag{78}
+    v^{\prime} = \frac{1}{m}(F(t)-s(u)-f(v)),
         
         
 
@@ -548,21 +570,21 @@ one with :math:`v'` on the left-hand side:
 
 .. math::
 
-    \tag{76}
+    \tag{79}
     u^{\prime} = v{\thinspace .}
         
         
 
-The idea is to step :ref:`(75) <Eq:vib:ode2:EulerCromer:veq>` forward using
+The idea is to step :ref:`(78) <Eq:vib:ode2:EulerCromer:veq>` forward using
 a standard Forward Euler method, while we update :math:`u` from
-:ref:`(76) <Eq:vib:ode2:EulerCromer:ueq>` with a Backward Euler method,
+:ref:`(79) <Eq:vib:ode2:EulerCromer:ueq>` with a Backward Euler method,
 utilizing the recent, computed :math:`v^{n+1}` value. In detail,
 
 .. _Eq:vib:ode2:EulerCromer:dveq0a:
 
 .. math::
 
-    \tag{77}
+    \tag{80}
     \frac{v^{n+1}-v^n}{\Delta t} = \frac{1}{m}(F(t_n)-s(u^n)-f(v^n)),
         
         
@@ -571,7 +593,7 @@ utilizing the recent, computed :math:`v^{n+1}` value. In detail,
 
 .. math::
 
-    \tag{78}
+    \tag{81}
     \frac{u^{n+1}-u^n}{\Delta t} = v^{n+1},
         
         
@@ -582,7 +604,7 @@ resulting in the explicit scheme
 
 .. math::
 
-    \tag{79}
+    \tag{82}
     v^{n+1} = v^n + \Delta t\frac{1}{m}(F(t_n)-s(u^n)-f(v^n)),
         
         
@@ -591,7 +613,7 @@ resulting in the explicit scheme
 
 .. math::
 
-    \tag{80}
+    \tag{83}
     u^{n+1} = u^n + \Delta t\,v^{n+1}{\thinspace .}
         
         
@@ -600,33 +622,177 @@ We immediately note one very favorable feature of this scheme: all the
 nonlinearities in :math:`s(u)` and :math:`f(v)` are evaluated at a previous time
 level. This makes the Euler-Cromer method easier to apply and
 hence much more convenient than the centered scheme for the second-order
-ODE :ref:`(60) <Eq:vib:ode2>`.
+ODE :ref:`(63) <Eq:vib:ode2>`.
 
 The initial conditions are trivially set as
 
-.. _Eq:_auto26:
+.. _Eq:_auto29:
 
 .. math::
 
-    \tag{81}
+    \tag{84}
     v^0 = V,
         
         
 
-.. _Eq:_auto27:
+.. _Eq:_auto30:
 
 .. math::
 
-    \tag{82}
+    \tag{85}
     u^0 = I{\thinspace .}
         
         
 
-[**hpl 8**: odespy for the generalized problem]
-
 .. Discussion of which method is best:
 
 .. `<http://gamedev.stackexchange.com/questions/33694/pros-and-cons-of-different-integrators>`_
+
+.. _vib:model2x2:gen:StormerVerlet:
+
+The Stoermer-Verlet algorithm for the generalized model
+-------------------------------------------------------
+
+We can easily apply the ideas from the section :ref:`vib:model2x2:StormerVerlet` to
+extend that method to the generalized model
+
+.. math::
+        
+        v^{\prime} &= \frac{1}{m}(F(t)-s(u)-f(v)),\\ 
+        u^{\prime} &= v{\thinspace .}
+        
+
+However, since the scheme is essentially centered differences for
+the ODE system on a staggered mesh, we do not go into detail here,
+but refer to the section :ref:`vib:ode2:staggered`.
+
+.. _vib:ode2:PEFRL:
+
+The PEFRL 4th-order accurate algorithm
+--------------------------------------
+
+A variant of the Euler-Cromer type of algorithm, which provides an
+error :math:`{\mathcal{O}(\Delta t^4)}` if :math:`f(v)=0`, is called PEFRL
+[Ref4]_. This algorithm is very well suited for integrating
+dynamic systems (especially those without damping) over very long time
+periods. Define
+
+.. math::
+         g(u,v) = \frac{1}{m}(F(t)-s(u)-f(v)){\thinspace .}
+
+The algorithm is explicit and features these simple steps:
+
+.. _Eq:_auto31:
+
+.. math::
+
+    \tag{86}
+    u^{n+1,1} = u^n       + \xi\Delta t v^n,
+        
+        
+
+.. _Eq:_auto32:
+
+.. math::
+
+    \tag{87}
+    v^{n+1,1} = v^n       + \frac{1}{2}(1-2\lambda)\Delta t g(u^{n+1,1},v^n),
+        
+        
+
+.. _Eq:_auto33:
+
+.. math::
+
+    \tag{88}
+    x^{n+1,2} = x^{n+1,1} + \chi\Delta t v^{n+1,1},
+        
+        
+
+.. _Eq:_auto34:
+
+.. math::
+
+    \tag{89}
+    v^{n+1,2} = v^{n+1,1} + \lambda\Delta t g(u^{n+1,2}, v^{n+1,1}),
+        
+        
+
+.. _Eq:_auto35:
+
+.. math::
+
+    \tag{90}
+    x^{n+1,3} = x^{n+1,2} + (1-2(\chi + \xi))\Delta t v^{n+1,2},
+        
+        
+
+.. _Eq:_auto36:
+
+.. math::
+
+    \tag{91}
+    v^{n+1,3} = v^{n+1,2} + \lambda\Delta t g(u^{n+1,3}, v^{n+1,2}),
+        
+        
+
+.. _Eq:_auto37:
+
+.. math::
+
+    \tag{92}
+    u^{n+1,4} = u^{n+1,3} + \chi\Delta t v^{n+1,3},
+        
+        
+
+.. _Eq:_auto38:
+
+.. math::
+
+    \tag{93}
+    v^{n+1}   = v^{n+1,3} + \frac{1}{2}(1-2\lambda)\Delta t g(u^{n+1,4},v^{n+1,3}),
+        
+        
+
+.. _Eq:_auto39:
+
+.. math::
+
+    \tag{94}
+    u^{n+1}   = u^{n+1,4} + \xi\Delta t v^{n+1}
+        
+        
+
+.. Compare with eq 22 in article
+
+The parameters :math:`\xi`, :math:`\lambda`, and :math:`\xi` have the values
+
+.. _Eq:_auto40:
+
+.. math::
+
+    \tag{95}
+    \xi = 0.1720865590295143,
+        
+        
+
+.. _Eq:_auto41:
+
+.. math::
+
+    \tag{96}
+    \lambda = -0.09156203075515678,
+        
+        
+
+.. _Eq:_auto42:
+
+.. math::
+
+    \tag{97}
+    \chi = -0.1616217622107222
+        
+        
 
 Exercises and Problems
 ======================
@@ -666,57 +832,57 @@ sketch of the program ``vib_undamped_verify_mms.py``:
 
 .. code-block:: python
 
-        import sympy as sym
-        V, t, I, w, dt = sym.symbols('V t I w dt')  # global symbols
-        f = None  # global variable for the source term in the ODE
-        
-        def ode_source_term(u):
-            """Return the terms in the ODE that the source term
-            must balance, here u'' + w**2*u.
-            u is symbolic Python function of t."""
-            return sym.diff(u(t), t, t) + w**2*u(t)
-        
-        def residual_discrete_eq(u):
-            """Return the residual of the discrete eq. with u inserted."""
-            R = ...
-            return sym.simplify(R)
-        
-        def residual_discrete_eq_step1(u):
-            """Return the residual of the discrete eq. at the first
-            step with u inserted."""
-            R = ...
-            return sym.simplify(R)
-        
-        def DtDt(u, dt):
-            """Return 2nd-order finite difference for u_tt.
-            u is a symbolic Python function of t.
-            """
-            return ...
-        
-        def main(u):
-            """
-            Given some chosen solution u (as a function of t, implemented
-            as a Python function), use the method of manufactured solutions
-            to compute the source term f, and check if u also solves
-            the discrete equations.
-            """
-            print '=== Testing exact solution: %s ===' % u
-            print "Initial conditions u(0)=%s, u'(0)=%s:" % \ 
-                  (u(t).subs(t, 0), sym.diff(u(t), t).subs(t, 0))
-        
-            # Method of manufactured solution requires fitting f
-            global f  # source term in the ODE
-            f = sym.simplify(ode_lhs(u))
-        
-            # Residual in discrete equations (should be 0)
-            print 'residual step1:', residual_discrete_eq_step1(u)
-            print 'residual:', residual_discrete_eq(u)
-        
-        def linear():
-            main(lambda t: V*t + I)
-        
-        if __name__ == '__main__':
-            linear()
+    import sympy as sym
+    V, t, I, w, dt = sym.symbols('V t I w dt')  # global symbols
+    f = None  # global variable for the source term in the ODE
+    
+    def ode_source_term(u):
+        """Return the terms in the ODE that the source term
+        must balance, here u'' + w**2*u.
+        u is symbolic Python function of t."""
+        return sym.diff(u(t), t, t) + w**2*u(t)
+    
+    def residual_discrete_eq(u):
+        """Return the residual of the discrete eq. with u inserted."""
+        R = ...
+        return sym.simplify(R)
+    
+    def residual_discrete_eq_step1(u):
+        """Return the residual of the discrete eq. at the first
+        step with u inserted."""
+        R = ...
+        return sym.simplify(R)
+    
+    def DtDt(u, dt):
+        """Return 2nd-order finite difference for u_tt.
+        u is a symbolic Python function of t.
+        """
+        return ...
+    
+    def main(u):
+        """
+        Given some chosen solution u (as a function of t, implemented
+        as a Python function), use the method of manufactured solutions
+        to compute the source term f, and check if u also solves
+        the discrete equations.
+        """
+        print '=== Testing exact solution: %s ===' % u
+        print "Initial conditions u(0)=%s, u'(0)=%s:" % \ 
+              (u(t).subs(t, 0), sym.diff(u(t), t).subs(t, 0))
+    
+        # Method of manufactured solution requires fitting f
+        global f  # source term in the ODE
+        f = sym.simplify(ode_lhs(u))
+    
+        # Residual in discrete equations (should be 0)
+        print 'residual step1:', residual_discrete_eq_step1(u)
+        print 'residual:', residual_discrete_eq(u)
+    
+    def linear():
+        main(lambda t: V*t + I)
+    
+    if __name__ == '__main__':
+        linear()
 
 Fill in the various functions such that the calls in the ``main``
 function works.
@@ -854,10 +1020,37 @@ Filename: ``vib_first_step``.
 
 .. --- begin exercise ---
 
+Problem 6: Derive and investigate the velocity Verlet method
+------------------------------------------------------------
+
+The velocity Verlet method for :math:`u^{\prime\prime} + \omega^2u=0` is
+based on the following ideas:
+
+1. step :math:`u` forward from :math:`t_n` to :math:`t_{n+1}` using a three-term Taylor
+   series,
+
+2. replace :math:`u^{\prime\prime}` by :math:`-\omega^2u`
+
+3. discretize :math:`v^{\prime}=-\omega^2u` by a Crank-Nicolson method.
+
+Derive the scheme, implement it, and determine empirically the convergence rate.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
+.. How can the scheme be extended to the general case :math:`mu^{\prime\prime}
+
+.. + f(u^{\prime}) + s(u) =F(t)`? No, that's too complicated because of
+
+.. the substitution in the Taylor series.
+
+.. --- end exercise ---
+
+.. --- begin exercise ---
+
 .. _vib:exer:wdt:limit:
 
-Exercise 6: Find the minimal resolution of an oscillatory function
-------------------------------------------------------------------
+Problem 7: Find the minimal resolution of an oscillatory function
+-----------------------------------------------------------------
 
 .. Short: Find the largest relevant value of :math:`\omega\Delta t`
 
@@ -878,7 +1071,7 @@ Filename: ``vib_largest_wdt``.
 
 .. _vib:exer:fd:exp:plot:
 
-Exercise 7: Visualize the accuracy of finite differences for a cosine function
+Exercise 8: Visualize the accuracy of finite differences for a cosine function
 ------------------------------------------------------------------------------
 
 .. Short: Visualize the accuracy of finite differences
@@ -917,7 +1110,7 @@ Filename: ``vib_plot_fd_exp_error``.
 
 .. _vib:exer:energy:convrate:
 
-Exercise 8: Verify convergence rates of the error in energy
+Exercise 9: Verify convergence rates of the error in energy
 -----------------------------------------------------------
 
 We consider the ODE problem :math:`u^{\prime\prime} + \omega^2u=0`, :math:`u(0)=I`, :math:`u^{\prime}(0)=V`,
@@ -927,11 +1120,12 @@ constant.
 The error in energy can be computed as explained in
 the section :ref:`vib:model1:energy`.
 
-Make a test function in a file ``test_error_conv.py``, where code from
+Make a test function in a separate file, where code from
 ``vib_undamped.py`` is imported, but the ``convergence_rates`` and
 ``test_convergence_rates`` functions are copied and modified to also
 incorporate computations of the error in energy and the convergence
-rate of this error. The expected rate is 2.
+rate of this error. The expected rate is 2, just as for the solution
+itself.
 
 .. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
 
@@ -943,11 +1137,11 @@ Filename: ``test_error_conv``.
 
 .. _vib:exer:verify:gen:linear:
 
-Exercise 9: Use linear/quadratic functions for verification
------------------------------------------------------------
+Exercise 10: Use linear/quadratic functions for verification
+------------------------------------------------------------
 
 This exercise is a generalization of :ref:`vib:exer:undamped:verify:linquad` to the extended model problem
-:ref:`(60) <Eq:vib:ode2>` where the damping term is either linear or quadratic.
+:ref:`(63) <Eq:vib:ode2>` where the damping term is either linear or quadratic.
 Solve the various subproblems and see how the results and problem
 settings change with the generalized ODE in case of linear or
 quadratic damping. By modifying the code from :ref:`vib:exer:undamped:verify:linquad`, ``sympy`` will do most
@@ -963,7 +1157,7 @@ Filename: ``vib_verify_mms``.
 
 .. _vib:exer:discrete:omega:
 
-Exercise 10: Use an exact discrete solution for verification
+Exercise 11: Use an exact discrete solution for verification
 ------------------------------------------------------------
 
 Write a test function in a separate file
@@ -981,17 +1175,18 @@ Filename: ``test_vib_undamped_exact_discrete_sol``.
 
 .. _vib:exer:conv:rate:
 
-Exercise 11: Use analytical solution for convergence rate tests
+Exercise 12: Use analytical solution for convergence rate tests
 ---------------------------------------------------------------
 
 The purpose of this exercise is to perform convergence tests of the
-problem :ref:`(60) <Eq:vib:ode2>` when :math:`s(u)=cu`, :math:`F(t)=A\sin\phi t` and there is no damping.
-Find the complete analytical solution to the problem in this case
-(most textbooks on mechanics or ordinary differential equations list
-the various elements you need to write down the exact solution).
-Modify the ``convergence_rate`` function from the ``vib_undamped.py``
-program to perform experiments with the extended model.  Verify that
-the error is of order :math:`\Delta t^2`.
+problem :ref:`(63) <Eq:vib:ode2>` when :math:`s(u)=cu`, :math:`F(t)=A\sin\phi t` and there
+is no damping.  Find the complete analytical solution to the problem
+in this case (most textbooks on mechanics or ordinary differential
+equations list the various elements you need to write down the exact
+solution, or you can use symbolic tools like ``sympy`` or ``wolframalpha.com``).
+Modify the ``convergence_rate`` function from the
+``vib_undamped.py`` program to perform experiments with the extended
+model.  Verify that the error is of order :math:`\Delta t^2`.
 
 .. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
 
@@ -1003,7 +1198,7 @@ Filename: ``vib_conv_rate``.
 
 .. _vib:exer:undamped:odespy:
 
-Exercise 12: Investigate the amplitude errors of many solvers
+Exercise 13: Investigate the amplitude errors of many solvers
 -------------------------------------------------------------
 
 Use the program ``vib_undamped_odespy.py`` from the section :ref:`vib:model2x2:compare` (utilize the function ``amplitudes``) to investigate
@@ -1025,20 +1220,18 @@ Filename: ``vib_amplitude_errors``.
 
 .. _vib:exer:memsave:
 
-Exercise 13: Minimize memory usage of a vibration solver
---------------------------------------------------------
+Problem 14: Minimize memory usage of a vibration solver
+-------------------------------------------------------
 
-The program `vib.py <http://tinyurl.com/nm5587k/vib/vib.py>`__
-stores the complete solution :math:`u^0,u^1,\ldots,u^{N_t}` in memory, which is
-convenient for later plotting.
-Make a memory minimizing version of this program where only the last three
-:math:`u^{n+1}`, :math:`u^n`, and :math:`u^{n-1}` values are stored in memory.
-Write each computed :math:`(t_{n+1}, u^{n+1})` pair to file.
-Visualize the data in the file (a cool solution is to
-read one line at a time and
-plot the :math:`u` value using the line-by-line plotter in the
-``visualize_front_ascii`` function - this technique makes it trivial
-to visualize very long time simulations).
+The program `vib.py <http://tinyurl.com/nm5587k/vib/vib.py>`__ stores the complete
+solution :math:`u^0,u^1,\ldots,u^{N_t}` in memory, which is convenient for
+later plotting.  Make a memory minimizing version of this program
+where only the last three :math:`u^{n+1}`, :math:`u^n`, and :math:`u^{n-1}` values are
+stored in memory.  Write each computed :math:`(t_{n+1}, u^{n+1})` pair to
+file.  Visualize the data in the file (a cool solution is to read one
+line at a time and plot the :math:`u` value using the line-by-line plotter
+in the ``visualize_front_ascii`` function - this technique makes it
+trivial to visualize very long time simulations).
 
 .. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
 
@@ -1048,25 +1241,134 @@ Filename: ``vib_memsave``.
 
 .. --- begin exercise ---
 
+.. _vib:exer:EC_vs_centered:
+
+Exercise 15: Implement the Euler-Cromer scheme for the generalized model
+------------------------------------------------------------------------
+
+We consider the generalized model problem
+
+.. math::
+         mu'' + f(u') + s(u) = F(t),\quad u(0)=I,\ u'(0)=V{\thinspace .}
+
+**a)**
+Implement the Euler-Cromer method from the section :ref:`vib:ode2:EulerCromer`.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
+**b)**
+We expect the Euler-Cromer method to have first-order convergence rate.
+Make a unit test based on this expectation.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
+**c)**
+Consider a system with :math:`m=4`, :math:`f(v)=b|v|v`, :math:`b=0.2`, :math:`s=2u`, :math:`F=0`.
+Compute the solution using the centered difference scheme
+from the section :ref:`vib:ode2:fdm:flin` and the Euler-Cromer scheme
+for the longest possible time step :math:`\Delta t`. We can use the
+result from the case without damping, i.e., the largest :math:`\Delta t= 2/\omega`,
+:math:`\omega\approx
+\sqrt{0.5}` in this case, but since :math:`b` will modify the frequency, we
+take the longest possible time step as a safety factor 0.9 times :math:`2/\omega`.
+Refine :math:`\Delta t` three times by a factor of two and compare the
+two curves.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
+Filename: ``vib_EulerCromer``.
+
+.. --- end exercise ---
+
+.. --- begin exercise ---
+
+.. _vib:exer:gen:PEFRL:
+
+Exercise 16: Implement the PEFRL algorithm
+------------------------------------------
+
+We consider the motion of a planet around a star as modeled in
+the section :ref:`vib:app:gravitation`. The simplified case where one
+mass is very much bigger than the other and one object is at rest,
+results in the scaled ODE model
+
+.. math::
+        
+        \ddot x + (x^2 + y^2)^{3/2}x & = 0,\\ 
+        \ddot y + (x^2 + y^2)^{3/2}y & = 0{\thinspace .}
+        
+
+**a)**
+It is easy to show that :math:`x(t)` and :math:`y(t)` goes like sine and cosine
+functions. Use this idea to derive the exact solution.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
+**b)**
+A planet may orbit a star for billion of years. We are now interested
+in how accurate methods we actually need for such calculations.
+First, we need to determine what the time interval of interest is in
+scaled units. Take the earth and sun as typical objects and find
+the characteristic time used in the scaling of the equations
+(:math:`t_c = \sqrt{L^3/(mG)}`, where :math:`m` is the mass of the sun, :math:`L` is the
+distance between the sun and the earth, and :math:`G` is the gravitational
+constant. Find the scaled time interval corresponding to one billion years.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
+**c)**
+Make a solver based on Odespy for the current problem.
+Run the 4-th order Runge-Kutta method for the time interval in b).
+What is the deviation of the orbit after one billion years?
+The answer depends heavily on the size of the time step. Try to establish
+an empirical formula for the deviation of the orbit as a function of
+:math:`\Delta t`.
+
+**d)**
+Implement a solver based on the PEFRL method from
+the section :ref:`vib:ode2:PEFRL`. Verify its 4th-order convergence
+using an equation :math:`u'' + u = 0`.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
+**e)**
+Run the PEFRL method on the planet-star problem and establish an
+empirical relation for the deviation of the orbit as a function
+of :math:`\Delta t`. Is it feasible on today's computers to
+simulate the planetary motion for one billion years?
+
+Filename: ``vib_PEFRL``.
+
+.. Closing remarks for this Exercise
+
+Remarks          (1)
+~~~~~~~~~~~~~~~~~~~~
+
+This exercise investigates whether it is feasible to predict
+planetary motion for the life time of a solar system.
+
+.. --- end exercise ---
+
+.. --- begin exercise ---
+
 .. _vib:exer:gen:class:
 
-Exercise 14: Implement the solver via classes
+Exercise 17: Implement the solver via classes
 ---------------------------------------------
 
-Reimplement the ``vib.py``
-program
-using a class ``Problem`` to hold all the physical parameters of the problem,
-a class ``Solver`` to hold the numerical parameters and compute the
-solution, and a class ``Visualizer`` to display the solution.
+Reimplement the ``vib.py`` program using a class ``Problem`` to hold all
+the physical parameters of the problem, a class ``Solver`` to hold the
+numerical parameters and compute the solution, and a class
+``Visualizer`` to display the solution.
 
 .. --- begin hint in exercise ---
 
 **Hint.**
-Use the ideas and examples
-for an `ODE model <http://hplgit.github.io/decay-book/doc/pub/book/sphinx/._book009.html#classes-for-problem-and-solution-method>`__ in [Ref1]_.
-More specifically, make a superclass ``Problem`` for holding the scalar
-physical parameters of a problem and let subclasses implement the
-:math:`s(u)` and :math:`F(t)` functions as methods.
+Use the ideas and examples for an `ODE
+model <http://hplgit.github.io/decay-book/doc/pub/book/sphinx/._book009.html#classes-for-problem-and-solution-method>`__
+in [Ref1]_.  More specifically, make a superclass
+``Problem`` for holding the scalar physical parameters of a problem and
+let subclasses implement the :math:`s(u)` and :math:`F(t)` functions as methods.
 Try to call up as much existing functionality in ``vib.py`` as possible.
 
 .. --- end hint in exercise ---
@@ -1081,12 +1383,12 @@ Filename: ``vib_class``.
 
 .. _vib:exer:DtDt:asDtpDtm:
 
-Exercise 15: Interpret :math:`[D_tD_t u]^n` as a forward-backward difference
-----------------------------------------------------------------------------
+Problem 18: Interpret :math:`[D_tD_t u]^n` as a forward-backward difference
+---------------------------------------------------------------------------
 
 Show that the difference :math:`[D_t D_tu]^n` is equal to :math:`[D_t^+D_t^-u]^n`
 and :math:`D_t^-D_t^+u]^n`. That is, instead of applying a centered difference
-twice one can alternatively apply a mixture forward and backward
+twice one can alternatively apply a mixture of forward and backward
 differences.
 
 .. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
@@ -1099,8 +1401,8 @@ Filename: ``vib_DtDt_fw_bw``.
 
 .. _vib:exer:quad:damping:bw:
 
-Exercise 16: Use a backward difference for the damping term
------------------------------------------------------------
+Problem 19: Use a backward difference for the damping term
+----------------------------------------------------------
 
 As an alternative to discretizing the damping terms :math:`\beta u^{\prime}` and
 :math:`\beta |u^{\prime}|u^{\prime}` by centered differences, we may apply
@@ -1109,8 +1411,9 @@ backward differences:
 .. math::
         
         [u^{\prime}]^n &\approx [D_t^-u]^n,\\ 
-        & [|u^{\prime}|u^{\prime}]^n &\approx [|D_t^-u|D_t^-u]^n
-        = |[D_t^-u]^n|[D_t^-u]^n{\thinspace .}
+        & [|u^{\prime}|u^{\prime}]^n\\ 
+        &\approx [|D_t^-u|D_t^-u]^n\\ 
+        &= |[D_t^-u]^n|[D_t^-u]^n{\thinspace .}
         
 
 The advantage of the backward difference is that the damping term is
@@ -1132,7 +1435,7 @@ Filename: ``vib_gen_bwdamping``.
 
 .. _vib:exer:EulerCromer:analysis:
 
-Exercise 17: Analysis of the Euler-Cromer scheme
+Exercise 20: Analysis of the Euler-Cromer scheme
 ------------------------------------------------
 
 The Euler-Cromer scheme for the model problem
@@ -1188,13 +1491,12 @@ following formula is handy:
 Applications of vibration models
 ================================
 
-The following text derives some of the most well-known physical problems
-that lead to
-second-order ODE models of the type addressed in this document.
-We consider a simple spring-mass system; thereafter extended with
-nonlinear spring, damping, and external excitation; a spring-mass system
-with sliding friction; a simple and a physical (classical) pendulum;
-and an elastic pendulum.
+The following text derives some of the most well-known physical
+problems that lead to second-order ODE models of the type addressed in
+this document.  We consider a simple spring-mass system; thereafter
+extended with nonlinear spring, damping, and external excitation; a
+spring-mass system with sliding friction; a simple and a physical
+(classical) pendulum; and an elastic pendulum.
 
 .. _vib:app:mass_spring:
 
@@ -1238,7 +1540,7 @@ The ODE problem is normally written as
 
 .. math::
 
-    \tag{83}
+    \tag{98}
     m\ddot u + ku = 0,\quad u(0)=I,\ \dot u(0)=V{\thinspace .}
         
         
@@ -1251,7 +1553,7 @@ and introduce the frequency :math:`\omega = \sqrt{k/m}`:
 
 .. math::
 
-    \tag{84}
+    \tag{99}
     \ddot u + \omega^2 u = 0,\quad u(0)=I,\  \dot u(0)=V{\thinspace .}
         
         
@@ -1270,10 +1572,11 @@ complete motion, we say that the mechanical system has one degree of freedom
 Scaling          (1)
 ~~~~~~~~~~~~~~~~~~~~
 
-For numerical simulations it is very convenient to scale :ref:`(84) <Eq:vib:app:mass_spring:equ>` and thereby get rid of the problem of finding relevant values
-for all the parameters :math:`m`, :math:`k`, :math:`I`, and :math:`V`.
+For numerical simulations it is very convenient to scale
+:ref:`(99) <Eq:vib:app:mass_spring:equ>` and thereby get rid of the problem of
+finding relevant values for all the parameters :math:`m`, :math:`k`, :math:`I`, and :math:`V`.
 Since the amplitude of the oscillations are dictated by :math:`I` and :math:`V`
-(or more precisely, :math:`V/\omega`), we scale :math:`u` by :math:`I` (or :math:`V/omega` if
+(or more precisely, :math:`V/\omega`), we scale :math:`u` by :math:`I` (or :math:`V/\omega` if
 :math:`I=0`):
 
 .. math::
@@ -1282,7 +1585,7 @@ Since the amplitude of the oscillations are dictated by :math:`I` and :math:`V`
 The time scale :math:`t_c` is normally chosen as the inverse period :math:`2\pi/\omega` or
 angular frequency :math:`1/\omega`, most often as :math:`t_c=1/\omega`.
 Inserting the dimensionless quantities :math:`\bar u` and :math:`\bar t` in
-:ref:`(84) <Eq:vib:app:mass_spring:equ>` results in the scaled problem
+:ref:`(99) <Eq:vib:app:mass_spring:equ>` results in the scaled problem
 
 .. math::
          \frac{d^2\bar u}{d\bar t^2} + \bar u = 0,\quad \bar u(0)=1,\ \frac{\bar u}{\bar t}(0)=\beta = \frac{V}{I\omega},
@@ -1293,19 +1596,19 @@ where :math:`\beta` is a dimensionless number. Any motion that starts from rest
 The physics
 ~~~~~~~~~~~
 
-The typical physics of the system in Figure :ref:`vib:app:mass_spring:fig` can
-be described as follows.
-Initially, we displace the body to some position :math:`I`, say at rest
-(:math:`V=0`). After releasing the body, the spring, which is extended, will
-act with a force :math:`-kI\boldsymbol{i}` and pull the body to the left. This force
-causes an acceleration and therefore increases velocity. The body passes
-the point :math:`x=0`, where :math:`u=0`,
-and the spring will then be compressed and act with a
-force :math:`kx\boldsymbol{i}` against the motion and cause retardation. At some point,
-the motion stops and the velocity is zero, before the spring force
-:math:`kx\boldsymbol{i}` accelerates the body in positive direction. The result is that
-the body accelerates back and forth. As long as there is no friction
-forces to damp the motion, the oscillations will continue forever.
+The typical physics of the system in Figure
+:ref:`vib:app:mass_spring:fig` can be described as follows.  Initially,
+we displace the body to some position :math:`I`, say at rest (:math:`V=0`). After
+releasing the body, the spring, which is extended, will act with a
+force :math:`-kI\boldsymbol{i}` and pull the body to the left. This force causes an
+acceleration and therefore increases velocity. The body passes the
+point :math:`x=0`, where :math:`u=0`, and the spring will then be compressed and
+act with a force :math:`kx\boldsymbol{i}` against the motion and cause retardation. At
+some point, the motion stops and the velocity is zero, before the
+spring force :math:`kx\boldsymbol{i}` has worked long enough to push the body in
+positive direction. The result is that the body accelerates back and
+forth. As long as there is no friction forces to damp the motion, the
+oscillations will continue forever.
 
 .. _vib:app:mass_gen:
 
@@ -1338,7 +1641,7 @@ Finally, we have the external environmental force :math:`\boldsymbol{F}_e = F(t)
 Newton's second law of motion now involves three forces:
 
 .. math::
-         F(t)\boldsymbol{i} + f(\dot u)ii - s(u)\boldsymbol{i} = m\ddot u \boldsymbol{i}{\thinspace .}
+         F(t)\boldsymbol{i} + f(\dot u)\boldsymbol{i} - s(u)\boldsymbol{i} = m\ddot u \boldsymbol{i}{\thinspace .}
 
 The common mathematical form of the ODE problem is
 
@@ -1346,7 +1649,7 @@ The common mathematical form of the ODE problem is
 
 .. math::
 
-    \tag{85}
+    \tag{100}
     m\ddot u + f(\dot u) + s(u) = F(t),\quad u(0)=I,\ \dot u(0)=V{\thinspace .}
         
         
@@ -1390,7 +1693,7 @@ The scaled ODE becomes
 
 .. math::
 
-    \tag{86}
+    \tag{101}
     \frac{d^2\bar u}{d\bar t^2}
         + 2\beta\left\vert\frac{d\bar u}{d\bar t}\right\vert
         \frac{d\bar u}{d\bar t} + \bar u = \sin(\gamma\bar t),
@@ -1458,7 +1761,7 @@ The equation of motion becomes
 
 .. math::
 
-    \tag{87}
+    \tag{102}
     m\ddot u + \mu mg\hbox{sign}(\dot u) + s(u) = 0,\quad u(0)=I,\ \dot u(0)=V{\thinspace .}
         
         
@@ -1473,8 +1776,6 @@ If the machine contains just a few clothes, the circular motion of
 the machine induces a sinusoidal external force and the machine will
 jump up and down if the frequency of the external force is close to
 the natural frequency of the machine and its spring-damper system.
-
-[**hpl 9**: Not finished. This is a good example on resonance.]
 
 .. _vib:app:pendulum:
 
@@ -1536,7 +1837,11 @@ The forces are now expressed as follows.
 
 Since a positive velocity means movement in the direction of :math:`\boldsymbol{i}_{\theta}`,
 the drag force must be directed along :math:`-\boldsymbol{i}_{\theta}` so it works against the
-motion.
+motion. We assume motion in air so that the added mass effect can
+be neglected (for a spherical body, the added mass is :math:`\frac{1}{2}\varrho V`,
+where :math:`V` is the volume of the body). Also the buoyancy effect
+can be neglected for motion in the air when the density difference
+between the fluid and the body is so significant.
 
 The velocity of the body is found from :math:`\boldsymbol{r}`:
 
@@ -1566,7 +1871,7 @@ leading to two component equations
 
 .. math::
 
-    \tag{88}
+    \tag{103}
     -S + mg\cos\theta = -L\dot\theta^2,
         
         
@@ -1575,14 +1880,14 @@ leading to two component equations
 
 .. math::
 
-    \tag{89}
+    \tag{104}
     -mg\sin\theta - \frac{1}{2}C_D\varrho AL^2|\dot\theta|\dot\theta
         = mL\ddot\theta{\thinspace .}
         
         
 
-From :ref:`(88) <Eq:vib:app:pendulum:ir>` we get an expression for
-:math:`S=mg\cos\theta + L\dot\theta^2`, and from :ref:`(89) <Eq:vib:app:pendulum:ith>`
+From :ref:`(103) <Eq:vib:app:pendulum:ir>` we get an expression for
+:math:`S=mg\cos\theta + L\dot\theta^2`, and from :ref:`(104) <Eq:vib:app:pendulum:ith>`
 we get a differential equation for the angle :math:`\theta(t)`. This latter
 equation is ordered as
 
@@ -1590,7 +1895,7 @@ equation is ordered as
 
 .. math::
 
-    \tag{90}
+    \tag{105}
     m\ddot\theta + \frac{1}{2}C_D\varrho AL|\dot\theta|\dot\theta
         + \frac{mg}{L}\sin\theta = 0{\thinspace .}
         
@@ -1599,8 +1904,8 @@ equation is ordered as
 Two initial conditions are needed: :math:`\theta=\Theta` and :math:`\dot\theta = \Omega`.
 Normally, the pendulum motion is started from rest, which means :math:`\Omega =0`.
 
-Equation :ref:`(90) <Eq:vib:app:pendulum:thetaeq>` fits the general model
-used in :ref:`(60) <Eq:vib:ode2>` in the section :ref:`vib:model2` if we define
+Equation :ref:`(105) <Eq:vib:app:pendulum:thetaeq>` fits the general model
+used in :ref:`(63) <Eq:vib:ode2>` in the section :ref:`vib:model2` if we define
 :math:`u=\theta`, :math:`f(u^{\prime}) = \frac{1}{2}C_D\varrho AL|\dot u|\dot u`,
 :math:`s(u) = L^{-1}mg\sin u`, and :math:`F=0`.
 If the body is a sphere with radius :math:`R`, we can take :math:`C_D=0.4` and :math:`A=\pi R^2`.
@@ -1628,7 +1933,7 @@ for :math:`\theta(t)`:
 
 .. math::
 
-    \tag{91}
+    \tag{106}
     I\ddot\theta + \frac{1}{2}C_D\varrho AL^3|\dot\theta|\dot\theta
         + mgL\sin\theta = 0{\thinspace .}
         
@@ -1707,7 +2012,7 @@ drag force :math:`\bar D` is then
 
 .. math::
 
-    \tag{92}
+    \tag{107}
     \frac{d\omega}{d\bar t} = - \alpha|\omega|\omega - \sin\theta,
         
         
@@ -1716,7 +2021,7 @@ drag force :math:`\bar D` is then
 
 .. math::
 
-    \tag{93}
+    \tag{108}
     \frac{d\theta}{d\bar t} = \omega,
         
         
@@ -1725,7 +2030,7 @@ drag force :math:`\bar D` is then
 
 .. math::
 
-    \tag{94}
+    \tag{109}
     \bar S = \omega^2 + \cos\theta,
         
         
@@ -1734,7 +2039,7 @@ drag force :math:`\bar D` is then
 
 .. math::
 
-    \tag{95}
+    \tag{110}
     \bar D = -\alpha |\omega|\omega,
         
         
@@ -1745,38 +2050,40 @@ with
          \alpha = \frac{C_D\varrho\pi R^2L}{2m}{\thinspace .}
 
 as a dimensionless parameter expressing the ratio of the drag force and
-the gravity force.
+the gravity force. The dimensionless :math:`\omega` is made non-dimensional
+by the time, so :math:`\omega\sqrt{L/g}` is the corresponding angular
+frequency with dimensions.
 
 .. :ref:`vib:exer:pendulum_simple` asks you to carry out the details of
 
 .. the scaling.
 
 A suitable function for computing
-:ref:`(92) <Eq:vib:app:pendulum_bodydia:eqth>`-:ref:`(95) <Eq:vib:app:pendulum_bodydia:eqD>`
+:ref:`(107) <Eq:vib:app:pendulum_bodydia:eqth>`-:ref:`(110) <Eq:vib:app:pendulum_bodydia:eqD>`
 is listed below.
 
 .. code-block:: python
 
-        def simulate(alpha, Theta, dt, T):
-            import odespy
-        
-            def f(u, t, alpha):
-                omega, theta = u
-                return [-alpha*omega*abs(omega) - sin(theta),
-                        omega]
-        
-            import numpy as np
-            Nt = int(round(T/float(dt)))
-            t = np.linspace(0, Nt*dt, Nt+1)
-            solver = odespy.RK4(f, f_args=[alpha])
-            solver.set_initial_condition([0, Theta])
-            u, t = solver.solve(
-                t, terminate=lambda u, t, n: abs(u[n,1]) < 1E-3)
-            omega = u[:,0]
-            theta = u[:,1]
-            S = omega**2 + np.cos(theta)
-            drag = -alpha*np.abs(omega)*omega
-            return t, theta, omega, S, drag
+    def simulate(alpha, Theta, dt, T):
+        import odespy
+    
+        def f(u, t, alpha):
+            omega, theta = u
+            return [-alpha*omega*abs(omega) - sin(theta),
+                    omega]
+    
+        import numpy as np
+        Nt = int(round(T/float(dt)))
+        t = np.linspace(0, Nt*dt, Nt+1)
+        solver = odespy.RK4(f, f_args=[alpha])
+        solver.set_initial_condition([0, Theta])
+        u, t = solver.solve(
+            t, terminate=lambda u, t, n: abs(u[n,1]) < 1E-3)
+        omega = u[:,0]
+        theta = u[:,1]
+        S = omega**2 + np.cos(theta)
+        drag = -alpha*np.abs(omega)*omega
+        return t, theta, omega, S, drag
 
 Drawing the free body diagram
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1789,84 +2096,84 @@ important for an animated free body diagram.
 
 .. code-block:: python
 
-        import sys
-        try:
-            from pysketcher import *
-        except ImportError:
-            print 'Pysketcher must be installed from'
-            print 'https://github.com/hplgit/pysketcher'
-            sys.exit(1)
-        
-        # Overall dimensions of sketch
-        H = 15.
-        W = 17.
-        
-        drawing_tool.set_coordinate_system(
-            xmin=0, xmax=W, ymin=0, ymax=H,
-            axis=False)
-        
-        def sketch(theta, S, mg, drag, t, time_level):
-            """
-            Draw pendulum sketch with body forces at a time level
-            corresponding to time t. The drag force is in
-            drag[time_level], the force in the wire is S[time_level],
-            the angle is theta[time_level].
-            """
-            import math
-            a = math.degrees(theta[time_level])  # angle in degrees
-            L = 0.4*H         # Length of pendulum
-            P = (W/2, 0.8*H)  # Fixed rotation point
-        
-            mass_pt = path.geometric_features()['end']
-            rod = Line(P, mass_pt)
-        
-            mass = Circle(center=mass_pt, radius=L/20.)
-            mass.set_filled_curves(color='blue')
-            rod_vec = rod.geometric_features()['end'] - \ 
-                      rod.geometric_features()['start']
-            unit_rod_vec = unit_vec(rod_vec)
-            mass_symbol = Text('$m$', mass_pt + L/10*unit_rod_vec)
-        
-            rod_start = rod.geometric_features()['start']  # Point P
-            vertical = Line(rod_start, rod_start + point(0,-L/3))
-        
-            def set_dashed_thin_blackline(*objects):
-                """Set linestyle of objects to dashed, black, width=1."""
-                for obj in objects:
-                    obj.set_linestyle('dashed')
-                    obj.set_linecolor('black')
-                    obj.set_linewidth(1)
-        
-            set_dashed_thin_blackline(vertical)
-            set_dashed_thin_blackline(rod)
-            angle = Arc_wText(r'$\theta$', rod_start, L/6, -90, a,
-                              text_spacing=1/30.)
-        
-            magnitude = 1.2*L/2   # length of a unit force in figure
-            force = mg[time_level]  # constant (scaled eq: about 1)
-            force *= magnitude
-            mg_force  = Force(mass_pt, mass_pt + force*point(0,-1),
-                              '', text_pos='end')
-            force = S[time_level]
-            force *= magnitude
-            rod_force = Force(mass_pt, mass_pt - force*unit_vec(rod_vec),
-                              '', text_pos='end',
-                              text_spacing=(0.03, 0.01))
-            force = drag[time_level]
-            force *= magnitude
-            air_force = Force(mass_pt, mass_pt -
-                              force*unit_vec((rod_vec[1], -rod_vec[0])),
-                              '', text_pos='end',
-                              text_spacing=(0.04,0.005))
-        
-            body_diagram = Composition(
-                {'mg': mg_force, 'S': rod_force, 'air': air_force,
-                 'rod': rod, 'body': mass
-                 'vertical': vertical, 'theta': angle,})
-        
-            body_diagram.draw(verbose=0)
-            drawing_tool.savefig('tmp_%04d.png' % time_level, crop=False)
-            # (No cropping: otherwise movies will be very strange!)
+    import sys
+    try:
+        from pysketcher import *
+    except ImportError:
+        print 'Pysketcher must be installed from'
+        print 'https://github.com/hplgit/pysketcher'
+        sys.exit(1)
+    
+    # Overall dimensions of sketch
+    H = 15.
+    W = 17.
+    
+    drawing_tool.set_coordinate_system(
+        xmin=0, xmax=W, ymin=0, ymax=H,
+        axis=False)
+    
+    def sketch(theta, S, mg, drag, t, time_level):
+        """
+        Draw pendulum sketch with body forces at a time level
+        corresponding to time t. The drag force is in
+        drag[time_level], the force in the wire is S[time_level],
+        the angle is theta[time_level].
+        """
+        import math
+        a = math.degrees(theta[time_level])  # angle in degrees
+        L = 0.4*H         # Length of pendulum
+        P = (W/2, 0.8*H)  # Fixed rotation point
+    
+        mass_pt = path.geometric_features()['end']
+        rod = Line(P, mass_pt)
+    
+        mass = Circle(center=mass_pt, radius=L/20.)
+        mass.set_filled_curves(color='blue')
+        rod_vec = rod.geometric_features()['end'] - \ 
+                  rod.geometric_features()['start']
+        unit_rod_vec = unit_vec(rod_vec)
+        mass_symbol = Text('$m$', mass_pt + L/10*unit_rod_vec)
+    
+        rod_start = rod.geometric_features()['start']  # Point P
+        vertical = Line(rod_start, rod_start + point(0,-L/3))
+    
+        def set_dashed_thin_blackline(*objects):
+            """Set linestyle of objects to dashed, black, width=1."""
+            for obj in objects:
+                obj.set_linestyle('dashed')
+                obj.set_linecolor('black')
+                obj.set_linewidth(1)
+    
+        set_dashed_thin_blackline(vertical)
+        set_dashed_thin_blackline(rod)
+        angle = Arc_wText(r'$\theta$', rod_start, L/6, -90, a,
+                          text_spacing=1/30.)
+    
+        magnitude = 1.2*L/2   # length of a unit force in figure
+        force = mg[time_level]  # constant (scaled eq: about 1)
+        force *= magnitude
+        mg_force  = Force(mass_pt, mass_pt + force*point(0,-1),
+                          '', text_pos='end')
+        force = S[time_level]
+        force *= magnitude
+        rod_force = Force(mass_pt, mass_pt - force*unit_vec(rod_vec),
+                          '', text_pos='end',
+                          text_spacing=(0.03, 0.01))
+        force = drag[time_level]
+        force *= magnitude
+        air_force = Force(mass_pt, mass_pt -
+                          force*unit_vec((rod_vec[1], -rod_vec[0])),
+                          '', text_pos='end',
+                          text_spacing=(0.04,0.005))
+    
+        body_diagram = Composition(
+            {'mg': mg_force, 'S': rod_force, 'air': air_force,
+             'rod': rod, 'body': mass
+             'vertical': vertical, 'theta': angle,})
+    
+        body_diagram.draw(verbose=0)
+        drawing_tool.savefig('tmp_%04d.png' % time_level, crop=False)
+        # (No cropping: otherwise movies will be very strange!)
 
 Making the animated free body diagram
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1876,24 +2183,24 @@ We first run ``simulate``:
 
 .. code-block:: python
 
-        from math import pi, radians, degrees
-        import numpy as np
-        alpha = 0.4
-        period = 2*pi   # Use small theta approximation
-        T = 12*period   # Simulate for 12 periods
-        dt = period/40  # 40 time steps per period
-        a = 70          # Initial amplitude in degrees
-        Theta = radians(a)
-        
-        t, theta, omega, S, drag = simulate(alpha, Theta, dt, T)
+    from math import pi, radians, degrees
+    import numpy as np
+    alpha = 0.4
+    period = 2*pi   # Use small theta approximation
+    T = 12*period   # Simulate for 12 periods
+    dt = period/40  # 40 time steps per period
+    a = 70          # Initial amplitude in degrees
+    Theta = radians(a)
+    
+    t, theta, omega, S, drag = simulate(alpha, Theta, dt, T)
 
 The next step is to run through the time levels in the simulation and
 make a sketch at each level:
 
 .. code-block:: python
 
-        for time_level, t_ in enumerate(t):
-            sketch(theta, S, mg, drag, t_, time_level)
+    for time_level, t_ in enumerate(t):
+        sketch(theta, S, mg, drag, t_, time_level)
 
 The individual sketches are (by the ``sketch`` function) saved in files
 with names ``tmp_%04d.png``. These can be combined to videos using
@@ -1903,45 +2210,45 @@ listed below.
 
 .. code-block:: python
 
-        def animate():
-            # Clean up old plot files
-            import os, glob
-            for filename in glob.glob('tmp_*.png') + glob.glob('movie.*'):
-                os.remove(filename)
-            # Solve problem
-            from math import pi, radians, degrees
-            import numpy as np
-            alpha = 0.4
-            period = 2*pi   # Use small theta approximation
-            T = 12*period   # Simulate for 12 periods
-            dt = period/40  # 40 time steps per period
-            a = 70          # Initial amplitude in degrees
-            Theta = radians(a)
-        
-            t, theta, omega, S, drag = simulate(alpha, Theta, dt, T)
-        
-            # Visualize drag force 5 times as large
-            drag *= 5
-            mg = np.ones(S.size)  # Gravity force (needed in sketch)
-        
-            # Draw animation
-            import time
-            for time_level, t_ in enumerate(t):
-                sketch(theta, S, mg, drag, t_, time_level)
-                time.sleep(0.2)  # Pause between each frame on the screen
-        
-            # Make videos
-            prog = 'ffmpeg'
-            filename = 'tmp_%04d.png'
-            fps = 6
-            codecs = {'flv': 'flv', 'mp4': 'libx264',
-                      'webm': 'libvpx', 'ogg': 'libtheora'}
-            for ext in codecs:
-                lib = codecs[ext]
-                cmd = '%(prog)s -i %(filename)s -r %(fps)s ' % vars()
-                cmd += '-vcodec %(lib)s movie.%(ext)s' % vars()
-                print(cmd)
-                os.system(cmd)
+    def animate():
+        # Clean up old plot files
+        import os, glob
+        for filename in glob.glob('tmp_*.png') + glob.glob('movie.*'):
+            os.remove(filename)
+        # Solve problem
+        from math import pi, radians, degrees
+        import numpy as np
+        alpha = 0.4
+        period = 2*pi   # Use small theta approximation
+        T = 12*period   # Simulate for 12 periods
+        dt = period/40  # 40 time steps per period
+        a = 70          # Initial amplitude in degrees
+        Theta = radians(a)
+    
+        t, theta, omega, S, drag = simulate(alpha, Theta, dt, T)
+    
+        # Visualize drag force 5 times as large
+        drag *= 5
+        mg = np.ones(S.size)  # Gravity force (needed in sketch)
+    
+        # Draw animation
+        import time
+        for time_level, t_ in enumerate(t):
+            sketch(theta, S, mg, drag, t_, time_level)
+            time.sleep(0.2)  # Pause between each frame on the screen
+    
+        # Make videos
+        prog = 'ffmpeg'
+        filename = 'tmp_%04d.png'
+        fps = 6
+        codecs = {'flv': 'flv', 'mp4': 'libx264',
+                  'webm': 'libvpx', 'ogg': 'libtheora'}
+        for ext in codecs:
+            lib = codecs[ext]
+            cmd = '%(prog)s -i %(filename)s -r %(fps)s ' % vars()
+            cmd += '-vcodec %(lib)s movie.%(ext)s' % vars()
+            print(cmd)
+            os.system(cmd)
 
 .. _vib:app:pendulum_elastic:
 
@@ -1985,12 +2292,13 @@ The stretch :math:`\Delta L` in the wire is
 
 The force in the wire is then :math:`-S\boldsymbol{n}=-k\Delta L\boldsymbol{n}`.
 
-The other forces are the gravity and the air resistance, just
-as in Figure :ref:`vib:app:pendulum:fig_forces`. The main difference
-is that we have a *model* for :math:`S` in terms of the motion (as soon as
-we have expressed :math:`\Delta L` by :math:`\boldsymbol{r}`). For simplicity, we drop
-the air resistance term (but :ref:`vib:exer:pendulum_elastic_drag`
-asks you to include it).
+The other forces are the gravity and the air resistance, just as in
+Figure :ref:`vib:app:pendulum:fig_forces`. For motion in air we can
+neglect the added mass and buoyancy effects.  The main difference is
+that we have a *model* for :math:`S` in terms of the motion (as soon as we
+have expressed :math:`\Delta L` by :math:`\boldsymbol{r}`). For simplicity, we drop the air
+resistance term (but :ref:`vib:exer:pendulum_elastic_drag` asks
+you to include it).
 
 Newton's second law of motion applied to the body now results in
 
@@ -1998,19 +2306,19 @@ Newton's second law of motion applied to the body now results in
 
 .. math::
 
-    \tag{96}
+    \tag{111}
     m\ddot\boldsymbol{r} = -k(L-L_0)\boldsymbol{n} - mg\boldsymbol{j}
         
         
 
 The two components of
-:ref:`(96) <Eq:vib:app:pendulum_elastic:eq1>` are
+:ref:`(111) <Eq:vib:app:pendulum_elastic:eq1>` are
 
-.. _Eq:_auto28:
+.. _Eq:_auto45:
 
 .. math::
 
-    \tag{97}
+    \tag{112}
     \ddot x = -\frac{k}{m}(L-L_0)n_x,
         
         
@@ -2019,12 +2327,12 @@ The two components of
 
 .. math::
 
-    \tag{98}
+    \tag{113}
     .. _Eq:vib:app:pendulum_elastic:eq2b:
 
 .. math::
 
-    \tag{99}
+    \tag{114}
     \ddot y = - \frac{k}{m}(L-L_0)n_y - g
         {\thinspace .}
         
@@ -2126,7 +2434,7 @@ We insert :math:`n_x` and :math:`n_y`  in the ODEs:
 
 .. math::
 
-    \tag{100}
+    \tag{115}
     \ddot x = -\frac{k}{m}\left(1 -\frac{L_0}{L}\right)(x-x_0),
         
         
@@ -2135,7 +2443,7 @@ We insert :math:`n_x` and :math:`n_y`  in the ODEs:
 
 .. math::
 
-    \tag{101}
+    \tag{116}
     \ddot y = -\frac{k}{m}\left(1 -\frac{L_0}{L}\right)(y-y_0) - g,
         
         
@@ -2144,7 +2452,7 @@ We insert :math:`n_x` and :math:`n_y`  in the ODEs:
 
 .. math::
 
-    \tag{102}
+    \tag{117}
     L = \sqrt{(x-x_0)^2 + (y-y_0)^2},
         
         
@@ -2153,7 +2461,7 @@ We insert :math:`n_x` and :math:`n_y`  in the ODEs:
 
 .. math::
 
-    \tag{103}
+    \tag{118}
     x(0) = (L_0+mg/k)\sin\Theta,
         
         
@@ -2162,7 +2470,7 @@ We insert :math:`n_x` and :math:`n_y`  in the ODEs:
 
 .. math::
 
-    \tag{104}
+    \tag{119}
     x'(0) = 0,
         
         
@@ -2171,7 +2479,7 @@ We insert :math:`n_x` and :math:`n_y`  in the ODEs:
 
 .. math::
 
-    \tag{105}
+    \tag{120}
     y(0)  =(L_0+mg/k)(1-\cos\Theta),
         
         
@@ -2180,7 +2488,7 @@ We insert :math:`n_x` and :math:`n_y`  in the ODEs:
 
 .. math::
 
-    \tag{106}
+    \tag{121}
     y'(0) = 0{\thinspace .}
         
         
@@ -2192,7 +2500,7 @@ The elastic pendulum model can be used to study both an elastic pendulum
 and a classic, non-elastic pendulum. The latter problem is obtained
 by letting :math:`k\rightarrow\infty`. Unfortunately,
 a serious problem with the ODEs
-:ref:`(100) <Eq:vib:app:pendulum_elastic:x>`-:ref:`(101) <Eq:vib:app:pendulum_elastic:y>` is that for large :math:`k`, we have a very large factor :math:`k/m` multiplied by a
+:ref:`(115) <Eq:vib:app:pendulum_elastic:x>`-:ref:`(116) <Eq:vib:app:pendulum_elastic:y>` is that for large :math:`k`, we have a very large factor :math:`k/m` multiplied by a
 very small number :math:`1-L_0/L`, since for large :math:`k`, :math:`L\approx L_0` (very
 small deformations of the wire). The product is subject to
 significant round-off errors for many relevant physical values of
@@ -2270,7 +2578,7 @@ With :math:`\beta` the ODEs read
 
 .. math::
 
-    \tag{107}
+    \tag{122}
     \frac{d^2\bar x}{d\bar t^2} =
         -\frac{\beta}{1-\beta}\left(1- \frac{\beta}{\bar L}\right)\bar x,
         
@@ -2280,7 +2588,7 @@ With :math:`\beta` the ODEs read
 
 .. math::
 
-    \tag{108}
+    \tag{123}
     \frac{d^2\bar y}{d\bar t^2} =
         -\frac{\beta}{1-\beta}\left(1- \frac{\beta}{\bar L}\right)(\bar y-1)
         -\beta,
@@ -2291,7 +2599,7 @@ With :math:`\beta` the ODEs read
 
 .. math::
 
-    \tag{109}
+    \tag{124}
     \bar L = \sqrt{\bar x^2 + (\bar y-1)^2},
         
         
@@ -2300,7 +2608,7 @@ With :math:`\beta` the ODEs read
 
 .. math::
 
-    \tag{110}
+    \tag{125}
     \bar x(0) = (1+\epsilon)\sin\Theta,
         
         
@@ -2309,7 +2617,7 @@ With :math:`\beta` the ODEs read
 
 .. math::
 
-    \tag{111}
+    \tag{126}
     \frac{d\bar x}{d\bar t}(0) = 0,
         
         
@@ -2318,7 +2626,7 @@ With :math:`\beta` the ODEs read
 
 .. math::
 
-    \tag{112}
+    \tag{127}
     \bar y(0) = 1 - (1+\epsilon)\cos\Theta,
         
         
@@ -2327,7 +2635,7 @@ With :math:`\beta` the ODEs read
 
 .. math::
 
-    \tag{113}
+    \tag{128}
     \frac{d\bar y}{d\bar t}(0) = 0,
         
         
@@ -2385,11 +2693,11 @@ black mass at the top is :math:`H`. With the aid of the :math:`\boldsymbol{r}_0`
 in Figure :ref:`vib:app:bumpy:fig:sketch`, the position :math:`\boldsymbol{r}` of
 the center point of the mass is
 
-.. _Eq:_auto29:
+.. _Eq:_auto46:
 
 .. math::
 
-    \tag{114}
+    \tag{129}
     \boldsymbol{r} = \boldsymbol{r}_0 + 2R\boldsymbol{j} + L\boldsymbol{j} + u\boldsymbol{j} + \frac{1}{2} H\boldsymbol{j},\ 
         
         
@@ -2423,11 +2731,11 @@ To simplify a little bit, we omit the gravity force :math:`mg` in comparison wit
 the other terms. Introducing :math:`u'` for :math:`\dot u` then gives a standard
 damped, vibration equation with external forcing:
 
-.. _Eq:_auto30:
+.. _Eq:_auto47:
 
 .. math::
 
-    \tag{115}
+    \tag{130}
     mu'' + bu' + s(u) =  -mh''(vt)v^2{\thinspace .}
         
         
@@ -2486,7 +2794,7 @@ combined with Newton's second law gives the ODE model
 
 .. math::
 
-    \tag{116}
+    \tag{131}
     h^{\prime\prime}(t) = -g,
         
         
@@ -2497,7 +2805,7 @@ or expressed alternatively as a system of first-order equations:
 
 .. math::
 
-    \tag{117}
+    \tag{132}
     v'(t) = -g,
          
         
@@ -2506,7 +2814,7 @@ or expressed alternatively as a system of first-order equations:
 
 .. math::
 
-    \tag{118}
+    \tag{133}
     h'(t) = v(t){\thinspace .}
         
         
@@ -2523,28 +2831,188 @@ we have two cases.
 2. The motion stops, recognized by a sufficiently small velocity
    (:math:`|v|<\epsilon_v`) close to the ground.
 
+.. _vib:app:gravitation:
+
+Two-body gravitational problem
+------------------------------
+
+Consider two astronomical objects :math:`A` and :math:`B` that attract each other
+by gravitational forces. :math:`A` and :math:`B` could be two stars in a binary
+system, a planet orbiting a star, or a moon orbiting a planet.
+Each object is acted upon by the
+gravitational force due to the other object. Consider motion in a plane
+(for simplicity) and let :math:`(x_A,y_A)` and :math:`(x_B,y_B)` be the
+positions of object :math:`A` and :math:`B`, respectively.
+
+The governing equations
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Newton's second law of motion applied to each object is all we need
+to set up a mathematical model for this physical problem:
+
+.. _Eq:_auto48:
+
+.. math::
+
+    \tag{134}
+    m_A\ddot\boldsymbol{x}_A = \boldsymbol{F},
+        
+        
+
+.. _Eq:_auto49:
+
+.. math::
+
+    \tag{135}
+    m_B\ddot\boldsymbol{x}_B = -\boldsymbol{F},
+        
+        
+
+where :math:`F` is the gravitational force
+
+.. math::
+         \boldsymbol{F} = \frac{Gm_Am_B}{||\boldsymbol{r}||^3}\boldsymbol{r},
+
+where
+
+.. math::
+         \boldsymbol{r}(t) = \boldsymbol{x}_B(t) - \boldsymbol{x}_A(t),
+
+and :math:`G` is the gravitational constant:
+:math:`G=6.674\cdot 10^{-11}\hbox{ Nm}^2/\hbox{kg}^2`.
+
+Scaling          (4)
+~~~~~~~~~~~~~~~~~~~~
+
+A problem with these equations is that the parameters are very large
+(:math:`m_A`, :math:`m_B`, :math:`||\boldsymbol{r}||`) or very small (:math:`G`). The rotation time
+for binary stars can be very small and large as well. It is therefore
+advantageous to scale the equations.
+A natural length scale could be the initial distance between the objects:
+:math:`L=\boldsymbol{r}(0)`. We write the dimensionless quantities as
+
+.. math::
+         \bar\boldsymbol{x}_A = \frac{\boldsymbol{x}_A}{L},\quad\bar\boldsymbol{x}_B = \frac{\boldsymbol{x}_B}{L},\quad
+        \bar t = \frac{t}{t_c}{\thinspace .}
+
+The gravity force is transformed to
+
+.. math::
+         \boldsymbol{F} = \frac{Gm_Am_B}{L^2||\bar\boldsymbol{r}||^3}\bar\boldsymbol{r},\quad \bar\boldsymbol{r} = \bar\boldsymbol{x}_B - \bar\boldsymbol{x}_A,
+
+so the first ODE for :math:`\boldsymbol{x}_A` becomes
+
+.. math::
+         \frac{d^2 \bar\boldsymbol{x}_A}{d\bar t^2} =
+        \frac{Gm_Bt_c^2}{L^3}\frac{\bar\boldsymbol{r}}{||\bar\boldsymbol{r}||^3}{\thinspace .}
+
+Assuming that quantities with a bar and their derivatives are around unity
+in size, it is natural to choose :math:`t_c` such that the fraction :math:`Gm_Bt_c/L^2=1`:
+
+.. math::
+         t_c = \sqrt{\frac{L^3}{Gm_B}}{\thinspace .}
+
+From the other equation for :math:`\boldsymbol{x}_B` we get another candidate for :math:`t_c` with
+:math:`m_A` instead of :math:`m_B`. Which mass we choose play a role if :math:`m_A\ll m_B` or
+:math:`m_B\ll m_A`. One solution is to use the sum of the masses:
+
+.. math::
+         t_c = \sqrt{\frac{L^3}{G(m_A+m_B)}}{\thinspace .}
+
+Taking a look at `Kepler's laws <https://en.wikipedia.org/wiki/Kepler%27s_laws_of_planetary_motion>`__ of planetary motion, the orbital period for a planet around the star is given by the :math:`t_c` above, except for a missing factor of :math:`2\pi`,
+but that means that :math:`t_c^{-1}` is just the angular frequency of the motion.
+Our characteristic time :math:`t_c` is therefore highly relevant.
+Introducing the dimensionless number
+
+.. math::
+         \alpha = \frac{m_A}{m_B},
+
+we can write the dimensionless ODE as
+
+.. _Eq:_auto50:
+
+.. math::
+
+    \tag{136}
+    \frac{d^2 \bar\boldsymbol{x}_A}{d\bar t^2} =
+        \frac{1}{1+\alpha}\frac{\bar\boldsymbol{r}}{||\bar\boldsymbol{r}||^3},
+        
+        
+
+.. _Eq:_auto51:
+
+.. math::
+
+    \tag{137}
+    \frac{d^2 \bar\boldsymbol{x}_B}{d\bar t^2} =
+        \frac{1}{1+\alpha^{-1}}\frac{\bar\boldsymbol{r}}{||\bar\boldsymbol{r}||^3}{\thinspace .}
+        
+        
+
+In the limit :math:`m_A\ll m_B`, i.e., :math:`\alpha\ll 1`,
+object B stands still, say :math:`\bar\boldsymbol{x}_B=0`, and object
+A orbits according to
+
+.. math::
+         \frac{d^2 \bar\boldsymbol{x}_A}{d\bar t^2} = -\frac{\bar\boldsymbol{x}_A}{||\bar \boldsymbol{x}_A||^3}{\thinspace .}
+
+Solution in a special case: planet orbiting a star
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To better see the motion, and that our scaling is reasonable,
+we introduce polar coordinates :math:`r` and :math:`\theta`:
+
+.. math::
+         \bar\boldsymbol{x}_A = r\cos\theta\boldsymbol{i} + r\sin\theta\boldsymbol{j},
+
+which means :math:`\bar\boldsymbol{x}_A` can be written as :math:`\bar\boldsymbol{x}_A =r{\boldsymbol{i}_r}`. Since
+
+.. math::
+         \frac{d}{dt}{\boldsymbol{i}_r} = \dot\theta\boldsymbol{i}_{\theta},\quad \frac{d}{dt}\boldsymbol{i}_{\theta} = -\dot\theta{\boldsymbol{i}_r},
+
+we have
+
+.. math::
+         \frac{d^2 \bar\boldsymbol{x}_A}{d\bar t^2} =
+        (\ddot r - r\dot\theta^2){\boldsymbol{i}_r} + (r\ddot\theta + 2\dot r\dot\theta)\boldsymbol{i}_{\theta}{\thinspace .}
+        
+
+The equation of motion for mass A is then
+
+.. math::
+        
+        \ddot r - r\dot\theta^2 &= -\frac{1}{r^2},\\ 
+        r\ddot\theta + 2\dot r\dot\theta &= 0{\thinspace .}
+        
+
+The special case of circular motion, :math:`r=1`, fulfills the equations, since
+the latter equation then gives :math:`\dot\theta =\hbox{const}` and
+the former then gives :math:`\dot\theta = 1`, i.e., the motion is
+:math:`r(t)=1`, :math:`\theta(t)=t`, with unit angular frequency as expected and
+period :math:`2\pi` as expected.
+
 Electric circuits
 -----------------
 
 Although the term "mechanical vibrations" is used in the present
-document, we must mention that the same type of equations arise
+book, we must mention that the same type of equations arise
 when modeling electric circuits.
 The current :math:`I(t)` in a
 circuit with an inductor with inductance :math:`L`, a capacitor with
 capacitance :math:`C`, and overall resistance :math:`R`, is governed by
 
-.. _Eq:_auto31:
+.. _Eq:_auto52:
 
 .. math::
 
-    \tag{119}
+    \tag{138}
     \ddot I + \frac{R}{L}\dot I + \frac{1}{LC}I = \dot V(t),
         
         
 
 where :math:`V(t)` is the voltage source powering the circuit.
 This equation has the same form as the general model considered in
-Section ref:ref:`vib:model2` if we set :math:`u=I`, :math:`f(u^{\prime}=bu^{\prime}`
+the section :ref:`vib:model2` if we set :math:`u=I`, :math:`f(u^{\prime})=bu^{\prime}`
 and define :math:`b=R/L`, :math:`s(u) = L^{-1}C^{-1}u`, and :math:`F(t)=\dot V(t)`.
 
 Exercises
@@ -2554,13 +3022,13 @@ Exercises
 
 .. _vib:exer:resonance:
 
-Exercise 18: Simulate resonance
+Exercise 21: Simulate resonance
 -------------------------------
 
 .. index:: resonance
 
 We consider the scaled ODE model
-:ref:`(86) <Eq:vib:app:mass_gen:scaled>` from the section :ref:`vib:app:mass_gen`.
+:ref:`(101) <Eq:vib:app:mass_gen:scaled>` from the section :ref:`vib:app:mass_gen`.
 After scaling, the amplitude of :math:`u` will have a size about unity
 as time grows and the effect of the initial conditions die out due
 to damping. However, as :math:`\gamma\rightarrow 1`, the amplitude of :math:`u`
@@ -2569,7 +3037,7 @@ increases, especially if :math:`\beta` is small. This effect is called
 
 **a)**
 Figure out how the ``solver`` function in ``vib.py`` can be called
-for the scaled ODE :ref:`(86) <Eq:vib:app:mass_gen:scaled>`.
+for the scaled ODE :ref:`(101) <Eq:vib:app:mass_gen:scaled>`.
 
 .. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
 
@@ -2588,7 +3056,7 @@ Filename: ``resonance``.
 
 .. _vib:exer:sliding_box:
 
-Exercise 19: Simulate oscillations of a sliding box
+Exercise 22: Simulate oscillations of a sliding box
 ---------------------------------------------------
 
 Consider a sliding box on a flat surface as modeled in the section :ref:`vib:app:mass_sliding`. As spring force we choose the nonlinear
@@ -2623,13 +3091,13 @@ Filename: ``sliding_box``.
 
 .. _vib:exer:bouncing:ball:
 
-Exercise 20: Simulate a bouncing ball
+Exercise 23: Simulate a bouncing ball
 -------------------------------------
 
 The section :ref:`vib:app:bouncing_ball` presents a model for a bouncing
 ball.
-Choose one of the two ODE formulation, :ref:`(116) <Eq:vib:app:bouncing:ball:h2eq>` or
-:ref:`(117) <Eq:vib:app:bouncing:ball:veq>`-:ref:`(118) <Eq:vib:app:bouncing:ball:heq>`,
+Choose one of the two ODE formulation, :ref:`(131) <Eq:vib:app:bouncing:ball:h2eq>` or
+:ref:`(132) <Eq:vib:app:bouncing:ball:veq>`-:ref:`(133) <Eq:vib:app:bouncing:ball:heq>`,
 and simulate the motion of a bouncing ball. Plot :math:`h(t)`. Think about how to
 plot :math:`v(t)`.
 
@@ -2653,7 +3121,7 @@ Filename: ``bouncing_ball``.
 
 .. _vib:exer:pendulum_simple:
 
-Exercise 21: Simulate a simple pendulum
+Exercise 24: Simulate a simple pendulum
 ---------------------------------------
 
 Simulation of simple pendulum can be carried out by using
@@ -2686,7 +3154,7 @@ Filename: ``simple_pendulum``.
 
 .. _vib:exer:pendulum_elastic:
 
-Exercise 22: Simulate an elastic pendulum
+Exercise 25: Simulate an elastic pendulum
 -----------------------------------------
 
 The section :ref:`vib:app:pendulum_elastic` describes a model for an elastic
@@ -2701,14 +3169,14 @@ The function should have the following arguments:
 
 .. code-block:: python
 
-        def simulate(
-            beta=0.9,                 # dimensionless parameter
-            Theta=30,                 # initial angle in degrees
-            epsilon=0,                # initial stretch of wire
-            num_periods=6,            # simulate for num_periods
-            time_steps_per_period=60, # time step resolution
-            plot=True,                # make plots or not
-            ):
+    def simulate(
+        beta=0.9,                 # dimensionless parameter
+        Theta=30,                 # initial angle in degrees
+        epsilon=0,                # initial stretch of wire
+        num_periods=6,            # simulate for num_periods
+        time_steps_per_period=60, # time step resolution
+        plot=True,                # make plots or not
+        ):
 
 To set the total simulation time and the time step, we
 use our knowledge of the scaled, classical, non-elastic pendulum:
@@ -2743,8 +3211,9 @@ the code easier to read and compare with the mathematics.
 **Hint 1.**
 Equal aspect ratio is set by ``plt.gca().set_aspect('equal')`` in
 Matplotlib (``import matplotlib.pyplot as plt``)
-and by ``plot(..., daspect=[1,1,1], daspectmode='equal')``
-in SciTools (``import scitools.std as plt``).
+and in SciTools by the command
+``plt.plot(..., daspect=[1,1,1], daspectmode='equal')``
+(for ``import scitools.std as plt``).
 
 .. --- end hint in exercise ---
 
@@ -2796,10 +3265,10 @@ Filename: ``elastic_pendulum``.
 
 .. _vib:exer:pendulum_elastic_drag:
 
-Exercise 23: Simulate an elastic pendulum with air resistance
+Exercise 26: Simulate an elastic pendulum with air resistance
 -------------------------------------------------------------
 
-This is a continuation :ref:`vib:exer:pendulum_elastic_drag`.
+This is a continuation :ref:`vib:exer:pendulum_elastic`.
 Air resistance on the body with mass :math:`m` can be modeled by the
 force :math:`-\frac{1}{2}\varrho C_D A|\boldsymbol{v}|\boldsymbol{v}`,
 where :math:`C_D` is a drag coefficient (0.2 for a sphere), :math:`\varrho`
@@ -2808,7 +3277,7 @@ cross section area (:math:`A=\pi R^2` for a sphere, where :math:`R` is the radiu
 and :math:`\boldsymbol{v}` is the velocity of the body.
 Include air resistance in the original model, scale the model,
 write a function ``simulate_drag`` that is a copy of the ``simulate``
-function from :ref:`vib:exer:pendulum_elastic_drag`, but with the
+function from :ref:`vib:exer:pendulum_elastic`, but with the
 new ODEs included, and show plots of how air resistance
 influences the motion.
 
@@ -2818,8 +3287,8 @@ Filename: ``elastic_pendulum_drag``.
 
 .. Closing remarks for this Exercise
 
-Remarks
-~~~~~~~
+Remarks          (2)
+~~~~~~~~~~~~~~~~~~~~
 
 Test functions are challenging to construct for the problem with
 air resistance. You can reuse the tests from
@@ -2860,12 +3329,28 @@ References
 
 .. [Ref1]
    **H. P. Langtangen**. *Finite Difference Computing with Exponential Decay Models*,
+   *Lecture Notes in Computational Science and Engineering*,
    Springer,
-   2015,
+   2016,
    `http://tinyurl.com/nclmcng/web <http://tinyurl.com/nclmcng/web>`_.
 
 .. [Ref2]
    **H. P. Langtangen and G. K. Pedersen**. *Scaling of Differential Equations*,
-   2015,
+   *Simula Springer Brief Series*,
+   Springer,
+   2016,
    `http://tinyurl.com/qfjgxmf/web <http://tinyurl.com/qfjgxmf/web>`_.
+
+.. [Ref3]
+   **E. Hairer, S. P. N\orsett and G. Wanner**. *Solving Ordinary Differential Equations I. Nonstiff Problems*,
+   Springer,
+   1993.
+
+.. [Ref4]
+   **I. P. Omelyan, I. M. Mryglod and a. R. Folk**. Optimized Forest-Ruth- and Suzuki-like algorithms for integration of motion in many-body systems,
+   *Computer Physics Communication*,
+   146(2),
+   pp. 188-202,
+   2002,
+   `https://arxiv.org/abs/cond-mat/0110585 <https://arxiv.org/abs/cond-mat/0110585>`_.
 

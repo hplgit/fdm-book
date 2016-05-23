@@ -294,17 +294,17 @@ expansions of the roots:
 
 .. code-block:: python
 
-        >>> import sympy as sym
-        >>> dt, u_1, u = sym.symbols('dt u_1 u')
-        >>> r1, r2 = sym.solve(dt*u**2 + (1-dt)*u - u_1, u)  # find roots
-        >>> r1
-        (dt - sqrt(dt**2 + 4*dt*u_1 - 2*dt + 1) - 1)/(2*dt)
-        >>> r2
-        (dt + sqrt(dt**2 + 4*dt*u_1 - 2*dt + 1) - 1)/(2*dt)
-        >>> print r1.series(dt, 0, 2)    # 2 terms in dt, around dt=0
-        -1/dt + 1 - u_1 + dt*(u_1**2 - u_1) + O(dt**2)
-        >>> print r2.series(dt, 0, 2)
-        u_1 + dt*(-u_1**2 + u_1) + O(dt**2)
+    >>> import sympy as sym
+    >>> dt, u_1, u = sym.symbols('dt u_1 u')
+    >>> r1, r2 = sym.solve(dt*u**2 + (1-dt)*u - u_1, u)  # find roots
+    >>> r1
+    (dt - sqrt(dt**2 + 4*dt*u_1 - 2*dt + 1) - 1)/(2*dt)
+    >>> r2
+    (dt + sqrt(dt**2 + 4*dt*u_1 - 2*dt + 1) - 1)/(2*dt)
+    >>> print r1.series(dt, 0, 2)    # 2 terms in dt, around dt=0
+    -1/dt + 1 - u_1 + dt*(u_1**2 - u_1) + O(dt**2)
+    >>> print r2.series(dt, 0, 2)
+    u_1 + dt*(-u_1**2 + u_1) + O(dt**2)
 
 We see that the ``r1`` root, corresponding to
 a minus sign in front of the square root in
@@ -322,10 +322,10 @@ and see if a limit unreasonable:
 
 .. code-block:: python
 
-        >>> print r1.limit(dt, 0)
-        -oo
-        >>> print r2.limit(dt, 0)
-        u_1
+    >>> print r1.limit(dt, 0)
+    -oo
+    >>> print r2.limit(dt, 0)
+    u_1
 
 Linearization
 -------------
@@ -746,61 +746,61 @@ the logistic equation.
 
 .. code-block:: python
 
-        def BE_logistic(u0, dt, Nt, choice='Picard',
-                        eps_r=1E-3, omega=1, max_iter=1000):
-            if choice == 'Picard1':
-                choice = 'Picard'
-                max_iter = 1
-        
-            u = np.zeros(Nt+1)
-            iterations = []
-            u[0] = u0
-            for n in range(1, Nt+1):
-                a = dt
-                b = 1 - dt
-                c = -u[n-1]
-        
-                if choice == 'Picard':
-        
-                    def F(u):
-                        return a*u**2 + b*u + c
-        
-                    u_ = u[n-1]
-                    k = 0
-                    while abs(F(u_)) > eps_r and k < max_iter:
-                        u_ = omega*(-c/(a*u_ + b)) + (1-omega)*u_
-                        k += 1
-                    u[n] = u_
-                    iterations.append(k)
-        
-                elif choice == 'Newton':
-        
-                    def F(u):
-                        return a*u**2 + b*u + c
-        
-                    def dF(u):
-                        return 2*a*u + b
-        
-                    u_ = u[n-1]
-                    k = 0
-                    while abs(F(u_)) > eps_r and k < max_iter:
-                        u_ = u_ - F(u_)/dF(u_)
-                        k += 1
-                    u[n] = u_
-                    iterations.append(k)
-            return u, iterations
+    def BE_logistic(u0, dt, Nt, choice='Picard',
+                    eps_r=1E-3, omega=1, max_iter=1000):
+        if choice == 'Picard1':
+            choice = 'Picard'
+            max_iter = 1
+    
+        u = np.zeros(Nt+1)
+        iterations = []
+        u[0] = u0
+        for n in range(1, Nt+1):
+            a = dt
+            b = 1 - dt
+            c = -u[n-1]
+    
+            if choice == 'Picard':
+    
+                def F(u):
+                    return a*u**2 + b*u + c
+    
+                u_ = u[n-1]
+                k = 0
+                while abs(F(u_)) > eps_r and k < max_iter:
+                    u_ = omega*(-c/(a*u_ + b)) + (1-omega)*u_
+                    k += 1
+                u[n] = u_
+                iterations.append(k)
+    
+            elif choice == 'Newton':
+    
+                def F(u):
+                    return a*u**2 + b*u + c
+    
+                def dF(u):
+                    return 2*a*u + b
+    
+                u_ = u[n-1]
+                k = 0
+                while abs(F(u_)) > eps_r and k < max_iter:
+                    u_ = u_ - F(u_)/dF(u_)
+                    k += 1
+                u[n] = u_
+                iterations.append(k)
+        return u, iterations
 
 The Crank-Nicolson method utilizing a linearization based on the
 geometric mean gives a simpler algorithm:
 
 .. code-block:: python
 
-        def CN_logistic(u0, dt, Nt):
-            u = np.zeros(Nt+1)
-            u[0] = u0
-            for n in range(0, Nt):
-                u[n+1] = (1 + 0.5*dt)/(1 + dt*u[n] - 0.5*dt)*u[n]
-            return u
+    def CN_logistic(u0, dt, Nt):
+        u = np.zeros(Nt+1)
+        u[0] = u0
+        for n in range(0, Nt):
+            u[n+1] = (1 + 0.5*dt)/(1 + dt*u[n] - 0.5*dt)*u[n]
+        return u
 
 We may run experiments with the model problem
 :ref:`(1) <Eq:nonlin:timediscrete:logistic:eq>` and the different strategies for

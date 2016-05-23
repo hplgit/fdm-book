@@ -74,7 +74,7 @@ def solver_theta(I, a, L, Nx, D, T, theta=0.5, u_L=1, u_R=0,
     t = linspace(0, T, Nt+1)   # mesh points in time
 
     u   = zeros(Nx+1)   # solution array at t[n+1]
-    u_1 = zeros(Nx+1)   # solution at t[n]
+    u_n = zeros(Nx+1)   # solution at t[n]
 
     Dl = 0.5*D*theta
     Dr = 0.5*D*(1-theta)
@@ -103,16 +103,16 @@ def solver_theta(I, a, L, Nx, D, T, theta=0.5, u_L=1, u_R=0,
 
     # Set initial condition
     for i in range(0,Nx+1):
-        u_1[i] = I(x[i])
+        u_n[i] = I(x[i])
 
     if user_action is not None:
-        user_action(u_1, x, t, 0)
+        user_action(u_n, x, t, 0)
 
     # Time loop
     for n in range(0, Nt):
-        b[1:-1] = u_1[1:-1] + Dr*(
-            (a[2:] + a[1:-1])*(u_1[2:] - u_1[1:-1]) -
-            (a[1:-1] + a[0:-2])*(u_1[1:-1] - u_1[:-2]))
+        b[1:-1] = u_n[1:-1] + Dr*(
+            (a[2:] + a[1:-1])*(u_n[2:] - u_n[1:-1]) -
+            (a[1:-1] + a[0:-2])*(u_n[1:-1] - u_n[:-2]))
         # Boundary conditions
         b[0]  = u_L(t[n+1])
         b[-1] = u_R(t[n+1])
@@ -123,7 +123,7 @@ def solver_theta(I, a, L, Nx, D, T, theta=0.5, u_L=1, u_R=0,
             user_action(u, x, t, n+1)
 
         # Switch variables before next step
-        u_1, u = u, u_1
+        u_n, u = u, u_n
 !ec
 The code is found in the file "`diffu1D_vc.py`": "${src_diffu}/diffu1D_vc.py".
 

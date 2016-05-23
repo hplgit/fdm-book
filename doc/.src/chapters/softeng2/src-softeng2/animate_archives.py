@@ -8,17 +8,22 @@ import numpy as np
 
 def animate_multiple_solutions(
     archives, umin, umax, pause=0.2, show=True):
-    '''
+    """
     Animate data in list "archives" of numpy.savez archive files.
     Each archive in archives holds t, x, and u0000, u0001, u0002,
-    and so on.
+    and so on, where t and x are arrays for the time and space
+    meshes, resp., and the u* arrays are solutions u(x) at the
+    various time points.
     umin and umax are overall min and max values of the data.
     A pause is inserted between each frame in the screen animation.
     Each frame is stored in a file tmp_%04d.png (for video making).
+    No screen animation takes place if show=False.
 
-    The animation is based on the coarsest time resolution.
-    Linear interpolation is used to calculate data at these times.
-    '''
+    The animation applies the time points in the coarsest time
+    mesh found in the archives.
+    Linear interpolation is used to calculate data at these times
+    for the solutions in the other archives.
+    """
     import matplotlib.pyplot as plt
 
     simulations = [np.load(archive) for archive in archives]
@@ -121,16 +126,16 @@ def linear_interpolation(t, tp):
 def interpolate_arrays(arrays, t, tp):
     """
     Given a time point tp and a collection of arrays corresponding
-    to times t, perform linear interpolation among array i and i+1
-    when t[i] < tp < t[i+1].
+    to times in array t, perform linear interpolation among array
+    i and i+1 when t[i] < tp < t[i+1].
     arrays can be .npz archive (NpzFile) or list of numpy arrays.
-    Return interpolated array, i, w (interpolation weight: tp =
-    (1-w)*t[i] + w*t[i+1]).
+    Return interpolated array, i, w (where w is the interpolation
+    weight found in linear_interpolation).
     """
     i, w = linear_interpolation(t, tp)
 
     if isinstance(arrays, np.lib.npyio.NpzFile):
-        # arrays behaves as a dict with keys u1, u2, ...
+        # arrays behaves as a dict with keys u0001, u0002, ...
         if w is None:
             return arrays['u%04d' % i], i, None
         else:
@@ -139,6 +144,7 @@ def interpolate_arrays(arrays, t, tp):
 
     elif isinstance(arrays, (tuple,list)) and \
          isinstance(arrays[0], np.ndarray):
+        # arrays is list/tuple of arrays
         if w is None:
             return arrays[i], i, None
         else:
@@ -196,7 +202,48 @@ def test_animate_multiple_solutions():
             details[i][j][0] = round(details[i][j][0], 4)
             if isinstance(details[i][j][2], float):
                 details[i][j][2] = round(details[i][j][2], 4)
-    expected = [['coarsest', [0.05, 2, 0.25], [0.05, 5, None]], ['coarsest', [0.1, 4, 0.5], [0.1, 10, None]], ['coarsest', [0.15, 6, 0.75], [0.15, 15, None]], ['coarsest', [0.2, 9, None], [0.2, 20, None]], ['coarsest', [0.25, 11, 0.25], [0.25, 25, None]], ['coarsest', [0.3, 13, 0.5], [0.3, 30, None]], ['coarsest', [0.35, 15, 0.75], [0.35, 35, None]], ['coarsest', [0.4, 18, None], [0.4, 40, None]], ['coarsest', [0.45, 20, 0.25], [0.45, 45, None]], ['coarsest', [0.5, 22, 0.5], [0.5, 50, None]], ['coarsest', [0.55, 24, 0.75], [0.55, 55, None]], ['coarsest', [0.6, 27, None], [0.6, 60, None]], ['coarsest', [0.65, 29, 0.25], [0.65, 65, None]], ['coarsest', [0.7, 31, 0.5], [0.7, 70, None]], ['coarsest', [0.75, 33, 0.75], [0.75, 75, None]], ['coarsest', [0.8, 36, None], [0.8, 80, None]], ['coarsest', [0.85, 38, 0.25], [0.85, 85, None]], ['coarsest', [0.9, 40, 0.5], [0.9, 90, None]], ['coarsest', [0.95, 42, 0.75], [0.95, 95, None]], ['coarsest', [1.0, 45, None], [1.0, 100, None]], ['coarsest', [1.05, 47, 0.25], [1.05, 105, None]], ['coarsest', [1.1, 49, 0.5], [1.1, 110, None]], ['coarsest', [1.15, 51, 0.75], [1.15, 115, None]], ['coarsest', [1.2, 54, None], [1.2, 120, None]], ['coarsest', [1.25, 56, 0.25], [1.25, 125, None]], ['coarsest', [1.3, 58, 0.5], [1.3, 130, None]], ['coarsest', [1.35, 60, 0.75], [1.35, 135, None]], ['coarsest', [1.4, 63, None], [1.4, 140, None]], ['coarsest', [1.45, 65, 0.25], [1.45, 145, None]], ['coarsest', [1.5, 67, 0.5], [1.5, 150, None]], ['coarsest', [1.55, 69, 0.75], [1.55, 155, None]], ['coarsest', [1.6, 72, None], [1.6, 160, None]], ['coarsest', [1.65, 74, 0.25], [1.65, 165, None]], ['coarsest', [1.7, 76, 0.5], [1.7, 170, None]], ['coarsest', [1.75, 78, 0.75], [1.75, 175, None]], ['coarsest', [1.8, 81, None], [1.8, 180, None]], ['coarsest', [1.85, 83, 0.25], [1.85, 185, None]], ['coarsest', [1.9, 85, 0.5], [1.9, 190, None]], ['coarsest', [1.95, 87, 0.75], [1.95, 195, None]], ['coarsest', [2.0, 90, None], [2.0, 200, None]]]
+    expected = [
+        ['coarsest', [0.05, 2, 0.25], [0.05, 5, None]],
+        ['coarsest', [0.1, 4, 0.5], [0.1, 10, None]],
+        ['coarsest', [0.15, 6, 0.75], [0.15, 15, None]],
+        ['coarsest', [0.2, 9, None], [0.2, 20, None]],
+        ['coarsest', [0.25, 11, 0.25], [0.25, 25, None]],
+        ['coarsest', [0.3, 13, 0.5], [0.3, 30, None]],
+        ['coarsest', [0.35, 15, 0.75], [0.35, 35, None]],
+        ['coarsest', [0.4, 18, None], [0.4, 40, None]],
+        ['coarsest', [0.45, 20, 0.25], [0.45, 45, None]],
+        ['coarsest', [0.5, 22, 0.5], [0.5, 50, None]],
+        ['coarsest', [0.55, 24, 0.75], [0.55, 55, None]],
+        ['coarsest', [0.6, 27, None], [0.6, 60, None]],
+        ['coarsest', [0.65, 29, 0.25], [0.65, 65, None]],
+        ['coarsest', [0.7, 31, 0.5], [0.7, 70, None]],
+        ['coarsest', [0.75, 33, 0.75], [0.75, 75, None]],
+        ['coarsest', [0.8, 36, None], [0.8, 80, None]],
+        ['coarsest', [0.85, 38, 0.25], [0.85, 85, None]],
+        ['coarsest', [0.9, 40, 0.5], [0.9, 90, None]],
+        ['coarsest', [0.95, 42, 0.75], [0.95, 95, None]],
+        ['coarsest', [1.0, 45, None], [1.0, 100, None]],
+        ['coarsest', [1.05, 47, 0.25], [1.05, 105, None]],
+        ['coarsest', [1.1, 49, 0.5], [1.1, 110, None]],
+        ['coarsest', [1.15, 51, 0.75], [1.15, 115, None]],
+        ['coarsest', [1.2, 54, None], [1.2, 120, None]],
+        ['coarsest', [1.25, 56, 0.25], [1.25, 125, None]],
+        ['coarsest', [1.3, 58, 0.5], [1.3, 130, None]],
+        ['coarsest', [1.35, 60, 0.75], [1.35, 135, None]],
+        ['coarsest', [1.4, 63, None], [1.4, 140, None]],
+        ['coarsest', [1.45, 65, 0.25], [1.45, 145, None]],
+        ['coarsest', [1.5, 67, 0.5], [1.5, 150, None]],
+        ['coarsest', [1.55, 69, 0.75], [1.55, 155, None]],
+        ['coarsest', [1.6, 72, None], [1.6, 160, None]],
+        ['coarsest', [1.65, 74, 0.25], [1.65, 165, None]],
+        ['coarsest', [1.7, 76, 0.5], [1.7, 170, None]],
+        ['coarsest', [1.75, 78, 0.75], [1.75, 175, None]],
+        ['coarsest', [1.8, 81, None], [1.8, 180, None]],
+        ['coarsest', [1.85, 83, 0.25], [1.85, 185, None]],
+        ['coarsest', [1.9, 85, 0.5], [1.9, 190, None]],
+        ['coarsest', [1.95, 87, 0.75], [1.95, 195, None]],
+        ['coarsest', [2.0, 90, None], [2.0, 200, None]],
+        ]
     assert details == expected
 
 if __name__ == '__main__':

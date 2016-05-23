@@ -17,7 +17,8 @@ for i, beta in enumerate(beta_values):
         print gamma, 'max u amplitude:', np.abs(u).max()
     for ext in 'png', 'pdf':
         cmd = 'doconce combine_images '
-        cmd += ' '.join(['tmp_%s.' % gamma + ext for gamma in gamma_values])
+        cmd += ' '.join(['tmp_%s.' % gamma + ext
+                         for gamma in gamma_values])
         cmd += ' resonance%d.' % (i+1) + ext
         os.system(cmd)
 raw_input()

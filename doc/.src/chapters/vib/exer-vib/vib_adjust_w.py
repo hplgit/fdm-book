@@ -35,9 +35,7 @@ def visualize(u, t, I, w):
     title('dt=%g' % dt)
     umin = -1.2*I;  umax = -umin
     axis([t[0], t[-1], umin, umax])
-    savefig('vib1.png')
-    savefig('vib1.pdf')
-    savefig('vib1.eps')
+    savefig('tmp1.png'); savefig('tmp1.pdf')
     show()
 
 def convergence_rates(m, num_periods=8, adjust_w=True):
@@ -77,9 +75,9 @@ def main():
     parser.add_argument('--w', type=float, default=2*pi)
     parser.add_argument('--dt', type=float, default=0.05)
     parser.add_argument('--num_periods', type=int, default=5)
-    # Hack to allow --SCITOOLS options 
+    # Hack to allow --SCITOOLS options
     # (read when importing scitools.std)
-    parser.add_argument('--SCITOOLS_easyviz_backend', 
+    parser.add_argument('--SCITOOLS_easyviz_backend',
                         default='matplotlib')
     a = parser.parse_args()
     adjust_w, I, w, dt, num_periods = \
@@ -124,23 +122,6 @@ def visualize_front(u, t, I, w, savefig=False):
             if savefig:
                 st.savefig('tmp_vib%04d.png' % n)
         plot_manager.update(n)
-
-def visualize_front_ascii(u, t, I, w, fps=10):
-    """
-    Plot u and the exact solution vs t line by line in a
-    terminal window (only using ascii characters).
-    Makes it easy to plot very long time series.
-    """
-    from scitools.avplotter import Plotter
-    import time
-    P = 2*pi/w
-    umin = -1.2*I;  umax = -umin
-
-    p = Plotter(ymin=umin, ymax=umax, width=60, symbols='+o')
-    for n in range(len(u)):
-        print p.plot(t[n], u[n], I*cos(w*t[n])), \
-              '%.1f' % (t[n]/P)
-        time.sleep(1/float(fps))
 
 if __name__ == '__main__':
     main()

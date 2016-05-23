@@ -10,9 +10,20 @@ oscillate in time, typically in a damped or undamped sinusoidal
 fashion.  Such solutions put certain demands on the numerical methods
 compared to other phenomena whose solutions are monotone or very smooth.
 Both the frequency and amplitude of the oscillations need to be
-accurately handled by the numerical schemes. Most of the reasoning and
-specific building blocks introduced in the forthcoming text can be
-reused to construct sound methods for partial differential equations
+accurately handled by the numerical schemes. The forthcoming text
+presents a range of different methods, from classical ones
+(Runge-Kutta and midpoint/Crank-Nicolson methods), to more
+modern and popular symplectic (geometric) integration schemes (Leapfrog,
+Euler-Cromer, and
+# #if FORMAT in ("latex", "pdflatex")
+St\"{o}rmer-Verlet
+# #else
+Stoermer-Verlet
+# #endif
+methods), but with a clear emphasis on the latter. Vibration problems
+occur throughout mechanics and physics, but the methods discussed
+in this text are also fundamental for constructing successful algorithms
+for partial differential equations
 of wave nature in multiple spatial dimensions.
 
 [hpl: Need to discuss errors also for the damped and nonlinear models. At least the frequency errors must be illustrated here as well and investigated numerically, either in text or exercises.]
@@ -88,14 +99,17 @@ introducing a uniformly partitioned time mesh.
 The points in the mesh are $t_n=n\Delta t$, $n=0,1,\ldots,N_t$,
 where $\Delta t = T/N_t$ is the constant length of the time steps.
 We introduce a mesh function $u^n$ for $n=0,1,\ldots,N_t$, which
-approximates the exact solution at the mesh points. The mesh
-function will be computed from algebraic equations derived from
+approximates the exact solution at the mesh points. (Note that
+$n=0$ is the known initial condition, so $u^n$ is identical to the mathematical
+$u$ at this point.) The mesh
+function $u^n$ will be computed from algebraic equations derived from
 the differential equation problem.
 
 
 === Step 2: Fulfilling the equation at discrete time points ===
 
-The ODE is to be satisfied at each mesh point:
+The ODE is to be satisfied at each mesh point where the solution
+must be found:
 
 !bt
 \begin{equation}
@@ -146,8 +160,8 @@ label{vib:ode1:step3c}
 === Step 4: Formulating a recursive algorithm ===
 
 To formulate the computational algorithm, we assume that we
-have already computed $u^{n-1}$ and $u^n$ such that $u^{n+1}$ is the
-unknown value, which we can readily solve for:
+have already computed $u^{n-1}$ and $u^n$, such that $u^{n+1}$ is the
+unknown value to be solved for:
 
 !bt
 \begin{equation}
@@ -162,10 +176,13 @@ goes under the name
 # #if FORMAT in ("latex", "pdflatex")
 St\"{o}rmer's
 # #else
-Stormer's
+Stoermer's
 # #endif
-method or "Verlet integration":
-"http://en.wikipedia.org/wiki/Verlet_integration".
+method, "Verlet integration":
+"http://en.wikipedia.org/wiki/Verlet_integration", or the Leapfrog method
+(one should note
+that Leapfrog is used for many quite different methods for quite
+different differential equations!).
 
 === Computing the first step ===
 
@@ -252,12 +269,14 @@ which is written out as
 
 The discretization of initial conditions can in the operator notation
 be expressed as
+
 !bt
 \begin{equation}
 [u = I]^0,\quad [D_{2t} u = 0]^0,
 \end{equation}
 !et
 where the operator $[D_{2t} u]^n$ is defined as
+
 !bt
 \begin{equation}
 [D_{2t} u]^n = \frac{u^{n+1} - u^{n-1}}{2\Delta t}
@@ -333,11 +352,13 @@ A typical execution goes like
 Terminal> python vib_undamped.py --num_periods 20 --dt 0.1
 !ec
 
+idx{vectorization}
+
 === Computing $u^{\prime}$ ===
 
 In mechanical vibration applications one is often interested in
-computing the velocity $v(t)=u^{\prime}(t)$ after $u(t)$ has been computed.
-This can be done by a central difference,
+computing the velocity $v(t)=u^{\prime}(t)$ after $u(t)$ has been
+computed.  This can be done by a central difference,
 
 !bt
 \begin{equation}
@@ -365,14 +386,15 @@ v[0] = 0
 # Use backward difference at the final mesh point
 v[-1] = (u[-1] - u[-2])/dt
 !ec
-Since the loop is slow for large $N_t$, we
-can get rid of the loop by
-vectorizing the central difference. The above code segment
-goes as follows in its vectorized version (see ref[Problem
+Since the loop is slow for large $N_t$, we can get rid of the loop by
+vectorizing the central difference. The above code segment goes as
+follows in its vectorized version (see ref[Problem
 ref{decay:exer:dudt}][ in cite{Langtangen_decay}][the problem
-"Differentiate a function": "${decay_book}/html/._decay-book005.html#decay:exer:dudt" in
-"Finite Difference Computing with Exponential Decay Models": "http://tinyurl.com/nclmcng/web" cite{Langtangen_decay}]
-for explanation of details):
+"Differentiate a function":
+"${decay_book}/html/._decay-book005.html#decay:exer:dudt" in "Finite
+Difference Computing with Exponential Decay Models":
+"http://tinyurl.com/nclmcng/web" cite{Langtangen_decay}] for
+explanation of details):
 
 !bc pycod
 v = np.zeros_like(u)
@@ -420,7 +442,8 @@ section "Unit tests and test functions": "${decay_book_url}/html/._decay-book009
 "Finite Difference Computing with Exponential Decay Models": "http://tinyurl.com/nclmcng/web" cite{Langtangen_decay}]
 for more details on how to construct test functions and utilize nose
 or pytest for automatic execution of tests. Our recommendation is to
-use pytest and run all test functions in `vib_undamped.py` by
+use pytest. With this choice, you can
+run all test functions in `vib_undamped.py` by
 
 !bc sys
 Terminal> py.test -s -v vib_undamped.py
@@ -470,9 +493,9 @@ proceeding.
 
 In the present problem, computing convergence rates means that we must
 
- * perform $m$ simulations, halving the time steps as: $\Delta t_i=2^{-i}\Delta t_0$, $i=0,\ldots,m-1$,
+ * perform $m$ simulations, halving the time steps as: $\Delta t_i=2^{-i}\Delta t_0$, $i=1,\ldots,m-1$, and $\Delta t_i$ is the time step used in simulation $i$;
  * compute the $L^2$ norm of the error,
-   $E_i=\sqrt{\Delta t_i\sum_{n=0}^{N_t-1}(u^n-\uex(t_n))^2}$ in each case,
+   $E_i=\sqrt{\Delta t_i\sum_{n=0}^{N_t-1}(u^n-\uex(t_n))^2}$ in each case;
  * estimate the convergence rates $r_i$ based on two consecutive
    experiments $(\Delta t_{i-1}, E_{i-1})$ and $(\Delta t_{i}, E_{i})$,
    assuming $E_i=C(\Delta t_i)^{r}$ and $E_{i-1}=C(\Delta t_{i-1})^{r}$.
@@ -485,7 +508,7 @@ The computed rates $r_0,r_1,\ldots,r_{m-2}$ hopefully converge to the
 number 2 in the present
 problem, because theory (from Section ref{vib:ode1:analysis}) shows
 that the error of the numerical method we use behaves like $\Delta t^2$.
-The convergence of the sequence of rates $r_0,r_1,\ldots,r_{m-2}$
+The convergence of the sequence $r_0,r_1,\ldots,r_{m-2}$
 demands that the time steps
 $\Delta t_i$ are sufficiently small for the error model $E_i=C(\Delta t_i)^r$
 to be valid.
@@ -496,13 +519,15 @@ $r_0,r_1,\ldots,r_{m-2}$ appear below.
 @@@CODE src-vib/vib_undamped.py fromto: def convergence_rates@def test_convergence
 
 The error analysis in Section ref{vib:ode1:analysis} is quite
-detailed and results in $r=2$, but other methods like truncation error
-analysis
-% if BOOK == "book":
-(see Appendix ref{trunc:vib:undamped})
-% endif
-also points to $r=2$,
-as well as the related quick reasoning that we have used a
+detailed and suggests in $r=2$.
+##but other methods like truncation error
+##analysis
+##% if BOOK == "book":
+##(see Appendix ref{trunc:vib:undamped})
+##% endif
+##also points to $r=2$,
+##as well as the related quick reasoning that we have used a
+It is also a intuitively reasonable result, since we used a
 second-order accurate finite difference approximation $[D_tD_tu]^n$ to
 the ODE and a second-order accurate finite difference formula for the
 initial condition for $u^{\prime}$.
@@ -547,7 +572,7 @@ This gives the dimensionless model
 
 !bt
 \begin{equation}
-\frac{d^2\bar u}{\bar t^2} + 4\pi^2 \bar u = 0,\quad \bar u(0)=1,\
+\frac{d^2\bar u}{d\bar t^2} + 4\pi^2 \bar u = 0,\quad \bar u(0)=1,\
 \bar u^{\prime}(0)=0\tp
 label{vib:ode1:model:scaled}
 \end{equation}
@@ -571,7 +596,7 @@ Each period is now 1 and `T` simply counts the number of periods.
 Choosing `dt` as `1./M` gives `M` time steps per period.
 
 
-======= Long time simulations =======
+======= Visualization of long time simulations =======
 label{vib:ode1:longseries}
 
 Figure ref{vib:ode1:2dt} shows a comparison of the exact and numerical
@@ -580,14 +605,14 @@ $\Delta t=0.1, 0.05$.
 From the plot we make the following observations:
 
  * The numerical solution seems to have correct amplitude.
- * There is a angular frequency error which is reduced by reducing the time step.
+ * There is an angular frequency error which is reduced by decreasing the time step.
  * The total angular frequency error grows with time.
 
 By angular frequency error we mean that the numerical angular frequency differs
 from the exact $\omega$. This is evident by looking
 at the peaks of the numerical solution: these have incorrect
 positions compared with the peaks of the exact cosine solution. The
-effect can be mathematical expressed by writing the numerical solution
+effect can be mathematically expressed by writing the numerical solution
 as $I\cos\tilde\omega t$, where $\tilde\omega$ is not exactly
 equal to $\omega$. Later, we shall mathematically
 quantify this numerical angular frequency $\tilde\omega$.
@@ -605,7 +630,7 @@ the $p$ most recently computed periods of the solution. The
 a convenient tool for this: `MovingPlotWindow`. Typing
 `pydoc scitools.MovingPlotWindow` shows a demo and a description of its use.
 The function below utilizes the moving plot window and is in fact
-called by the `main` function the `vib_undamped` module
+called by the `main` function in the `vib_undamped` module
 if the number of periods in the simulation exceeds 10.
 
 @@@CODE src-vib/vib_undamped.py fromto: def visualize_front\(@def visualize_front_ascii
@@ -619,7 +644,7 @@ Terminal> python vib_undamped.py --dt 0.05 --num_periods 40
 !ec
 The moving plot window is invoked, and we can follow the numerical and exact
 solutions as time progresses. From this demo we see that
-the angular frequency error is small in the beginning, but it becomes more
+the angular frequency error is small in the beginning, and that it becomes more
 prominent with time. A new run with $\Delta t=0.1$ (i.e., only 10 time steps per period)
 clearly shows that the phase errors become significant even earlier
 in the time series, deteriorating the solution further.
@@ -716,7 +741,7 @@ filenames were not zero-padded, the frame `tmp_11.png` would appear
 before `tmp_2.png` in the movie.
 !ewarning
 
-=== Paying PNG files in a web browser ===
+=== Playing PNG files in a web browser ===
 
 idx{`scitools movie` command}
 
@@ -768,7 +793,7 @@ slowly.
 ===== Using Bokeh to compare graphs =====
 
 
-Instead of a moving plot frame, one can use tools that allows panning
+Instead of a moving plot frame, one can use tools that allow panning
 by the mouse. For example, we can show four periods of several signals in
 several plots and then scroll with the mouse through the rest of the
 simulation *simultaneously* in all the plot windows.
@@ -799,8 +824,9 @@ FIGURE: [fig-vib/bokeh_gridplot_interactive, width=800 frac=1] Interactive Bokeh
 # #endif
 
 A function for creating a Bokeh plot, given a list of `u` arrays
-and corresponding `t` arrays, from different simulations, described
-compactly in a list of strings `legends`, is implemented below.
+and corresponding `t` arrays, is implemented below.
+The code combines data fro different simulations, described
+compactly in a list of strings `legends`.
 
 @@@CODE src-vib/vib_undamped.py fromto: def bokeh_plot@def demo_bokeh
 A particular example using the `bokeh_plot` function appears below.
@@ -812,7 +838,8 @@ A particular example using the `bokeh_plot` function appears below.
 Plotting functions vertically, line by line, in the terminal window
 using ascii characters only is a simple, fast, and convenient
 visualization technique for long time series. Note that the time
-axis then is positive downwards on the screen.
+axis then is positive downwards on the screen, so we can let the
+solution be visualized ``forever''.
 The tool
 `scitools.avplotter.Plotter` makes it easy to create such plots:
 
@@ -958,10 +985,10 @@ amplitude seems to be more accurate.
 The lines with
 $\Delta t=0.01$, corresponding to 100 steps per period, can hardly be
 distinguished from the exact values. The next section shows how we
-can get mathematical insight into why amplitudes are good and frequencies
+can get mathematical insight into why amplitudes are good while frequencies
 are more inaccurate.
 
-FIGURE: [fig-vib/empirical_ampl_freq, width=800 frac=1.0] Empirical amplitude and angular frequency for three cases of time steps. label{vib:ode1:fig:freq_ampl}
+FIGURE: [fig-vib/empirical_ampl_freq, width=800 frac=1.0] Empirical angular frequency (left) and amplitude (right) for three different time steps. label{vib:ode1:fig:freq_ampl}
 
 # Use it for very long time integration of CN! And of RK4!
 
@@ -1213,9 +1240,8 @@ we could use the limit functionality in `sympy`:
 w
 !ec
 Also (ref{vib:ode1:tildeomega:series}) can be used to establish
-this result that
-$\tilde\omega\rightarrow\omega$. It then follows from the expression(s)
-for $e^n$ that $e^n\rightarrow 0$.
+that $\tilde\omega\rightarrow\omega$ when $\Delta t\rightarrow 0$.
+It then follows from the expression(s) for $e^n$ that $e^n\rightarrow 0$.
 
 ===== The global error =====
 
@@ -1423,7 +1449,7 @@ in terms of first-order derivatives of $u$ and $v$:
 \begin{align}
 u^{\prime} &= v,
 label{vib:model2x2:ueq}\\
-v' &= -\omega^2 u
+v^{\prime} &= -\omega^2 u
 label{vib:model2x2:veq}
 \tp
 \end{align}
@@ -2239,7 +2265,7 @@ Series for sin^2(x): x**2 - x**4/3 + 2*x**6/45 + O(x**8)
 [hpl: I don't think this will lead to any good.]
 
 We may take the discrete numerical solution and plug into the
-energy formula. It fulfills the formula if we compute $u'$
+energy formula. It fulfills the formula if we compute $u^{\prime}$
 by differentiation. However, if we use a numerical formula for the
 derivative, there will be an approximation error.
 One can analyze this by expanding $\cos(\tilde\omega(t\pm\Delta)$
@@ -2248,7 +2274,7 @@ Then $\sin^x$ can be expressed as $\sin^2x/2$ (for which we have
 expressions!) by $1-\cos^2x$ and $\cos x = 1-2\sin^2x/2$. Uncertain
 if this is a very valuable expression since it only tells the error
 if we compute the energy in a code based on numerical approximation to
-$u'$.
+$u^{\prime}$.
 # #endif
 
 ======= The Euler-Cromer method =======
@@ -2259,9 +2285,14 @@ for the vibration equation modeled as a first-order ODE system, both
 were inferior to the straightforward centered difference scheme for
 the second-order equation $u^{\prime\prime}+\omega^2u=0$. However,
 there is a similarly successful scheme available for the first-order
-system $u^{\prime}=v$, $v'=-\omega^2u$, to be presented next.
+system $u^{\prime}=v$, $v^{\prime}=-\omega^2u$, to be presented below.
+The ideas of the scheme and their further developments have become
+very popular in particle and rigid body dynamics and hence widely
+used by physicists.
+
 
 idx{forward-backward Euler-Cromer scheme}
+idx{Euler-Cromer scheme}
 
 ===== Forward-backward discretization =====
 
@@ -2316,7 +2347,7 @@ We can rewrite this second-order ODE as two first-order ODEs,
 
 !bt
 \begin{align*}
-v' &= -g(u,v,t),\\
+v^{\prime} &= -g(u,v,t),\\
 u^{\prime} &= v\tp
 \end{align*}
 !et
@@ -2339,6 +2370,8 @@ algebraic equations to be solved at each time level.
 #system for $u^{n+1}$ and $v^{n+1}$ because the structure of the ODEs
 #allows (ref{vib:model2x2:EulerCromer:ueq1})
 
+idx{symplectic scheme}
+
 The scheme
 (ref{vib:model2x2:EulerCromer:veq1b})-(ref{vib:model2x2:EulerCromer:ueq1b})
 goes under several names: forward-backward scheme, "semi-implicit
@@ -2348,7 +2381,7 @@ semi-explicit Euler, symplectic Euler,
 # #if FORMAT in ("latex", "pdflatex")
 Newton-St\"{o}rmer-Verlet,
 # #else
-Newton-Stormer-Verlet,
+Newton-Stoermer-Verlet,
 # #endif
 and Euler-Cromer.  We shall stick to the latter name.
 Since both time
@@ -2463,10 +2496,10 @@ label{vib:model2x2:EulerCromer:impl}
 
 === Solver function ===
 
-The function below, found in "`vib_EulerCromer.py`": "${src_vib}/vib_EulerCromer.py", implements the Euler-Cromer scheme
+The function below, found in "`vib_undamped_EulerCromer.py`": "${src_vib}/vib_undamped_EulerCromer.py", implements the Euler-Cromer scheme
 (ref{vib:model2x2:EulerCromer:veq1b})-(ref{vib:model2x2:EulerCromer:ueq1b}):
 
-@@@CODE src-vib/vib_EulerCromer.py fromto: import numpy@def solver_ic
+@@@CODE src-vib/vib_undamped_EulerCromer.py fromto: import numpy@def solver_ic
 
 === Verification ===
 
@@ -2531,93 +2564,152 @@ u = u[:,1]  # Extract displacement
 
 === Convergence rates ===
 
-We may use the `convergence_rates` function in the file `vib_undamped.py`
-to investigate the convergence rate of the Euler-Cromer method,
-see the `convergence_rate` function in the file `vib_undamped_EulerCromer.py`.
-Since we could eliminate $v$ to get a scheme for $u$ that
-is equivalent to the finite difference method for the second-order equation
-in $u$, we would expect the convergence rates to be the same, i.e.,
-$\mathcal{O}(\Delta t^2)$. However, measuring the convergence rate of $u$
-in the Euler-Cromer scheme shows that it is $\mathcal{O}(\Delta t)$!
-Adjusting the initial condition does not change the rate. Adjusting
-$\omega$, as outlined in Section ref{vib:ode1:analysis:numfreq}, gives
-a 4th-order method there, while there is no increase in the measured rate
-in the Euler-Cromer scheme. It is obvious that the Euler-Cromer scheme
-is dramatically much better than the two other first-order methods,
-Forward Euler and Backward Euler, but this is not reflected in the
-convergence rate of $u$.
+We may use the `convergence_rates` function in the file
+`vib_undamped.py` to investigate the convergence rate of the
+Euler-Cromer method, see the `convergence_rate` function in the file
+`vib_undamped_EulerCromer.py`.  Since we could eliminate $v$ to get a
+scheme for $u$ that is equivalent to the finite difference method for
+the second-order equation in $u$, we would expect the convergence
+rates to be the same, i.e., $\mathcal{O}(\Delta t^2)$. However,
+measuring the convergence rate of $u$ in the Euler-Cromer scheme shows
+that it is $\mathcal{O}(\Delta t)$!  Adjusting the initial condition
+does not change the rate. Adjusting $\omega$, as outlined in Section
+ref{vib:ode1:analysis:numfreq}, gives a 4th-order method there, while
+there is no increase in the measured rate in the Euler-Cromer
+scheme. It is obvious that the Euler-Cromer scheme is dramatically
+much better than the two other first-order methods, Forward Euler and
+Backward Euler, but this is not reflected in the convergence rate of
+$u$.
 
 
 # is anything really gained? is v of higher order compared
 # with differentiating u in the 2nd order ODE? most likely,
 # v is 2nd order, v from 2nd-order ODE is 1st order
 
+# #if FORMAT in ("pdflatex", "latex")
+===== The St\"{o}rmer-Verlet algorithm =====
+# #else
+===== The Stoermer-Verlet algorithm =====
+# #endif
+label{vib:model2x2:StormerVerlet}
 
-===== The velocity Verlet algorithm =====
+# See velverlet_EulerCromer_....pdf for discussion and relation to EC
 
-[hpl: Tie velocity Verlet better to Euler-Cromer. They are very related,
-at last if using staggered grids.]
+idx{Stoermer-Verlet algorithm}
 
-# See velverlet_EulerCromer_....pdf for discussion.
+Another very popular algorithm for vibration problems, especially
+for long time simulations, is the
+# #if FORMAT in ("pdflatex", "latex")
+St\"{o}mer-Verlet
+# #else
+Stoermer-Verlet
+# #endif
+algorithm. It has become *the* method among physicists
+for molecular simulations as well as particle and rigid body dynamics.
 
+The method can be derived by applying the Euler-Cromer idea
+twice, in a symmetric fashion, during the interval $[t_n,t_{n+1}]$:
 
-Another very popular algorithm for vibration problems
-$u^{\prime\prime}+\omega^2u=0$ can be derived as follows. First, we
-step $u$ forward from $t_n$ to $t_{n+1}$ using a three-term Taylor
-series,
+ o solve $v^{\prime}=-\omega u$ by a Forward Euler step in $[t_n,t_{n+\half}]$
+ o solve $u^{\prime}=v$ by a Backward Euler step in $[t_n,t_{n+\half}]$
+ o solve $u^{\prime}=v$ by a Forward Euler step in $[t_{n+\half}, t_{n+1}]$
+ o solve $v^{\prime}=-\omega u$ by a Backward Euler step in $[t_{n+\half}, t_{n+1}]$
+
+With mathematics,
 
 !bt
-\[ u(t_{n+1}) = u(t_n) + u^{\prime}(t_n)\Delta t + \frac{1}{2}u^{\prime\prime}(t_n)\Delta t^2\tp\]
+\begin{align*}
+\frac{v^{n+\half}-v^n}{\half\Delta t} &= -\omega^2 u^n,\\
+\frac{u^{n+\half}-u^n}{\half\Delta t} &= v^{n+\half},\\
+\frac{u^{n+1}-u^{n-\half}}{\half\Delta t} &= v^{n+\half},\\
+\frac{v^{n+1}-v^{n+\half}}{\half\Delta t} &= -\omega^2 u^{n+1}\tp
+\end{align*}
 !et
-Using $u^{\prime}=v$ and $u^{\prime\prime}=-\omega^2u$, we get the updating formula
+The two steps in the middle can be combined to
 
 !bt
-\[ u^{n+1} = u^n + v^n\Delta t - \frac{1}{2}\Delta t^2\omega^2u^n\tp\]
+\[ \frac{u^{n+1}-u^{n-1}}{\Delta t} = v^{n+\half},\]
 !et
-Second, the first-order equation for $v$,
-
-!bt
-\[ v'=-\omega^2u,\]
-!et
-is discretized by a centered difference in a Crank-Nicolson fashion at
-$t_{n+\frac{1}{2}}$:
-
-!bt
-\[ \frac{v^{n+1}-v^n}{\Delta t} = -\omega^2\frac{1}{2}(u^n + u^{n+1})\tp\]
-!et
-To summarize, we have the scheme
+and consequently
 
 !bt
 \begin{align}
-u^{n+1} &= u^n + v^n\Delta t - \frac{1}{2}\Delta^2\omega^2u^n
-label{vib:model2x2:Verlet:dueq} \\
-v^{n+1} &= v^n -\frac{1}{2}\Delta t\omega^2 (u^n + u^{n+1}),
-label{vib:model2x2:Verlet:dveq}
+v^{n+\half} &= v^n - \half\Delta t \omega^2 u^n,\\
+u^{n+1} &= u^{n} + \Delta t v^{n+\half},\\
+v^{n+1} &= v^{n+\half} - \half\Delta t \omega^2 u^{n+1}\tp
 \end{align}
 !et
-known as the *velocity Verlet* algorithm.
-Observe that this scheme is explicit since $u^{n+1}$ in
-(ref{vib:model2x2:Verlet:dveq}) is already computed
-from (ref{vib:model2x2:Verlet:dueq}).
+Writing the last equation as $v^n = v^{n-\half} - \half\Delta
+t\omega^2 u^n$ and using this $v^n$ in the first equation gives
+$v^{n+\half} = v^{n-\half} - \Delta t\omega^2 u^n$, and the scheme can
+be written as two steps:
 
-The algorithm can be straightforwardly implemented as shown below (the
-code appears in the file "`vib_undamped_velocity_Verlet.py`": "${src_vib}/vib_undamped_velocity_Verlet.py").
+!bt
+\begin{align}
+v^{n+\half} &= v^{n-\half} - \Delta t \omega^2 u^n,
+label{vib:model2x2:StormerVerlet:eqv}\\
+u^{n+1} &= u^{n} + \Delta t v^{n+\half},
+label{vib:model2x2:StormerVerlet:equ}
+\end{align}
+!et
+which is nothing but straightforward centered differences for the
+$2\times 2$ ODE system on a *staggered mesh*, see
+Section ref{vib:model2x2:staggered}. We have thus seen that
+four different reasonings (discretizing $u^{\prime\prime}+\omega^2 u$
+directly, using Euler-Cromer, using
+# #if FORMAT in ("pdflatex", "latex")
+St\"{o}mer-Verlet,
+# #else
+Stoermer-Verlet,
+# #endif
+and using centered differences for the $2times 2$ system on a staggered
+mesh) all end up with the same equations! The main difference is that
+the traditional Euler-Cromer displays first-order convergence in $\Delta t$
+(due to less symmetry in the way $u$ and $v$ are treated)
+while the others are $\Oof{\Delta t^2}$ schemes.
 
-@@@CODE src-vib/vib_undamped_velocity_Verlet.py fromto: from vib_undamped@if __name
-We provide the option that this `solver` function returns the same data
-as the `solver` function from Section ref{vib:impl1:solver} (if `return_v`
-is `False`), but alternatively, it may return `v` along with `u` and `t`.
+[hpl: Nobody shows why Euler-Cromer gives 1st order convergence, except
+pointing to the fact that it is obvious from two Euler steps,
+but it is also equivalent to
+the other schemes 2nd order schemes
+when we eliminate $v$. There must be something with
+the handling $v$ of that lowers the rate...but if nobody else is capable
+of explaining it, we must give in too. At least we have shown that
+the popular Stoermer-Verlet method is nothing but our staggered mesh very
+natural scheme.]
 
-The error in the Taylor series expansion behind
-(ref{vib:model2x2:Verlet:dueq}) is $\Oof{\Delta t^3}$, while the error
-in the central difference for $v$ is $\Oof{\Delta t^2}$.  The overall
-error is then no better than $\Oof{\Delta t^2}$, which can be verified
-empirically using the `convergence_rates` function from
-ref{vib:ode1:verify}:
+The most numerical stable scheme, with respect to accumulation of
+rounding errors, is
+(ref{vib:model2x2:StormerVerlet:eqv})-(ref{vib:model2x2:StormerVerlet:equ}).
+It has, according to cite{Hairer_Wanner_Norsett_bookI}, better
+properties in this regard than the direct scheme for the second-order
+ODE.
 
-!bc pyshell
->>> import vib_undamped_velocity_Verlet as m
->>> m.convergence_rates(4, solver_function=m.solver)
-[2.0036366687367346, 2.0009497328124835, 2.000240105995295]
-!ec
-#The output confirms that the overall convergence rate is 2.
+
+# #ifdef EXTRA
+
+Inserting $u^n=Ae^{i\tilde\omega n\Delta t}$ and $v^n=BAe^{i\tilde\omega n\Delta t}$,
+
+!bt
+\begin{align*}
+Be^{i\half\tilde\omega\Delta t} &= B -\half\Delta t\omega^2,\\
+e^{i\half\tilde\omega\Delta t} &= e^{-i\half\tilde\omega\Delta t}
++ B\Delta t,\\
+Be^{i\half\tilde\omega\Delta t} &= B - \half\Delta t\omega^2
+e^{i\half\tilde\omega\Delta t}
+\end{align*}
+!et
+The middle equation gives
+
+!bt
+\[ B = \frac{1}{\Delta t}\sin (\half\tilde\omega\Delta t)\tp\]
+!et
+The first one can be solved with respect to $\tilde\omega$. The real
+part of this equation gives
+
+!bt
+\[ \cos(\half\tilde\omega\Delta t) +
+\frac{\half p^2}{\sin (\half\tilde\omega\Delta t)} = 1  \]
+!et
+Can plot as function of $\half\tilde\omega\Delta t$ in $[0,\pi/2]$.
+# #endif

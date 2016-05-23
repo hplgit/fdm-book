@@ -5,9 +5,9 @@ import scitools.std as plt
 def solver_bwdamping(I, V, m, b, s, F, dt, T, damping='linear'):
     """
     Solve m*u'' + f(u') + s(u) = F(t) for t in (0,T],
-    u(0)=I and u'(0)=V. All terms except damping is discretized 
-    by a central finite difference method with time step dt. 
-    The damping term is discretized by a backward diff. approx., 
+    u(0)=I and u'(0)=V. All terms except damping is discretized
+    by a central finite difference method with time step dt.
+    The damping term is discretized by a backward diff. approx.,
     as is the init.cond. u'(0). If damping is 'linear', f(u')=b*u,
     while if damping is 'quadratic', f(u')=b*u'*abs(u').
     F(t) and s(u) are Python functions.
@@ -16,7 +16,7 @@ def solver_bwdamping(I, V, m, b, s, F, dt, T, damping='linear'):
     Nt = int(round(T/dt))
     u = np.zeros(Nt+1)
     t = np.linspace(0, Nt*dt, Nt+1)
-    
+
     u_original = np.zeros(Nt+1); u_original[0] = I  # for testing
 
     u[0] = I
@@ -34,49 +34,6 @@ def solver_bwdamping(I, V, m, b, s, F, dt, T, damping='linear'):
             u[n-1])*(u[n] - u[n-1]) + dt**2/m*(-s(u[n]) + F(t[n]))
     return u, t
 
-def solver(I, V, m, b, s, F, dt, T, damping='linear'):
-    """
-    Solve m*u'' + f(u') + s(u) = F(t) for t in (0,T],
-    u(0)=I and u'(0)=V,
-    by a central finite difference method with time step dt.
-    If damping is 'linear', f(u')=b*u, while if damping is
-    'quadratic', f(u')=b*u'*abs(u').
-    F(t) and s(u) are Python functions.
-    """
-    dt = float(dt); b = float(b); m = float(m) # avoid integer div.
-    Nt = int(round(T/dt))
-    u = np.zeros(Nt+1)
-    t = np.linspace(0, Nt*dt, Nt+1)
-
-    u[0] = I
-    if damping == 'linear':
-        u[1] = u[0] + dt*V + dt**2/(2*m)*(-b*V - s(u[0]) + F(t[0]))
-    elif damping == 'quadratic':
-        u[1] = u[0] + dt*V + \
-               dt**2/(2*m)*(-b*V*abs(V) - s(u[0]) + F(t[0]))
-
-    for n in range(1, Nt):
-        if damping == 'linear':
-            u[n+1] = (2*m*u[n] + (b*dt/2 - m)*u[n-1] +
-                      dt**2*(F(t[n]) - s(u[n])))/(m + b*dt/2)
-        elif damping == 'quadratic':
-            u[n+1] = (2*m*u[n] - m*u[n-1] + b*u[n]*abs(u[n] - u[n-1])
-                      + dt**2*(F(t[n]) - s(u[n])))/\
-                      (m + b*abs(u[n] - u[n-1]))
-    return u, t
-
-def visualize(u, t, title='', filename='tmp'):
-    plt.plot(t, u, 'b-')
-    plt.xlabel('t')
-    plt.ylabel('u')
-    dt = t[1] - t[0]
-    plt.title('dt=%g' % dt)
-    umin = 1.2*u.min(); umax = 1.2*u.max()
-    plt.axis([t[0], t[-1], umin, umax])
-    plt.title(title)
-    plt.savefig(filename + '.png')
-    plt.savefig(filename + '.pdf')
-    plt.show()
 
 import sympy as sym
 
@@ -90,14 +47,14 @@ def test_constant():
     dt = 0.2
     T = 2
     #u, t = solver(I, V, m, b, s, F, dt, T, 'linear')
-    u, t = solver_bwdamping(I, V, m, b, s, F, dt, T, 'linear')    
+    u, t = solver_bwdamping(I, V, m, b, s, F, dt, T, 'linear')
     difference = np.abs(u_exact(t) - u).max()
     print difference
     tol = 1E-13
     assert difference < tol
 
     #u, t = solver(I, V, m, b, s, F, dt, T, 'quadratic')
-    u, t = solver_bwdamping(I, V, m, b, s, F, dt, T, 'quadratic')    
+    u, t = solver_bwdamping(I, V, m, b, s, F, dt, T, 'quadratic')
     difference = np.abs(u_exact(t) - u).max()
     print difference
     assert difference < tol
@@ -186,7 +143,7 @@ def test_mms():
         F_formula = lhs_eq(t, m, b, s, u_exact, 'linear')
         F = sym.lambdify(t, F_formula)
         #u1, t1 = solver(I, V, m, b, s, F, dt, T, 'linear')
-        u1, t1 = solver_bwdamping(I, V, m, b, s, 
+        u1, t1 = solver_bwdamping(I, V, m, b, s,
                                   F, dt, T, 'linear')
         error = np.sqrt(np.sum((u_exact_py(t1) - u1)**2)*dt)
         errors_linear.append((dt, error))
@@ -195,7 +152,7 @@ def test_mms():
         #print sym.latex(F_formula, mode='plain')
         F = sym.lambdify(t, F_formula)
         #u2, t2 = solver(I, V, m, b, s, F, dt, T, 'quadratic')
-        u2, t2 = solver_bwdamping(I, V, m, b, s, 
+        u2, t2 = solver_bwdamping(I, V, m, b, s,
                                   F, dt, T, 'quadratic')
         error = np.sqrt(np.sum((u_exact_py(t2) - u2)**2)*dt)
         errors_quadratic.append((dt, error))
@@ -208,10 +165,30 @@ def test_mms():
             dt_1, error_1 = errors[i-1]
             r = np.log(error/error_1)/np.log(dt/dt_1)
         # check r for final simulation with (final and) smallest dt
-        # note that the method now is 1st order, i.e. r should 
+        # note that the method now is 1st order, i.e. r should
         # approach 1.0
         print r
         assert abs(r - 1.0) < tol
+
+import os, sys
+sys.path.insert(0, os.path.join(os.pardir, 'src-vib'))
+from vib import (plot_empirical_freq_and_amplitude,
+                 visualize_front, visualize_front_ascii,
+                 minmax, periods, amplitudes,
+                 solver as solver2)
+
+def visualize(list_of_curves, legends, title='', filename='tmp'):
+    """Plot list of curves: (u, t)."""
+    for u, t in list_of_curves:
+        plt.plot(t, u)
+        plt.hold('on')
+    plt.legend(legends)
+    plt.xlabel('t')
+    plt.ylabel('u')
+    plt.title(title)
+    plt.savefig(filename + '.png')
+    plt.savefig(filename + '.pdf')
+    plt.show()
 
 def main():
     import argparse
@@ -220,7 +197,7 @@ def main():
     parser.add_argument('--V', type=float, default=0.0)
     parser.add_argument('--m', type=float, default=1.0)
     parser.add_argument('--b', type=float, default=0.0)
-    parser.add_argument('--s', type=str, default='u')
+    parser.add_argument('--s', type=str, default='4*pi**2*u')
     parser.add_argument('--F', type=str, default='0')
     parser.add_argument('--dt', type=float, default=0.05)
     parser.add_argument('--T', type=float, default=20)
@@ -228,9 +205,9 @@ def main():
                         help='Number of periods in a window')
     parser.add_argument('--damping', type=str, default='linear')
     parser.add_argument('--savefig', action='store_true')
-    # Hack to allow --SCITOOLS options 
+    # Hack to allow --SCITOOLS options
     # (scitools.std reads this argument at import)
-    parser.add_argument('--SCITOOLS_easyviz_backend', 
+    parser.add_argument('--SCITOOLS_easyviz_backend',
                         default='matplotlib')
     a = parser.parse_args()
     from scitools.std import StringFunction
@@ -241,112 +218,21 @@ def main():
        a.damping
 
     # compute u by both methods and then visualize the difference
-    u, t = solver(I, V, m, b, s, F, dt, T, damping)
+    u, t = solver2(I, V, m, b, s, F, dt, T, damping)
     u_bw, _ = solver_bwdamping(I, V, m, b, s, F, dt, T, damping)
     u_diff = u - u_bw
 
     num_periods = plot_empirical_freq_and_amplitude(u_diff, t)
     if num_periods <= 40:
         plt.figure()
-        visualize(u_diff, t)
+        legends = ['1st-2nd order method',
+                   '2nd order method',
+                   '1st order method']
+        visualize([(u_diff, t), (u, t), (u_bw, t)], legends)
     else:
         visualize_front(u_diff, t, window_width, savefig)
-        visualize_front_ascii(u_diff, t)
+        #visualize_front_ascii(u_diff, t)
     plt.show()
-
-def plot_empirical_freq_and_amplitude(u, t):
-    minima, maxima = minmax(t, u)
-    p = periods(maxima)
-    a = amplitudes(minima, maxima)
-    plt.figure()
-    from math import pi
-    w = 2*pi/p    
-    plt.plot(range(len(p)), w, 'r-')
-    plt.hold('on')
-    plt.plot(range(len(a)), a, 'b-')
-    ymax = 1.1*max(w.max(), a.max())
-    ymin = 0.9*min(w.min(), a.min())
-    plt.axis([0, max(len(p), len(a)), ymin, ymax])
-    plt.legend(['estimated frequency', 'estimated amplitude'],
-               loc='upper right')
-    return len(maxima)
-
-def visualize_front(u, t, window_width, savefig=False):
-    """
-    Visualize u and the exact solution vs t, using a
-    moving plot window and continuous drawing of the
-    curves as they evolve in time.
-    Makes it easy to plot very long time series.
-    P is the approximate duration of one period.
-    """
-    import scitools.std as st
-    from scitools.MovingPlotWindow import MovingPlotWindow
-
-    umin = 1.2*u.min();  umax = -umin
-    plot_manager = MovingPlotWindow(
-        window_width=window_width,
-        dt=t[1]-t[0],
-        yaxis=[umin, umax],
-        mode='continuous drawing')
-    for n in range(1,len(u)):
-        if plot_manager.plot(n):
-            s = plot_manager.first_index_in_plot
-            st.plot(t[s:n+1], u[s:n+1], 'r-1',
-                    title='t=%6.3f' % t[n],
-                    axis=plot_manager.axis(),
-                    show=not savefig) # drop window if savefig
-            if savefig:
-                print 't=%g' % t[n]
-                st.savefig('tmp_vib%04d.png' % n)
-        plot_manager.update(n)
-
-def visualize_front_ascii(u, t, fps=10):
-    """
-    Plot u and the exact solution vs t line by line in a
-    terminal window (only using ascii characters).
-    Makes it easy to plot very long time series.
-    """
-    from scitools.avplotter import Plotter
-    import time
-    umin = 1.2*u.min();  umax = -umin
-
-    p = Plotter(ymin=umin, ymax=umax, width=60, symbols='+o')
-    for n in range(len(u)):
-        print p.plot(t[n], u[n]), '%.2f' % (t[n])
-        time.sleep(1/float(fps))
-
-def minmax(t, u):
-    """
-    Compute all local minima and maxima of the function u(t),
-    represented by discrete points in the arrays u and t.
-    Return lists minima and maxima of (t[i],u[i]) extreme points.
-    """
-    minima = []; maxima = []
-    for n in range(1, len(u)-1, 1):
-        if u[n-1] > u[n] < u[n+1]:
-            minima.append((t[n], u[n]))
-        if u[n-1] < u[n] > u[n+1]:
-            maxima.append((t[n], u[n]))
-    return minima, maxima
-
-def periods(extrema):
-    """
-    Given a list of (t,u) points of the maxima or minima,
-    return an array of the corresponding local periods.
-    """
-    p = [extrema[n][0] - extrema[n-1][0]
-         for n in range(1, len(extrema))]
-    return np.array(p)
-
-def amplitudes(minima, maxima):
-    """
-    Given a list of (t,u) points of the minima and maxima of
-    u, return an array of the corresponding local amplitudes.
-    """
-    # Compare first maxima with first minima and so on
-    a = [(abs(maxima[n][1] - minima[n][1]))/2.0
-         for n in range(min(len(minima),len(maxima)))]
-    return np.array(a)
 
 if __name__ == '__main__':
     main()
@@ -354,3 +240,4 @@ if __name__ == '__main__':
     #test_sinusoidal()
     #test_mms()
     #test_quadratic()
+    raw_input()

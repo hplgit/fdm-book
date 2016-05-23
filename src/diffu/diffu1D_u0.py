@@ -26,7 +26,7 @@ x     Mesh points in space.
 t     Mesh points in time.
 n     Index counter in time.
 u     Unknown at current/new time level.
-u_1   u at the previous time level.
+u_n   u at the previous time level.
 dx    Constant mesh spacing in x.
 dt    Constant mesh spacing in t.
 ===== ==========================================================
@@ -60,27 +60,27 @@ def solver_FE_simple(I, a, f, L, dt, F, T):
     dt = t[1] - t[0]
 
     u   = np.zeros(Nx+1)
-    u_1 = np.zeros(Nx+1)
+    u_n = np.zeros(Nx+1)
 
     # Set initial condition u(x,0) = I(x)
     for i in range(0, Nx+1):
-        u_1[i] = I(x[i])
+        u_n[i] = I(x[i])
 
     for n in range(0, Nt):
         # Compute u at inner mesh points
         for i in range(1, Nx):
-            u[i] = u_1[i] + F*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) + \
+            u[i] = u_n[i] + F*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) + \
                    dt*f(x[i], t[n])
 
         # Insert boundary conditions
         u[0] = 0;  u[Nx] = 0
 
         # Switch variables before next step
-        #u_1[:] = u  # safe, but slow
-        u_1, u = u, u_1
+        #u_n[:] = u  # safe, but slow
+        u_n, u = u, u_n
 
     t1 = time.clock()
-    return u_1, x, t, t1-t0  # u_1 holds latest u
+    return u_n, x, t, t1-t0  # u_n holds latest u
 
 
 def solver_FE(I, a, f, L, dt, F, T,
@@ -100,25 +100,25 @@ def solver_FE(I, a, f, L, dt, F, T,
     dt = t[1] - t[0]
 
     u   = np.zeros(Nx+1)   # solution array
-    u_1 = np.zeros(Nx+1)   # solution at t-dt
+    u_n = np.zeros(Nx+1)   # solution at t-dt
 
     # Set initial condition
     for i in range(0,Nx+1):
-        u_1[i] = I(x[i])
+        u_n[i] = I(x[i])
 
     if user_action is not None:
-        user_action(u_1, x, t, 0)
+        user_action(u_n, x, t, 0)
 
     for n in range(0, Nt):
         # Update all inner points
         if version == 'scalar':
             for i in range(1, Nx):
-                u[i] = u_1[i] + F*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) +\
+                u[i] = u_n[i] + F*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) +\
                        dt*f(x[i], t[n])
 
         elif version == 'vectorized':
-            u[1:Nx] = u_1[1:Nx] +  \
-                      F*(u_1[0:Nx-1] - 2*u_1[1:Nx] + u_1[2:Nx+1]) +\
+            u[1:Nx] = u_n[1:Nx] +  \
+                      F*(u_n[0:Nx-1] - 2*u_n[1:Nx] + u_n[2:Nx+1]) +\
                       dt*f(x[1:Nx], t[n])
         else:
             raise ValueError('version=%s' % version)
@@ -129,7 +129,7 @@ def solver_FE(I, a, f, L, dt, F, T,
             user_action(u, x, t, n+1)
 
         # Switch variables before next step
-        u_1, u = u, u_1
+        u_n, u = u, u_n
 
     t1 = time.clock()
     return t1-t0
@@ -153,7 +153,7 @@ def solver_BE_simple(I, a, f, L, dt, F, T, user_action=None):
     dt = t[1] - t[0]
 
     u   = np.zeros(Nx+1)
-    u_1 = np.zeros(Nx+1)
+    u_n = np.zeros(Nx+1)
 
     # Data structures for the linear system
     A = np.zeros((Nx+1, Nx+1))
@@ -167,22 +167,22 @@ def solver_BE_simple(I, a, f, L, dt, F, T, user_action=None):
 
     # Set initial condition u(x,0) = I(x)
     for i in range(0, Nx+1):
-        u_1[i] = I(x[i])
+        u_n[i] = I(x[i])
     if user_action is not None:
-        user_action(u_1, x, t, 0)
+        user_action(u_n, x, t, 0)
 
     for n in range(0, Nt):
         # Compute b and solve linear system
         for i in range(1, Nx):
-            b[i] = u_1[i] + dt*f(x[i], t[n+1])
+            b[i] = u_n[i] + dt*f(x[i], t[n+1])
         b[0] = b[Nx] = 0
         u[:] = np.linalg.solve(A, b)
 
         if user_action is not None:
             user_action(u, x, t, n+1)
 
-        # Update u_1 before next step
-        u_1, u = u, u_1
+        # Update u_n before next step
+        u_n, u = u, u_n
 
     t1 = time.clock()
     return t1-t0
@@ -206,7 +206,7 @@ def solver_BE(I, a, f, L, dt, F, T, user_action=None):
     dt = t[1] - t[0]
 
     u   = np.zeros(Nx+1)   # solution array at t[n+1]
-    u_1 = np.zeros(Nx+1)   # solution at t[n]
+    u_n = np.zeros(Nx+1)   # solution at t[n]
 
     # Representation of sparse matrix and right-hand side
     diagonal = np.zeros(Nx+1)
@@ -232,22 +232,22 @@ def solver_BE(I, a, f, L, dt, F, T, user_action=None):
 
     # Set initial condition
     for i in range(0,Nx+1):
-        u_1[i] = I(x[i])
+        u_n[i] = I(x[i])
 
     if user_action is not None:
-        user_action(u_1, x, t, 0)
+        user_action(u_n, x, t, 0)
 
     for n in range(0, Nt):
-        b = u_1 + dt*f(x[:], t[n+1])
+        b = u_n + dt*f(x[:], t[n+1])
         b[0] = b[-1] = 0.0  # boundary conditions
         u[:] = scipy.sparse.linalg.spsolve(A, b)
 
         if user_action is not None:
             user_action(u, x, t, n+1)
 
-        # Update u_1 before next step
-        #u_1[:] = u
-        u_1, u = u, u_1
+        # Update u_n before next step
+        #u_n[:] = u
+        u_n, u = u, u_n
 
     t1 = time.clock()
     return t1-t0
@@ -274,7 +274,7 @@ def solver_theta(I, a, f, L, dt, F, T, theta=0.5, u_L=0, u_R=0,
     dt = t[1] - t[0]
 
     u   = np.zeros(Nx+1)   # solution array at t[n+1]
-    u_1 = np.zeros(Nx+1)   # solution at t[n]
+    u_n = np.zeros(Nx+1)   # solution at t[n]
 
     # Representation of sparse matrix and right-hand side
     diagonal = np.zeros(Nx+1)
@@ -303,15 +303,15 @@ def solver_theta(I, a, f, L, dt, F, T, theta=0.5, u_L=0, u_R=0,
 
     # Set initial condition
     for i in range(0,Nx+1):
-        u_1[i] = I(x[i])
+        u_n[i] = I(x[i])
 
     if user_action is not None:
-        user_action(u_1, x, t, 0)
+        user_action(u_n, x, t, 0)
 
     # Time loop
     for n in range(0, Nt):
-        b[1:-1] = u_1[1:-1] + \
-                  Fr*(u_1[:-2] - 2*u_1[1:-1] + u_1[2:]) + \
+        b[1:-1] = u_n[1:-1] + \
+                  Fr*(u_n[:-2] - 2*u_n[1:-1] + u_n[2:]) + \
                   dt*theta*f(x[1:-1], t[n+1]) + \
                   dt*(1-theta)*f(x[1:-1], t[n])
         b[0] = u_L; b[-1] = u_R  # boundary conditions
@@ -320,8 +320,8 @@ def solver_theta(I, a, f, L, dt, F, T, theta=0.5, u_L=0, u_R=0,
         if user_action is not None:
             user_action(u, x, t, n+1)
 
-        # Update u_1 before next step
-        u_1, u = u, u_1
+        # Update u_n before next step
+        u_n, u = u, u_n
 
     t1 = time.clock()
     return t1-t0

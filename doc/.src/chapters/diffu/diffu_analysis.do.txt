@@ -294,6 +294,19 @@ make Taylor expansions of $A/\Aex$ to see the error more analytically.
 #We shall in particular investigate the error $\Aex - A$ in the
 #amplification factor.
 
+=== Truncation error ===
+
+As an alternative to examining the accuracy of the damping of a wave
+component, we can perform a general truncation error analysis as
+explained in ref[Appendix ref{ch:trunc}][ in
+cite{Langtangen_deqbook_trunc}]["Truncation error analysis": ""
+cite{Langtangen_deqbook_trunc}]. Such results are more general, but
+less detailed than what we get from the wave component analysis.  The
+truncation error can almost always be computed and represents the
+error in the numerical model when the exact solution is substituted
+into the equations. In particular, the truncation error analysis tells
+the order of the scheme, which is of fundamental importance when
+verifying codes based on empirical estimation of convergence rates.
 
 ===== Analysis of the Forward Euler scheme =====
 label{diffu:pde1:analysis:FE}
@@ -434,6 +447,32 @@ realize that the dominating terms in $A/\Aex$ are at most
 \]
 !et
 
+=== Truncation error ===
+
+We follow the theory explained in
+ref[Appendix ref{ch:trunc}][ in
+cite{Langtangen_deqbook_trunc}]["Truncation error analysis": ""
+cite{Langtangen_deqbook_trunc}]. The recipe is to set up the
+scheme in operator notation and use formulas from
+ref[Appendix ref{trunc:table}][ in
+cite{Langtangen_deqbook_trunc}]["Overview of leading-order error terms in finite difference formulas": ""
+cite{Langtangen_deqbook_trunc}] to derive an expression for
+the residual. The details are documented in
+ref[Appendix ref{trunc:diffu:1D}][ in
+cite{Langtangen_deqbook_trunc}]["Linear diffusion equation in 1D": ""
+cite{Langtangen_deqbook_trunc}]. We end up with a truncation error
+
+!bt
+\[ R^n_i = \Oof{\Delta t} + \Oof{\Delta x^2}\tp\]
+!et
+Although this is not the true error $\uex(x_i,t_n) - u^n_i$, it indicates
+that the true error is of the form
+
+!bt
+\[ E = C_t\Delta t + C_x\Delta x^2\]
+!et
+for two unknown constants $C_t$ and $C_x$.
+
 
 ===== Analysis of the Backward Euler scheme =====
 label{diffu:pde1:analysis:BE}
@@ -482,6 +521,14 @@ We see from (ref{diffu:pde1:analysis:BE:A}) that $0<A<1$, which means
 that all numerical wave components are stable and non-oscillatory
 for any $\Delta t >0$.
 
+=== Truncation error ===
+
+The derivation of the truncation error for the Backward Euler scheme is almost
+identical to that for the Forward Euler scheme. We end up with
+
+!bt
+\[ R^n_i = \Oof{\Delta t} + \Oof{\Delta x^2}\tp\]
+!et
 
 
 ===== Analysis of the Crank-Nicolson scheme =====
@@ -541,6 +588,63 @@ The criteria $A>-1$ and $A<1$ are fulfilled for any $\Delta t >0$.
 Therefore, the solution cannot grow, but it will oscillate if
 $1-2F\sin^p < 0$. To avoid such non-physical oscillations, we must demand
 $F\leq\half$.
+
+=== Truncation error ===
+
+The truncation error is derived in
+ref[Appendix ref{trunc:diffu:1D}][ in
+cite{Langtangen_deqbook_trunc}]["Linear diffusion equation in 1D": ""
+cite{Langtangen_deqbook_trunc}]:
+
+!bt
+\[ R^{n+\half}_i = \Oof{\Delta x^2} + \Oof{\Delta t^2}\tp\]
+!et
+
+
+===== Analysis of the Leapfrog scheme =====
+label{diffu:pde1:analysis:leapfrog}
+
+An attractive feature of the Forward Euler scheme is the explicit
+time stepping and no need for solving linear systems. However, the
+accuracy in time is only $\Oof{\Delta t}$. We can get an explicit
+*second-order* scheme in time by using the Leapfrog method:
+
+!bt
+\[ [D_{2t} u = \dfc D_xDx u + f]^n_i\tp\]
+!et
+Written out,
+
+!bt
+\[ u^{n+1} = u^{n-1} + \frac{2\dfc\Delta t}{\Delta x^2}
+(u^{n}_{i+1} - 2u^n_i + u^n_{i-1}) + f(x_i,t_n)\tp\]
+!et
+We need some formula for the first step, $u^1_i$, but for that we can use
+a Forward Euler step.
+
+Unfortunately, the Leapfrog scheme is always unstable for the
+diffusion equation. To see this, we insert a wave component $A^ne^{ikx}$
+and get
+
+!bt
+\[ \frac{A - A^{-1}}{\Delta t} = -\dfc \frac{4}{\Delta x^2}\sin^2 p,\]
+!et
+or
+
+!bt
+\[ A^2 + 4F \sin^2 p\, A - 1 = 0,\]
+!et
+which has roots
+
+!bt
+\[ A = -2F\sin^2 p \pm \sqrt{4F^2\sin^4 p + 1}\tp\]
+!et
+Both roots have $|A|>1$ so the always amplitude grows, which is not in
+accordance with physics of the problem.
+However, for a PDE with a first-order derivative in space, instead of
+a second-order one, the Leapfrog scheme performs very well.
+% if BOOK == 'book':
+Details are provided in Section ref{advec:1D:leapfrog}.
+% endif
 
 ===== Summary of accuracy of amplification factors =====
 

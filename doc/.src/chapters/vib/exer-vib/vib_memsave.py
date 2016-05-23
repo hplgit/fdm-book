@@ -1,17 +1,17 @@
 import numpy as np
 import scitools.std as plt
 
-def solve_and_store(filename, I, V, m, b, s, 
+def solve_and_store(filename, I, V, m, b, s,
                     F, dt, T, damping='linear'):
     """
-    Solve m*u'' + f(u') + s(u) = F(t) for t in (0,T], u(0)=I and 
-    u'(0)=V, by a central finite difference method with time step dt.
-    If damping is 'linear', f(u')=b*u, while if damping is
-    'quadratic', f(u')=b*u'*abs(u'). F(t) and s(u) are Python 
+    Solve m*u'' + f(u') + s(u) = F(t) for t in (0,T], u(0)=I and
+    u'(0)=V, by a central finite difference method with time step
+    dt. If damping is 'linear', f(u')=b*u, while if damping is
+    'quadratic', f(u')=b*u'*abs(u'). F(t) and s(u) are Python
     functions. The solution is written to file (filename).
-    Naming convention: we use the name u for the new solution to be 
-    computed, u_1 for the solution one time step prior to that and u_2
-    for the solution two time steps prior to that.
+    Naming convention: we use the name u for the new solution
+    to be computed, u_n for the solution one time step prior to
+    that and u_nm1 for the solution two time steps prior to that.
     Returns min and max u values needed for subsequent plotting.
     """
     dt = float(dt); b = float(b); m = float(m) # avoid integer div.
@@ -19,29 +19,29 @@ def solve_and_store(filename, I, V, m, b, s,
     outfile = open(filename, 'w')
     outfile.write('Time          Position\n')
 
-    u_2 = I
-    u_min = u_max = u_2
-    outfile.write('%6.3f         %7.5f\n' % (0*dt, u_2))
+    u_nm1 = I
+    u_min = u_max = u_nm1
+    outfile.write('%6.3f         %7.5f\n' % (0*dt, u_nm1))
     if damping == 'linear':
-        u_1 = u_2 + dt*V + dt**2/(2*m)*(-b*V - s(u_2) + F(0*dt))
+        u_n = u_nm1 + dt*V + dt**2/(2*m)*(-b*V - s(u_nm1) + F(0*dt))
     elif damping == 'quadratic':
-        u_1 = u_2 + dt*V + \
-               dt**2/(2*m)*(-b*V*abs(V) - s(u_2) + F(0*dt))
-    if u_1 < u_2:
-        u_min = u_1
-    else:  # either equal or u_1 > u_2
-        u_max = u_1
-    outfile.write('%6.3f         %7.5f\n' % (1*dt, u_1))
- 
+        u_n = u_nm1 + dt*V + \
+               dt**2/(2*m)*(-b*V*abs(V) - s(u_nm1) + F(0*dt))
+    if u_n < u_nm1:
+        u_min = u_n
+    else:  # either equal or u_n > u_nm1
+        u_max = u_n
+    outfile.write('%6.3f         %7.5f\n' % (1*dt, u_n))
+
     for n in range(1, Nt):
         # compute  solution at next time step
         if damping == 'linear':
-            u = (2*m*u_1 + (b*dt/2 - m)*u_2 +
-                dt**2*(F(n*dt) - s(u_1)))/(m + b*dt/2)
+            u = (2*m*u_n + (b*dt/2 - m)*u_nm1 +
+                dt**2*(F(n*dt) - s(u_n)))/(m + b*dt/2)
         elif damping == 'quadratic':
-            u = (2*m*u_1 - m*u_2 + b*u_1*abs(u_1 - u_2)
-                + dt**2*(F(n*dt) - s(u_1)))/\
-                (m + b*abs(u_1 - u_2))
+            u = (2*m*u_n - m*u_nm1 + b*u_n*abs(u_n - u_nm1)
+                + dt**2*(F(n*dt) - s(u_n)))/\
+                (m + b*abs(u_n - u_nm1))
         if u < u_min:
             u_min = u
         elif u > u_max:
@@ -50,7 +50,7 @@ def solve_and_store(filename, I, V, m, b, s,
         # write solution to file
         outfile.write('%6.3f         %7.5f\n' % ((n+1)*dt, u))
         # switch references before next step
-        u_2, u_1, u = u_1, u, u_2
+        u_nm1, u_n, u = u_n, u, u_nm1
 
     outfile.close()
     return u_min, u_max
@@ -70,9 +70,9 @@ def main():
                         help='Number of periods in a window')
     parser.add_argument('--damping', type=str, default='linear')
     parser.add_argument('--savefig', action='store_true')
-    # Hack to allow --SCITOOLS options 
+    # Hack to allow --SCITOOLS options
     # (scitools.std reads this argument at import)
-    parser.add_argument('--SCITOOLS_easyviz_backend', 
+    parser.add_argument('--SCITOOLS_easyviz_backend',
                         default='matplotlib')
     a = parser.parse_args()
     from scitools.std import StringFunction
@@ -83,7 +83,7 @@ def main():
        a.damping
 
     filename = 'vibration_sim.dat'
-    u_min, u_max = solve_and_store(filename, I, V, m, b, s, 
+    u_min, u_max = solve_and_store(filename, I, V, m, b, s,
                                    F, dt, T, damping)
 
     read_and_plot(filename, u_min, u_max)

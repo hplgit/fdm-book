@@ -51,28 +51,18 @@ def main(u):
 
 
 def linear():
-    def u_e(t):
-        """Return chosen linear exact solution."""
-        # General linear function u_e = c*t + d
-        # Initial conditions u(0)=I, u'(0)=V require c=V, d=I
-        return V*t + I
-
-    main(u_e)
+    """Test linear function V*t+I: u(0)=I, u'(0)=V."""
+    main(lambda t: V*t + I)
 
 def quadratic():
-    # Extend with quadratic functions
-    q = sym.Symbol('q')  # arbitrary constant in quadratic term
-
-    def u_e(t):
-        return q*t**2 + V*t + I
-
+    """Test quadratic function q*t**2 + V*t + I."""
+    q = sym.Symbol('q')  # arbitrary constant in t**2 term
+    u_e = lambda t: q*t**2 + V*t + I
     main(u_e)
 
 def cubic():
     r, q = sym.symbols('r q')
-
     main(lambda t: r*t**3 + q*t**2 + V*t + I)
-
 
 def solver(I, V, f, w, dt, T):
     """
@@ -92,6 +82,7 @@ def solver(I, V, f, w, dt, T):
     return u, t
 
 def test_quadratic_exact_solution():
+    """Verify solver function via quadratic solution."""
     # Transform global symbolic variables to functions and numbers
     # for numerical computations
     global p, V, I, w

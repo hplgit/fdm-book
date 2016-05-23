@@ -245,23 +245,23 @@ t = np.linspace(0, T, Nt+1)    # mesh points in time
 dt = t[1] - t[0]
 F = a*dt/dx**2
 u   = np.zeros(Nx+1)           # unknown u at new time level
-u_1 = np.zeros(Nx+1)           # u at the previous time level
+u_n = np.zeros(Nx+1)           # u at the previous time level
 
 # Set initial condition u(x,0) = I(x)
 for i in range(0, Nx+1):
-    u_1[i] = I(x[i])
+    u_n[i] = I(x[i])
 
 for n in range(0, Nt):
     # Compute u at inner mesh points
     for i in range(1, Nx):
-        u[i] = u_1[i] + F*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) + \
+        u[i] = u_n[i] + F*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) + \
 	       f(x[i], t[n])
 
     # Insert boundary conditions
     u[0] = 0;  u[Nx] = 0
 
-    # Update u_1 before next step
-    u_1[:]= u
+    # Update u_n before next step
+    u_n[:]= u
 !ec
 Note that we use `a` for $\dfc$ in the code, motivated by easy visual
 mapping between the variable name and the mathematical symbol in formulas.
@@ -287,21 +287,20 @@ The vectorized version replaces the explicit loop
 
 !bc pycod
 for i in range(1, Nx):
-    u[i] = u_1[i] + F*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) \
+    u[i] = u_n[i] + F*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) \
            + dt*f(x[i], t[n])
 !ec
 by arithmetics on displaced slices of the `u` array:
 
 !bc pycod
-u[1:Nx] = u_1[1:Nx] + F*(u_1[0:Nx-1] - 2*u_1[1:Nx] + u_1[2:Nx+1]) \
+u[1:Nx] = u_n[1:Nx] + F*(u_n[0:Nx-1] - 2*u_n[1:Nx] + u_n[2:Nx+1]) \
           + dt*f(x[1:Nx], t[n])
 # or
-u[1:-1] = u_1[1:-1] + F*(u_1[0:-2] - 2*u_1[1:-1] + u_1[2:]) \
+u[1:-1] = u_n[1:-1] + F*(u_n[0:-2] - 2*u_n[1:-1] + u_n[2:]) \
           + dt*f(x[1:-1], t[n])
 !ec
 For example,
-the
-vectorized version runs 70 times faster than the scalar version
+the vectorized version runs 70 times faster than the scalar version
 in a case with 100 time steps and a spatial mesh of $10^5$ cells.
 
 The `solver_FE` function also features a callback function such that the
@@ -440,19 +439,19 @@ Euler scheme is unstable for $F>1/2$).
 === Checking convergence rates ===
 label{diffu:pde1:FE:verify:convrates}
 
-If our chosen exact solution does not satisfy the discrete equations 
-exactly, we are left with checking the convergence rates, just as we did 
+If our chosen exact solution does not satisfy the discrete equations
+exactly, we are left with checking the convergence rates, just as we did
 previously for the wave equation. However, with the Euler scheme here,
 we have different accuracies in time and space, since we use a second
 order approximation to the spatial derivative and a first order approximation
-to the time derivative. Thus, we must expect different convergence rates in 
+to the time derivative. Thus, we must expect different convergence rates in
 time and space. For the numerical error,
 
 !bt
 \[ E = C_t\Delta t^r + C_x\Delta x^p,\]
 !et
-we should get convergence rates $r=1$ and $p=2$ ($C_t$ and $C_x$ are unknown constants). 
-As previously, we simplify matters by introducing a single discretization parameter. 
+we should get convergence rates $r=1$ and $p=2$ ($C_t$ and $C_x$ are unknown constants).
+As previously, we simplify matters by introducing a single discretization parameter.
 We introduce
 
 !bt
@@ -464,7 +463,7 @@ where $K$ is a constant. The error formula then becomes
 \[ E = C_t K^rh^r + C_xh^r = \tilde C h^r,\quad \tilde C = C_tK^r + C_x\tp\]
 !et
 where the computed rate $r$ should approach 1 with increasing resolution.
-It is tempting to choose $K=1$, but for the Forward Euler method, 
+It is tempting to choose $K=1$, but for the Forward Euler method,
 stability requires $\Delta t = hK \leq h/(4\dfc)$, so $K\leq 1/(4\dfc)$.
 
 The alternative error measures are as outlined for the wave equation and
@@ -800,7 +799,7 @@ x = np.linspace(0, L, Nx+1)   # mesh points in space
 dx = x[1] - x[0]
 t = np.linspace(0, T, N+1)    # mesh points in time
 u   = np.zeros(Nx+1)          # unknown u at new time level
-u_1 = np.zeros(Nx+1)          # u at the previous time level
+u_n = np.zeros(Nx+1)          # u at the previous time level
 
 # Data structures for the linear system
 A = np.zeros((Nx+1, Nx+1))
@@ -814,22 +813,22 @@ A[0,0] = A[Nx,Nx] = 1
 
 # Set initial condition u(x,0) = I(x)
 for i in range(0, Nx+1):
-    u_1[i] = I(x[i])
+    u_n[i] = I(x[i])
 
 import scipy.linalg
 
 for n in range(0, Nt):
     # Compute b and solve linear system
     for i in range(1, Nx):
-        b[i] = -u_1[i]
+        b[i] = -u_n[i]
     b[0] = b[Nx] = 0
     u[:] = scipy.linalg.solve(A, b)
 
-    # Update u_1 before next step
-    u_1[:] = u
+    # Update u_n before next step
+    u_n[:] = u
 !ec
 
-Regarding verification, the same considerations apply as for the 
+Regarding verification, the same considerations apply as for the
 Forward Euler method (Section ref{diffu:pde1:FE:verify}).
 
 idx{diffusion equation! 1D, verification (BE)}
@@ -883,13 +882,13 @@ print A.todense()  # Check that A is correct
 
 # Set initial condition
 for i in range(0,Nx+1):
-    u_1[i] = I(x[i])
+    u_n[i] = I(x[i])
 
 for n in range(0, Nt):
-    b = u_1
+    b = u_n
     b[0] = b[-1] = 0.0  # boundary conditions
     u[:] = scipy.sparse.linalg.spsolve(A, b)
-    u_1[:] = u
+    u_n[:] = u
 !ec
 The `scipy.sparse.linalg.spsolve` function utilizes the sparse storage
 structure of `A` and performs in this case a very efficient Gaussian
@@ -998,14 +997,14 @@ b_i &= u^{n-1}_i + \half(f_i^n + f_i^{n+1}),\quad i=1,\ldots,N_x-1,\\
 b_{N_x} &= 0 \tp  \end{align}
 !et
 
-When verifying some implementation of the Crank-Nicolson scheme by convergence rate testing, 
+When verifying some implementation of the Crank-Nicolson scheme by convergence rate testing,
 one should note that the scheme is second order accurate in both space and time. The numerical
 error then reads
 
 !bt
 \[ E = C_t\Delta t^r + C_x\Delta x^r,\]
 !et
-where $r=2$ ($C_t$ and $C_x$ are unknown constants, as before). 
+where $r=2$ ($C_t$ and $C_x$ are unknown constants, as before).
 When introducing a single discretization parameter, we may now simply choose
 
 !bt
@@ -1076,8 +1075,8 @@ Euler and Crank-Nicolson schemes listed earlier.
 Note that convergence rate testing with implementations of the theta rule must
 adjust the error expression according to which of the underlying schemes is actually being run.
 That is, if $\theta=0$ (i.e., Forward Euler) or $\theta=1$ (i.e., Backward Euler), there should
-be first order convergence, whereas with $\theta=0.5$ (i.e., Crank-Nicolson), one should get 
-second order convergence (as outlined in previous sections). 
+be first order convergence, whereas with $\theta=0.5$ (i.e., Crank-Nicolson), one should get
+second order convergence (as outlined in previous sections).
 
 
 # #ifdef EXTRA

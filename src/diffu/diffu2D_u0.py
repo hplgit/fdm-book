@@ -30,7 +30,7 @@ y     Mesh points in y.
 t     Mesh points in time.
 n     Index counter in time.
 u     Unknown at current/new time level.
-u_1   u at the previous time level.
+u_n   u at the previous time level.
 dx    Constant mesh spacing in x.
 dy    Constant mesh spacing in y.
 dt    Constant mesh spacing in t.
@@ -79,7 +79,7 @@ def solver_dense(
             if isinstance(x, np.ndarray) else 0
 
     u   = np.zeros((Nx+1, Ny+1))      # unknown u at new time level
-    u_1 = np.zeros((Nx+1, Ny+1))      # u at the previous time level
+    u_n = np.zeros((Nx+1, Ny+1))      # u at the previous time level
 
     Ix = range(0, Nx+1)
     Iy = range(0, Ny+1)
@@ -99,10 +99,10 @@ def solver_dense(
         _U_Ly = float(U_Ly)  # Make copy of U_Ly
         U_Ly = lambda t: _U_Ly
 
-    # Load initial condition into u_1
+    # Load initial condition into u_n
     for i in Ix:
         for j in Iy:
-            u_1[i,j] = I(x[i], y[j])
+            u_n[i,j] = I(x[i], y[j])
 
     # Two-dim coordinate arrays for vectorized function evaluations
     # in the user_action function
@@ -110,7 +110,7 @@ def solver_dense(
     yv = y[np.newaxis,:]
 
     if user_action is not None:
-        user_action(u_1, x, xv, y, yv, t, 0)
+        user_action(u_n, x, xv, y, yv, t, 0)
 
     # Data structures for the linear system
     N = (Nx+1)*(Ny+1)  # no of unknowns
@@ -156,10 +156,10 @@ def solver_dense(
             i = 0;  p = p = m(i,j);  b[p] = U_0x(t[n+1])  # boundary
             for i in Ix[1:-1]:
                 p = m(i,j)                                # interior
-                b[p] = u_1[i,j] + \
+                b[p] = u_n[i,j] + \
                   (1-theta)*(
-                  Fx*(u_1[i+1,j] - 2*u_1[i,j] + u_1[i-1,j]) +\
-                  Fy*(u_1[i,j+1] - 2*u_1[i,j] + u_1[i,j-1]))\
+                  Fx*(u_n[i+1,j] - 2*u_n[i,j] + u_n[i-1,j]) +\
+                  Fy*(u_n[i,j+1] - 2*u_n[i,j] + u_n[i,j-1]))\
                     + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \
                   (1-theta)*dt*f(i*dx,j*dy,n*dt)
             i = Nx;  p = m(i,j);  b[p] = U_Lx(t[n+1])     # boundary
@@ -182,8 +182,8 @@ def solver_dense(
         if user_action is not None:
             user_action(u, x, xv, y, yv, t, n+1)
 
-        # Update u_1 before next step
-        u_1, u = u, u_1
+        # Update u_n before next step
+        u_n, u = u, u_n
 
     t1 = time.clock()
 
@@ -224,7 +224,7 @@ def solver_sparse(
             if isinstance(x, np.ndarray) else 0
 
     u   = np.zeros((Nx+1, Ny+1))    # unknown u at new time level
-    u_1 = np.zeros((Nx+1, Ny+1))    # u at the previous time level
+    u_n = np.zeros((Nx+1, Ny+1))    # u at the previous time level
 
     Ix = range(0, Nx+1)
     Iy = range(0, Ny+1)
@@ -244,17 +244,17 @@ def solver_sparse(
         _U_Ly = float(U_Ly)  # Make copy of U_Ly
         U_Ly = lambda t: _U_Ly
 
-    # Load initial condition into u_1
+    # Load initial condition into u_n
     for i in Ix:
         for j in Iy:
-            u_1[i,j] = I(x[i], y[j])
+            u_n[i,j] = I(x[i], y[j])
 
     # Two-dim coordinate arrays for vectorized function evaluations
     xv = x[:,np.newaxis]
     yv = y[np.newaxis,:]
 
     if user_action is not None:
-        user_action(u_1, x, xv, y, yv, t, 0)
+        user_action(u_n, x, xv, y, yv, t, 0)
 
     N = (Nx+1)*(Ny+1)
     main   = np.zeros(N)            # diagonal
@@ -309,10 +309,10 @@ def solver_sparse(
             i = 0;  p = m(i,j);  b[p] = U_0x(t[n+1])  # Boundary
             for i in Ix[1:-1]:
                 p = m(i,j)                            # Interior
-                b[p] = u_1[i,j] + \
+                b[p] = u_n[i,j] + \
                   (1-theta)*(
-                  Fx*(u_1[i+1,j] - 2*u_1[i,j] + u_1[i-1,j]) +\
-                  Fy*(u_1[i,j+1] - 2*u_1[i,j] + u_1[i,j-1]))\
+                  Fx*(u_n[i+1,j] - 2*u_n[i,j] + u_n[i-1,j]) +\
+                  Fy*(u_n[i,j+1] - 2*u_n[i,j] + u_n[i,j-1]))\
                     + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \
                   (1-theta)*dt*f(i*dx,j*dy,n*dt)
             i = Nx;  p = m(i,j);  b[p] = U_Lx(t[n+1]) # Boundary
@@ -333,15 +333,15 @@ def solver_sparse(
             i = Nx;  p = m(i,j);  b[p] = U_Lx(t[n+1]) # Boundary
             imin = Ix[1]
             imax = Ix[-1]  # for slice, max i index is Ix[-1]-1
-            b[m(imin,j):m(imax,j)] = u_1[imin:imax,j] + \
+            b[m(imin,j):m(imax,j)] = u_n[imin:imax,j] + \
                   (1-theta)*(Fx*(
-              u_1[imin+1:imax+1,j] -
-            2*u_1[imin:imax,j] +
-              u_1[imin-1:imax-1,j]) +
+              u_n[imin+1:imax+1,j] -
+            2*u_n[imin:imax,j] +
+              u_n[imin-1:imax-1,j]) +
                              Fy*(
-              u_1[imin:imax,j+1] -
-            2*u_1[imin:imax,j] +
-              u_1[imin:imax,j-1])) + \
+              u_n[imin:imax,j+1] -
+            2*u_n[imin:imax,j] +
+              u_n[imin:imax,j-1])) + \
                 theta*dt*f_a_np1[imin:imax,j] + \
               (1-theta)*dt*f_a_n[imin:imax,j]
         j = Ny;  b[m(0,j):m(Nx+1,j)] = U_Ly(t[n+1]) # Boundary
@@ -350,7 +350,7 @@ def solver_sparse(
         if method == 'direct':
             c = scipy.sparse.linalg.spsolve(A, b)
         elif method == 'CG':
-            x0 = u_1.T.reshape(N)  # Start vector is u_1
+            x0 = u_n.T.reshape(N)  # Start vector is u_n
             CG_iter.append(0)
 
             def CG_callback(c_k):
@@ -378,8 +378,8 @@ def solver_sparse(
         if user_action is not None:
             user_action(u, x, xv, y, yv, t, n+1)
 
-        # Update u_1 before next step
-        u_1, u = u, u_1
+        # Update u_n before next step
+        u_n, u = u, u_n
 
     t1 = time.clock()
 
@@ -436,7 +436,7 @@ def solver_classic_iterative(
             omega = omega_optimal(Lx, Ly, Nx, Ny)
 
     u   = np.zeros((Nx+1, Ny+1))      # unknown u at new time level
-    u_1 = np.zeros((Nx+1, Ny+1))      # u at the previous time level
+    u_n = np.zeros((Nx+1, Ny+1))      # u at the previous time level
     u_  = np.zeros((Nx+1, Ny+1))      # most recent approx to u
     if version == 'vectorized':
         u_new = np.zeros((Nx+1, Ny+1))  # help array
@@ -459,10 +459,10 @@ def solver_classic_iterative(
         _U_Ly = float(U_Ly)  # Make copy of U_Ly
         U_Ly = lambda t: _U_Ly
 
-    # Load initial condition into u_1
+    # Load initial condition into u_n
     for i in Ix:
         for j in Iy:
-            u_1[i,j] = I(x[i], y[j])
+            u_n[i,j] = I(x[i], y[j])
 
     # Two-dim coordinate arrays for vectorized function evaluations
     # in the user_action function
@@ -470,13 +470,13 @@ def solver_classic_iterative(
     yv = y[np.newaxis,:]
 
     if user_action is not None:
-        user_action(u_1, x, xv, y, yv, t, 0)
+        user_action(u_n, x, xv, y, yv, t, 0)
 
     # Time loop
     import scipy.linalg
     for n in It[0:-1]:
         # Solve linear system by Jacobi or SOR iteration at time level n+1
-        u_[:,:] = u_1  # Start value
+        u_[:,:] = u_n  # Start value
         converged = False
         r = 0
         while not converged:
@@ -495,11 +495,11 @@ def solver_classic_iterative(
                         u_new = 1.0/(1.0 + 2*theta*(Fx + Fy))*(theta*(
                             Fx*(u_[i+1,j] + u__[i-1,j]) +
                             Fy*(u_[i,j+1] + u__[i,j-1])) + \
-                        u_1[i,j] + (1-theta)*(
+                        u_n[i,j] + (1-theta)*(
                           Fx*(
-                        u_1[i+1,j] - 2*u_1[i,j] + u_1[i-1,j]) +
+                        u_n[i+1,j] - 2*u_n[i,j] + u_n[i-1,j]) +
                           Fy*(
-                        u_1[i,j+1] - 2*u_1[i,j] + u_1[i,j-1]))\
+                        u_n[i,j+1] - 2*u_n[i,j] + u_n[i,j-1]))\
                           + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \
                         (1-theta)*dt*f(i*dx,j*dy,n*dt))
                         u[i,j] = omega*u_new + (1-omega)*u_[i,j]
@@ -514,7 +514,7 @@ def solver_classic_iterative(
                 # Internal points
                 f_a_np1 = f(xv, yv, t[n+1])
                 f_a_n   = f(xv, yv, t[n])
-                def update(u_, u_1, ic, im1, ip1, jc, jm1, jp1):
+                def update(u_, u_n, ic, im1, ip1, jc, jm1, jp1):
                     #print '''
 #ic:  %s
 #im1: %s
@@ -528,9 +528,9 @@ def solver_classic_iterative(
                     1.0/(1.0 + 2*theta*(Fx + Fy))*(theta*(
                         Fx*(u_[ip1,jc] + u_[im1,jc]) +
                         Fy*(u_[ic,jp1] + u_[ic,jm1])) +\
-                    u_1[ic,jc] + (1-theta)*(
-                      Fx*(u_1[ip1,jc] - 2*u_1[ic,jc] + u_1[im1,jc]) +\
-                      Fy*(u_1[ic,jp1] - 2*u_1[ic,jc] + u_1[ic,jm1]))+\
+                    u_n[ic,jc] + (1-theta)*(
+                      Fx*(u_n[ip1,jc] - 2*u_n[ic,jc] + u_n[im1,jc]) +\
+                      Fy*(u_n[ic,jp1] - 2*u_n[ic,jc] + u_n[ic,jm1]))+\
                       theta*dt*f_a_np1[ic,jc] + \
                       (1-theta)*dt*f_a_n[ic,jc])
 
@@ -539,7 +539,7 @@ def solver_classic_iterative(
                     im1 = jm1 = slice(0,-2)
                     ip1 = jp1 = slice(2,None)
                     u_new[ic,jc] = update(
-                        u_, u_1, ic, im1, ip1, jc, jm1, jp1)
+                        u_, u_n, ic, im1, ip1, jc, jm1, jp1)
                     u[ic,jc] = omega*u_new[ic,jc] + (1-omega)*u_[ic,jc]
                 elif iteration == 'SOR':
                     u_new[:,:] = u_
@@ -551,7 +551,7 @@ def solver_classic_iterative(
                     jm1 = slice(0,-2,2)
                     jp1 = slice(2,None,2)
                     u_new[ic,jc] = update(
-                        u_new, u_1, ic, im1, ip1, jc, jm1, jp1)
+                        u_new, u_n, ic, im1, ip1, jc, jm1, jp1)
 
                     ic  = slice(2,-1,2)
                     im1 = slice(1,-2,2)
@@ -560,7 +560,7 @@ def solver_classic_iterative(
                     jm1 = slice(1,-2,2)
                     jp1 = slice(3,None,2)
                     u_new[ic,jc] = update(
-                        u_new, u_1, ic, im1, ip1, jc, jm1, jp1)
+                        u_new, u_n, ic, im1, ip1, jc, jm1, jp1)
 
                     # Black points
                     ic  = slice(2,-1,2)
@@ -570,7 +570,7 @@ def solver_classic_iterative(
                     jm1 = slice(0,-2,2)
                     jp1 = slice(2,None,2)
                     u_new[ic,jc] = update(
-                        u_new, u_1, ic, im1, ip1, jc, jm1, jp1)
+                        u_new, u_n, ic, im1, ip1, jc, jm1, jp1)
 
                     ic  = slice(1,-1,2)
                     im1 = slice(0,-2,2)
@@ -579,7 +579,7 @@ def solver_classic_iterative(
                     jm1 = slice(1,-2,2)
                     jp1 = slice(3,None,2)
                     u_new[ic,jc] = update(
-                        u_new, u_1, ic, im1, ip1, jc, jm1, jp1)
+                        u_new, u_n, ic, im1, ip1, jc, jm1, jp1)
 
                     # Relax
                     c = slice(1,-1)
@@ -596,8 +596,8 @@ def solver_classic_iterative(
         if user_action is not None:
             user_action(u, x, xv, y, yv, t, n+1)
 
-        # Update u_1 before next step
-        u_1, u = u, u_1
+        # Update u_n before next step
+        u_n, u = u, u_n
 
     t1 = time.clock()
 

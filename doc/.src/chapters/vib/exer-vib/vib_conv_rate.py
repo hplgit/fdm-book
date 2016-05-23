@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from vib_verify_mms import solver
 
 def u_exact(t, I, V, A, f, c, m):
-    '''Found by solving mu'' + cu = F in Wolfram alpha'''
+    """Found by solving mu'' + cu = F in Wolfram alpha."""
     k_1 = I
     k_2 = (V - A*2*np.pi*f/(c - 4*np.pi**2*f**2*m))*\
                                         np.sqrt(m/float(c))
@@ -11,13 +11,13 @@ def u_exact(t, I, V, A, f, c, m):
            k_2*np.sin(np.sqrt(c/float(m))*t) + \
            k_1*np.cos(np.sqrt(c/float(m))*t)
 
-def convergence_rates(N_est, solver_function, num_periods=8):
+def convergence_rates(N, solver_function, num_periods=8):
     """
-    Returns N_est-1 empirical estimates of the convergence rate
-    based on N_est simulations, where the time step is halved
+    Returns N-1 empirical estimates of the convergence rate
+    based on N simulations, where the time step is halved
     for each simulation.
-    solver_function(I, V, F, c, m, dt, T, damping) solves 
-    each problem, where T is based on simulation for 
+    solver_function(I, V, F, c, m, dt, T, damping) solves
+    each problem, where T is based on simulation for
     num_periods periods.
     """
 
@@ -25,12 +25,12 @@ def convergence_rates(N_est, solver_function, num_periods=8):
         """External driving force"""
         return A*np.sin(2*np.pi*f*t)
 
-    b, c, m = 0, 1.6, 1.3 # just some chosen values
+    b, c, m = 0, 1.6, 1.3  # just some chosen values
     I = 0                  # init. cond. u(0)
     V = 0                  # init. cond. u'(0)
     A = 1.0                # amplitude of driving force
-    f = 1.0		   # chosen frequency of driving force
-    damping = 'zero'       
+    f = 1.0                # chosen frequency of driving force
+    damping = 'zero'
 
     P = 1/f
     dt = P/30              # 30 time step per period 2*pi/w
@@ -38,7 +38,7 @@ def convergence_rates(N_est, solver_function, num_periods=8):
 
     dt_values = []
     E_values = []
-    for i in range(N_est):
+    for i in range(N):
         u, t = solver_function(I, V, F, b, c, m, dt, T, damping)
         u_e = u_exact(t, I, V, A, f, c, m)
         E = np.sqrt(dt*np.sum((u_e-u)**2))
@@ -50,20 +50,18 @@ def convergence_rates(N_est, solver_function, num_periods=8):
 
     r = [np.log(E_values[i-1]/E_values[i])/
          np.log(dt_values[i-1]/dt_values[i])
-         for i in range(1, N_est, 1)]
+         for i in range(1, N, 1)]
     print r
     return r
 
 def test_convergence_rates():
-
-    r = convergence_rates(N_est=5, 
-                          solver_function=solver, 
-                          num_periods=8)
+    r = convergence_rates(
+        N=5,
+        solver_function=solver,
+        num_periods=8)
     # Accept rate to 1 decimal place
     tol = 0.1
     assert abs(r[-1] - 2.0) < tol
 
 if __name__ == '__main__':
     test_convergence_rates()
-
-

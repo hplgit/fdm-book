@@ -47,8 +47,8 @@ rm -rf tmp_stripped*
 egrep "[^\\]thinspace" *.do.txt
 if [ $? -eq 0 ]; then echo "wrong thinspace commands - abort"; exit; fi
 
-#comments="--skip_inline_comments"
-comments=""
+comments="--skip_inline_comments"
+#comments=""
 doc=document
 appendix=document
 
@@ -73,7 +73,7 @@ preprocess -DFORMAT=pdflatex ../newcommands_keep.p.tex > newcommands_keep.tex
 
 # PDF with solutions (start with this and let .aux be the most
 # relevant version for xr references
-system doconce format pdflatex ${mainname} $preprocessor_opt $comments --latex_table_format=center --device=screen "--latex_code_style=default:vrb-blue1@sys:vrb[frame=lines,label=\\fbox{{\tiny Terminal}},framesep=2.5mm,framerule=0.7pt,fontsize=\fontsize{9pt}{9pt}]" --allow_refs_to_external_docs
+system doconce format pdflatex ${mainname} $preprocessor_opt $comments --latex_table_format=center --device=screen "--latex_code_style=default:lst[style=blue1_bluegreen]@pypro:lst[style=blue1bar_bluegreen]@dat:lst[style=gray]@sys:vrb[frame=lines,label=\\fbox{{\tiny Terminal}},framesep=2.5mm,framerule=0.7pt,fontsize=\fontsize{9pt}{9pt}]" --allow_refs_to_external_docs
 doconce latex_exercise_toc ${mainname}
 doconce subst 'frametitlebackgroundcolor=.*?,' 'frametitlebackgroundcolor=blue!5,' ${mainname}.tex
 system pdflatex ${mainname}
@@ -87,7 +87,7 @@ rm -f ${mainname}.pdf
 # See http://www2.warwick.ac.uk/fac/sci/statistics/staff/academic-research/firth/software/pdfjam for examples on pdfnup and pdfjam
 
 # PDF for printing, standard paper size
-system doconce format pdflatex ${mainname} $preprocessor_opt $solutions $comments --latex_table_format=center --device=paper "--latex_code_style=default:vrb-blue1@sys:vrb[frame=lines,label=\\fbox{{\tiny Terminal}},framesep=2.5mm,framerule=0.7pt,fontsize=\fontsize{9pt}{9pt}]" --allow_refs_to_external_docs
+system doconce format pdflatex ${mainname} $preprocessor_opt $solutions $comments --latex_table_format=center --device=paper "--latex_code_style=default:lst[style=blue1_bluegreen]@pypro:lst[style=blue1bar_bluegreen]@dat:lst[style=gray]@sys:vrb[frame=lines,label=\\fbox{{\tiny Terminal}},framesep=2.5mm,framerule=0.7pt,fontsize=\fontsize{9pt}{9pt}]" --allow_refs_to_external_docs
 doconce subst 'frametitlebackgroundcolor=.*?,' 'frametitlebackgroundcolor=blue!5,' ${mainname}.tex
 pdflatex ${mainname}
 makeindex ${mainname}
@@ -100,7 +100,7 @@ cp ${mainname}.pdf ${nickname}-4print.pdf
 #pdfnup --frame true --outfile ${nickname}-4print-2up.pdf ${nickname}-4print.pdf
 
 # PDF for electronic viewing
-system doconce format pdflatex ${mainname} $preprocessor_opt $no_solutions $comments --latex_table_format=center --device=screen "--latex_code_style=default:vrb-blue1@sys:vrb[frame=lines,label=\\fbox{{\tiny Terminal}},framesep=2.5mm,framerule=0.7pt,fontsize=\fontsize{9pt}{9pt}]" --allow_refs_to_external_docs
+system doconce format pdflatex ${mainname} $preprocessor_opt $no_solutions $comments --latex_table_format=center --device=screen "--latex_code_style=default:lst[style=blue1_bluegreen]@pypro:lst[style=blue1bar_bluegreen]@dat:lst[style=gray]@sys:vrb[frame=lines,label=\\fbox{{\tiny Terminal}},framesep=2.5mm,framerule=0.7pt,fontsize=\fontsize{9pt}{9pt}]" --allow_refs_to_external_docs
 doconce latex_exercise_toc ${mainname}
 doconce subst 'frametitlebackgroundcolor=.*?,' 'frametitlebackgroundcolor=blue!5,' ${mainname}.tex
 system pdflatex ${mainname}
@@ -134,7 +134,7 @@ if [ $sphinx -eq 1 ]; then
 system doconce format sphinx ${mainname} $preprocessor_opt $no_solutions $comments --sphinx_keep_splits --allow_refs_to_external_docs
 doconce replace 'P$d$' 'Pd' ${mainname}.rst
 system doconce split_rst ${mainname}
-system doconce sphinx_dir theme=cbc copyright="H. P. Langtangen" ${mainname}
+system doconce sphinx_dir theme=cbc ${mainname}
 system python automake_sphinx.py
 fi
 

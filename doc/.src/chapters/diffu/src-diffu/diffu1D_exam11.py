@@ -38,7 +38,7 @@ def solver(I, a, L, Nx, F, T, theta=0.5, u_L=0, u_R=0,
     t = linspace(0, T, Nt+1)    # mesh points in time
 
     u   = zeros(Nx+1)   # solution array at t[n+1]
-    u_1 = zeros(Nx+1)   # solution at t[n]
+    u_n = zeros(Nx+1)   # solution at t[n]
 
     # Representation of sparse matrix and right-hand side
     diagonal = zeros(Nx+1)
@@ -65,14 +65,14 @@ def solver(I, a, L, Nx, F, T, theta=0.5, u_L=0, u_R=0,
 
     # Set initial condition
     for i in range(0,Nx+1):
-        u_1[i] = I(x[i])
+        u_n[i] = I(x[i])
 
     if user_action is not None:
-        user_action(u_1, x, t, 0)
+        user_action(u_n, x, t, 0)
 
     # Time loop
     for n in range(0, Nt):
-        b[1:-1] = u_1[1:-1] + Fr*(u_1[:-2] - 2*u_1[1:-1] + u_1[2:])
+        b[1:-1] = u_n[1:-1] + Fr*(u_n[:-2] - 2*u_n[1:-1] + u_n[2:])
         b[0] = u_L; b[-1] = u_R  # boundary conditions
         u[:] = spsolve(A, b)
 
@@ -80,7 +80,7 @@ def solver(I, a, L, Nx, F, T, theta=0.5, u_L=0, u_R=0,
             user_action(u, x, t, n+1)
 
         # Switch variables before next step
-        u_1, u = u, u_1
+        u_n, u = u, u_n
 
     t1 = time.clock()
     return u, x, t, t1-t0

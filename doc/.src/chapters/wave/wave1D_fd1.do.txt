@@ -353,13 +353,6 @@ or a "movie file": "${doc_notes}/mov-wave/wave1D_PDE_Dirichlet_stencil_gpl/movie
 ===== Sketch of an implementation =====
 label{wave:string:impl}
 
-In a Python implementation of this algorithm, we use the array
-elements `u[i]` to store $u^{n+1}_i$, `u_1[i]` to store $u^n_i$, and
-`u_2[i]` to store $u^{n-1}_i$. Our naming convention is to use `u` for the
-unknown new spatial field to be computed, `u_1` as the solution
-one time step back in time, `u_2` as the solution two time steps back
-in time and so forth.
-
 The algorithm only involves the three most recent time levels, so we
 need only three arrays for $u_i^{n+1}$, $u_i^n$, and $u_i^{n-1}$,
 $i=0,\ldots,N_x$.  Storing all the solutions in a two-dimensional
@@ -368,6 +361,14 @@ one-dimensional PDE problem, but is normally out of the question in
 three-dimensional (3D) and large two-dimensional (2D) problems. We
 shall therefore, in all our PDE solving programs, have the unknown in
 memory at as few time levels as possible.
+
+In a Python implementation of this algorithm, we use the array
+elements `u[i]` to store $u^{n+1}_i$, `u_n[i]` to store $u^n_i$, and
+`u_nm1[i]` to store $u^{n-1}_i$.
+Our naming convention is to use `u` for the
+unknown new spatial field to be computed and have all previous time
+levels in a list `u_n` that we index as `u_n`, `u_nm1`, `u_n[-2]`
+and so on. For the wave equation, `u_n` has just length 2.
 
 The following Python snippet realizes the steps in the computational
 algorithm.
@@ -382,36 +383,36 @@ C2 = C**2              # Help variable in the scheme
 
 # Set initial condition u(x,0) = I(x)
 for i in range(0, Nx+1):
-    u_1[i] = I(x[i])
+    u_n[i] = I(x[i])
 
 # Apply special formula for first step, incorporating du/dt=0
 for i in range(1, Nx):
-    u[i] = u_1[i] - 0.5*C**2(u_1[i+1] - 2*u_1[i] + u_1[i-1])
+    u[i] = u_n[i] - \
+           0.5*C**2(u_n[i+1] - 2*u_n[i] + u_n[i-1])
 u[0] = 0;  u[Nx] = 0   # Enforce boundary conditions
 
 # Switch variables before next step
-u_2[:], u_1[:] = u_1, u
+u_nm1[:], u_n[:] = u_n, u
 
 for n in range(1, Nt):
     # Update all inner mesh points at time t[n+1]
     for i in range(1, Nx):
-        u[i] = 2u_1[i] - u_2[i] - \
-               C**2(u_1[i+1] - 2*u_1[i] + u_1[i-1])
+        u[i] = 2u_n[i] - u_nm1[i] - \
+               C**2(u_n[i+1] - 2*u_n[i] + u_n[i-1])
 
     # Insert boundary conditions
     u[0] = 0;  u[Nx] = 0
 
     # Switch variables before next step
-    u_2[:], u_1[:] = u_1, u
+    u_nm1[:], u_n[:] = u_n, u
 !ec
 
 ======= Verification =======
 
 Before implementing the algorithm, it is convenient to add a source
-term to the PDE (ref{wave:pde1}), since that
-gives us more freedom in finding test problems for
-verification. Physically, a source term acts as a generator for waves
-in the interior of the domain.
+term to the PDE (ref{wave:pde1}), since that gives us more freedom in
+finding test problems for verification. Physically, a source term acts
+as a generator for waves in the interior of the domain.
 
 ===== A slightly generalized model problem =====
 label{wave:pde2:fd}

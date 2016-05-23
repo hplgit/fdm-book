@@ -1,4 +1,4 @@
-======= Generalization: damping, nonlinear spring, and external excitation =======
+======= Generalization: damping, nonlinearities, and external excitation =======
 label{vib:model2}
 
 idx{nonlinear restoring force}
@@ -291,9 +291,6 @@ the discrete equations. The constant should therefore be reproduced
 to machine precision. The function `test_constant` in `vib.py`
 implements this test.
 
-[hpl: Add verification tests for constant, linear, quadratic.
-Check how many bugs that are caught by these tests.]
-
 === Linear solution ===
 
 Now we choose a linear solution: $\uex = ct + d$. The initial condition
@@ -327,6 +324,25 @@ Doing Exercise ref{vib:exer:verify:gen:linear} will reveal
 the details. One can fit $F^n$ in the discrete equations such that
 the quadratic polynomial is reproduced by the numerical method (to
 machine precision).
+
+=== Catching bugs ===
+
+How good are the constant and quadratic solutions at catching
+bugs in the implementation?
+
+ * Use `m` instead of `2*m` in the denominator of `u[1]`: constant
+   works, while quadratic fails.
+ * Use `b*dt` instead of `b*dt/2` in the updating formula for `u[n+1]`
+   in case of linear damping: constant and quadratic fail.
+ * Use `F[n+1]` instead of `F[n]` in case of linear or quadratic damping:
+   constant solution works, quadratic fails.
+
+We realize that the constant solution is very useful to catch bugs because
+of its simplicity (easy to predict what the different terms in the
+formula should evaluate to), while it seems the quadratic solution is
+capable of detecting all other types of typos in the scheme (?).
+This results demonstrates why we focus so much on exact, simple polynomial
+solutions of the numerical schemes in these writings.
 
 # More: classes, cases with pendulum approx u vs sin(u),
 # making UI via parampool
@@ -417,15 +433,16 @@ Figure ref{vib:ode2:fig:demo} shows a part of the time series.
 FIGURE: [fig-vib/vib_gen_demo, width=600 frac=1.0] Damped oscillator excited by a sinusoidal function. label{vib:ode2:fig:demo}
 
 ===== The Euler-Cromer scheme for the generalized model =====
+label{vib:ode2:EulerCromer}
 
 The ideas of the Euler-Cromer method from Section ref{vib:model2x2:EulerCromer}
 carry over to the generalized model. We write (ref{vib:ode2})
 as two equations for $u$ and $v=u^{\prime}$. The first equation is taken as the
-one with $v'$ on the left-hand side:
+one with $v^{\prime}$ on the left-hand side:
 
 !bt
 \begin{align}
-v' &= \frac{1}{m}(F(t)-s(u)-f(v)),
+v^{\prime} &= \frac{1}{m}(F(t)-s(u)-f(v)),
 label{vib:ode2:EulerCromer:veq}\\
 u^{\prime} &= v\tp
 label{vib:ode2:EulerCromer:ueq}
@@ -473,6 +490,64 @@ u^0 &= I\tp
 
 # Discussion of which method is best:
 # http://gamedev.stackexchange.com/questions/33694/pros-and-cons-of-different-integrators
+
+# #if FORMAT in ("pdflatex", "latex")
+===== The St\"{o}rmer-Verlet algorithm for the generalized model =====
+# #else
+===== The Stoermer-Verlet algorithm for the generalized model =====
+# #endif
+label{vib:model2x2:gen:StormerVerlet}
+
+We can easily apply the ideas from Section ref{vib:model2x2:StormerVerlet} to
+extend that method to the generalized model
+
+!bt
+\begin{align*}
+v^{\prime} &= \frac{1}{m}(F(t)-s(u)-f(v)),\\
+u^{\prime} &= v\tp
+\end{align*}
+!et
+However, since the scheme is essentially centered differences for
+the ODE system on a staggered mesh, we do not go into detail here,
+but refer to Section ref{vib:ode2:staggered}.
+
+===== The PEFRL 4th-order accurate algorithm =====
+label{vib:ode2:PEFRL}
+
+A variant of the Euler-Cromer type of algorithm, which provides an
+error $\Oof{\Delta t^4}$ if $f(v)=0$, is called PEFRL
+cite{PEFRL_2002}. This algorithm is very well suited for integrating
+dynamic systems (especially those without damping) over very long time
+periods. Define
+
+!bt
+\[ g(u,v) = \frac{1}{m}(F(t)-s(u)-f(v))\tp\]
+!et
+The algorithm is explicit and features these simple steps:
+
+!bt
+\begin{align}
+u^{n+1,1} &= u^n       + \xi\Delta t v^n,\\
+v^{n+1,1} &= v^n       + \half(1-2\lambda)\Delta t g(u^{n+1,1},v^n),\\
+x^{n+1,2} &= x^{n+1,1} + \chi\Delta t v^{n+1,1},\\
+v^{n+1,2} &= v^{n+1,1} + \lambda\Delta t g(u^{n+1,2}, v^{n+1,1}),\\
+x^{n+1,3} &= x^{n+1,2} + (1-2(\chi + \xi))\Delta t v^{n+1,2},\\
+v^{n+1,3} &= v^{n+1,2} + \lambda\Delta t g(u^{n+1,3}, v^{n+1,2}),\\
+u^{n+1,4} &= u^{n+1,3} + \chi\Delta t v^{n+1,3},\\
+v^{n+1}   &= v^{n+1,3} + \half(1-2\lambda)\Delta t g(u^{n+1,4},v^{n+1,3}),\\
+u^{n+1}   &= u^{n+1,4} + \xi\Delta t v^{n+1}
+\end{align}
+!et
+# Compare with eq 22 in article
+The parameters $\xi$, $\lambda$, and $\xi$ have the values
+
+!bt
+\begin{align}
+\xi &= 0.1720865590295143,\\
+\lambda &= -0.09156203075515678,\\
+\chi &= -0.1616217622107222
+\end{align}
+!et
 
 ======= Exercises and Problems =======
 
@@ -640,7 +715,10 @@ Fill in the various functions such that the calls in the `main`
 function works.
 
 !bsol
-See final code presented below.
+This part of the code goes as follows:
+
+@@@CODE exer-vib/vib_undamped_verify_mms.py fromto: import sympy@def linear
+
 !esol
 !esubex
 
@@ -655,7 +733,12 @@ to `linear`.)
 #is correct.
 
 !bsol
-Yes, a quadratic function will fulfill the discrete equations exactly. See output from final code presented below.
+Yes, a quadratic function will fulfill the discrete equations exactly.
+The implementation becomes
+
+@@@CODE exer-vib/vib_undamped_verify_mms.py fromto: def quadratic@def cubic
+Calling `quadratic()` shows that the residual vanishes, and the quadratic
+function is an exact solution of the discrete equations.
 !esol
 !esubex
 
@@ -663,7 +746,10 @@ Yes, a quadratic function will fulfill the discrete equations exactly. See outpu
 Will a polynomial of degree three fulfill the discrete equations?
 
 !bsol
-No, when running the final code presented below, the printout shows that the
+We can easily make a test:
+
+@@@CODE exer-vib/vib_undamped_verify_mms.py fromto: def cubic@def solver
+When running the final code presented below, the printout shows that the
 step1 residual for the cubic function is not zero.
 !esol
 !esubex
@@ -673,7 +759,12 @@ Implement a `solver` function for computing the numerical
 solution of this problem.
 
 !bsol
-See final code presented below.
+The `solver` function may take the form
+
+@@@CODE exer-vib/vib_undamped_verify_mms.py fromto: def solver@def test_quadratic
+We can verify the implementation by the following test function:
+
+@@@CODE exer-vib/vib_undamped_verify_mms.py fromto: def test_quadratic@if __name
 !esol
 !esubex
 
@@ -752,6 +843,11 @@ for 80 periods, with and without adjustment of $\omega$).
 # How does this go if
 
 !bsol
+We may take a copy of the `vib_undamped.py` file and edit the `solver`
+function to
+
+@@@CODE exer-vib/vib_adjust_w.py fromto: from numpy@def exact_solution
+
 The modified code (below) was run for 80 periods with, and without,
 the given adjustment of $\omega$. A substantial difference in accuracy
 was observed between the two,
@@ -782,13 +878,17 @@ adaptive solver or if equally many points with a simple method gives
 about the same accuracy.
 
 !bsol
-The code:
+Here is a code where we define the test problem, solve it by the
+Dormand-Prince adaptive method from Odespy, and then call `solver`
+
 @@@CODE exer-vib/vib_undamped_adaptive.py
 
-The program produces the plot seen in Figure ref{vib:exer:fig:undamped_adaptive},
-which shows how the adaptive solution clearly outperforms the simpler method.
+The program may produce the plots seen in
+Figure ref{vib:exer:fig:undamped_adaptive},
+which shows how the adaptive solution clearly outperforms the simpler method,
+regardless of the accuracy level.
 
-FIGURE: [fig-vib/vib_undamped_adaptive, width=600 frac=1.0] Result of solving the problem by two different approaches, one adaptive and one simpler difference method. label{vib:exer:fig:undamped_adaptive}
+FIGURE: [fig-vib/vib_undamped_adaptive, width=800 frac=1.0] Comparison of adaptive solver and simple finite difference solver using the same number of points. label{vib:exer:fig:undamped_adaptive}
 
 !esol
 
@@ -852,6 +952,79 @@ which also gives
 !esol
 
 
+===== Problem: Derive and investigate the velocity Verlet method =====
+
+The velocity Verlet method for $u^{\prime\prime} + \omega^2u=0$ is
+based on the following ideas:
+
+ o step $u$ forward from $t_n$ to $t_{n+1}$ using a three-term Taylor
+   series,
+ o replace $u^{\prime\prime}$ by $-\omega^2u$
+ o discretize $v^{\prime}=-\omega^2u$ by a Crank-Nicolson method.
+
+Derive the scheme, implement it, and determine empirically the convergence rate.
+
+#How can the scheme be extended to the general case $mu^{\prime\prime}
+#+ f(u^{\prime}) + s(u) =F(t)$? No, that's too complicated because of
+#the substitution in the Taylor series.
+
+!bsol
+Stepping $u$ forward from $t_n$ to $t_{n+1}$ using a three-term Taylor
+series gives
+
+!bt
+\[ u(t_{n+1}) = u(t_n) + u^{\prime}(t_n)\Delta t + \frac{1}{2}u^{\prime\prime}(t_n)\Delta t^2\tp\]
+!et
+Using $u^{\prime}=v$ and $u^{\prime\prime}=-\omega^2u$, we get the updating formula
+
+!bt
+\[ u^{n+1} = u^n + v^n\Delta t - \frac{1}{2}\Delta t^2\omega^2u^n\tp\]
+!et
+Second, the first-order equation for $v$,
+
+!bt
+\[ v^{\prime}=-\omega^2u,\]
+!et
+is discretized by a centered difference in a Crank-Nicolson fashion at
+$t_{n+\frac{1}{2}}$:
+
+!bt
+\[ \frac{v^{n+1}-v^n}{\Delta t} = -\omega^2\frac{1}{2}(u^n + u^{n+1})\tp\]
+!et
+To summarize, we have the scheme
+
+!bt
+\begin{align}
+u^{n+1} &= u^n + v^n\Delta t - \frac{1}{2}\Delta t^2\omega^2u^n,\\
+v^{n+1} &= v^n -\frac{1}{2}\Delta t\omega^2 (u^n + u^{n+1}),
+\end{align}
+!et
+known as the velocity Verlet algorithm.
+Observe that this scheme is explicit since $u^{n+1}$ in the second
+equation is already computed by the first equation.
+
+The algorithm can be straightforwardly implemented as shown below:
+
+@@@CODE exer-vib/vib_undamped_velocity_Verlet.py fromto: from vib_undamped@if __name
+We provide the option that this `solver` function returns the same data
+as the `solver` function from Section ref{vib:impl1:solver} (if `return_v`
+is `False`), but alternatively, it may return `v` along with `u` and `t`.
+
+The error in the Taylor series expansion behind the first equation
+is $\Oof{\Delta t^3}$, while the error
+in the central difference for $v$ is $\Oof{\Delta t^2}$.  The overall
+error is then no better than $\Oof{\Delta t^2}$, which can be verified
+empirically using the `convergence_rates` function from
+Section ref{vib:ode1:verify}:
+
+!bc pyshell
+>>> import vib_undamped_velocity_Verlet as m
+>>> m.convergence_rates(4, solver_function=m.solver)
+[2.0036366687367346, 2.0009497328124835, 2.000240105995295]
+!ec
+The output confirms that the overall convergence rate is 2.
+!esol
+
 ===== Problem: Find the minimal resolution of an oscillatory function =====
 # Short: Find the largest relevant value of $\omega\Delta t$
 
@@ -859,16 +1032,18 @@ label{vib:exer:wdt:limit}
 file=vib_largest_wdt
 
 Sketch the function on a given mesh which has the highest possible
-frequency. That is, this oscillatory "cos-like" function has its
+frequency. That is, this oscillatory ``cos-like'' function has its
 maxima and minima at every two grid points.  Find an expression for
 the frequency of this function, and use the result to find the largest
 relevant value of $\omega\Delta t$ when $\omega$ is the frequency
 of an oscillating function and $\Delta t$ is the mesh spacing.
 
 !bsol
-The smallest period must be $2\Delta t$, which means that
-$\omega = \frac{2\pi}{2\Delta t} = \frac{\pi}{\Delta t}$.
-This means that the largest value for $\omega\Delta t$ is $\pi$.
+The smallest period must be $2\Delta t$. Since the period $P$ is related
+to the angular frequency $\omega$ by $P=2\pi/\omega$, it means that
+$\omega = \frac{2\pi}{2\Delta t} = \frac{\pi}{\Delta t}$ is the smallest
+meaningful angular frequency.
+This further means that the largest value for $\omega\Delta t$ is $\pi$.
 
 !esol
 
@@ -952,14 +1127,16 @@ constant.
 The error in energy can be computed as explained in
 Section ref{vib:model1:energy}.
 
-Make a test function in a file `test_error_conv.py`, where code from
+Make a test function in a separate file, where code from
 `vib_undamped.py` is imported, but the `convergence_rates` and
 `test_convergence_rates` functions are copied and modified to also
 incorporate computations of the error in energy and the convergence
-rate of this error. The expected rate is 2.
+rate of this error. The expected rate is 2, just as for the solution
+itself.
 
 !bsol
-The code:
+The complete code with test functions goes as follows.
+
 @@@CODE exer-vib/test_error_conv.py
 
 !esol
@@ -978,7 +1155,9 @@ ref{vib:exer:undamped:verify:linquad}, `sympy` will do most
 of the work required to analyze the generalized problem.
 
 !bsol
-With a linear spring force, i.e. $s(u)=cu$, our model problem becomes
+With a linear spring force, i.e. $s(u)=cu$ (for constant $c$),
+our model problem becomes
+
 !bt
 \begin{equation}
 mu^{\prime\prime} + f(u^{\prime}) + cu = F(t),\quad u(0)=I,\ u^{\prime}(0)=V,\ t\in (0,T]
@@ -986,9 +1165,10 @@ mu^{\prime\prime} + f(u^{\prime}) + cu = F(t),\quad u(0)=I,\ u^{\prime}(0)=V,\ t
 \nonumber
 \end{equation}
 !et
-First we consider linear damping, i.e., when $f(u^{\prime}) = bu^{\prime}$, and follow the
-text in Chapter ref{vib:ode2:fdm:flin}. Discretizing the
-equation according to
+First we consider linear damping, i.e., when $f(u^{\prime}) =
+bu^{\prime}$, and follow the text in Section
+ref{vib:ode2:fdm:flin}. Discretizing the equation according to
+
 !bt
 \begin{equation}
 [mD_tD_t u + f(D_{2t}u) + cu = F]^n,
@@ -996,6 +1176,7 @@ equation according to
 \end{equation}
 !et
 implies that
+
 !bt
 \begin{equation}
 m\frac{u^{n+1}-2u^n + u^{n-1}}{\Delta t^2}
@@ -1188,8 +1369,9 @@ that employs the exact discrete solution
 `solver` function in the file `vib_undamped.py`.
 
 !bsol
-The code:
-@@@CODE exer-vib/test_vib_undamped_exact_discrete_sol.py
+The code goes like this:
+
+@@@CODE exer-vib/test_vib_undamped_exact_discrete_sol.py fromto: from vib_undamped@
 
 !esol
 
@@ -1198,13 +1380,14 @@ label{vib:exer:conv:rate}
 file=vib_conv_rate
 
 The purpose of this exercise is to perform convergence tests of the
-problem (ref{vib:ode2}) when $s(u)=cu$, $F(t)=A\sin\phi t$ and there is no damping.
-Find the complete analytical solution to the problem in this case
-(most textbooks on mechanics or ordinary differential equations list
-the various elements you need to write down the exact solution).
-Modify the `convergence_rate` function from the `vib_undamped.py`
-program to perform experiments with the extended model.  Verify that
-the error is of order $\Delta t^2$.
+problem (ref{vib:ode2}) when $s(u)=cu$, $F(t)=A\sin\phi t$ and there
+is no damping.  Find the complete analytical solution to the problem
+in this case (most textbooks on mechanics or ordinary differential
+equations list the various elements you need to write down the exact
+solution, or you can use symbolic tools like `sympy` or `wolframalpha.com`).
+Modify the `convergence_rate` function from the
+`vib_undamped.py` program to perform experiments with the extended
+model.  Verify that the error is of order $\Delta t^2$.
 
 !bsol
 The code:
@@ -1228,11 +1411,12 @@ the 2nd- and 3rd-order Adams-Bashforth methods (`AdamsBashforth2`,
 the beginning of Section ref{vib:model2x2}.
 
 !bsol
-The code:
+We modify the proposed code to the following:
+
 @@@CODE exer-vib/vib_amplitude_errors.py
 
 Running the code, we get the plots seen in Figure ref{vib:exer:fig:ampl_RK34},
-Figure ref{vib:exer:fig:ampl_CNB2} and Figure ref{vib:exer:fig:ampl_AB}. They
+ref{vib:exer:fig:ampl_CNB2}, and ref{vib:exer:fig:ampl_AB}. They
 show that `RK4` is superior to the others, but that also `CrankNicolson` performs well. In fact, with `RK4` the amplitude changes by less than $0.1$ per cent over the interval.
 
 FIGURE: [fig-vib/Amplitudes_RK3_RK4, width=600 frac=1.0] The amplitude as it changes over 100 periods for RK3 and RK4. label{vib:exer:fig:ampl_RK34}
@@ -1248,45 +1432,191 @@ FIGURE: [fig-vib/Amplitudes_AdamsBashforth2_AdamsBashforth3, width=600 frac=1.0]
 label{vib:exer:memsave}
 file=vib_memsave
 
-The program "`vib.py`": "${src_vib}/vib.py"
-stores the complete solution $u^0,u^1,\ldots,u^{N_t}$ in memory, which is
-convenient for later plotting.
-Make a memory minimizing version of this program where only the last three
-$u^{n+1}$, $u^n$, and $u^{n-1}$ values are stored in memory.
-Write each computed $(t_{n+1}, u^{n+1})$ pair to file.
-Visualize the data in the file (a cool solution is to
-read one line at a time and
-plot the $u$ value using the line-by-line plotter in the
-`visualize_front_ascii` function - this technique makes it trivial
-to visualize very long time simulations).
+The program "`vib.py`": "${src_vib}/vib.py" stores the complete
+solution $u^0,u^1,\ldots,u^{N_t}$ in memory, which is convenient for
+later plotting.  Make a memory minimizing version of this program
+where only the last three $u^{n+1}$, $u^n$, and $u^{n-1}$ values are
+stored in memory.  Write each computed $(t_{n+1}, u^{n+1})$ pair to
+file.  Visualize the data in the file (a cool solution is to read one
+line at a time and plot the $u$ value using the line-by-line plotter
+in the `visualize_front_ascii` function - this technique makes it
+trivial to visualize very long time simulations).
 
 !bsol
-The code:
+Here is the complete program:
+
 @@@CODE exer-vib/vib_memsave.py
 
 !esol
+
+===== Exercise: Implement the Euler-Cromer scheme for the generalized model =====
+label{vib:exer:EC_vs_centered}
+file=vib_EulerCromer
+
+We consider the generalized model problem
+
+!bt
+\[ mu'' + f(u') + s(u) = F(t),\quad u(0)=I,\ u'(0)=V\tp\]
+!et
+
+!bsubex
+Implement the Euler-Cromer method from Section ref{vib:ode2:EulerCromer}.
+
+!bsol
+A suitable function is
+
+@@@CODE exer-vib/vib_EulerCromer.py fromto: import numpy@def test_
+!esol
+!esubex
+
+!bsubex
+We expect the Euler-Cromer method to have first-order convergence rate.
+Make a unit test based on this expectation.
+
+!bsol
+We may use SymPy to derive a problem based on a manufactured solution
+$u=3\cos t$. Then we may run some $\Delta t$ values, compute the error
+divided by $\Delta t$, and check that this ratio remains approximately
+constant. (An alternative is to compute true convergence rates and check
+that they are close to unity.)
+
+@@@CODE exer-vib/vib_EulerCromer.py fromto: def test_@def demo
+!esol
+!esubex
+
+!bsubex
+Consider a system with $m=4$, $f(v)=b|v|v$, $b=0.2$, $s=2u$, $F=0$.
+Compute the solution using the centered difference scheme
+from Section ref{vib:ode2:fdm:flin} and the Euler-Cromer scheme
+for the longest possible time step $\Delta t$. We can use the
+result from the case without damping, i.e., the largest $\Delta t= 2/\omega$,
+$\omega\approx
+\sqrt{0.5}$ in this case, but since $b$ will modify the frequency, we
+take the longest possible time step as a safety factor 0.9 times $2/\omega$.
+Refine $\Delta t$ three times by a factor of two and compare the
+two curves.
+
+!bsol
+We rely on the module `vib` for the implementation of the method
+from Section ref{vib:ode2:fdm:flin}. A suitable function for making
+the comparisons is then
+
+@@@CODE exer-vib/vib_EulerCromer.py fromto: def demo@if __name
+!esol
+!esubex
+
+===== Exercise: Implement the PEFRL algorithm =====
+label{vib:exer:gen:PEFRL}
+file=vib_PEFRL
+
+We consider the motion of a planet around a star as modeled in
+Section ref{vib:app:gravitation}. The simplified case where one
+mass is very much bigger than the other and one object is at rest,
+results in the scaled ODE model
+
+!bt
+\begin{align*}
+\ddot x + (x^2 + y^2)^{3/2}x & = 0,\\
+\ddot y + (x^2 + y^2)^{3/2}y & = 0\tp
+\end{align*}
+!et
+
+!bsubex
+It is easy to show that $x(t)$ and $y(t)$ goes like sine and cosine
+functions. Use this idea to derive the exact solution.
+
+!bsol
+We may assume $x=C_x\cos(\omega t)$ and $y=C_y\sin(\omega t)$ for
+constants $C_x,$, $C_y$, and $\omega$. Inserted in the equations, we
+see that $\omega =1$. The initial conditions determine the other
+constants, which we may choose as $C_x=C_y=1$ (the object starts
+at $(1,0)$ with a velocity $(0,1)$). The motion is a perfect circle,
+which should last forever.
+!esol
+!esubex
+
+!bsubex
+A planet may orbit a star for billion of years. We are now interested
+in how accurate methods we actually need for such calculations.
+First, we need to determine what the time interval of interest is in
+scaled units. Take the earth and sun as typical objects and find
+the characteristic time used in the scaling of the equations
+($t_c = \sqrt{L^3/(mG)}$, where $m$ is the mass of the sun, $L$ is the
+distance between the sun and the earth, and $G$ is the gravitational
+constant. Find the scaled time interval corresponding to one billion years.
+
+!bsol
+According to "Wikipedia": "https://en.wikipedia.org/wiki/Solar_mass",
+the mass of the sun is approximately $2\cdot 10^{30}$ kg. This
+is 332946 times the mass of the sun, implying that the
+dimensionless constant $\alpha = 3\cdot 10^{-6}$. With
+$G=6.674\cdot 10^{-11}\hbox{ Nm}^2/\hbox{kg}^2$, and the
+"sun-earth distance": "https://en.wikipedia.org/wiki/Astronomical_unit"
+as (approximately) 150 million km, we have $t_c \approx 160 000$ s.
+[hpl: This is just 1.85 days!]
+!esol
+!esubex
+
+!bsubex
+Make a solver based on Odespy for the current problem.
+Run the 4-th order Runge-Kutta method for the time interval in b).
+What is the deviation of the orbit after one billion years?
+The answer depends heavily on the size of the time step. Try to establish
+an empirical formula for the deviation of the orbit as a function of
+$\Delta t$.
+[hpl: This part may not be feasible at all. RK4 may run out of the orbit
+after not so many years. It all depends on how small $\Delta t$
+we can afford.]
+!esubex
+
+!bsubex
+Implement a solver based on the PEFRL method from
+Section ref{vib:ode2:PEFRL}. Verify its 4th-order convergence
+using an equation $u'' + u = 0$.
+
+!bsol
+Here is a solver function:
+
+@@@CODE exer-vib/vib_PEFRL.py fromto: import numpy@
+Can take the verification from `exer-vib/vib_EulerCromer.py`.
+!esol
+!esubex
+
+!bsubex
+Run the PEFRL method on the planet-star problem and establish an
+empirical relation for the deviation of the orbit as a function
+of $\Delta t$. Is it feasible on today's computers to
+simulate the planetary motion for one billion years?
+!esubex
+
+!bremarks
+This exercise investigates whether it is feasible to predict
+planetary motion for the life time of a solar system.
+!eremarks
 
 ===== Exercise: Implement the solver via classes =====
 label{vib:exer:gen:class}
 file=vib_class
 
-Reimplement the `vib.py`
-program
-using a class `Problem` to hold all the physical parameters of the problem,
-a class `Solver` to hold the numerical parameters and compute the
-solution, and a class `Visualizer` to display the solution.
+Reimplement the `vib.py` program using a class `Problem` to hold all
+the physical parameters of the problem, a class `Solver` to hold the
+numerical parameters and compute the solution, and a class
+`Visualizer` to display the solution.
 
 !bhint
-Use the ideas and examples
-ref[from Section ref{decay:prog:se:class} and ref{decay:prog:se:class2}][in cite{Langtangen_decay}][for an "ODE model": "${decay_book}/._book009.html#classes-for-problem-and-solution-method" in cite{Langtangen_decay}].
-More specifically, make a superclass `Problem` for holding the scalar
-physical parameters of a problem and let subclasses implement the
-$s(u)$ and $F(t)$ functions as methods.
+Use the ideas and examples ref[from Section ref{decay:prog:se:class}
+and ref{decay:prog:se:class2}][ in cite{Langtangen_decay}][for an "ODE
+model":
+"${decay_book}/._book009.html#classes-for-problem-and-solution-method"
+in cite{Langtangen_decay}].  More specifically, make a superclass
+`Problem` for holding the scalar physical parameters of a problem and
+let subclasses implement the $s(u)$ and $F(t)$ functions as methods.
 Try to call up as much existing functionality in `vib.py` as possible.
 !ehint
 
 !bsol
-The code:
+The complete code looks like this.
+
 @@@CODE exer-vib/vib_class.py
 
 !esol
@@ -1299,7 +1629,7 @@ file=vib_DtDt_fw_bw
 
 Show that the difference $[D_t D_tu]^n$ is equal to $[D_t^+D_t^-u]^n$
 and $D_t^-D_t^+u]^n$. That is, instead of applying a centered difference
-twice one can alternatively apply a mixture forward and backward
+twice one can alternatively apply a mixture of forward and backward
 differences.
 
 !bsol
@@ -1335,8 +1665,9 @@ backward differences:
 !bt
 \begin{align*}
 [u^{\prime}]^n &\approx [D_t^-u]^n,\\
-& [|u^{\prime}|u^{\prime}]^n &\approx [|D_t^-u|D_t^-u]^n
-= |[D_t^-u]^n|[D_t^-u]^n\tp
+& [|u^{\prime}|u^{\prime}]^n\\
+&\approx [|D_t^-u|D_t^-u]^n\\
+&= |[D_t^-u]^n|[D_t^-u]^n\tp
 \end{align*}
 !et
 The advantage of the backward difference is that the damping term is
@@ -1351,9 +1682,21 @@ differences.
 
 !bsol
 
-The new discretization approach of the linear and quadratic damping terms call for new derivations of the updating formulas (for $u$) in the solver. Since backward difference approximations will be used for the damping term, we may also use this approximation for the initial condition on $u'(0)$ without deteriorating the convergence rate any further. Note that introducing backward difference approximations for the damping term make our computational schemes first order, as opposed to the original second order schemes which used central difference approximations also for the damping terms. The motivation for also using a backward difference approximation for the initial condition on $u'(0)$, is simply that the computational schemes get much simpler.
+The new discretization approach of the linear and quadratic damping
+terms calls for new derivations of the updating formulas (for $u$) in
+the solver. Since backward difference approximations will be used for
+the damping term, we may also use this approximation for the initial
+condition on $u^{\prime}(0)$ without deteriorating the convergence
+rate any further. Note that introducing backward difference
+approximations for the damping term make our computational schemes
+first order, as opposed to the original second order schemes which
+used central difference approximations also for the damping terms. The
+motivation for also using a backward difference approximation for the
+initial condition on $u^{\prime}(0)$, is simply that the computational
+schemes get much simpler.
 
 With linear damping, the new discretized form of the equation reads
+
 !bt
 \begin{equation}
 m\frac{u^{n+1}-2u^n+u^{n-1}}{\Delta t^2} + b\frac{u^n - u^{n-1}}{\Delta t} + s(u^n) = F^n,
@@ -1361,6 +1704,7 @@ m\frac{u^{n+1}-2u^n+u^{n-1}}{\Delta t^2} + b\frac{u^n - u^{n-1}}{\Delta t} + s(u
 \end{equation}
 !et
 which gives us
+
 !bt
 \begin{equation}
 u^{n+1} = \left(2-\frac{\Delta t b}{m}\right)u^n + \frac{\Delta t^2}{m}\left(F^n - s(u^n)\right) + \left(\frac{\Delta t b}{m} - 1\right)u^{n-1}.
@@ -1368,13 +1712,15 @@ u^{n+1} = \left(2-\frac{\Delta t b}{m}\right)u^n + \frac{\Delta t^2}{m}\left(F^n
 \end{equation}
 !et
 With $n=0$, the updating formula becomes
+
 !bt
 \begin{equation}
 u^1 = \left(2-\frac{\Delta t b}{m}\right)u^0 + \frac{\Delta t^2}{m}\left(F^0 - s(u^0)\right) + \left(\frac{\Delta t b}{m} - 1\right)u^{-1},
 \nonumber
 \end{equation}
 !et
-which requires some further elaboration because of the unknown $u^{-1}$. We handle this by discretizing the initial condition $u'(0) = V$ by a backward difference approximation as
+which requires some further elaboration because of the unknown $u^{-1}$. We handle this by discretizing the initial condition $u^{\prime}(0) = V$ by a backward difference approximation as
+
 !bt
 \begin{equation}
 \frac{u^0 - u^{-1}}{\Delta t} = V,
@@ -1382,6 +1728,7 @@ which requires some further elaboration because of the unknown $u^{-1}$. We hand
 \end{equation}
 !et
 which implies that
+
 !bt
 \begin{equation}
 u^{-1} = u^0 - \Delta t V.
@@ -1390,6 +1737,7 @@ u^{-1} = u^0 - \Delta t V.
 !et
 Inserting this expression for $u^{-1}$ in the updating formula for $u^{n+1}$, and simplifying,
 gives us the following special formula for the first time step:
+
 !bt
 \begin{equation}
 u^1 = u^0 + \Delta t V + \frac{\Delta t^2}{m}\left(-bV - s(u^0) + F^0\right).
@@ -1397,6 +1745,7 @@ u^1 = u^0 + \Delta t V + \frac{\Delta t^2}{m}\left(-bV - s(u^0) + F^0\right).
 \end{equation}
 !et
 Switching to quadratic damping, the new discretized form of the equations becomes
+
 !bt
 \begin{equation}
 m\frac{u^{n+1}-2u^n+u^{n-1}}{\Delta t^2} + b|\frac{u^n - u^{n-1}}{\Delta t}|\frac{u^n - u^{n-1}}{\Delta t} + s(u^n) = F^n,
@@ -1404,6 +1753,7 @@ m\frac{u^{n+1}-2u^n+u^{n-1}}{\Delta t^2} + b|\frac{u^n - u^{n-1}}{\Delta t}|\fra
 \end{equation}
 !et
 which leads to
+
 !bt
 \begin{equation}
 u^{n+1} = 2u^n - u^{n-1} - \frac{b}{m}|u^n - u^{n-1}|(u^n - u^{n-1}) + \frac{\Delta t^2}{m}\left(F^n - s(u^n)\right).
@@ -1411,6 +1761,7 @@ u^{n+1} = 2u^n - u^{n-1} - \frac{b}{m}|u^n - u^{n-1}|(u^n - u^{n-1}) + \frac{\De
 \end{equation}
 !et
 With $n=0$, this updating formula becomes
+
 !bt
 \begin{equation}
 u^1 = 2u^0 - u^{-1} - \frac{b}{m}|u^0 - u^{-1}|(u^0 - u^{-1}) + \frac{\Delta t^2}{m}\left(F^0 - s(u^0)\right).
@@ -1418,19 +1769,39 @@ u^1 = 2u^0 - u^{-1} - \frac{b}{m}|u^0 - u^{-1}|(u^0 - u^{-1}) + \frac{\Delta t^2
 \end{equation}
 !et
 Again, we handle the unknown $u^{-1}$ via the same expression as above, which be derived from a backward difference approximation to the initial condition on the derivative. Inserting this expression for $u^{-1}$ and simplifying, gives the special updating formula for $u^1$ as
+
 !bt
 \begin{equation}
 u^1 = u^0 + \Delta t V + \frac{\Delta t^2}{m}\left(-b|V|V - s(u^0) + F^0\right).
 \nonumber
 \end{equation}
 !et
-We implement these new computational schemes in a new solver function `solver_bwdamping`, so that the discrete solution for $u$ can be found by both the original and the new solver. The difference between the two different solutions is then visualized in the same way as the original solution in `main`.
+We implement these new computational schemes in a new solver function
+`solver_bwdamping`, so that the discrete solution for $u$ can be found
+by both the original and the new solver. The difference between the
+two different solutions is then visualized in the same way as the
+original solution in `main`.
 
-The convergence rates computed in `test_mms` demonstrates that our scheme now is a first order scheme, as $r$ is seen to approach 1.0 with decreasing $\Delta t$.
+The convergence rates computed in `test_mms` demonstrates that our
+scheme now is a first order scheme, as $r$ is seen to approach 1.0
+with decreasing $\Delta t$.
 
-Both solvers reproduce a constant solution exactly (within machine precision), whereas sinusoidal and quadratic solutions differ, as should be expected after comparing the schemes.
+Both solvers reproduce a constant solution exactly (within machine
+precision), whereas sinusoidal and quadratic solutions differ, as
+should be expected after comparing the schemes. Pointing out the
+``best'' approach is difficult: the backward differences yield a much
+simpler mathematical problem to be solved, while the more complicated
+method converges faster and gives more accuracy for the same cost. On
+the other hand, the backward differences can yield any reasonable
+accuracy by lowering $\Delta t$, and the results are obtained within a
+few seconds on a laptop.
+
+Here is the complete computer code, arising from copying `vib.py` and changing
+the functions that have to be changed:
 
 @@@CODE exer-vib/vib_gen_bwdamping.py
+
+FIGURE: [fig-vib/vib_gen_bwdamping, width=800 frac=1] Comparison of standard method (2nd order) and backward differences for damping (1st order) for 10 (left) and 40 (right) time steps per period.
 
 !esol
 
@@ -1459,7 +1830,7 @@ following formula is handy:
 !bsol
 We follow the ideas in Section ref{vib:ode1:analysis}. Inserting
 $u^n=I\exp{(i\tilde\omega\Delta t\,n)}$ and
-$v^=qu^n$ in
+$v^n=qu^n$ in
 (ref{vib:model2x2:EulerCromer:ueq1b})-(ref{vib:model2x2:EulerCromer:veq1b})
 and dividing by $I\exp{(i\tilde\omega\Delta t\,n)}$ gives
 

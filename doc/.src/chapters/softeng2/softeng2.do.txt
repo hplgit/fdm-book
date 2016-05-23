@@ -688,7 +688,7 @@ advance = wave2D_u0_loop_cy.advance
 ...
 for n in It[1:-1:                  # time loop
     f_a[:,:] = f(xv, yv, t[n])     # precompute, size as u
-    u = advance(u, u_1, u_2, f_a, x, y, t, Cx2, Cy2, dt2)
+    u = advance(u, u_n, u_nm1, f_a, x, y, t, Cx2, Cy2, dt2)
 !ec
 
 === Efficiency ===
@@ -746,13 +746,13 @@ as returned values. That is, the right way of calling the above
 Fortran subroutine from Python is
 
 !bc pycod
-u = advance(u, u_1, u_2, f, Cx2, Cy2, dt2)
+u = advance(u, u_n, u_nm1, f, Cx2, Cy2, dt2)
 !ec
 The less encouraged style, which works and resembles the way the
 Fortran subroutine is called from Fortran, reads
 
 !bc pycod
-advance(u, u_1, u_2, f, Cx2, Cy2, dt2)
+advance(u, u_n, u_nm1, f, Cx2, Cy2, dt2)
 !ec
 !enotice
 
@@ -795,7 +795,7 @@ Python module:
 >>> print wave2D_u0_loop_f77.__doc__
 This module 'wave2D_u0_loop_f77' is auto-generated with f2py....
 Functions:
-  u = advance(u,u_1,u_2,f,cx2,cy2,dt2,
+  u = advance(u,u_n,u_nm1,f,cx2,cy2,dt2,
       nx=(shape(u,0)-1),ny=(shape(u,1)-1))
 !ec
 
@@ -828,15 +828,15 @@ subroutine:
 >>> print wave2D_u0_loop_f77.advance.__doc__
 This module 'wave2D_u0_loop_f77' is auto-generated with f2py
 Functions:
-  u = advance(u,u_1,u_2,f,cx2,cy2,dt2,
+  u = advance(u,u_n,u_nm1,f,cx2,cy2,dt2,
               nx=(shape(u,0)-1),ny=(shape(u,1)-1))
 .
 advance - Function signature:
-  u = advance(u,u_1,u_2,f,cx2,cy2,dt2,[nx,ny])
+  u = advance(u,u_n,u_nm1,f,cx2,cy2,dt2,[nx,ny])
 Required arguments:
   u : input rank-2 array('d') with bounds (nx + 1,ny + 1)
-  u_1 : input rank-2 array('d') with bounds (nx + 1,ny + 1)
-  u_2 : input rank-2 array('d') with bounds (nx + 1,ny + 1)
+  u_n : input rank-2 array('d') with bounds (nx + 1,ny + 1)
+  u_nm1 : input rank-2 array('d') with bounds (nx + 1,ny + 1)
   f : input rank-2 array('d') with bounds (nx + 1,ny + 1)
   cx2 : input float
   cy2 : input float
@@ -892,8 +892,8 @@ the arrays with Fortran storage:
 !bc pycod
 order = 'Fortran' if version == 'f77' else 'C'
 u   = zeros((Nx+1,Ny+1), order=order)   # solution array
-u_1 = zeros((Nx+1,Ny+1), order=order)   # solution at t-dt
-u_2 = zeros((Nx+1,Ny+1), order=order)   # solution at t-2*dt
+u_n = zeros((Nx+1,Ny+1), order=order)   # solution at t-dt
+u_nm1 = zeros((Nx+1,Ny+1), order=order)   # solution at t-2*dt
 !ec
 
 
@@ -976,8 +976,8 @@ in C code. Just as Fortran calls for care regarding the storage of
 two-dimensional arrays, working with two-dimensional arrays in C
 is a bit tricky. The reason is that
 `numpy` arrays are viewed as one-dimensional arrays when
-transferred to C, while C programmers will think of `u`, `u_1`, and
-`u_2` as two dimensional arrays and index them like `u[i][j]`.
+transferred to C, while C programmers will think of `u`, `u_n`, and
+`u_nm1` as two dimensional arrays and index them like `u[i][j]`.
 The C code must declare `u` as `double* u` and translate an index
 pair `[i][j]` to a corresponding single index when `u` is
 viewed as one-dimensional. This translation requires knowledge of
@@ -1083,7 +1083,7 @@ import wave2D_u0_loop_c_cy
 advance = wave2D_u0_loop_c_cy.advance_cwrap
 ...
 f_a[:,:] = f(xv, yv, t[n])
-u = advance(u, u_1, u_2, f_a, Cx2, Cy2, dt2)
+u = advance(u, u_n, u_nm1, f_a, Cx2, Cy2, dt2)
 !ec
 
 === Efficiency ===

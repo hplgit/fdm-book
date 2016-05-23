@@ -86,7 +86,7 @@ def demo():
         u, v, t = solver(I, w, dt, T)
         plt.figure()
         plt.plot(t, u, t2, u2,
-                 legend=('Euler-Cromer', 'center scheme for $u''+u=0$'),
+                 legend=('Euler-Cromer', 'centered scheme for $u''+u=0$'),
                  title='dt=%.3g' % dt)
         raw_input()
         plt.savefig('ECvs2nd_%d' % k + '.png')
@@ -121,6 +121,7 @@ def convergence_rate():
     print round(r[-1], 1)
 
 if __name__ == '__main__':
-    test_solver()
+    solver(I=3, w=1, dt=0.6283185, T=2)
+    #test_solver()
     #demo()
-    convergence_rate()
+    #convergence_rate()

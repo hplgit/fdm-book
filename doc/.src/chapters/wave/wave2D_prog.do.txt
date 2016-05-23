@@ -124,12 +124,11 @@ $u^{n-1}_{i,j}$ in three two-dimensional arrays,
 
 !bc pycod
 u   = zeros((Nx+1,Ny+1))   # solution array
-u_1 = zeros((Nx+1,Ny+1))   # solution at t-dt
-u_2 = zeros((Nx+1,Ny+1))   # solution at t-2*dt
+u_n = [zeros((Nx+1,Ny+1)), zeros((Nx+1,Ny+1))]  # t-dt, t-2*dt
 !ec
 where $u^{n+1}_{i,j}$ corresponds to `u[i,j]`,
-$u^{n}_{i,j}$ to `u_1[i,j]`, and
-$u^{n-1}_{i,j}$ to `u_2[i,j]`
+$u^{n}_{i,j}$ to `u_n[i,j]`, and
+$u^{n-1}_{i,j}$ to `u_nm1[i,j]`.
 
 idx{index set notation}
 
@@ -147,17 +146,17 @@ It = range(0, t.shape[0])
 === Computing the solution ===
 
 Inserting the initial
-condition `I` in `u_1` and making a callback to the user in terms of
+condition `I` in `u_n` and making a callback to the user in terms of
 the `user_action` function is a straightforward generalization of
 the 1D code from Section ref{wave:string:impl}:
 
 !bc pycod
 for i in Ix:
     for j in Iy:
-        u_1[i,j] = I(x[i], y[j])
+        u_n[i,j] = I(x[i], y[j])
 
 if user_action is not None:
-    user_action(u_1, x, xv, y, yv, t, 0)
+    user_action(u_n, x, xv, y, yv, t, 0)
 !ec
 The `user_action` function has additional arguments compared to the
 1D case. The arguments `xv` and `yv` will be commented
@@ -172,7 +171,7 @@ The `step1` variable has been introduced to allow the formula to be
 reused for first step $u^1_{i,j}$:
 
 !bc pycod
-u = advance_scalar(u, u_1, u_2, f, x, y, t,
+u = advance_scalar(u, u_n, f, x, y, t,
                    n, Cx2, Cy2, dt, V, step1=True)
 !ec
 Below, we will make many alternative implementations of the
@@ -183,7 +182,8 @@ Finally, we remark that the `solver` function in the `wave2D_u0.py` code
 updates arrays for the next time step by switching references as
 described in Section ref{wave:pde1:impl:ref:switch}. If the solution
 `u` is returned from `solver`, which it is not, it is important to
-set `u = u_1` after the time loop, otherwise `u` actually contains `u_2`.
+set `u = u_n` after the time loop, otherwise `u` actually contains
+`u_nm1`.
 
 ===== Vectorized computations =====
 label{wave2D3D:impl:vectorized}
@@ -222,11 +222,11 @@ With the `xv` and `yv` arrays for vectorized computing,
 setting the initial condition is just a matter of
 
 !bc pycod
-u_1[:,:] = I(xv, yv)
+u_n[:,:] = I(xv, yv)
 !ec
-One could also have written `u_1 = I(xv, yv)` and let `u_1` point to a
+One could also have written `u_n = I(xv, yv)` and let `u_n` point to a
 new object, but vectorized operations often make use of direct
-insertion in the original array through `u_1[:,:]`, because sometimes
+insertion in the original array through `u_n[:,:]`, because sometimes
 not all of the array is to be filled by such a function
 evaluation. This is the case with the computational scheme for
 $u^{n+1}_{i,j}$:
@@ -237,7 +237,7 @@ Array slices in 2D are more complicated to understand than those in
 1D, but the logic from 1D applies to each dimension separately.
 For example, when doing $u^{n}_{i,j} - u^{n}_{i-1,j}$ for $i\in\setr{\Ix}$,
 we just keep `j` constant and make a slice in the first index:
-`u_1[1:,j] - u_1[:-1,j]`, exactly as in 1D. The `1:` slice
+`u_n[1:,j] - u_n[:-1,j]`, exactly as in 1D. The `1:` slice
 specifies all the indices $i=1,2,\ldots,N_x$ (up to the last
 valid index),
 while `:-1` specifies the relevant indices for the second term:

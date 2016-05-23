@@ -443,7 +443,7 @@ by their spatial values at the mesh points:
 
 !bc pycod
 u   = np.zeros((Nx+1, Ny+1))      # unknown u at new time level
-u_1 = np.zeros((Nx+1, Ny+1))      # u at the previous time level
+u_n = np.zeros((Nx+1, Ny+1))      # u at the previous time level
 !ec
 It is a good habit (for extensions) to
 introduce index sets for all mesh points:
@@ -456,10 +456,10 @@ It = range(0, Nt+1)
 The initial condition is easy to fill in:
 
 !bc pycod
-# Load initial condition into u_1
+# Load initial condition into u_n
 for i in Ix:
     for j in Iy:
-        u_1[i,j] = I(x[i], y[j])
+        u_n[i,j] = I(x[i], y[j])
 !ec
 The memory for the coefficient matrix and right-hand side vector
 is allocated by
@@ -512,10 +512,10 @@ for n in It[0:-1]:
         i = 0;  p = m(i,j);  b[p] = 0   # Boundary
         for i in Ix[1:-1]:              # Interior points
             p = m(i,j)
-            b[p] = u_1[i,j] + \
+            b[p] = u_n[i,j] + \
               (1-theta)*(
-              Fx*(u_1[i+1,j] - 2*u_1[i,j] + u_1[i-1,j]) +\
-              Fy*(u_1[i,j+1] - 2*u_1[i,j] + u_1[i,j-1]))\
+              Fx*(u_n[i+1,j] - 2*u_n[i,j] + u_n[i-1,j]) +\
+              Fy*(u_n[i,j+1] - 2*u_n[i,j] + u_n[i,j-1]))\
                 + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \
               (1-theta)*dt*f(i*dx,j*dy,n*dt)
         i = Nx;  p = m(i,j);  b[p] = 0  # Boundary
@@ -531,8 +531,8 @@ for n in It[0:-1]:
         for j in Iy:
             u[i,j] = c[m(i,j)]
 
-    # Update u_1 before next step
-    u_1, u = u, u_1
+    # Update u_n before next step
+    u_n, u = u, u_n
 !ec
 We use `solve` from `scipy.linalg` and not from `numpy.linalg`. The difference
 is stated below.
@@ -921,10 +921,10 @@ for n in It[0:-1]:
         i = 0;  p = m(i,j);  b[p] = 0             # Boundary
         for i in Ix[1:-1]:
             p = m(i,j)                            # Interior
-            b[p] = u_1[i,j] + \
+            b[p] = u_n[i,j] + \
               (1-theta)*(
-              Fx*(u_1[i+1,j] - 2*u_1[i,j] + u_1[i-1,j]) +\
-              Fy*(u_1[i,j+1] - 2*u_1[i,j] + u_1[i,j-1]))\
+              Fx*(u_n[i+1,j] - 2*u_n[i,j] + u_n[i-1,j]) +\
+              Fy*(u_n[i,j+1] - 2*u_n[i,j] + u_n[i,j-1]))\
                 + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \
               (1-theta)*dt*f(i*dx,j*dy,n*dt)
         i = Nx;  p = m(i,j);  b[p] = 0            # Boundary
@@ -940,8 +940,8 @@ for n in It[0:-1]:
         for j in Iy:
             u[i,j] = c[m(i,j)]
 
-    # Update u_1 before next step
-    u_1, u = u, u_1
+    # Update u_n before next step
+    u_n, u = u, u_n
 !ec
 
 === Filling the right-hand side; vectorized version ===
@@ -967,15 +967,15 @@ for n in It[0:-1]:
         i = Nx;  p = m(i,j);  b[p] = 0 # Boundary
         imin = Ix[1]
         imax = Ix[-1]  # for slice, max i index is Ix[-1]-1
-        b[m(imin,j):m(imax,j)] = u_1[imin:imax,j] + \
+        b[m(imin,j):m(imax,j)] = u_n[imin:imax,j] + \
               (1-theta)*(Fx*(
-          u_1[imin+1:imax+1,j] -
-        2*u_1[imin:imax,j] + \
-          u_1[imin-1:imax-1,j]) +
+          u_n[imin+1:imax+1,j] -
+        2*u_n[imin:imax,j] + \
+          u_n[imin-1:imax-1,j]) +
                          Fy*(
-          u_1[imin:imax,j+1] -
-        2*u_1[imin:imax,j] +
-          u_1[imin:imax,j-1])) + \
+          u_n[imin:imax,j+1] -
+        2*u_n[imin:imax,j] +
+          u_n[imin:imax,j-1])) + \
             theta*dt*f_a_np1[imin:imax,j] + \
           (1-theta)*dt*f_a_n[imin:imax,j]
     j = Ny;  b[m(0,j):m(Nx+1,j)] = 0 # Boundary
@@ -986,8 +986,8 @@ for n in It[0:-1]:
     # Fill u with vector c
     u[:,:] = c.reshape(Ny+1,Nx+1).T
 
-    # Update u_1 before next step
-    u_1, u = u, u_1
+    # Update u_n before next step
+    u_n, u = u, u_n
 !ec
 The most tricky part of this code snippet is the loading of values in
 the one-dimensional array `c`
@@ -1235,13 +1235,13 @@ The Jacobi method needs no coefficient matrix and right-hand side
 vector, but it needs an array for $u$ in the previous iteration.  We
 call this array `u_`, using the notation at the end of the previous
 section (at the same time level). The unknown itself is called `u`,
-while `u_1` is the computed solution one time level back in time.
+while `u_n` is the computed solution one time level back in time.
 With a $\theta$ rule in time, the time loop can be coded like this:
 
 !bc pycod
 for n in It[0:-1]:
     # Solve linear system by Jacobi iteration at time level n+1
-    u_[:,:] = u_1  # Start value
+    u_[:,:] = u_n  # Start value
     converged = False
     r = 0
     while not converged:
@@ -1257,11 +1257,11 @@ for n in It[0:-1]:
                     u_new = 1.0/(1.0 + 2*theta*(Fx + Fy))*(theta*(
                         Fx*(u_[i+1,j] + u_[i-1,j]) +
                         Fy*(u_[i,j+1] + u_[i,j-1])) + \
-                    u_1[i,j] + \
+                    u_n[i,j] + \
                     (1-theta)*(Fx*(
-                    u_1[i+1,j] - 2*u_1[i,j] + u_1[i-1,j]) +
+                    u_n[i+1,j] - 2*u_n[i,j] + u_n[i-1,j]) +
                       Fy*(
-                    u_1[i,j+1] - 2*u_1[i,j] + u_1[i,j-1]))\
+                    u_n[i,j+1] - 2*u_n[i,j] + u_n[i,j-1]))\
                       + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \
                     (1-theta)*dt*f(i*dx,j*dy,n*dt))
                     u[i,j] = omega*u_new + (1-omega)*u_[i,j]
@@ -1281,11 +1281,11 @@ for n in It[0:-1]:
               u_[2:,1:-1] + u_[:-2,1:-1]) +
                 Fy*(
               u_[1:-1,2:] + u_[1:-1,:-2])) +\
-            u_1[1:-1,1:-1] + \
+            u_n[1:-1,1:-1] + \
               (1-theta)*(Fx*(
-              u_1[2:,1:-1] - 2*u_1[1:-1,1:-1] + u_1[:-2,1:-1]) +\
+              u_n[2:,1:-1] - 2*u_n[1:-1,1:-1] + u_n[:-2,1:-1]) +\
                 Fy*(
-              u_1[1:-1,2:] - 2*u_1[1:-1,1:-1] + u_1[1:-1,:-2]))\
+              u_n[1:-1,2:] - 2*u_n[1:-1,1:-1] + u_n[1:-1,:-2]))\
               + theta*dt*f_a_np1[1:-1,1:-1] + \
               (1-theta)*dt*f_a_n[1:-1,1:-1])
             u[1:-1,1:-1] = omega*u_new + (1-omega)*u_[1:-1,1:-1]
@@ -1293,8 +1293,8 @@ for n in It[0:-1]:
         converged = np.abs(u-u_).max() < tol or r >= max_iter
         u_[:,:] = u
 
-    # Update u_1 before next step
-    u_1, u = u, u_1
+    # Update u_n before next step
+    u_n, u = u, u_n
 !ec
 The vectorized version should be quite straightforward to understand
 once one has an understanding of how a standard 2D finite stencil
@@ -1571,7 +1571,7 @@ are so similar, we can easily make a common code for the two:
 !bc pycod
 for n in It[0:-1]:
     # Solve linear system by Jacobi/SOR iteration at time level n+1
-    u_[:,:] = u_1  # Start value
+    u_[:,:] = u_n  # Start value
     converged = False
     r = 0
     while not converged:
@@ -1590,11 +1590,11 @@ for n in It[0:-1]:
                     u_new = 1.0/(1.0 + 2*theta*(Fx + Fy))*(theta*(
                         Fx*(u_[i+1,j] + u__[i-1,j]) +
                         Fy*(u_[i,j+1] + u__[i,j-1])) + \
-                    u_1[i,j] + (1-theta)*(
+                    u_n[i,j] + (1-theta)*(
                       Fx*(
-                    u_1[i+1,j] - 2*u_1[i,j] + u_1[i-1,j]) +
+                    u_n[i+1,j] - 2*u_n[i,j] + u_n[i-1,j]) +
                       Fy*(
-                    u_1[i,j+1] - 2*u_1[i,j] + u_1[i,j-1]))\
+                    u_n[i,j+1] - 2*u_n[i,j] + u_n[i,j-1]))\
                       + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \
                     (1-theta)*dt*f(i*dx,j*dy,n*dt))
                     u[i,j] = omega*u_new + (1-omega)*u_[i,j]
@@ -1605,7 +1605,7 @@ for n in It[0:-1]:
         converged = np.abs(u-u_).max() < tol or r >= max_iter
         u_[:,:] = u
 
-    u_1, u = u, u_1  # Get ready for next iteration
+    u_n, u = u, u_n  # Get ready for next iteration
 !ec
 The idea here is to introduce `u__` to be used for already computed
 values (`u`) in the Gauss-Seidel/SOR version of the implementation, or
@@ -1663,7 +1663,7 @@ for sweep in 'red', 'black':
         for i in range(start, Nx, 2):
 	    u[i,j] = 1.0/(1.0 + 2*(Fx + Fy))*(
                      Fx*(u[i+1,j] + u[i-1,j]) +
-                     Fy*(u[i,j+1] + u[i,j-1]) + u_1[i,j])
+                     Fy*(u[i,j+1] + u[i,j-1]) + u_n[i,j])
 !ec
 
 The vectorized version must be based on slices. Looking at a typical
@@ -1766,14 +1766,14 @@ representing $i$, $i-1$, $i+1$, $j$, $j-1$, and $j+1$, here called
 and `jp1`, respectively.
 
 !bc pycod
-def update(u_, u_1, ic, im1, ip1, jc, jm1, jp1):
+def update(u_, u_n, ic, im1, ip1, jc, jm1, jp1):
     return \
        1.0/(1.0 + 2*theta*(Fx + Fy))*(theta*(
            Fx*(u_[ip1,jc] + u_[im1,jc]) +
            Fy*(u_[ic,jp1] + u_[ic,jm1])) +\
-       u_1[ic,jc] + (1-theta)*(
-         Fx*(u_1[ip1,jc] - 2*u_1[ic,jc] + u_1[im1,jc]) +\
-         Fy*(u_1[ic,jp1] - 2*u_1[ic,jc] + u_1[ic,jm1]))+\
+       u_n[ic,jc] + (1-theta)*(
+         Fx*(u_n[ip1,jc] - 2*u_n[ic,jc] + u_n[im1,jc]) +\
+         Fy*(u_n[ic,jp1] - 2*u_n[ic,jc] + u_n[ic,jm1]))+\
          theta*dt*f_a_np1[ic,jc] + \
          (1-theta)*dt*f_a_n[ic,jc])
 !ec
@@ -1787,7 +1787,7 @@ ic  = jc  = slice(1,-1)
 im1 = jm1 = slice(0,-2)
 ip1 = jp1 = slice(2,None)
 u_new[ic,jc] = update(
-    u_, u_1, ic, im1, ip1, jc, jm1, jp1)
+    u_, u_n, ic, im1, ip1, jc, jm1, jp1)
 u[ic,jc] = omega*u_new[ic,jc] + (1-omega)*u_[ic,jc]
 !ec
 
@@ -1805,7 +1805,7 @@ jc  = slice(1,-1,2)
 jm1 = slice(0,-2,2)
 jp1 = slice(2,None,2)
 u_new[ic,jc] = update(
-    u_new, u_1, ic, im1, ip1, jc, jm1, jp1)
+    u_new, u_n, ic, im1, ip1, jc, jm1, jp1)
 
 ic  = slice(2,-1,2)
 im1 = slice(1,-2,2)
@@ -1814,7 +1814,7 @@ jc  = slice(2,-1,2)
 jm1 = slice(1,-2,2)
 jp1 = slice(3,None,2)
 u_new[ic,jc] = update(
-    u_new, u_1, ic, im1, ip1, jc, jm1, jp1)
+    u_new, u_n, ic, im1, ip1, jc, jm1, jp1)
 
 # Black points
 ic  = slice(2,-1,2)
@@ -1824,7 +1824,7 @@ jc  = slice(1,-1,2)
 jm1 = slice(0,-2,2)
 jp1 = slice(2,None,2)
 u_new[ic,jc] = update(
-    u_new, u_1, ic, im1, ip1, jc, jm1, jp1)
+    u_new, u_n, ic, im1, ip1, jc, jm1, jp1)
 
 ic  = slice(1,-1,2)
 im1 = slice(0,-2,2)
@@ -1833,7 +1833,7 @@ jc  = slice(2,-1,2)
 jm1 = slice(1,-2,2)
 jp1 = slice(3,None,2)
 u_new[ic,jc] = update(
-    u_new, u_1, ic, im1, ip1, jc, jm1, jp1)
+    u_new, u_n, ic, im1, ip1, jc, jm1, jp1)
 
 # Relax
 c = slice(1,-1)
@@ -2127,7 +2127,7 @@ def solver_sparse(
         if method == 'direct':
             c = scipy.sparse.linalg.spsolve(A, b)
         elif method == 'CG':
-            x0 = u_1.T.reshape(N)  # Start vector is u_1
+            x0 = u_n.T.reshape(N)  # Start vector is u_n
             CG_iter.append(0)
 
             def CG_callback(c_k):
@@ -2139,8 +2139,8 @@ def solver_sparse(
                 callback=CG_callback)
 
         # Fill u with vector c
-        # Update u_1 before next step
-        u_1, u = u, u_1
+        # Update u_n before next step
+        u_n, u = u, u_n
 !ec
 The number of iterations in the Conjugate gradient method is of interest,
 but is unfortunately not available from the `cg` function. Therefore,

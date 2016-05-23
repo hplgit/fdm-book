@@ -296,30 +296,30 @@ The algorithm is compactly and fully specified in Python:
 
 .. code-block:: python
 
-        import numpy as np
-        x = np.linspace(0, L, Nx+1)    # mesh points in space
-        dx = x[1] - x[0]
-        t = np.linspace(0, T, Nt+1)    # mesh points in time
-        dt = t[1] - t[0]
-        F = a*dt/dx**2
-        u   = np.zeros(Nx+1)           # unknown u at new time level
-        u_1 = np.zeros(Nx+1)           # u at the previous time level
-        
-        # Set initial condition u(x,0) = I(x)
-        for i in range(0, Nx+1):
-            u_1[i] = I(x[i])
-        
-        for n in range(0, Nt):
-            # Compute u at inner mesh points
-            for i in range(1, Nx):
-                u[i] = u_1[i] + F*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) + \ 
-        	       f(x[i], t[n])
-        
-            # Insert boundary conditions
-            u[0] = 0;  u[Nx] = 0
-        
-            # Update u_1 before next step
-            u_1[:]= u
+    import numpy as np
+    x = np.linspace(0, L, Nx+1)    # mesh points in space
+    dx = x[1] - x[0]
+    t = np.linspace(0, T, Nt+1)    # mesh points in time
+    dt = t[1] - t[0]
+    F = a*dt/dx**2
+    u   = np.zeros(Nx+1)           # unknown u at new time level
+    u_n = np.zeros(Nx+1)           # u at the previous time level
+    
+    # Set initial condition u(x,0) = I(x)
+    for i in range(0, Nx+1):
+        u_n[i] = I(x[i])
+    
+    for n in range(0, Nt):
+        # Compute u at inner mesh points
+        for i in range(1, Nx):
+            u[i] = u_n[i] + F*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) + \ 
+    	       f(x[i], t[n])
+    
+        # Insert boundary conditions
+        u[0] = 0;  u[Nx] = 0
+    
+        # Update u_n before next step
+        u_n[:]= u
 
 Note that we use ``a`` for :math:`{\alpha}` in the code, motivated by easy visual
 mapping between the variable name and the mathematical symbol in formulas.
@@ -343,47 +343,47 @@ as specified in the algorithm above:
 
 .. code-block:: python
 
-        import numpy as np
-        
-        def solver_FE_simple(I, a, f, L, dt, F, T):
-            """
-            Simplest expression of the computational algorithm
-            using the Forward Euler method and explicit Python loops.
-            For this method F <= 0.5 for stability.
-            """
-            import time;  t0 = time.clock()  # For measuring the CPU time
-        
-            Nt = int(round(T/float(dt)))
-            t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
-            dx = np.sqrt(a*dt/F)
-            Nx = int(round(L/dx))
-            x = np.linspace(0, L, Nx+1)       # Mesh points in space
-            # Make sure dx and dt are compatible with x and t
-            dx = x[1] - x[0]
-            dt = t[1] - t[0]
-        
-            u   = np.zeros(Nx+1)
-            u_1 = np.zeros(Nx+1)
-        
-            # Set initial condition u(x,0) = I(x)
-            for i in range(0, Nx+1):
-                u_1[i] = I(x[i])
-        
-            for n in range(0, Nt):
-                # Compute u at inner mesh points
-                for i in range(1, Nx):
-                    u[i] = u_1[i] + F*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) + \ 
-                           dt*f(x[i], t[n])
-        
-                # Insert boundary conditions
-                u[0] = 0;  u[Nx] = 0
-        
-                # Switch variables before next step
-                #u_1[:] = u  # safe, but slow
-                u_1, u = u, u_1
-        
-            t1 = time.clock()
-            return u_1, x, t, t1-t0  # u_1 holds latest u
+    import numpy as np
+    
+    def solver_FE_simple(I, a, f, L, dt, F, T):
+        """
+        Simplest expression of the computational algorithm
+        using the Forward Euler method and explicit Python loops.
+        For this method F <= 0.5 for stability.
+        """
+        import time;  t0 = time.clock()  # For measuring the CPU time
+    
+        Nt = int(round(T/float(dt)))
+        t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
+        dx = np.sqrt(a*dt/F)
+        Nx = int(round(L/dx))
+        x = np.linspace(0, L, Nx+1)       # Mesh points in space
+        # Make sure dx and dt are compatible with x and t
+        dx = x[1] - x[0]
+        dt = t[1] - t[0]
+    
+        u   = np.zeros(Nx+1)
+        u_n = np.zeros(Nx+1)
+    
+        # Set initial condition u(x,0) = I(x)
+        for i in range(0, Nx+1):
+            u_n[i] = I(x[i])
+    
+        for n in range(0, Nt):
+            # Compute u at inner mesh points
+            for i in range(1, Nx):
+                u[i] = u_n[i] + F*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) + \ 
+                       dt*f(x[i], t[n])
+    
+            # Insert boundary conditions
+            u[0] = 0;  u[Nx] = 0
+    
+            # Switch variables before next step
+            #u_n[:] = u  # safe, but slow
+            u_n, u = u, u_n
+    
+        t1 = time.clock()
+        return u_n, x, t, t1-t0  # u_n holds latest u
 
 A faster version, based on vectorization of the finite difference
 scheme, is available in the function ``solver_FE``.
@@ -391,23 +391,22 @@ The vectorized version replaces the explicit loop
 
 .. code-block:: python
 
-        for i in range(1, Nx):
-            u[i] = u_1[i] + F*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) \ 
-                   + dt*f(x[i], t[n])
+    for i in range(1, Nx):
+        u[i] = u_n[i] + F*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) \ 
+               + dt*f(x[i], t[n])
 
 by arithmetics on displaced slices of the ``u`` array:
 
 .. code-block:: python
 
-        u[1:Nx] = u_1[1:Nx] + F*(u_1[0:Nx-1] - 2*u_1[1:Nx] + u_1[2:Nx+1]) \ 
-                  + dt*f(x[1:Nx], t[n])
-        # or
-        u[1:-1] = u_1[1:-1] + F*(u_1[0:-2] - 2*u_1[1:-1] + u_1[2:]) \ 
-                  + dt*f(x[1:-1], t[n])
+    u[1:Nx] = u_n[1:Nx] + F*(u_n[0:Nx-1] - 2*u_n[1:Nx] + u_n[2:Nx+1]) \ 
+              + dt*f(x[1:Nx], t[n])
+    # or
+    u[1:-1] = u_n[1:-1] + F*(u_n[0:-2] - 2*u_n[1:-1] + u_n[2:]) \ 
+              + dt*f(x[1:-1], t[n])
 
 For example,
-the
-vectorized version runs 70 times faster than the scalar version
+the vectorized version runs 70 times faster than the scalar version
 in a case with 100 time steps and a spatial mesh of :math:`10^5` cells.
 
 The ``solver_FE`` function also features a callback function such that the
@@ -422,56 +421,56 @@ callback function, and a bit more complicated setting of the source
 
 .. code-block:: python
 
-        def solver_FE(I, a, f, L, dt, F, T,
-                      user_action=None, version='scalar'):
-            """
-            Vectorized implementation of solver_FE_simple.
-            """
-            import time;  t0 = time.clock()  # for measuring the CPU time
-        
-            Nt = int(round(T/float(dt)))
-            t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
-            dx = np.sqrt(a*dt/F)
-            Nx = int(round(L/dx))
-            x = np.linspace(0, L, Nx+1)       # Mesh points in space
-            # Make sure dx and dt are compatible with x and t
-            dx = x[1] - x[0]
-            dt = t[1] - t[0]
-        
-            u   = np.zeros(Nx+1)   # solution array
-            u_1 = np.zeros(Nx+1)   # solution at t-dt
-        
-            # Set initial condition
-            for i in range(0,Nx+1):
-                u_1[i] = I(x[i])
-        
+    def solver_FE(I, a, f, L, dt, F, T,
+                  user_action=None, version='scalar'):
+        """
+        Vectorized implementation of solver_FE_simple.
+        """
+        import time;  t0 = time.clock()  # for measuring the CPU time
+    
+        Nt = int(round(T/float(dt)))
+        t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
+        dx = np.sqrt(a*dt/F)
+        Nx = int(round(L/dx))
+        x = np.linspace(0, L, Nx+1)       # Mesh points in space
+        # Make sure dx and dt are compatible with x and t
+        dx = x[1] - x[0]
+        dt = t[1] - t[0]
+    
+        u   = np.zeros(Nx+1)   # solution array
+        u_n = np.zeros(Nx+1)   # solution at t-dt
+    
+        # Set initial condition
+        for i in range(0,Nx+1):
+            u_n[i] = I(x[i])
+    
+        if user_action is not None:
+            user_action(u_n, x, t, 0)
+    
+        for n in range(0, Nt):
+            # Update all inner points
+            if version == 'scalar':
+                for i in range(1, Nx):
+                    u[i] = u_n[i] + F*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) +\ 
+                           dt*f(x[i], t[n])
+    
+            elif version == 'vectorized':
+                u[1:Nx] = u_n[1:Nx] +  \ 
+                          F*(u_n[0:Nx-1] - 2*u_n[1:Nx] + u_n[2:Nx+1]) +\ 
+                          dt*f(x[1:Nx], t[n])
+            else:
+                raise ValueError('version=%s' % version)
+    
+            # Insert boundary conditions
+            u[0] = 0;  u[Nx] = 0
             if user_action is not None:
-                user_action(u_1, x, t, 0)
-        
-            for n in range(0, Nt):
-                # Update all inner points
-                if version == 'scalar':
-                    for i in range(1, Nx):
-                        u[i] = u_1[i] + F*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) +\ 
-                               dt*f(x[i], t[n])
-        
-                elif version == 'vectorized':
-                    u[1:Nx] = u_1[1:Nx] +  \ 
-                              F*(u_1[0:Nx-1] - 2*u_1[1:Nx] + u_1[2:Nx+1]) +\ 
-                              dt*f(x[1:Nx], t[n])
-                else:
-                    raise ValueError('version=%s' % version)
-        
-                # Insert boundary conditions
-                u[0] = 0;  u[Nx] = 0
-                if user_action is not None:
-                    user_action(u, x, t, n+1)
-        
-                # Switch variables before next step
-                u_1, u = u, u_1
-        
-            t1 = time.clock()
-            return t1-t0
+                user_action(u, x, t, n+1)
+    
+            # Switch variables before next step
+            u_n, u = u, u_n
+    
+        t1 = time.clock()
+        return t1-t0
 
 .. _diffu:pde1:FE:verify:
 
@@ -518,14 +517,14 @@ is easily automated with ``sympy``:
 
 .. code-block:: python
 
-        import sympy as sym
-        x, t, a, L = sym.symbols('x t a L')
-        u = x*(L-x)*5*t
-        
-        def pde(u):
-            return sym.diff(u, t) - a*sym.diff(u, x, x)
-        
-        f = sym.simplify(pde(u))
+    import sympy as sym
+    x, t, a, L = sym.symbols('x t a L')
+    u = x*(L-x)*5*t
+    
+    def pde(u):
+        return sym.diff(u, t) - a*sym.diff(u, x, x)
+    
+    f = sym.simplify(pde(u))
 
 Now we can choose any expression for ``u`` and automatically
 get the suitable source term ``f``. However, the manufactured solution
@@ -546,13 +545,13 @@ numbers in ``u`` and ``f``. The appropriate code looks like this:
 
 .. code-block:: python
 
-        a = 0.5
-        L = 1.5
-        u_exact = sym.lambdify(
-            [x, t], u.subs('L', L).subs('a', a), modules='numpy')
-        f = sym.lambdify(
-            [x, t], f.subs('L', L).subs('a', a), modules='numpy')
-        I = lambda x: u_exact(x, 0)
+    a = 0.5
+    L = 1.5
+    u_exact = sym.lambdify(
+        [x, t], u.subs('L', L).subs('a', a), modules='numpy')
+    f = sym.lambdify(
+        [x, t], f.subs('L', L).subs('a', a), modules='numpy')
+    I = lambda x: u_exact(x, 0)
 
 Here we also make a function ``I`` for the initial condition.
 
@@ -564,35 +563,35 @@ time interval:
 
 .. code-block:: python
 
-        def test_solver_FE():
-            # Define u_exact, f, I as explained above
-        
-            dx = L/3  # 3 cells
-            F = 0.5
-            dt = F*dx**2
-        
-            u, x, t, cpu = solver_FE_simple(
-                I=I, a=a, f=f, L=L, dt=dt, F=F, T=2)
-            u_e = u_exact(x, t[-1])
-            diff = abs(u_e - u).max()
-            tol = 1E-14
-            assert diff < tol, 'max diff solver_FE_simple: %g' % diff
-        
-            u, x, t, cpu = solver_FE(
-                I=I, a=a, f=f, L=L, dt=dt, F=F, T=2,
-                user_action=None, version='scalar')
-            u_e = u_exact(x, t[-1])
-            diff = abs(u_e - u).max()
-            tol = 1E-14
-            assert diff < tol, 'max diff solver_FE, scalar: %g' % diff
-        
-            u, x, t, cpu = solver_FE(
-                I=I, a=a, f=f, L=L, dt=dt, F=F, T=2,
-                user_action=None, version='vectorized')
-            u_e = u_exact(x, t[-1])
-            diff = abs(u_e - u).max()
-            tol = 1E-14
-            assert diff < tol, 'max diff solver_FE, vectorized: %g' % diff
+    def test_solver_FE():
+        # Define u_exact, f, I as explained above
+    
+        dx = L/3  # 3 cells
+        F = 0.5
+        dt = F*dx**2
+    
+        u, x, t, cpu = solver_FE_simple(
+            I=I, a=a, f=f, L=L, dt=dt, F=F, T=2)
+        u_e = u_exact(x, t[-1])
+        diff = abs(u_e - u).max()
+        tol = 1E-14
+        assert diff < tol, 'max diff solver_FE_simple: %g' % diff
+    
+        u, x, t, cpu = solver_FE(
+            I=I, a=a, f=f, L=L, dt=dt, F=F, T=2,
+            user_action=None, version='scalar')
+        u_e = u_exact(x, t[-1])
+        diff = abs(u_e - u).max()
+        tol = 1E-14
+        assert diff < tol, 'max diff solver_FE, scalar: %g' % diff
+    
+        u, x, t, cpu = solver_FE(
+            I=I, a=a, f=f, L=L, dt=dt, F=F, T=2,
+            user_action=None, version='vectorized')
+        u_e = u_exact(x, t[-1])
+        diff = abs(u_e - u).max()
+        tol = 1E-14
+        assert diff < tol, 'max diff solver_FE, vectorized: %g' % diff
 
 We emphasize that the value ``F=0.5`` is critical: the tests above
 will fail if ``F`` has a larger value (this is because the Forward
@@ -603,19 +602,19 @@ Euler scheme is unstable for :math:`F>1/2`).
 Checking convergence rates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If our chosen exact solution does not satisfy the discrete equations 
-exactly, we are left with checking the convergence rates, just as we did 
+If our chosen exact solution does not satisfy the discrete equations
+exactly, we are left with checking the convergence rates, just as we did
 previously for the wave equation. However, with the Euler scheme here,
 we have different accuracies in time and space, since we use a second
 order approximation to the spatial derivative and a first order approximation
-to the time derivative. Thus, we must expect different convergence rates in 
+to the time derivative. Thus, we must expect different convergence rates in
 time and space. For the numerical error,
 
 .. math::
          E = C_t\Delta t^r + C_x\Delta x^p,
 
-we should get convergence rates :math:`r=1` and :math:`p=2` (:math:`C_t` and :math:`C_x` are unknown constants). 
-As previously, we simplify matters by introducing a single discretization parameter. 
+we should get convergence rates :math:`r=1` and :math:`p=2` (:math:`C_t` and :math:`C_x` are unknown constants).
+As previously, we simplify matters by introducing a single discretization parameter.
 We introduce
 
 .. math::
@@ -627,7 +626,7 @@ where :math:`K` is a constant. The error formula then becomes
          E = C_t K^rh^r + C_xh^r = \tilde C h^r,\quad \tilde C = C_tK^r + C_x{\thinspace .}
 
 where the computed rate :math:`r` should approach 1 with increasing resolution.
-It is tempting to choose :math:`K=1`, but for the Forward Euler method, 
+It is tempting to choose :math:`K=1`, but for the Forward Euler method,
 stability requires :math:`\Delta t = hK \leq h/(4{\alpha})`, so :math:`K\leq 1/(4{\alpha})`.
 
 The alternative error measures are as outlined for the wave equation and
@@ -642,15 +641,15 @@ Numerical experiments
 .. index::
    single: diffusion equation;  1D, numerical experiments
 
-When a test function like the one above runs silently without
-errors, we have some evidence for a correct implementation of the
-numerical method.
-The next step is to do some experiments with more interesting solutions.
+When a test function like the one above runs silently without errors,
+we have some evidence for a correct implementation of the numerical
+method.  The next step is to do some experiments with more interesting
+solutions.
 
 We target a scaled diffusion problem where :math:`x/L` is a new spatial
 coordinate and :math:`{\alpha} t/L^2` is a new time coordinate. The source term
-:math:`f` is omitted, and :math:`u` is scaled by :math:`\max_{x\in [0,L]}|I(x)|`
-(see `Scaling of the diffusion equation <http://hplgit.github.io/scaling-book/doc/pub/book/html/._scaling-book008.html#sec:scale:diffu>`__ in [Ref1]_ for details).
+:math:`f` is omitted, and :math:`u` is scaled by :math:`\max_{x\in [0,L]}|I(x)|` (see
+`Scaling of the diffusion equation <http://hplgit.github.io/scaling-book/doc/pub/book/html/._scaling-book008.html#sec:scale:diffu>`__ [Ref1]_ for details).
 The governing PDE is then
 
 .. math::
@@ -675,40 +674,40 @@ respectively:
 
 .. code-block:: python
 
-        def plug(scheme='FE', F=0.5, Nx=50):
-            L = 1.
-            a = 1.
-            T = 0.1
-            # Compute dt from Nx and F
-            dx = L/Nx;  dt = F/a*dx**2
-        
-            def I(x):
-                """Plug profile as initial condition."""
-                if abs(x-L/2.0) > 0.1:
-                    return 0
-                else:
-                    return 1
-        
-            cpu = viz(I, a, L, dt, F, T,
-                      umin=-0.1, umax=1.1,
-                      scheme=scheme, animate=True, framefiles=True)
-            print 'CPU time:', cpu
-        
-        def gaussian(scheme='FE', F=0.5, Nx=50, sigma=0.05):
-            L = 1.
-            a = 1.
-            T = 0.1
-            # Compute dt from Nx and F
-            dx = L/Nx;  dt = F/a*dx**2
-        
-            def I(x):
-                """Gaussian profile as initial condition."""
-                return exp(-0.5*((x-L/2.0)**2)/sigma**2)
-        
-            u, cpu = viz(I, a, L, dt, F, T,
-                         umin=-0.1, umax=1.1,
-                         scheme=scheme, animate=True, framefiles=True)
-            print 'CPU time:', cpu
+    def plug(scheme='FE', F=0.5, Nx=50):
+        L = 1.
+        a = 1.
+        T = 0.1
+        # Compute dt from Nx and F
+        dx = L/Nx;  dt = F/a*dx**2
+    
+        def I(x):
+            """Plug profile as initial condition."""
+            if abs(x-L/2.0) > 0.1:
+                return 0
+            else:
+                return 1
+    
+        cpu = viz(I, a, L, dt, F, T,
+                  umin=-0.1, umax=1.1,
+                  scheme=scheme, animate=True, framefiles=True)
+        print 'CPU time:', cpu
+    
+    def gaussian(scheme='FE', F=0.5, Nx=50, sigma=0.05):
+        L = 1.
+        a = 1.
+        T = 0.1
+        # Compute dt from Nx and F
+        dx = L/Nx;  dt = F/a*dx**2
+    
+        def I(x):
+            """Gaussian profile as initial condition."""
+            return exp(-0.5*((x-L/2.0)**2)/sigma**2)
+    
+        u, cpu = viz(I, a, L, dt, F, T,
+                     umin=-0.1, umax=1.1,
+                     scheme=scheme, animate=True, framefiles=True)
+        print 'CPU time:', cpu
 
 These functions make use of the function ``viz`` for running the
 solver and visualizing the solution using a callback function
@@ -716,26 +715,26 @@ with plotting:
 
 .. code-block:: python
 
-        def viz(I, a, L, dt, F, T, umin, umax,
-                scheme='FE', animate=True, framefiles=True):
-        
-            def plot_u(u, x, t, n):
-                plt.plot(x, u, 'r-', axis=[0, L, umin, umax],
-                         title='t=%f' % t[n])
-                if framefiles:
-                    plt.savefig('tmp_frame%04d.png' % n)
-                if t[n] == 0:
-                    time.sleep(2)
-                elif not framefiles:
-                    # It takes time to write files so pause is needed
-                    # for screen only animation
-                    time.sleep(0.2)
-        
-            user_action = plot_u if animate else lambda u,x,t,n: None
-        
-            cpu = eval('solver_'+scheme)(I, a, L, dt, F, T,
-                                         user_action=user_action)
-            return cpu
+    def viz(I, a, L, dt, F, T, umin, umax,
+            scheme='FE', animate=True, framefiles=True):
+    
+        def plot_u(u, x, t, n):
+            plt.plot(x, u, 'r-', axis=[0, L, umin, umax],
+                     title='t=%f' % t[n])
+            if framefiles:
+                plt.savefig('tmp_frame%04d.png' % n)
+            if t[n] == 0:
+                time.sleep(2)
+            elif not framefiles:
+                # It takes time to write files so pause is needed
+                # for screen only animation
+                time.sleep(0.2)
+    
+        user_action = plot_u if animate else lambda u,x,t,n: None
+    
+        cpu = eval('solver_'+scheme)(I, a, L, dt, F, T,
+                                     user_action=user_action)
+        return cpu
 
 Notice that this ``viz`` function stores all the solutions in a
 list ``solutions`` in the callback function. Modern computers have
@@ -752,8 +751,8 @@ simulate for :math:`t\in [0,0.1]`. First we try the highest value of
 
 .. code-block:: text
 
-        Terminal> python -c 'from diffu1D_u0 import gaussian
-        > gaussian("solver_FE", F=0.5, dt=0.0002)'
+    Terminal> python -c 'from diffu1D_u0 import gaussian
+              gaussian("solver_FE", F=0.5, dt=0.0002)'
 
 The :math:`u(x,t)` curve as a function of :math:`x` is shown
 in Figure :ref:`diffu:pde1:FE:fig:F=0.5` at four time
@@ -1199,39 +1198,39 @@ with Python code:
 
 .. code-block:: python
 
-        x = np.linspace(0, L, Nx+1)   # mesh points in space
-        dx = x[1] - x[0]
-        t = np.linspace(0, T, N+1)    # mesh points in time
-        u   = np.zeros(Nx+1)          # unknown u at new time level
-        u_1 = np.zeros(Nx+1)          # u at the previous time level
-        
-        # Data structures for the linear system
-        A = np.zeros((Nx+1, Nx+1))
-        b = np.zeros(Nx+1)
-        
+    x = np.linspace(0, L, Nx+1)   # mesh points in space
+    dx = x[1] - x[0]
+    t = np.linspace(0, T, N+1)    # mesh points in time
+    u   = np.zeros(Nx+1)          # unknown u at new time level
+    u_n = np.zeros(Nx+1)          # u at the previous time level
+    
+    # Data structures for the linear system
+    A = np.zeros((Nx+1, Nx+1))
+    b = np.zeros(Nx+1)
+    
+    for i in range(1, Nx):
+        A[i,i-1] = -F
+        A[i,i+1] = -F
+        A[i,i] = 1 + 2*F
+    A[0,0] = A[Nx,Nx] = 1
+    
+    # Set initial condition u(x,0) = I(x)
+    for i in range(0, Nx+1):
+        u_n[i] = I(x[i])
+    
+    import scipy.linalg
+    
+    for n in range(0, Nt):
+        # Compute b and solve linear system
         for i in range(1, Nx):
-            A[i,i-1] = -F
-            A[i,i+1] = -F
-            A[i,i] = 1 + 2*F
-        A[0,0] = A[Nx,Nx] = 1
-        
-        # Set initial condition u(x,0) = I(x)
-        for i in range(0, Nx+1):
-            u_1[i] = I(x[i])
-        
-        import scipy.linalg
-        
-        for n in range(0, Nt):
-            # Compute b and solve linear system
-            for i in range(1, Nx):
-                b[i] = -u_1[i]
-            b[0] = b[Nx] = 0
-            u[:] = scipy.linalg.solve(A, b)
-        
-            # Update u_1 before next step
-            u_1[:] = u
+            b[i] = -u_n[i]
+        b[0] = b[Nx] = 0
+        u[:] = scipy.linalg.solve(A, b)
+    
+        # Update u_n before next step
+        u_n[:] = u
 
-Regarding verification, the same considerations apply as for the 
+Regarding verification, the same considerations apply as for the
 Forward Euler method (the section :ref:`diffu:pde1:FE:verify`).
 
 .. index::
@@ -1268,35 +1267,35 @@ can store only the main diagonal and the upper and lower diagonals.
 
 .. code-block:: python
 
-        # Representation of sparse matrix and right-hand side
-        main  = np.zeros(Nx+1)
-        lower = np.zeros(Nx)
-        upper = np.zeros(Nx)
-        b     = np.zeros(Nx+1)
-        
-        # Precompute sparse matrix
-        main[:] = 1 + 2*F
-        lower[:] = -F
-        upper[:] = -F
-        # Insert boundary conditions
-        main[0] = 1
-        main[Nx] = 1
-        
-        A = scipy.sparse.diags(
-            diagonals=[main, lower, upper],
-            offsets=[0, -1, 1], shape=(Nx+1, Nx+1),
-            format='csr')
-        print A.todense()  # Check that A is correct
-        
-        # Set initial condition
-        for i in range(0,Nx+1):
-            u_1[i] = I(x[i])
-        
-        for n in range(0, Nt):
-            b = u_1
-            b[0] = b[-1] = 0.0  # boundary conditions
-            u[:] = scipy.sparse.linalg.spsolve(A, b)
-            u_1[:] = u
+    # Representation of sparse matrix and right-hand side
+    main  = np.zeros(Nx+1)
+    lower = np.zeros(Nx)
+    upper = np.zeros(Nx)
+    b     = np.zeros(Nx+1)
+    
+    # Precompute sparse matrix
+    main[:] = 1 + 2*F
+    lower[:] = -F
+    upper[:] = -F
+    # Insert boundary conditions
+    main[0] = 1
+    main[Nx] = 1
+    
+    A = scipy.sparse.diags(
+        diagonals=[main, lower, upper],
+        offsets=[0, -1, 1], shape=(Nx+1, Nx+1),
+        format='csr')
+    print A.todense()  # Check that A is correct
+    
+    # Set initial condition
+    for i in range(0,Nx+1):
+        u_n[i] = I(x[i])
+    
+    for n in range(0, Nt):
+        b = u_n
+        b[0] = b[-1] = 0.0  # boundary conditions
+        u[:] = scipy.sparse.linalg.spsolve(A, b)
+        u_n[:] = u
 
 The ``scipy.sparse.linalg.spsolve`` function utilizes the sparse storage
 structure of ``A`` and performs in this case a very efficient Gaussian
@@ -1481,14 +1480,14 @@ The right-hand side :math:`b` has entries
     b_{N_x} = 0 {\thinspace .}   
         
 
-When verifying some implementation of the Crank-Nicolson scheme by convergence rate testing, 
+When verifying some implementation of the Crank-Nicolson scheme by convergence rate testing,
 one should note that the scheme is second order accurate in both space and time. The numerical
 error then reads
 
 .. math::
          E = C_t\Delta t^r + C_x\Delta x^r,
 
-where :math:`r=2` (:math:`C_t` and :math:`C_x` are unknown constants, as before). 
+where :math:`r=2` (:math:`C_t` and :math:`C_x` are unknown constants, as before).
 When introducing a single discretization parameter, we may now simply choose
 
 .. math::
@@ -1566,8 +1565,8 @@ Euler and Crank-Nicolson schemes listed earlier.
 Note that convergence rate testing with implementations of the theta rule must
 adjust the error expression according to which of the underlying schemes is actually being run.
 That is, if :math:`\theta=0` (i.e., Forward Euler) or :math:`\theta=1` (i.e., Backward Euler), there should
-be first order convergence, whereas with :math:`\theta=0.5` (i.e., Crank-Nicolson), one should get 
-second order convergence (as outlined in previous sections). 
+be first order convergence, whereas with :math:`\theta=0.5` (i.e., Crank-Nicolson), one should get
+second order convergence (as outlined in previous sections).
 
 .. _diffu:pde1:theta:experiments:
 
@@ -2011,6 +2010,20 @@ make Taylor expansions of :math:`A/{A_{\small\mbox{e}}}` to see the error more a
 
 .. amplification factor.
 
+Truncation error          (1)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As an alternative to examining the accuracy of the damping of a wave
+component, we can perform a general truncation error analysis as
+explained in "Truncation error analysis": ""
+[Ref2]_. Such results are more general, but
+less detailed than what we get from the wave component analysis.  The
+truncation error can almost always be computed and represents the
+error in the numerical model when the exact solution is substituted
+into the equations. In particular, the truncation error analysis tells
+the order of the scheme, which is of fundamental importance when
+verifying codes based on empirical estimation of convergence rates.
+
 .. _diffu:pde1:analysis:FE:
 
 Analysis of the Forward Euler scheme
@@ -2143,16 +2156,16 @@ can easily be done with aid of ``sympy``:
 
 .. code-block:: python
 
-        def A_exact(F, p):
-            return exp(-4*F*p**2)
-        
-        def A_FE(F, p):
-            return 1 - 4*F*sin(p)**2
-        
-        from sympy import *
-        F, p = symbols('F p')
-        A_err_FE = A_FE(F, p)/A_exact(F, p)
-        print A_err_FE.series(F, 0, 6)
+    def A_exact(F, p):
+        return exp(-4*F*p**2)
+    
+    def A_FE(F, p):
+        return 1 - 4*F*sin(p)**2
+    
+    from sympy import *
+    F, p = symbols('F p')
+    A_err_FE = A_FE(F, p)/A_exact(F, p)
+    print A_err_FE.series(F, 0, 6)
 
 The result is
 
@@ -2170,6 +2183,30 @@ realize that the dominating terms in :math:`A/{A_{\small\mbox{e}}}` are at most
         + {\alpha}^2 \Delta t^2\Delta x^2 + \cdots
         {\thinspace .}
         
+
+Truncation error          (2)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We follow the theory explained in
+"Truncation error analysis": ""
+[Ref2]_. The recipe is to set up the
+scheme in operator notation and use formulas from
+"Overview of leading-order error terms in finite difference formulas": ""
+[Ref2]_ to derive an expression for
+the residual. The details are documented in
+"Linear diffusion equation in 1D": ""
+[Ref2]_. We end up with a truncation error
+
+.. math::
+         R^n_i = {\mathcal{O}(\Delta t)} + {\mathcal{O}(\Delta x^2)}{\thinspace .}
+
+Although this is not the true error :math:`{u_{\small\mbox{e}}}(x_i,t_n) - u^n_i`, it indicates
+that the true error is of the form
+
+.. math::
+         E = C_t\Delta t + C_x\Delta x^2
+
+for two unknown constants :math:`C_t` and :math:`C_x`.
 
 .. _diffu:pde1:analysis:BE:
 
@@ -2226,6 +2263,15 @@ Stability          (3)
 We see from :ref:`(59) <Eq:diffu:pde1:analysis:BE:A>` that :math:`0<A<1`, which means
 that all numerical wave components are stable and non-oscillatory
 for any :math:`\Delta t >0`.
+
+Truncation error          (3)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The derivation of the truncation error for the Backward Euler scheme is almost
+identical to that for the Forward Euler scheme. We end up with
+
+.. math::
+         R^n_i = {\mathcal{O}(\Delta t)} + {\mathcal{O}(\Delta x^2)}{\thinspace .}
 
 .. _diffu:pde1:analysis:CN:
 
@@ -2294,6 +2340,60 @@ The criteria :math:`A>-1` and :math:`A<1` are fulfilled for any :math:`\Delta t 
 Therefore, the solution cannot grow, but it will oscillate if
 :math:`1-2F\sin^p < 0`. To avoid such non-physical oscillations, we must demand
 :math:`F\leq\frac{1}{2}`.
+
+Truncation error          (4)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The truncation error is derived in
+"Linear diffusion equation in 1D": ""
+[Ref2]_:
+
+.. math::
+         R^{n+\frac{1}{2}}_i = {\mathcal{O}(\Delta x^2)} + {\mathcal{O}(\Delta t^2)}{\thinspace .}
+
+.. _diffu:pde1:analysis:leapfrog:
+
+Analysis of the Leapfrog scheme
+-------------------------------
+
+An attractive feature of the Forward Euler scheme is the explicit
+time stepping and no need for solving linear systems. However, the
+accuracy in time is only :math:`{\mathcal{O}(\Delta t)}`. We can get an explicit
+*second-order* scheme in time by using the Leapfrog method:
+
+.. math::
+         [D_{2t} u = {\alpha} D_xDx u + f]^n_i{\thinspace .}
+
+Written out,
+
+.. math::
+         u^{n+1} = u^{n-1} + \frac{2{\alpha}\Delta t}{\Delta x^2}
+        (u^{n}_{i+1} - 2u^n_i + u^n_{i-1}) + f(x_i,t_n){\thinspace .}
+
+We need some formula for the first step, :math:`u^1_i`, but for that we can use
+a Forward Euler step.
+
+Unfortunately, the Leapfrog scheme is always unstable for the
+diffusion equation. To see this, we insert a wave component :math:`A^ne^{ikx}`
+and get
+
+.. math::
+         \frac{A - A^{-1}}{\Delta t} = -{\alpha} \frac{4}{\Delta x^2}\sin^2 p,
+
+or
+
+.. math::
+         A^2 + 4F \sin^2 p\, A - 1 = 0,
+
+which has roots
+
+.. math::
+         A = -2F\sin^2 p \pm \sqrt{4F^2\sin^4 p + 1}{\thinspace .}
+
+Both roots have :math:`|A|>1` so the always amplitude grows, which is not in
+accordance with physics of the problem.
+However, for a PDE with a first-order derivative in space, instead of
+a second-order one, the Leapfrog scheme performs very well.
 
 Summary of accuracy of amplification factors
 --------------------------------------------
@@ -2931,65 +3031,65 @@ Since the Fourier number has no meaning for varying
 
 .. code-block:: python
 
-        def solver_theta(I, a, L, Nx, D, T, theta=0.5, u_L=1, u_R=0,
-                         user_action=None):
-            x = linspace(0, L, Nx+1)   # mesh points in space
-            dx = x[1] - x[0]
-            dt = D*dx**2
-            Nt = int(round(T/float(dt)))
-            t = linspace(0, T, Nt+1)   # mesh points in time
-        
-            u   = zeros(Nx+1)   # solution array at t[n+1]
-            u_1 = zeros(Nx+1)   # solution at t[n]
-        
-            Dl = 0.5*D*theta
-            Dr = 0.5*D*(1-theta)
-        
-            # Representation of sparse matrix and right-hand side
-            diagonal = zeros(Nx+1)
-            lower    = zeros(Nx)
-            upper    = zeros(Nx)
-            b        = zeros(Nx+1)
-        
-            # Precompute sparse matrix (scipy format)
-            diagonal[1:-1] = 1 + Dl*(a[2:] + 2*a[1:-1] + a[:-2])
-            lower[:-1] = -Dl*(a[1:-1] + a[:-2])
-            upper[1:]  = -Dl*(a[2:] + a[1:-1])
-            # Insert boundary conditions
-            diagonal[0] = 1
-            upper[0] = 0
-            diagonal[Nx] = 1
-            lower[-1] = 0
-        
-            A = scipy.sparse.diags(
-                diagonals=[diagonal, lower, upper],
-                offsets=[0, -1, 1],
-                shape=(Nx+1, Nx+1),
-                format='csr')
-        
-            # Set initial condition
-            for i in range(0,Nx+1):
-                u_1[i] = I(x[i])
-        
+    def solver_theta(I, a, L, Nx, D, T, theta=0.5, u_L=1, u_R=0,
+                     user_action=None):
+        x = linspace(0, L, Nx+1)   # mesh points in space
+        dx = x[1] - x[0]
+        dt = D*dx**2
+        Nt = int(round(T/float(dt)))
+        t = linspace(0, T, Nt+1)   # mesh points in time
+    
+        u   = zeros(Nx+1)   # solution array at t[n+1]
+        u_n = zeros(Nx+1)   # solution at t[n]
+    
+        Dl = 0.5*D*theta
+        Dr = 0.5*D*(1-theta)
+    
+        # Representation of sparse matrix and right-hand side
+        diagonal = zeros(Nx+1)
+        lower    = zeros(Nx)
+        upper    = zeros(Nx)
+        b        = zeros(Nx+1)
+    
+        # Precompute sparse matrix (scipy format)
+        diagonal[1:-1] = 1 + Dl*(a[2:] + 2*a[1:-1] + a[:-2])
+        lower[:-1] = -Dl*(a[1:-1] + a[:-2])
+        upper[1:]  = -Dl*(a[2:] + a[1:-1])
+        # Insert boundary conditions
+        diagonal[0] = 1
+        upper[0] = 0
+        diagonal[Nx] = 1
+        lower[-1] = 0
+    
+        A = scipy.sparse.diags(
+            diagonals=[diagonal, lower, upper],
+            offsets=[0, -1, 1],
+            shape=(Nx+1, Nx+1),
+            format='csr')
+    
+        # Set initial condition
+        for i in range(0,Nx+1):
+            u_n[i] = I(x[i])
+    
+        if user_action is not None:
+            user_action(u_n, x, t, 0)
+    
+        # Time loop
+        for n in range(0, Nt):
+            b[1:-1] = u_n[1:-1] + Dr*(
+                (a[2:] + a[1:-1])*(u_n[2:] - u_n[1:-1]) -
+                (a[1:-1] + a[0:-2])*(u_n[1:-1] - u_n[:-2]))
+            # Boundary conditions
+            b[0]  = u_L(t[n+1])
+            b[-1] = u_R(t[n+1])
+            # Solve
+            u[:] = scipy.sparse.linalg.spsolve(A, b)
+    
             if user_action is not None:
-                user_action(u_1, x, t, 0)
-        
-            # Time loop
-            for n in range(0, Nt):
-                b[1:-1] = u_1[1:-1] + Dr*(
-                    (a[2:] + a[1:-1])*(u_1[2:] - u_1[1:-1]) -
-                    (a[1:-1] + a[0:-2])*(u_1[1:-1] - u_1[:-2]))
-                # Boundary conditions
-                b[0]  = u_L(t[n+1])
-                b[-1] = u_R(t[n+1])
-                # Solve
-                u[:] = scipy.sparse.linalg.spsolve(A, b)
-        
-                if user_action is not None:
-                    user_action(u, x, t, n+1)
-        
-                # Switch variables before next step
-                u_1, u = u, u_1
+                user_action(u, x, t, n+1)
+    
+            # Switch variables before next step
+            u_n, u = u, u_n
 
 The code is found in the file `diffu1D_vc.py <http://tinyurl.com/nm5587k/diffu/diffu1D_vc.py>`__.
 
@@ -3122,37 +3222,37 @@ form
 
 .. code-block:: python
 
-        class SerialLayers:
-            """
-            b: coordinates of boundaries of layers, b[0] is left boundary
-            and b[-1] is right boundary of the domain [0,L].
-            a: values of the functions in each layer (len(a) = len(b)-1).
-            U_0: u(x) value at left boundary x=0=b[0].
-            U_L: u(x) value at right boundary x=L=b[0].
-            """
-        
-            def __init__(self, a, b, U_0, U_L, eps=0):
-                self.a, self.b = np.asarray(a), np.asarray(b)
-                self.eps = eps  # smoothing parameter for smoothed a
-                self.U_0, self.U_L = U_0, U_L
-        
-                a_data = [[bi, ai] for bi, ai in zip(self.b, self.a)]
-                domain = [b[0], b[-1]]
-                self.a_func = PiecewiseConstant(domain, a_data, eps)
-        
-                # inv_a = 1/a is needed in formulas
-                inv_a_data = [[bi, 1./ai] for bi, ai in zip(self.b, self.a)]
-                self.inv_a_func = \ 
-                     PiecewiseConstant(domain, inv_a_data, eps)
-                self.integral_of_inv_a_func = \ 
-                     IntegratedPiecewiseConstant(domain, inv_a_data, eps)
-                # Denominator in the exact formula is constant
-                self.inv_a_0L = self.integral_of_inv_a_func(b[-1])
-        
-            def __call__(self, x):
-                solution = self.U_0 + (self.U_L-self.U_0)*\ 
-                           self.integral_of_inv_a_func(x)/self.inv_a_0L
-                return solution
+    class SerialLayers:
+        """
+        b: coordinates of boundaries of layers, b[0] is left boundary
+        and b[-1] is right boundary of the domain [0,L].
+        a: values of the functions in each layer (len(a) = len(b)-1).
+        U_0: u(x) value at left boundary x=0=b[0].
+        U_L: u(x) value at right boundary x=L=b[0].
+        """
+    
+        def __init__(self, a, b, U_0, U_L, eps=0):
+            self.a, self.b = np.asarray(a), np.asarray(b)
+            self.eps = eps  # smoothing parameter for smoothed a
+            self.U_0, self.U_L = U_0, U_L
+    
+            a_data = [[bi, ai] for bi, ai in zip(self.b, self.a)]
+            domain = [b[0], b[-1]]
+            self.a_func = PiecewiseConstant(domain, a_data, eps)
+    
+            # inv_a = 1/a is needed in formulas
+            inv_a_data = [[bi, 1./ai] for bi, ai in zip(self.b, self.a)]
+            self.inv_a_func = \ 
+                 PiecewiseConstant(domain, inv_a_data, eps)
+            self.integral_of_inv_a_func = \ 
+                 IntegratedPiecewiseConstant(domain, inv_a_data, eps)
+            # Denominator in the exact formula is constant
+            self.inv_a_0L = self.integral_of_inv_a_func(b[-1])
+    
+        def __call__(self, x):
+            solution = self.U_0 + (self.U_L-self.U_0)*\ 
+                       self.integral_of_inv_a_func(x)/self.inv_a_0L
+            return solution
 
 A visualization method is also convenient to have. Below we plot :math:`u(x)`
 along with :math:`\alpha (x)` (which works well as long as :math:`\max \alpha(x)`
@@ -3160,35 +3260,35 @@ is of the same size as :math:`\max u = \max(U_0,U_L)`).
 
 .. code-block:: python
 
-        class SerialLayers:
-            ...
-        
-            def plot(self):
-                x, y_a = self.a_func.plot()
-                x = np.asarray(x); y_a = np.asarray(y_a)
-                y_u = self.u_exact(x)
-                import matplotlib.pyplot as plt
-                plt.figure()
-                plt.plot(x, y_u, 'b')
-                plt.hold('on')  # Matlab style
-                plt.plot(x, y_a, 'r')
-                ymin = -0.1
-                ymax = 1.2*max(y_u.max(), y_a.max())
-                plt.axis([x[0], x[-1], ymin, ymax])
-                plt.legend(['solution $u$', 'coefficient $a$'], loc='upper left')
-                if self.eps > 0:
-                    plt.title('Smoothing eps: %s' % self.eps)
-                plt.savefig('tmp.pdf')
-                plt.savefig('tmp.png')
-                plt.show()
+    class SerialLayers:
+        ...
+    
+        def plot(self):
+            x, y_a = self.a_func.plot()
+            x = np.asarray(x); y_a = np.asarray(y_a)
+            y_u = self.u_exact(x)
+            import matplotlib.pyplot as plt
+            plt.figure()
+            plt.plot(x, y_u, 'b')
+            plt.hold('on')  # Matlab style
+            plt.plot(x, y_a, 'r')
+            ymin = -0.1
+            ymax = 1.2*max(y_u.max(), y_a.max())
+            plt.axis([x[0], x[-1], ymin, ymax])
+            plt.legend(['solution $u$', 'coefficient $a$'], loc='upper left')
+            if self.eps > 0:
+                plt.title('Smoothing eps: %s' % self.eps)
+            plt.savefig('tmp.pdf')
+            plt.savefig('tmp.png')
+            plt.show()
 
 Figure :ref:`diffu:fd2:pde:st:sol:pc:fig1` shows the case where
 
 .. code-block:: python
 
-        b = [0, 0.25, 0.5, 1]   # material boundaries
-        a = [0.2, 0.4, 4]       # material values
-        U_0 = 0.5;  U_L = 5     # boundary conditions
+    b = [0, 0.25, 0.5, 1]   # material boundaries
+    a = [0.2, 0.4, 4]       # material values
+    U_0 = 0.5;  U_L = 5     # boundary conditions
 
 .. _diffu:fd2:pde:st:sol:pc:fig1:
 
@@ -4051,90 +4151,90 @@ to understand than the sparse matrix case.
 
 .. code-block:: python
 
-        import numpy as np
-        
-        def solver_dense(
-            I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5, user_action=None):
-            """
-            Solve u_t = a*(u_xx + u_yy) + f, u(x,y,0)=I(x,y), with u=0
-            on the boundary, on [0,Lx]x[0,Ly]x[0,T], with time step dt,
-            using the theta-scheme.
-            """
-            x = np.linspace(0, Lx, Nx+1)       # mesh points in x dir
-            y = np.linspace(0, Ly, Ny+1)       # mesh points in y dir
-            dx = x[1] - x[0]
-            dy = y[1] - y[0]
-        
-            dt = float(dt)                    # avoid integer division
-            Nt = int(round(T/float(dt)))
-            t = np.linspace(0, Nt*dt, Nt+1)   # mesh points in time
-        
-            # Mesh Fourier numbers in each direction
-            Fx = a*dt/dx**2
-            Fy = a*dt/dy**2
+    import numpy as np
+    
+    def solver_dense(
+        I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5, user_action=None):
+        """
+        Solve u_t = a*(u_xx + u_yy) + f, u(x,y,0)=I(x,y), with u=0
+        on the boundary, on [0,Lx]x[0,Ly]x[0,T], with time step dt,
+        using the theta-scheme.
+        """
+        x = np.linspace(0, Lx, Nx+1)       # mesh points in x dir
+        y = np.linspace(0, Ly, Ny+1)       # mesh points in y dir
+        dx = x[1] - x[0]
+        dy = y[1] - y[0]
+    
+        dt = float(dt)                    # avoid integer division
+        Nt = int(round(T/float(dt)))
+        t = np.linspace(0, Nt*dt, Nt+1)   # mesh points in time
+    
+        # Mesh Fourier numbers in each direction
+        Fx = a*dt/dx**2
+        Fy = a*dt/dy**2
 
 The :math:`u^{n+1}_{i,j}` and :math:`u^n_{i,j}` mesh functions are represented
 by their spatial values at the mesh points:
 
 .. code-block:: python
 
-        u   = np.zeros((Nx+1, Ny+1))      # unknown u at new time level
-        u_1 = np.zeros((Nx+1, Ny+1))      # u at the previous time level
+    u   = np.zeros((Nx+1, Ny+1))      # unknown u at new time level
+    u_n = np.zeros((Nx+1, Ny+1))      # u at the previous time level
 
 It is a good habit (for extensions) to
 introduce index sets for all mesh points:
 
 .. code-block:: python
 
-        Ix = range(0, Nx+1)
-        Iy = range(0, Ny+1)
-        It = range(0, Nt+1)
+    Ix = range(0, Nx+1)
+    Iy = range(0, Ny+1)
+    It = range(0, Nt+1)
 
 The initial condition is easy to fill in:
 
 .. code-block:: python
 
-        # Load initial condition into u_1
-        for i in Ix:
-            for j in Iy:
-                u_1[i,j] = I(x[i], y[j])
+    # Load initial condition into u_n
+    for i in Ix:
+        for j in Iy:
+            u_n[i,j] = I(x[i], y[j])
 
 The memory for the coefficient matrix and right-hand side vector
 is allocated by
 
 .. code-block:: python
 
-        N = (Nx+1)*(Ny+1)  # no of unknowns
-        A = np.zeros((N, N))
-        b = np.zeros(N)
+    N = (Nx+1)*(Ny+1)  # no of unknowns
+    A = np.zeros((N, N))
+    b = np.zeros(N)
 
 The filling of ``A`` goes like this:
 
 .. code-block:: python
 
-        m = lambda i, j: j*(Nx+1) + i
-        
-        # Equations corresponding to j=0, i=0,1,... (u known)
-        j = 0
-        for i in Ix:
-            p = m(i,j);  A[p, p] = 1
-        
-        # Loop over all internal mesh points in y diretion
-        # and all mesh points in x direction
-        for j in Iy[1:-1]:
-            i = 0;  p = m(i,j);  A[p, p] = 1   # Boundary
-            for i in Ix[1:-1]:                 # Interior points
-                p = m(i,j)
-                A[p, m(i,j-1)] = - theta*Fy
-                A[p, m(i-1,j)] = - theta*Fx
-                A[p, p]        = 1 + 2*theta*(Fx+Fy)
-                A[p, m(i+1,j)] = - theta*Fx
-                A[p, m(i,j+1)] = - theta*Fy
-            i = Nx;  p = m(i,j);  A[p, p] = 1  # Boundary
-        # Equations corresponding to j=Ny, i=0,1,... (u known)
-        j = Ny
-        for i in Ix:
-            p = m(i,j);  A[p, p] = 1
+    m = lambda i, j: j*(Nx+1) + i
+    
+    # Equations corresponding to j=0, i=0,1,... (u known)
+    j = 0
+    for i in Ix:
+        p = m(i,j);  A[p, p] = 1
+    
+    # Loop over all internal mesh points in y diretion
+    # and all mesh points in x direction
+    for j in Iy[1:-1]:
+        i = 0;  p = m(i,j);  A[p, p] = 1   # Boundary
+        for i in Ix[1:-1]:                 # Interior points
+            p = m(i,j)
+            A[p, m(i,j-1)] = - theta*Fy
+            A[p, m(i-1,j)] = - theta*Fx
+            A[p, p]        = 1 + 2*theta*(Fx+Fy)
+            A[p, m(i+1,j)] = - theta*Fx
+            A[p, m(i,j+1)] = - theta*Fy
+        i = Nx;  p = m(i,j);  A[p, p] = 1  # Boundary
+    # Equations corresponding to j=Ny, i=0,1,... (u known)
+    j = Ny
+    for i in Ix:
+        p = m(i,j);  A[p, p] = 1
 
 Since ``A`` is independent of time, it can be filled once and for all before
 the time loop. The right-hand side vector must be filled at each
@@ -4142,38 +4242,38 @@ time level inside the time loop:
 
 .. code-block:: python
 
-        import scipy.linalg
-        
-        for n in It[0:-1]:
-            # Compute b
-            j = 0
-            for i in Ix:
-                p = m(i,j);  b[p] = 0           # Boundary
-            for j in Iy[1:-1]:
-                i = 0;  p = m(i,j);  b[p] = 0   # Boundary
-                for i in Ix[1:-1]:              # Interior points
-                    p = m(i,j)
-                    b[p] = u_1[i,j] + \ 
-                      (1-theta)*(
-                      Fx*(u_1[i+1,j] - 2*u_1[i,j] + u_1[i-1,j]) +\ 
-                      Fy*(u_1[i,j+1] - 2*u_1[i,j] + u_1[i,j-1]))\ 
-                        + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \ 
-                      (1-theta)*dt*f(i*dx,j*dy,n*dt)
-                i = Nx;  p = m(i,j);  b[p] = 0  # Boundary
-            j = Ny
-            for i in Ix:
-                p = m(i,j);  b[p] = 0           # Boundary
-        
-            # Solve matrix system A*c = b
-            c = scipy.linalg.solve(A, b)
-        
-            # Fill u with vector c
-            for i in Ix:
-                for j in Iy:
-                    u[i,j] = c[m(i,j)]
-        
-            # Update u_1 before next step
-            u_1, u = u, u_1
+    import scipy.linalg
+    
+    for n in It[0:-1]:
+        # Compute b
+        j = 0
+        for i in Ix:
+            p = m(i,j);  b[p] = 0           # Boundary
+        for j in Iy[1:-1]:
+            i = 0;  p = m(i,j);  b[p] = 0   # Boundary
+            for i in Ix[1:-1]:              # Interior points
+                p = m(i,j)
+                b[p] = u_n[i,j] + \ 
+                  (1-theta)*(
+                  Fx*(u_n[i+1,j] - 2*u_n[i,j] + u_n[i-1,j]) +\ 
+                  Fy*(u_n[i,j+1] - 2*u_n[i,j] + u_n[i,j-1]))\ 
+                    + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \ 
+                  (1-theta)*dt*f(i*dx,j*dy,n*dt)
+            i = Nx;  p = m(i,j);  b[p] = 0  # Boundary
+        j = Ny
+        for i in Ix:
+            p = m(i,j);  b[p] = 0           # Boundary
+    
+        # Solve matrix system A*c = b
+        c = scipy.linalg.solve(A, b)
+    
+        # Fill u with vector c
+        for i in Ix:
+            for j in Iy:
+                u[i,j] = c[m(i,j)]
+    
+        # Update u_n before next step
+        u_n, u = u, u_n
 
 We use ``solve`` from ``scipy.linalg`` and not from ``numpy.linalg``. The difference
 is stated below.
@@ -4223,7 +4323,7 @@ The function has the signature
 
 .. code-block:: python
 
-        user_action(u, x, xv, y, yv, t, n)
+    user_action(u, x, xv, y, yv, t, n)
 
 where ``u`` is a two-dimensional array holding the solution at time level ``n``
 and time ``t[n]``. The :math:`x` and :math:`y` coordinates of the mesh points are given by
@@ -4234,15 +4334,15 @@ defined by
 
 .. code-block:: python
 
-        xv = x[:,np.newaxis]
-        yv = y[np.newaxis,:]
+    xv = x[:,np.newaxis]
+    yv = y[np.newaxis,:]
 
 One can then evaluate, e.g., :math:`f(x,y,t)` at all internal mesh points at time
 level ``n`` by first evaluating :math:`f` at all points,
 
 .. code-block:: python
 
-        f_a = f(xv, yv, t[n])
+    f_a = f(xv, yv, t[n])
 
 and then use slices to extract a view of the values at the internal
 mesh points: ``f_a[1:-1,1:-1]``.
@@ -4280,48 +4380,48 @@ for checking the solution goes like this:
 
 .. code-block:: text
 
-        def quadratic(theta, Nx, Ny):
-        
-            def u_exact(x, y, t):
-                return 5*t*x*(Lx-x)*y*(Ly-y)
-            def I(x, y):
-                return u_exact(x, y, 0)
-            def f(x, y, t):
-                return 5*x*(Lx-x)*y*(Ly-y) + 10*a*t*(y*(Ly-y)+x*(Lx-x))
-        
-            # Use rectangle to detect errors in switching i and j in scheme
-            Lx = 0.75
-            Ly = 1.5
-            a = 3.5
-            dt = 0.5
-            T = 2
-        
-            def assert_no_error(u, x, xv, y, yv, t, n):
-                """Assert zero error at all mesh points."""
-                u_e = u_exact(xv, yv, t[n])
-                diff = abs(u - u_e).max()
-                tol = 1E-12
-                msg = 'diff=%g, step %d, time=%g' % (diff, n, t[n])
-                print msg
-                assert diff < tol, msg
-        
-            solver_dense(
-                I, a, f, Lx, Ly, Nx, Ny,
-                dt, T, theta, user_action=assert_no_error)
+    def quadratic(theta, Nx, Ny):
+    
+        def u_exact(x, y, t):
+            return 5*t*x*(Lx-x)*y*(Ly-y)
+        def I(x, y):
+            return u_exact(x, y, 0)
+        def f(x, y, t):
+            return 5*x*(Lx-x)*y*(Ly-y) + 10*a*t*(y*(Ly-y)+x*(Lx-x))
+    
+        # Use rectangle to detect errors in switching i and j in scheme
+        Lx = 0.75
+        Ly = 1.5
+        a = 3.5
+        dt = 0.5
+        T = 2
+    
+        def assert_no_error(u, x, xv, y, yv, t, n):
+            """Assert zero error at all mesh points."""
+            u_e = u_exact(xv, yv, t[n])
+            diff = abs(u - u_e).max()
+            tol = 1E-12
+            msg = 'diff=%g, step %d, time=%g' % (diff, n, t[n])
+            print msg
+            assert diff < tol, msg
+    
+        solver_dense(
+            I, a, f, Lx, Ly, Nx, Ny,
+            dt, T, theta, user_action=assert_no_error)
 
 A true test function for checking the quadratic solution for several
 different meshes and :math:`\theta` values can take the form
 
 .. code-block:: python
 
-        def test_quadratic():
-            # For each of the three schemes (theta = 1, 0.5, 0), a series of
-            # meshes are tested (Nx > Ny and Nx < Ny)
-            for theta in [1, 0.5, 0]:
-                for Nx in range(2, 6, 2):
-                    for Ny in range(2, 6, 2):
-                        print 'testing for %dx%d mesh' % (Nx, Ny)
-                        quadratic(theta, Nx, Ny)
+    def test_quadratic():
+        # For each of the three schemes (theta = 1, 0.5, 0), a series of
+        # meshes are tested (Nx > Ny and Nx < Ny)
+        for theta in [1, 0.5, 0]:
+            for Nx in range(2, 6, 2):
+                for Ny in range(2, 6, 2):
+                    print 'testing for %dx%d mesh' % (Nx, Ny)
+                    quadratic(theta, Nx, Ny)
 
 .. _diffu:2D:convrate:
 
@@ -4461,12 +4561,12 @@ Based on this information, we declare the diagonals by
 
 .. code-block:: python
 
-        main   = np.zeros(N)            # diagonal
-        lower  = np.zeros(N-1)          # subdiagonal
-        upper  = np.zeros(N-1)          # superdiagonal
-        lower2 = np.zeros(N-(Nx+1))     # lower diagonal
-        upper2 = np.zeros(N-(Nx+1))     # upper diagonal
-        b      = np.zeros(N)            # right-hand side
+    main   = np.zeros(N)            # diagonal
+    lower  = np.zeros(N-1)          # subdiagonal
+    upper  = np.zeros(N-1)          # superdiagonal
+    lower2 = np.zeros(N-(Nx+1))     # lower diagonal
+    upper2 = np.zeros(N-(Nx+1))     # upper diagonal
+    b      = np.zeros(N)            # right-hand side
 
 Filling the diagonals
 ~~~~~~~~~~~~~~~~~~~~~
@@ -4477,8 +4577,8 @@ on the boundary, and only the main diagonal gets a contribution:
 
 .. code-block:: python
 
-        m = lambda i, j: j*(Nx+1) + i
-        j = 0; main[m(0,j):m(Nx+1,j)] = 1  # j=0 boundary line
+    m = lambda i, j: j*(Nx+1) + i
+    j = 0; main[m(0,j):m(Nx+1,j)] = 1  # j=0 boundary line
 
 Then we run through all interior :math:`j=\hbox{const}` lines of mesh points.
 The first and the last point on each line, :math:`i=0` and :math:`i=N_x`, correspond
@@ -4486,9 +4586,9 @@ to boundary points:
 
 .. code-block:: python
 
-        for j in Iy[1:-1]:             # Interior mesh lines j=1,...,Ny-1
-            i = 0;   main[m(i,j)] = 1
-            i = Nx;  main[m(i,j)] = 1  # Boundary
+    for j in Iy[1:-1]:             # Interior mesh lines j=1,...,Ny-1
+        i = 0;   main[m(i,j)] = 1
+        i = Nx;  main[m(i,j)] = 1  # Boundary
 
 For the interior mesh points :math:`i=1,\ldots,N_x-1` on a mesh line :math:`y=\hbox{const}`
 we can start with the main diagonal. The entries to be filled go from
@@ -4497,7 +4597,7 @@ we can start with the main diagonal. The entries to be filled go from
 
 .. code-block:: python
 
-        main[m(1,j):m(Nx,j)] = 1 + 2*theta*(Fx+Fy)
+    main[m(1,j):m(Nx,j)] = 1 + 2*theta*(Fx+Fy)
 
 The ``upper`` array for the superdiagonal has its index 0 corresponding to
 row 0 in the matrix, and the array entries
@@ -4505,7 +4605,7 @@ to be set go from :math:`m(1,j)` to :math:`m(N_x-1,j)`:
 
 .. code-block:: python
 
-        upper[m(1,j):m(Nx,j)] = - theta*Fx
+    upper[m(1,j):m(Nx,j)] = - theta*Fx
 
 The subdiagonal (``lower`` array), however, has its index 0
 corresponding to row 1, so there is an offset of 1 in indices compared to
@@ -4515,56 +4615,56 @@ we set the following slice in ``lower``:
 
 .. code-block:: python
 
-        lower_offset = 1
-        lower[m(1,j)-lower_offset:m(Nx,j)-lower_offset] = - theta*Fx
+    lower_offset = 1
+    lower[m(1,j)-lower_offset:m(Nx,j)-lower_offset] = - theta*Fx
 
 For the upper diagonal, its index 0 corresponds to matrix row 0, so there
 is no offset and we can set the entries correspondingly to ``upper``:
 
 .. code-block:: python
 
-        upper2[m(1,j):m(Nx,j)] = - theta*Fy
+    upper2[m(1,j):m(Nx,j)] = - theta*Fy
 
 The ``lower2`` diagonal, however, has its first index 0 corresponding to row
 :math:`N_x+1`, so here we need to subtract the offset :math:`N_x+1`:
 
 .. code-block:: python
 
-        lower2_offset = Nx+1
-        lower2[m(1,j)-lower2_offset:m(Nx,j)-lower2_offset] = - theta*Fy
+    lower2_offset = Nx+1
+    lower2[m(1,j)-lower2_offset:m(Nx,j)-lower2_offset] = - theta*Fy
 
 We can now summarize the above code lines for setting the entries in
 the sparse matrix representation of the coefficient matrix:
 
 .. code-block:: python
 
-        lower_offset = 1
-        lower2_offset = Nx+1
-        m = lambda i, j: j*(Nx+1) + i
-        
-        j = 0; main[m(0,j):m(Nx+1,j)] = 1  # j=0 boundary line
-        for j in Iy[1:-1]:             # Interior mesh lines j=1,...,Ny-1
-            i = 0;   main[m(i,j)] = 1  # Boundary
-            i = Nx;  main[m(i,j)] = 1  # Boundary
-            # Interior i points: i=1,...,N_x-1
-            lower2[m(1,j)-lower2_offset:m(Nx,j)-lower2_offset] = - theta*Fy
-            lower[m(1,j)-lower_offset:m(Nx,j)-lower_offset] = - theta*Fx
-            main[m(1,j):m(Nx,j)] = 1 + 2*theta*(Fx+Fy)
-            upper[m(1,j):m(Nx,j)] = - theta*Fx
-            upper2[m(1,j):m(Nx,j)] = - theta*Fy
-        j = Ny; main[m(0,j):m(Nx+1,j)] = 1  # Boundary line
+    lower_offset = 1
+    lower2_offset = Nx+1
+    m = lambda i, j: j*(Nx+1) + i
+    
+    j = 0; main[m(0,j):m(Nx+1,j)] = 1  # j=0 boundary line
+    for j in Iy[1:-1]:             # Interior mesh lines j=1,...,Ny-1
+        i = 0;   main[m(i,j)] = 1  # Boundary
+        i = Nx;  main[m(i,j)] = 1  # Boundary
+        # Interior i points: i=1,...,N_x-1
+        lower2[m(1,j)-lower2_offset:m(Nx,j)-lower2_offset] = - theta*Fy
+        lower[m(1,j)-lower_offset:m(Nx,j)-lower_offset] = - theta*Fx
+        main[m(1,j):m(Nx,j)] = 1 + 2*theta*(Fx+Fy)
+        upper[m(1,j):m(Nx,j)] = - theta*Fx
+        upper2[m(1,j):m(Nx,j)] = - theta*Fy
+    j = Ny; main[m(0,j):m(Nx+1,j)] = 1  # Boundary line
 
 The next task is to create the sparse matrix from these diagonals:
 
 .. code-block:: python
 
-        import scipy.sparse
-        
-        A = scipy.sparse.diags(
-            diagonals=[main, lower, upper, lower2, upper2],
-            offsets=[0, -lower_offset, lower_offset,
-                     -lower2_offset, lower2_offset],
-            shape=(N, N), format='csr')
+    import scipy.sparse
+    
+    A = scipy.sparse.diags(
+        diagonals=[main, lower, upper, lower2, upper2],
+        offsets=[0, -lower_offset, lower_offset,
+                 -lower2_offset, lower2_offset],
+        shape=(N, N), format='csr')
 
 Filling the right-hand side; scalar version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -4578,38 +4678,38 @@ loop goes as follows.
 
 .. code-block:: python
 
-        import scipy.sparse.linalg
-        
-        for n in It[0:-1]:
-            # Compute b
-            j = 0
-            for i in Ix:
-                p = m(i,j);  b[p] = 0                     # Boundary
-            for j in Iy[1:-1]:
-                i = 0;  p = m(i,j);  b[p] = 0             # Boundary
-                for i in Ix[1:-1]:
-                    p = m(i,j)                            # Interior
-                    b[p] = u_1[i,j] + \ 
-                      (1-theta)*(
-                      Fx*(u_1[i+1,j] - 2*u_1[i,j] + u_1[i-1,j]) +\ 
-                      Fy*(u_1[i,j+1] - 2*u_1[i,j] + u_1[i,j-1]))\ 
-                        + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \ 
-                      (1-theta)*dt*f(i*dx,j*dy,n*dt)
-                i = Nx;  p = m(i,j);  b[p] = 0            # Boundary
-            j = Ny
-            for i in Ix:
-                p = m(i,j);  b[p] = 0                     # Boundary
-        
-            # Solve matrix system A*c = b
-            c = scipy.sparse.linalg.spsolve(A, b)
-        
-            # Fill u with vector c
-            for i in Ix:
-                for j in Iy:
-                    u[i,j] = c[m(i,j)]
-        
-            # Update u_1 before next step
-            u_1, u = u, u_1
+    import scipy.sparse.linalg
+    
+    for n in It[0:-1]:
+        # Compute b
+        j = 0
+        for i in Ix:
+            p = m(i,j);  b[p] = 0                     # Boundary
+        for j in Iy[1:-1]:
+            i = 0;  p = m(i,j);  b[p] = 0             # Boundary
+            for i in Ix[1:-1]:
+                p = m(i,j)                            # Interior
+                b[p] = u_n[i,j] + \ 
+                  (1-theta)*(
+                  Fx*(u_n[i+1,j] - 2*u_n[i,j] + u_n[i-1,j]) +\ 
+                  Fy*(u_n[i,j+1] - 2*u_n[i,j] + u_n[i,j-1]))\ 
+                    + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \ 
+                  (1-theta)*dt*f(i*dx,j*dy,n*dt)
+            i = Nx;  p = m(i,j);  b[p] = 0            # Boundary
+        j = Ny
+        for i in Ix:
+            p = m(i,j);  b[p] = 0                     # Boundary
+    
+        # Solve matrix system A*c = b
+        c = scipy.sparse.linalg.spsolve(A, b)
+    
+        # Fill u with vector c
+        for i in Ix:
+            for j in Iy:
+                u[i,j] = c[m(i,j)]
+    
+        # Update u_n before next step
+        u_n, u = u, u_n
 
 Filling the right-hand side; vectorized version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -4623,40 +4723,40 @@ loops over the ``i`` index:
 
 .. code-block:: python
 
-        for n in It[0:-1]:
-            # Compute b, vectorized version
-        
-            # Precompute f in array so we can make slices
-            f_a_np1 = f(xv, yv, t[n+1])
-            f_a_n   = f(xv, yv, t[n])
-        
-            j = 0; b[m(0,j):m(Nx+1,j)] = 0     # Boundary
-            for j in Iy[1:-1]:
-                i = 0;   p = m(i,j);  b[p] = 0 # Boundary
-                i = Nx;  p = m(i,j);  b[p] = 0 # Boundary
-                imin = Ix[1]
-                imax = Ix[-1]  # for slice, max i index is Ix[-1]-1
-                b[m(imin,j):m(imax,j)] = u_1[imin:imax,j] + \ 
-                      (1-theta)*(Fx*(
-                  u_1[imin+1:imax+1,j] -
-                2*u_1[imin:imax,j] + \ 
-                  u_1[imin-1:imax-1,j]) +
-                                 Fy*(
-                  u_1[imin:imax,j+1] -
-                2*u_1[imin:imax,j] +
-                  u_1[imin:imax,j-1])) + \ 
-                    theta*dt*f_a_np1[imin:imax,j] + \ 
-                  (1-theta)*dt*f_a_n[imin:imax,j]
-            j = Ny;  b[m(0,j):m(Nx+1,j)] = 0 # Boundary
-        
-            # Solve matrix system A*c = b
-            c = scipy.sparse.linalg.spsolve(A, b)
-        
-            # Fill u with vector c
-            u[:,:] = c.reshape(Ny+1,Nx+1).T
-        
-            # Update u_1 before next step
-            u_1, u = u, u_1
+    for n in It[0:-1]:
+        # Compute b, vectorized version
+    
+        # Precompute f in array so we can make slices
+        f_a_np1 = f(xv, yv, t[n+1])
+        f_a_n   = f(xv, yv, t[n])
+    
+        j = 0; b[m(0,j):m(Nx+1,j)] = 0     # Boundary
+        for j in Iy[1:-1]:
+            i = 0;   p = m(i,j);  b[p] = 0 # Boundary
+            i = Nx;  p = m(i,j);  b[p] = 0 # Boundary
+            imin = Ix[1]
+            imax = Ix[-1]  # for slice, max i index is Ix[-1]-1
+            b[m(imin,j):m(imax,j)] = u_n[imin:imax,j] + \ 
+                  (1-theta)*(Fx*(
+              u_n[imin+1:imax+1,j] -
+            2*u_n[imin:imax,j] + \ 
+              u_n[imin-1:imax-1,j]) +
+                             Fy*(
+              u_n[imin:imax,j+1] -
+            2*u_n[imin:imax,j] +
+              u_n[imin:imax,j-1])) + \ 
+                theta*dt*f_a_np1[imin:imax,j] + \ 
+              (1-theta)*dt*f_a_n[imin:imax,j]
+        j = Ny;  b[m(0,j):m(Nx+1,j)] = 0 # Boundary
+    
+        # Solve matrix system A*c = b
+        c = scipy.sparse.linalg.spsolve(A, b)
+    
+        # Fill u with vector c
+        u[:,:] = c.reshape(Ny+1,Nx+1).T
+    
+        # Update u_n before next step
+        u_n, u = u, u_n
 
 The most tricky part of this code snippet is the loading of values in
 the one-dimensional array ``c``
@@ -4692,11 +4792,11 @@ the section :ref:`diffu:2D:verify` to include a test of the
 
 .. code-block:: python
 
-        def quadratic(theta, Nx, Ny):
-            ...
-            t, cpu = solver_sparse(
-                I, a, f, Lx, Ly, Nx, Ny,
-                dt, T, theta, user_action=assert_no_error)
+    def quadratic(theta, Nx, Ny):
+        ...
+        t, cpu = solver_sparse(
+            I, a, f, Lx, Ly, Nx, Ny,
+            dt, T, theta, user_action=assert_no_error)
 
 The Jacobi iterative method
 ---------------------------
@@ -4979,67 +5079,67 @@ The Jacobi method needs no coefficient matrix and right-hand side
 vector, but it needs an array for :math:`u` in the previous iteration.  We
 call this array ``u_``, using the notation at the end of the previous
 section (at the same time level). The unknown itself is called ``u``,
-while ``u_1`` is the computed solution one time level back in time.
+while ``u_n`` is the computed solution one time level back in time.
 With a :math:`\theta` rule in time, the time loop can be coded like this:
 
 .. code-block:: python
 
-        for n in It[0:-1]:
-            # Solve linear system by Jacobi iteration at time level n+1
-            u_[:,:] = u_1  # Start value
-            converged = False
-            r = 0
-            while not converged:
-                if version == 'scalar':
-                    j = 0
-                    for i in Ix:
-                        u[i,j] = U_0y(t[n+1])           # Boundary
-                    for j in Iy[1:-1]:
-                        i = 0;   u[i,j] = U_0x(t[n+1])  # Boundary
-                        i = Nx;  u[i,j] = U_Lx(t[n+1])  # Boundary
-        		# Interior points
-                        for i in Ix[1:-1]:
-                            u_new = 1.0/(1.0 + 2*theta*(Fx + Fy))*(theta*(
-                                Fx*(u_[i+1,j] + u_[i-1,j]) +
-                                Fy*(u_[i,j+1] + u_[i,j-1])) + \ 
-                            u_1[i,j] + \ 
-                            (1-theta)*(Fx*(
-                            u_1[i+1,j] - 2*u_1[i,j] + u_1[i-1,j]) +
-                              Fy*(
-                            u_1[i,j+1] - 2*u_1[i,j] + u_1[i,j-1]))\ 
-                              + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \ 
-                            (1-theta)*dt*f(i*dx,j*dy,n*dt))
-                            u[i,j] = omega*u_new + (1-omega)*u_[i,j]
-                    j = Ny
-                    for i in Ix:
-                        u[i,j] = U_Ly(t[n+1])      # Boundary
-        
-                elif version == 'vectorized':
-                    j = 0;  u[:,j] = U_0y(t[n+1])  # Boundary
-                    i = 0;  u[i,:] = U_0x(t[n+1])  # Boundary
-                    i = Nx; u[i,:] = U_Lx(t[n+1])  # Boundary
-                    j = Ny; u[:,j] = U_Ly(t[n+1])  # Boundary
-        	    # Internal points
-                    f_a_np1 = f(xv, yv, t[n+1])
-                    f_a_n   = f(xv, yv, t[n])
-                    u_new = 1.0/(1.0 + 2*theta*(Fx + Fy))*(theta*(Fx*(
-                      u_[2:,1:-1] + u_[:-2,1:-1]) +
-                        Fy*(
-                      u_[1:-1,2:] + u_[1:-1,:-2])) +\ 
-                    u_1[1:-1,1:-1] + \ 
-                      (1-theta)*(Fx*(
-                      u_1[2:,1:-1] - 2*u_1[1:-1,1:-1] + u_1[:-2,1:-1]) +\ 
-                        Fy*(
-                      u_1[1:-1,2:] - 2*u_1[1:-1,1:-1] + u_1[1:-1,:-2]))\ 
-                      + theta*dt*f_a_np1[1:-1,1:-1] + \ 
-                      (1-theta)*dt*f_a_n[1:-1,1:-1])
-                    u[1:-1,1:-1] = omega*u_new + (1-omega)*u_[1:-1,1:-1]
-                r += 1
-                converged = np.abs(u-u_).max() < tol or r >= max_iter
-                u_[:,:] = u
-        
-            # Update u_1 before next step
-            u_1, u = u, u_1
+    for n in It[0:-1]:
+        # Solve linear system by Jacobi iteration at time level n+1
+        u_[:,:] = u_n  # Start value
+        converged = False
+        r = 0
+        while not converged:
+            if version == 'scalar':
+                j = 0
+                for i in Ix:
+                    u[i,j] = U_0y(t[n+1])           # Boundary
+                for j in Iy[1:-1]:
+                    i = 0;   u[i,j] = U_0x(t[n+1])  # Boundary
+                    i = Nx;  u[i,j] = U_Lx(t[n+1])  # Boundary
+    		# Interior points
+                    for i in Ix[1:-1]:
+                        u_new = 1.0/(1.0 + 2*theta*(Fx + Fy))*(theta*(
+                            Fx*(u_[i+1,j] + u_[i-1,j]) +
+                            Fy*(u_[i,j+1] + u_[i,j-1])) + \ 
+                        u_n[i,j] + \ 
+                        (1-theta)*(Fx*(
+                        u_n[i+1,j] - 2*u_n[i,j] + u_n[i-1,j]) +
+                          Fy*(
+                        u_n[i,j+1] - 2*u_n[i,j] + u_n[i,j-1]))\ 
+                          + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \ 
+                        (1-theta)*dt*f(i*dx,j*dy,n*dt))
+                        u[i,j] = omega*u_new + (1-omega)*u_[i,j]
+                j = Ny
+                for i in Ix:
+                    u[i,j] = U_Ly(t[n+1])      # Boundary
+    
+            elif version == 'vectorized':
+                j = 0;  u[:,j] = U_0y(t[n+1])  # Boundary
+                i = 0;  u[i,:] = U_0x(t[n+1])  # Boundary
+                i = Nx; u[i,:] = U_Lx(t[n+1])  # Boundary
+                j = Ny; u[:,j] = U_Ly(t[n+1])  # Boundary
+    	    # Internal points
+                f_a_np1 = f(xv, yv, t[n+1])
+                f_a_n   = f(xv, yv, t[n])
+                u_new = 1.0/(1.0 + 2*theta*(Fx + Fy))*(theta*(Fx*(
+                  u_[2:,1:-1] + u_[:-2,1:-1]) +
+                    Fy*(
+                  u_[1:-1,2:] + u_[1:-1,:-2])) +\ 
+                u_n[1:-1,1:-1] + \ 
+                  (1-theta)*(Fx*(
+                  u_n[2:,1:-1] - 2*u_n[1:-1,1:-1] + u_n[:-2,1:-1]) +\ 
+                    Fy*(
+                  u_n[1:-1,2:] - 2*u_n[1:-1,1:-1] + u_n[1:-1,:-2]))\ 
+                  + theta*dt*f_a_np1[1:-1,1:-1] + \ 
+                  (1-theta)*dt*f_a_n[1:-1,1:-1])
+                u[1:-1,1:-1] = omega*u_new + (1-omega)*u_[1:-1,1:-1]
+            r += 1
+            converged = np.abs(u-u_).max() < tol or r >= max_iter
+            u_[:,:] = u
+    
+        # Update u_n before next step
+        u_n, u = u, u_n
 
 The vectorized version should be quite straightforward to understand
 once one has an understanding of how a standard 2D finite stencil
@@ -5057,27 +5157,27 @@ for the difference between the exact and the computed solution.
 
 .. code-block:: python
 
-        def quadratic(theta, Nx, Ny):
-            ...
-            def assert_small_error(u, x, xv, y, yv, t, n):
-                """Assert small error for iterative methods."""
-                u_e = u_exact(xv, yv, t[n])
-                diff = abs(u - u_e).max()
-                tol = 1E-4
-                msg = 'diff=%g, step %d, time=%g' % (diff, n, t[n])
-                assert diff < tol, msg
-        
-            for version in 'scalar', 'vectorized':
-                for theta in 1, 0.5:
-                    print 'testing Jacobi, %s version, theta=%g' % \ 
-                          (version, theta)
-                    t, cpu = solver_Jacobi(
-                        I=I, a=a, f=f, Lx=Lx, Ly=Ly, Nx=Nx, Ny=Ny,
-                        dt=dt, T=T, theta=theta,
-                        U_0x=0, U_0y=0, U_Lx=0, U_Ly=0,
-                        user_action=assert_small_error,
-                        version=version, iteration='Jacobi',
-                        omega=1.0, max_iter=100, tol=1E-5)
+    def quadratic(theta, Nx, Ny):
+        ...
+        def assert_small_error(u, x, xv, y, yv, t, n):
+            """Assert small error for iterative methods."""
+            u_e = u_exact(xv, yv, t[n])
+            diff = abs(u - u_e).max()
+            tol = 1E-4
+            msg = 'diff=%g, step %d, time=%g' % (diff, n, t[n])
+            assert diff < tol, msg
+    
+        for version in 'scalar', 'vectorized':
+            for theta in 1, 0.5:
+                print 'testing Jacobi, %s version, theta=%g' % \ 
+                      (version, theta)
+                t, cpu = solver_Jacobi(
+                    I=I, a=a, f=f, Lx=Lx, Ly=Ly, Nx=Nx, Ny=Ny,
+                    dt=dt, T=T, theta=theta,
+                    U_0x=0, U_0y=0, U_Lx=0, U_Ly=0,
+                    user_action=assert_small_error,
+                    version=version, iteration='Jacobi',
+                    omega=1.0, max_iter=100, tol=1E-5)
 
 Even for a very coarse :math:`4\times 4` mesh, the Jacobi method requires
 26 iterations to reach a tolerance of :math:`10^{-5}`,
@@ -5351,43 +5451,43 @@ are so similar, we can easily make a common code for the two:
 
 .. code-block:: python
 
-        for n in It[0:-1]:
-            # Solve linear system by Jacobi/SOR iteration at time level n+1
-            u_[:,:] = u_1  # Start value
-            converged = False
-            r = 0
-            while not converged:
-                if version == 'scalar':
-                    if iteration == 'Jacobi':
-                        u__ = u_
-                    elif iteration == 'SOR':
-                        u__ = u
-                    j = 0
+    for n in It[0:-1]:
+        # Solve linear system by Jacobi/SOR iteration at time level n+1
+        u_[:,:] = u_n  # Start value
+        converged = False
+        r = 0
+        while not converged:
+            if version == 'scalar':
+                if iteration == 'Jacobi':
+                    u__ = u_
+                elif iteration == 'SOR':
+                    u__ = u
+                j = 0
+                for i in Ix:
+                    u[i,j] = U_0y(t[n+1])  # Boundary
+                for j in Iy[1:-1]:
+                    i = 0;   u[i,j] = U_0x(t[n+1])  # Boundary
+                    i = Nx;  u[i,j] = U_Lx(t[n+1])  # Boundary
+                    for i in Ix[1:-1]:
+                        u_new = 1.0/(1.0 + 2*theta*(Fx + Fy))*(theta*(
+                            Fx*(u_[i+1,j] + u__[i-1,j]) +
+                            Fy*(u_[i,j+1] + u__[i,j-1])) + \ 
+                        u_n[i,j] + (1-theta)*(
+                          Fx*(
+                        u_n[i+1,j] - 2*u_n[i,j] + u_n[i-1,j]) +
+                          Fy*(
+                        u_n[i,j+1] - 2*u_n[i,j] + u_n[i,j-1]))\ 
+                          + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \ 
+                        (1-theta)*dt*f(i*dx,j*dy,n*dt))
+                        u[i,j] = omega*u_new + (1-omega)*u_[i,j]
+                    j = Ny
                     for i in Ix:
-                        u[i,j] = U_0y(t[n+1])  # Boundary
-                    for j in Iy[1:-1]:
-                        i = 0;   u[i,j] = U_0x(t[n+1])  # Boundary
-                        i = Nx;  u[i,j] = U_Lx(t[n+1])  # Boundary
-                        for i in Ix[1:-1]:
-                            u_new = 1.0/(1.0 + 2*theta*(Fx + Fy))*(theta*(
-                                Fx*(u_[i+1,j] + u__[i-1,j]) +
-                                Fy*(u_[i,j+1] + u__[i,j-1])) + \ 
-                            u_1[i,j] + (1-theta)*(
-                              Fx*(
-                            u_1[i+1,j] - 2*u_1[i,j] + u_1[i-1,j]) +
-                              Fy*(
-                            u_1[i,j+1] - 2*u_1[i,j] + u_1[i,j-1]))\ 
-                              + theta*dt*f(i*dx,j*dy,(n+1)*dt) + \ 
-                            (1-theta)*dt*f(i*dx,j*dy,n*dt))
-                            u[i,j] = omega*u_new + (1-omega)*u_[i,j]
-                        j = Ny
-                        for i in Ix:
-                            u[i,j] = U_Ly(t[n+1])  # boundary
-                r += 1
-                converged = np.abs(u-u_).max() < tol or r >= max_iter
-                u_[:,:] = u
-        
-            u_1, u = u, u_1  # Get ready for next iteration
+                        u[i,j] = U_Ly(t[n+1])  # boundary
+            r += 1
+            converged = np.abs(u-u_).max() < tol or r >= max_iter
+            u_[:,:] = u
+    
+        u_n, u = u, u_n  # Get ready for next iteration
 
 The idea here is to introduce ``u__`` to be used for already computed
 values (``u``) in the Gauss-Seidel/SOR version of the implementation, or
@@ -5418,13 +5518,13 @@ Here is an example of a :math:`6\times 6` mesh:
 
 .. code-block:: text
 
-        r b r b r b r
-        b r b r b r b
-        r b r b r b r
-        b r b r b r b
-        r b r b r b r
-        b r b r b r b
-        r b r b r b r
+    r b r b r b r
+    b r b r b r b
+    r b r b r b r
+    b r b r b r b
+    r b r b r b r
+    b r b r b r b
+    r b r b r b r
 
 The idea now is to first update all the red points. Each formula for
 updating a red point involves only the black neighbors. Thereafter, we
@@ -5439,43 +5539,43 @@ scheme in time and without a source term:
 
 .. code-block:: python
 
-        # Update internal points
-        for sweep in 'red', 'black':
-            for j in range(1, Ny, 1):
-                if sweep == 'red':
-                    start = 1 if j % 2 == 1 else 2
-                elif sweep == 'black':
-                    start = 2 if j % 2 == 1 else 1
-                for i in range(start, Nx, 2):
-        	    u[i,j] = 1.0/(1.0 + 2*(Fx + Fy))*(
-                             Fx*(u[i+1,j] + u[i-1,j]) +
-                             Fy*(u[i,j+1] + u[i,j-1]) + u_1[i,j])
+    # Update internal points
+    for sweep in 'red', 'black':
+        for j in range(1, Ny, 1):
+            if sweep == 'red':
+                start = 1 if j % 2 == 1 else 2
+            elif sweep == 'black':
+                start = 2 if j % 2 == 1 else 1
+            for i in range(start, Nx, 2):
+    	    u[i,j] = 1.0/(1.0 + 2*(Fx + Fy))*(
+                         Fx*(u[i+1,j] + u[i-1,j]) +
+                         Fy*(u[i,j+1] + u[i,j-1]) + u_n[i,j])
 
 The vectorized version must be based on slices. Looking at a typical
 red-black pattern, e.g.,
 
 .. code-block:: text
 
-        r b r b r b r
-        b r b r b r b
-        r b r b r b r
-        b r b r b r b
-        r b r b r b r
-        b r b r b r b
-        r b r b r b r
+    r b r b r b r
+    b r b r b r b
+    r b r b r b r
+    b r b r b r b
+    r b r b r b r
+    b r b r b r b
+    r b r b r b r
 
 we want to update the internal points (marking boundary points with
 ``x``):
 
 .. code-block:: text
 
-        x x x x x x x
-        x r b r b r x
-        x b r b r b x
-        x r b r b r x
-        x b r b r b x
-        x r b r b r x
-        x x x x x x x
+    x x x x x x x
+    x r b r b r x
+    x b r b r b x
+    x r b r b r x
+    x b r b r b x
+    x r b r b r x
+    x x x x x x x
 
 It is impossible to make one slice that picks out all the internal
 red points. Instead, we need two slices. The first involves points
@@ -5483,74 +5583,74 @@ marked with ``R``:
 
 .. code-block:: text
 
-        x x x x x x x
-        x R b R b R x
-        x b r b r b x
-        x R b R b R x
-        x b r b r b x
-        x R b R b R x
-        x x x x x x x
+    x x x x x x x
+    x R b R b R x
+    x b r b r b x
+    x R b R b R x
+    x b r b r b x
+    x R b R b R x
+    x x x x x x x
 
 This slice is specified as ``1::2`` for ``i`` and ``1::2`` for ``j``, or with
 ``slice`` objects:
 
 .. code-block:: python
 
-        i = slice(1, None, 2);  j = slice(1, None, 2)
+    i = slice(1, None, 2);  j = slice(1, None, 2)
 
 The second slice involves the red points with ``R``:
 
 .. code-block:: text
 
-        x x x x x x x
-        x r b r b r x
-        x b R b R b x
-        x r b r b r x
-        x b R b R b x
-        x r b r b r x
-        x x x x x x x
+    x x x x x x x
+    x r b r b r x
+    x b R b R b x
+    x r b r b r x
+    x b R b R b x
+    x r b r b r x
+    x x x x x x x
 
 The slices are
 
 .. code-block:: python
 
-        i = slice(2, None, 2);  j = slice(2, None, 2)
+    i = slice(2, None, 2);  j = slice(2, None, 2)
 
 For the black points, the first slice involves the ``B`` points:
 
 .. code-block:: text
 
-        x x x x x x x
-        x r B r B r x
-        x b r b r b x
-        x r B r B r x
-        x b r b r b x
-        x r B r B r x
-        x x x x x x x
+    x x x x x x x
+    x r B r B r x
+    x b r b r b x
+    x r B r B r x
+    x b r b r b x
+    x r B r B r x
+    x x x x x x x
 
 with slice objects
 
 .. code-block:: python
 
-        i = slice(2, None, 2);  j = slice(1, None, 2)
+    i = slice(2, None, 2);  j = slice(1, None, 2)
 
 The second set of black points is shown here:
 
 .. code-block:: text
 
-        x x x x x x x
-        x r b r b r x
-        x B r B r B x
-        x r b r b r x
-        x B r B r B x
-        x r b r b r x
-        x x x x x x x
+    x x x x x x x
+    x r b r b r x
+    x B r B r B x
+    x r b r b r x
+    x B r B r B x
+    x r b r b r x
+    x x x x x x x
 
 with slice objects
 
 .. code-block:: python
 
-        i = slice(1, None, 2);  j = slice(2, None, 2)
+    i = slice(1, None, 2);  j = slice(2, None, 2)
 
 That is, we need four sets of slices. The simplest way of implementing
 the algorithm is to make a function with variables for the slices
@@ -5560,16 +5660,16 @@ and ``jp1``, respectively.
 
 .. code-block:: python
 
-        def update(u_, u_1, ic, im1, ip1, jc, jm1, jp1):
-            return \ 
-               1.0/(1.0 + 2*theta*(Fx + Fy))*(theta*(
-                   Fx*(u_[ip1,jc] + u_[im1,jc]) +
-                   Fy*(u_[ic,jp1] + u_[ic,jm1])) +\ 
-               u_1[ic,jc] + (1-theta)*(
-                 Fx*(u_1[ip1,jc] - 2*u_1[ic,jc] + u_1[im1,jc]) +\ 
-                 Fy*(u_1[ic,jp1] - 2*u_1[ic,jc] + u_1[ic,jm1]))+\ 
-                 theta*dt*f_a_np1[ic,jc] + \ 
-                 (1-theta)*dt*f_a_n[ic,jc])
+    def update(u_, u_n, ic, im1, ip1, jc, jm1, jp1):
+        return \ 
+           1.0/(1.0 + 2*theta*(Fx + Fy))*(theta*(
+               Fx*(u_[ip1,jc] + u_[im1,jc]) +
+               Fy*(u_[ic,jp1] + u_[ic,jm1])) +\ 
+           u_n[ic,jc] + (1-theta)*(
+             Fx*(u_n[ip1,jc] - 2*u_n[ic,jc] + u_n[im1,jc]) +\ 
+             Fy*(u_n[ic,jp1] - 2*u_n[ic,jc] + u_n[ic,jm1]))+\ 
+             theta*dt*f_a_np1[ic,jc] + \ 
+             (1-theta)*dt*f_a_n[ic,jc])
 
 The formula returned from ``update`` is to be compared with
 :ref:`(111) <Eq:diffu:2D:SOR3>`.
@@ -5578,12 +5678,12 @@ The relaxed Jacobi iteration can be implemented by
 
 .. code-block:: python
 
-        ic  = jc  = slice(1,-1)
-        im1 = jm1 = slice(0,-2)
-        ip1 = jp1 = slice(2,None)
-        u_new[ic,jc] = update(
-            u_, u_1, ic, im1, ip1, jc, jm1, jp1)
-        u[ic,jc] = omega*u_new[ic,jc] + (1-omega)*u_[ic,jc]
+    ic  = jc  = slice(1,-1)
+    im1 = jm1 = slice(0,-2)
+    ip1 = jp1 = slice(2,None)
+    u_new[ic,jc] = update(
+        u_, u_n, ic, im1, ip1, jc, jm1, jp1)
+    u[ic,jc] = omega*u_new[ic,jc] + (1-omega)*u_[ic,jc]
 
 The Gauss-Seidel (or SOR) updates need four different steps.
 The ``ic`` and ``jc`` slices are specified above. For each of these,
@@ -5592,47 +5692,47 @@ slices. The code below contain the details.
 
 .. code-block:: python
 
-        # Red points
-        ic  = slice(1,-1,2)
-        im1 = slice(0,-2,2)
-        ip1 = slice(2,None,2)
-        jc  = slice(1,-1,2)
-        jm1 = slice(0,-2,2)
-        jp1 = slice(2,None,2)
-        u_new[ic,jc] = update(
-            u_new, u_1, ic, im1, ip1, jc, jm1, jp1)
-        
-        ic  = slice(2,-1,2)
-        im1 = slice(1,-2,2)
-        ip1 = slice(3,None,2)
-        jc  = slice(2,-1,2)
-        jm1 = slice(1,-2,2)
-        jp1 = slice(3,None,2)
-        u_new[ic,jc] = update(
-            u_new, u_1, ic, im1, ip1, jc, jm1, jp1)
-        
-        # Black points
-        ic  = slice(2,-1,2)
-        im1 = slice(1,-2,2)
-        ip1 = slice(3,None,2)
-        jc  = slice(1,-1,2)
-        jm1 = slice(0,-2,2)
-        jp1 = slice(2,None,2)
-        u_new[ic,jc] = update(
-            u_new, u_1, ic, im1, ip1, jc, jm1, jp1)
-        
-        ic  = slice(1,-1,2)
-        im1 = slice(0,-2,2)
-        ip1 = slice(2,None,2)
-        jc  = slice(2,-1,2)
-        jm1 = slice(1,-2,2)
-        jp1 = slice(3,None,2)
-        u_new[ic,jc] = update(
-            u_new, u_1, ic, im1, ip1, jc, jm1, jp1)
-        
-        # Relax
-        c = slice(1,-1)
-        u[c,c] = omega*u_new[c,c] + (1-omega)*u_[c,c]
+    # Red points
+    ic  = slice(1,-1,2)
+    im1 = slice(0,-2,2)
+    ip1 = slice(2,None,2)
+    jc  = slice(1,-1,2)
+    jm1 = slice(0,-2,2)
+    jp1 = slice(2,None,2)
+    u_new[ic,jc] = update(
+        u_new, u_n, ic, im1, ip1, jc, jm1, jp1)
+    
+    ic  = slice(2,-1,2)
+    im1 = slice(1,-2,2)
+    ip1 = slice(3,None,2)
+    jc  = slice(2,-1,2)
+    jm1 = slice(1,-2,2)
+    jp1 = slice(3,None,2)
+    u_new[ic,jc] = update(
+        u_new, u_n, ic, im1, ip1, jc, jm1, jp1)
+    
+    # Black points
+    ic  = slice(2,-1,2)
+    im1 = slice(1,-2,2)
+    ip1 = slice(3,None,2)
+    jc  = slice(1,-1,2)
+    jm1 = slice(0,-2,2)
+    jp1 = slice(2,None,2)
+    u_new[ic,jc] = update(
+        u_new, u_n, ic, im1, ip1, jc, jm1, jp1)
+    
+    ic  = slice(1,-1,2)
+    im1 = slice(0,-2,2)
+    ip1 = slice(2,None,2)
+    jc  = slice(2,-1,2)
+    jm1 = slice(1,-2,2)
+    jp1 = slice(3,None,2)
+    u_new[ic,jc] = update(
+        u_new, u_n, ic, im1, ip1, jc, jm1, jp1)
+    
+    # Relax
+    c = slice(1,-1)
+    u[c,c] = omega*u_new[c,c] + (1-omega)*u_[c,c]
 
 The function ``solver_classic_iterative`` in
 `diffu2D_u0.py <http://tinyurl.com/nm5587k/diffu/diffu2D_u0.py>`__
@@ -5766,7 +5866,7 @@ That is, the efficiency of the Jacobi method quickly deteriorates with
 the increasing mesh resolution, and SOR is much to be preferred
 (even if the optimal
 :math:`\omega` remains an open question). We refer to
-Chapter 4 of [Ref2]_ for more information on the convergence theory.
+Chapter 4 of [Ref3]_ for more information on the convergence theory.
 One important result is that if :math:`A` is symmetric and positive definite,
 then SOR will converge for any :math:`0<\omega <2`.
 
@@ -5809,7 +5909,7 @@ There is no simple intuitive derivation of the Conjugate gradient
 method, so we refer to the many excellent expositions in the
 literature for the idea of the method and how the algorithm is
 derived. In particular, we recommend the books
-[Ref3]_ [Ref2]_ [Ref4]_.  A brief overview is
+[Ref4]_ [Ref3]_ [Ref5]_.  A brief overview is
 provided in the `Wikipedia article <https://en.wikipedia.org/wiki/Conjugate_gradient_method>`__. Here, we
 just state the pros and cons of the method from a user's perspective
 and how we utilize it in code.
@@ -5902,60 +6002,60 @@ gradient function as an alternative solver.
 
 .. code-block:: python
 
-        def solver_sparse(
-            I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5,
-            U_0x=0, U_0y=0, U_Lx=0, U_Ly=0, user_action=None,
-            method='direct', CG_prec='ILU', CG_tol=1E-5):
-            """
-            Full solver for the model problem using the theta-rule
-            difference approximation in time. Sparse matrix with
-            dedicated Gaussian elimination algorithm (method='direct')
-            or ILU preconditioned Conjugate Gradients (method='CG' with
-            tolerance CG_tol and preconditioner CG_prec ('ILU' or None)).
-            """
-            # Set up data structures as shown before
-        
-            # Precompute sparse matrix
-            ...
-        
-            A = scipy.sparse.diags(
-                diagonals=[main, lower, upper, lower2, upper2],
-                offsets=[0, -lower_offset, lower_offset,
-                         -lower2_offset, lower2_offset],
-                shape=(N, N), format='csc')
-        
-            if method == 'CG':
-                if CG_prec == 'ILU':
-                    # Find ILU preconditioner (constant in time)
-                    A_ilu = scipy.sparse.linalg.spilu(A)  # SuperLU defaults
-                    M = scipy.sparse.linalg.LinearOperator(
-                        shape=(N, N), matvec=A_ilu.solve)
-                else:
-                    M = None
-                CG_iter = []  # No of CG iterations at time level n
-        
-            # Time loop
-            for n in It[0:-1]:
-                # Compute b, vectorized version
-        
-                # Solve matrix system A*c = b
-                if method == 'direct':
-                    c = scipy.sparse.linalg.spsolve(A, b)
-                elif method == 'CG':
-                    x0 = u_1.T.reshape(N)  # Start vector is u_1
-                    CG_iter.append(0)
-        
-                    def CG_callback(c_k):
-                        """Trick to count the no of iterations in CG."""
-                        CG_iter[-1] += 1
-        
-                    c, info = scipy.sparse.linalg.cg(
-                        A, b, x0=x0, tol=CG_tol, maxiter=N, M=M,
-                        callback=CG_callback)
-        
-                # Fill u with vector c
-                # Update u_1 before next step
-                u_1, u = u, u_1
+    def solver_sparse(
+        I, a, f, Lx, Ly, Nx, Ny, dt, T, theta=0.5,
+        U_0x=0, U_0y=0, U_Lx=0, U_Ly=0, user_action=None,
+        method='direct', CG_prec='ILU', CG_tol=1E-5):
+        """
+        Full solver for the model problem using the theta-rule
+        difference approximation in time. Sparse matrix with
+        dedicated Gaussian elimination algorithm (method='direct')
+        or ILU preconditioned Conjugate Gradients (method='CG' with
+        tolerance CG_tol and preconditioner CG_prec ('ILU' or None)).
+        """
+        # Set up data structures as shown before
+    
+        # Precompute sparse matrix
+        ...
+    
+        A = scipy.sparse.diags(
+            diagonals=[main, lower, upper, lower2, upper2],
+            offsets=[0, -lower_offset, lower_offset,
+                     -lower2_offset, lower2_offset],
+            shape=(N, N), format='csc')
+    
+        if method == 'CG':
+            if CG_prec == 'ILU':
+                # Find ILU preconditioner (constant in time)
+                A_ilu = scipy.sparse.linalg.spilu(A)  # SuperLU defaults
+                M = scipy.sparse.linalg.LinearOperator(
+                    shape=(N, N), matvec=A_ilu.solve)
+            else:
+                M = None
+            CG_iter = []  # No of CG iterations at time level n
+    
+        # Time loop
+        for n in It[0:-1]:
+            # Compute b, vectorized version
+    
+            # Solve matrix system A*c = b
+            if method == 'direct':
+                c = scipy.sparse.linalg.spsolve(A, b)
+            elif method == 'CG':
+                x0 = u_n.T.reshape(N)  # Start vector is u_n
+                CG_iter.append(0)
+    
+                def CG_callback(c_k):
+                    """Trick to count the no of iterations in CG."""
+                    CG_iter[-1] += 1
+    
+                c, info = scipy.sparse.linalg.cg(
+                    A, b, x0=x0, tol=CG_tol, maxiter=N, M=M,
+                    callback=CG_callback)
+    
+            # Fill u with vector c
+            # Update u_n before next step
+            u_n, u = u, u_n
 
 The number of iterations in the Conjugate gradient method is of interest,
 but is unfortunately not available from the ``cg`` function. Therefore,
@@ -6106,12 +6206,12 @@ probability :math:`p` and :math:`r>p` with probability :math:`1-p`:
 
 .. code-block:: python
 
-        import random
-        r = random.uniform(0, 1)
-        if r <= p:
-            # Event happens
-        else:
-            # Event does not happen
+    import random
+    r = random.uniform(0, 1)
+    if r <= p:
+        # Event happens
+    else:
+        # Event does not happen
 
 A random walk with :math:`N` steps, starting at :math:`x_0`, where we move
 to the left with probability :math:`p` and to the right
@@ -6119,22 +6219,22 @@ with probability :math:`1-p` can now be implemented by
 
 .. code-block:: python
 
-        import random, numpy as np
-        
-        def random_walk1D(x0, N, p):
-            """1D random walk with 1 particle."""
-            # Store position in step k in position[k]
-            position = np.zeros(N)
-            position[0] = x0
-            current_pos = x0
-            for k in range(N-1):
-                r = random.uniform(0, 1)
-                if r <= p:
-                    current_pos -= 1
-                else:
-                    current_pos += 1
-                position[k+1] = current_pos
-            return position
+    import random, numpy as np
+    
+    def random_walk1D(x0, N, p):
+        """1D random walk with 1 particle."""
+        # Store position in step k in position[k]
+        position = np.zeros(N)
+        position[0] = x0
+        current_pos = x0
+        for k in range(N-1):
+            r = random.uniform(0, 1)
+            if r <= p:
+                current_pos -= 1
+            else:
+                current_pos += 1
+            position[k+1] = current_pos
+        return position
 
 .. index:: vectorization
 
@@ -6157,8 +6257,8 @@ otherwise the step is :math:`1`:
 
 .. code-block:: python
 
-        r = np.random.uniform(0, 1, size=N)
-        steps = np.where(r <= p, -1, 1)
+    r = np.random.uniform(0, 1, size=N)
+    steps = np.where(r <= p, -1, 1)
 
 The value of ``position[k]`` is the sum of all steps up to step ``k``.
 Such sums are often needed in vectorized algorithms and therefore
@@ -6166,9 +6266,9 @@ available by the ``numpy.cumsum`` function:
 
 .. code-block:: python
 
-        >>> import numpy as np
-        >>> np.cumsum(np.array([1,3,4,6]))
-        array([ 1,  4,  8, 14])
+    >>> import numpy as np
+    >>> np.cumsum(np.array([1,3,4,6]))
+    array([ 1,  4,  8, 14])
 
 The resulting array in this demo has elements :math:`1`, :math:`1+3=4`, :math:`1+3+4=8`,
 and :math:`1+3+4+6=14`.
@@ -6177,15 +6277,15 @@ We can now vectorize the ``random_walk1D`` function:
 
 .. code-block:: python
 
-        def random_walk1D_vec(x0, N, p):
-            """Vectorized version of random_walk1D."""
-            # Store position in step k in position[k]
-            position = np.zeros(N+1)
-            position[0] = x0
-            r = np.random.uniform(0, 1, size=N)
-            steps = np.where(r <= p, -1, 1)
-            position[1:] = x0 + np.cumsum(steps)
-            return position
+    def random_walk1D_vec(x0, N, p):
+        """Vectorized version of random_walk1D."""
+        # Store position in step k in position[k]
+        position = np.zeros(N+1)
+        position[0] = x0
+        r = np.random.uniform(0, 1, size=N)
+        steps = np.where(r <= p, -1, 1)
+        position[1:] = x0 + np.cumsum(steps)
+        return position
 
 This code runs about 10 times faster than the scalar version.
 With a parallel ``numpy`` library, the code can also automatically take
@@ -6204,7 +6304,7 @@ number generator to some chosen integer, e.g.,
 
 .. code-block:: python
 
-        np.random.seed(10)
+    np.random.seed(10)
 
 Calls to ``random_walk1D_vec`` give positions of the particle as
 depicted in Figure :ref:`diffu:randomwalk:1D:code1:fig1`. The particle starts
@@ -6236,11 +6336,11 @@ is the most flexible choice:
 
 .. code-block:: text
 
-        import random
-        
-        def random_walk1D(x0, N, p, random=random):
-            ...
-            r = random.uniform(0, 1)
+    import random
+    
+    def random_walk1D(x0, N, p, random=random):
+        ...
+        r = random.uniform(0, 1)
 
 Using ``random=np.random``, the ``r`` variable gets computed
 by ``np.random.uniform``, and the sequence of random numbers will be
@@ -6251,15 +6351,15 @@ vectorized implementations:
 
 .. code-block:: python
 
-        def test_random_walk1D():
-            # For fixed seed, check that scalar and vectorized versions
-            # produce the same result
-            x0 = 2;  N = 4;  p = 0.6
-            np.random.seed(10)
-            scalar_computed = random_walk1D(x0, N, p, random=np.random)
-            np.random.seed(10)
-            vectorized_computed = random_walk1D_vec(x0, N, p)
-            assert (scalar_computed == vectorized_computed).all()
+    def test_random_walk1D():
+        # For fixed seed, check that scalar and vectorized versions
+        # produce the same result
+        x0 = 2;  N = 4;  p = 0.6
+        np.random.seed(10)
+        scalar_computed = random_walk1D(x0, N, p, random=np.random)
+        np.random.seed(10)
+        vectorized_computed = random_walk1D_vec(x0, N, p)
+        assert (scalar_computed == vectorized_computed).all()
 
 Note that we employ ``==`` for arrays with real numbers, which is normally
 an inadequate test due to rounding errors, but in the present case,
@@ -6417,7 +6517,7 @@ spaced through time:
 
 .. code-block:: python
 
-        pos_hist_times = [(N//num_times)*i for i in range(num_times)]
+    pos_hist_times = [(N//num_times)*i for i in range(num_times)]
 
 This is one of the few situations we want integer division (``//``) or
 real division rounded to an integer.
@@ -6430,35 +6530,35 @@ like this:
 
 .. code-block:: python
 
-        def random_walks1D(x0, N, p, num_walks=1, num_times=1,
-                           random=random):
-            """Simulate num_walks random walks from x0 with N steps."""
-            position = np.zeros(N+1)    # Accumulated positions
-            position[0] = x0*num_walks
-            position2 = np.zeros(N+1)   # Accumulated positions**2
-            position2[0] = x0**2*num_walks
-            # Histogram at num_times selected time points
-            pos_hist = np.zeros((num_walks, num_times))
-            pos_hist_times = [(N//num_times)*i for i in range(num_times)]
-            #print 'save hist:', post_hist_times
-        
-            for n in range(num_walks):
-                num_times_counter = 0
-                current_pos = x0
-                for k in range(N):
-                    if k in pos_hist_times:
-                        #print 'save, k:', k, num_times_counter, n
-                        pos_hist[n,num_times_counter] = current_pos
-                        num_times_counter += 1
-                    # current_pos corresponds to step k+1
-                    r = random.uniform(0, 1)
-                    if r <= p:
-                        current_pos -= 1
-                    else:
-                        current_pos += 1
-                    position [k+1] += current_pos
-                    position2[k+1] += current_pos**2
-            return position, position2, pos_hist, np.array(pos_hist_times)
+    def random_walks1D(x0, N, p, num_walks=1, num_times=1,
+                       random=random):
+        """Simulate num_walks random walks from x0 with N steps."""
+        position = np.zeros(N+1)    # Accumulated positions
+        position[0] = x0*num_walks
+        position2 = np.zeros(N+1)   # Accumulated positions**2
+        position2[0] = x0**2*num_walks
+        # Histogram at num_times selected time points
+        pos_hist = np.zeros((num_walks, num_times))
+        pos_hist_times = [(N//num_times)*i for i in range(num_times)]
+        #print 'save hist:', post_hist_times
+    
+        for n in range(num_walks):
+            num_times_counter = 0
+            current_pos = x0
+            for k in range(N):
+                if k in pos_hist_times:
+                    #print 'save, k:', k, num_times_counter, n
+                    pos_hist[n,num_times_counter] = current_pos
+                    num_times_counter += 1
+                # current_pos corresponds to step k+1
+                r = random.uniform(0, 1)
+                if r <= p:
+                    current_pos -= 1
+                else:
+                    current_pos += 1
+                position [k+1] += current_pos
+                position2[k+1] += current_pos**2
+        return position, position2, pos_hist, np.array(pos_hist_times)
 
 Vectorized version
 ~~~~~~~~~~~~~~~~~~
@@ -6472,24 +6572,24 @@ inserted in ``pos_hist[n,:]``.
 
 .. code-block:: python
 
-        def random_walks1D_vec1(x0, N, p, num_walks=1, num_times=1):
-            """Vectorized version of random_walks1D."""
-            position  = np.zeros(N+1)    # Accumulated positions
-            position2 = np.zeros(N+1)    # Accumulated positions**2
-            walk = np.zeros(N+1)         # Positions of current walk
-            walk[0] = x0
-            # Histogram at num_times selected time points
-            pos_hist = np.zeros((num_walks, num_times))
-            pos_hist_times = [(N//num_times)*i for i in range(num_times)]
-        
-            for n in range(num_walks):
-                r = np.random.uniform(0, 1, size=N)
-                steps = np.where(r <= p, -1, 1)
-                walk[1:] = x0 + np.cumsum(steps)  # Positions of this walk
-                position  += walk
-                position2 += walk**2
-                pos_hist[n,:] = walk[pos_hist_times]
-            return position, position2, pos_hist, np.array(pos_hist_times)
+    def random_walks1D_vec1(x0, N, p, num_walks=1, num_times=1):
+        """Vectorized version of random_walks1D."""
+        position  = np.zeros(N+1)    # Accumulated positions
+        position2 = np.zeros(N+1)    # Accumulated positions**2
+        walk = np.zeros(N+1)         # Positions of current walk
+        walk[0] = x0
+        # Histogram at num_times selected time points
+        pos_hist = np.zeros((num_walks, num_times))
+        pos_hist_times = [(N//num_times)*i for i in range(num_times)]
+    
+        for n in range(num_walks):
+            r = np.random.uniform(0, 1, size=N)
+            steps = np.where(r <= p, -1, 1)
+            walk[1:] = x0 + np.cumsum(steps)  # Positions of this walk
+            position  += walk
+            position2 += walk**2
+            pos_hist[n,:] = walk[pos_hist_times]
+        return position, position2, pos_hist, np.array(pos_hist_times)
 
 Improved vectorized version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -6507,8 +6607,8 @@ each row represents the steps in one walk.
 
 .. code-block:: python
 
-        walks = np.zeros((num_walks, N+1))  # Positions of each walk
-        walks[:,0] = x0
+    walks = np.zeros((num_walks, N+1))  # Positions of each walk
+    walks[:,0] = x0
 
 Since all the steps are independent, we can just make one long
 vector of enough random numbers (``N*num_walks``), translate these
@@ -6517,8 +6617,8 @@ of each walk are stored in the rows.
 
 .. code-block:: python
 
-        r = np.random.uniform(0, 1, size=N*num_walks)
-        steps = np.where(r <= p, -1, 1).reshape(num_walks, N)
+    r = np.random.uniform(0, 1, size=N*num_walks)
+    steps = np.where(r <= p, -1, 1).reshape(num_walks, N)
 
 The next step is to sum up the steps in each walk. We need the
 ``np.cumsum`` function for this, with the argument ``axis=1`` for
@@ -6526,26 +6626,26 @@ indicating a sum across the columns:
 
 .. code-block:: python
 
-        >>> a = np.arange(6).reshape(2,3)
-        >>> a
-        array([[0, 1, 2],
-               [3, 4, 5]])
-        >>> np.cumsum(a, axis=1)
-        array([[ 0,  1,  3],
-               [ 3,  7, 12]])
+    >>> a = np.arange(6).reshape(2,3)
+    >>> a
+    array([[0, 1, 2],
+           [3, 4, 5]])
+    >>> np.cumsum(a, axis=1)
+    array([[ 0,  1,  3],
+           [ 3,  7, 12]])
 
 Now ``walks`` can be computed by
 
 .. code-block:: python
 
-        walks[:,1:] = x0 + np.cumsum(steps, axis=1)
+    walks[:,1:] = x0 + np.cumsum(steps, axis=1)
 
 The ``position`` vector is the sum of all the walks. That is, we want to
 sum all the rows, obtained by
 
 .. code-block:: python
 
-        position  = np.sum(walks, axis=0)
+    position  = np.sum(walks, axis=0)
 
 A corresponding expression computes the squares of the positions.
 Finally, we need to compute ``pos_hist``, but that is a matter of
@@ -6553,30 +6653,30 @@ grabbing some of the walks (according to ``pos_hist_times``):
 
 .. code-block:: python
 
-        pos_hist[:,:] = walks[:,pos_hist_times]
+    pos_hist[:,:] = walks[:,pos_hist_times]
 
 The complete vectorized algorithm without any loop can now be
 summarized:
 
 .. code-block:: python
 
-        def random_walks1D_vec2(x0, N, p, num_walks=1, num_times=1):
-            """Vectorized version of random_walks1D; no loops."""
-            position  = np.zeros(N+1)    # Accumulated positions
-            position2 = np.zeros(N+1)    # Accumulated positions**2
-            walks = np.zeros((num_walks, N+1))  # Positions of each walk
-            walks[:,0] = x0
-            # Histogram at num_times selected time points
-            pos_hist = np.zeros((num_walks, num_times))
-            pos_hist_times = [(N//num_times)*i for i in range(num_times)]
-        
-            r = np.random.uniform(0, 1, size=N*num_walks)
-            steps = np.where(r <= p, -1, 1).reshape(num_walks, N)
-            walks[:,1:] = x0 + np.cumsum(steps, axis=1)
-            position  = np.sum(walks,    axis=0)
-            position2 = np.sum(walks**2, axis=0)
-            pos_hist[:,:] = walks[:,pos_hist_times]
-            return position, position2, pos_hist, np.array(pos_hist_times)
+    def random_walks1D_vec2(x0, N, p, num_walks=1, num_times=1):
+        """Vectorized version of random_walks1D; no loops."""
+        position  = np.zeros(N+1)    # Accumulated positions
+        position2 = np.zeros(N+1)    # Accumulated positions**2
+        walks = np.zeros((num_walks, N+1))  # Positions of each walk
+        walks[:,0] = x0
+        # Histogram at num_times selected time points
+        pos_hist = np.zeros((num_walks, num_times))
+        pos_hist_times = [(N//num_times)*i for i in range(num_times)]
+    
+        r = np.random.uniform(0, 1, size=N*num_walks)
+        steps = np.where(r <= p, -1, 1).reshape(num_walks, N)
+        walks[:,1:] = x0 + np.cumsum(steps, axis=1)
+        position  = np.sum(walks,    axis=0)
+        position2 = np.sum(walks**2, axis=0)
+        pos_hist[:,:] = walks[:,pos_hist_times]
+        return position, position2, pos_hist, np.array(pos_hist_times)
 
 What is the gain of the vectorized implementations? One important gain
 is that each vectorized operation can be automatically parallelized
@@ -6613,64 +6713,64 @@ serial code such that the shortest loop is the outer loop:
 
 .. code-block:: python
 
-        def random_walks1D2(x0, N, p, num_walks=1, num_times=1, ...):
-            ...
-            current_pos = x0 + np.zeros(num_walks)
-            num_times_counter = -1
-        
-            for k in range(N):
-                if k in pos_hist_times:
-        	    num_times_counter += 1
-        	    store_hist = True
-        	else:
-        	    store_hist = False
-        
-                for n in range(num_walks):
-                    # current_pos corresponds to step k+1
-                    r = random.uniform(0, 1)
-        	    if r <= p:
-                        current_pos[n] -= 1
-                    else:
-                        current_pos[n] += 1
-                    position [k+1] += current_pos[n]
-                    position2[k+1] += current_pos[n]**2
-                    if store_hist:
-                        pos_hist[n,num_times_counter] = current_pos[n]
-            return position, position2, pos_hist, np.array(pos_hist_times)
+    def random_walks1D2(x0, N, p, num_walks=1, num_times=1, ...):
+        ...
+        current_pos = x0 + np.zeros(num_walks)
+        num_times_counter = -1
+    
+        for k in range(N):
+            if k in pos_hist_times:
+    	    num_times_counter += 1
+    	    store_hist = True
+    	else:
+    	    store_hist = False
+    
+            for n in range(num_walks):
+                # current_pos corresponds to step k+1
+                r = random.uniform(0, 1)
+    	    if r <= p:
+                    current_pos[n] -= 1
+                else:
+                    current_pos[n] += 1
+                position [k+1] += current_pos[n]
+                position2[k+1] += current_pos[n]**2
+                if store_hist:
+                    pos_hist[n,num_times_counter] = current_pos[n]
+        return position, position2, pos_hist, np.array(pos_hist_times)
 
 The vectorized version of this code, where we just vectorize the
 loop over ``n``, becomes
 
 .. code-block:: python
 
-        def random_walks1D2_vec1(x0, N, p, num_walks=1, num_times=1):
-            """Vectorized version of random_walks1D2."""
-            position  = np.zeros(N+1)    # Accumulated positions
-            position2 = np.zeros(N+1)    # Accumulated positions**2
-            # Histogram at num_times selected time points
-            pos_hist = np.zeros((num_walks, num_times))
-            pos_hist_times = [(N//num_times)*i for i in range(num_times)]
-        
-            current_pos = np.zeros(num_walks)
-            current_pos[0] = x0
-            num_times_counter = -1
-        
-            for k in range(N):
-                if k in pos_hist_times:
-        	    num_times_counter += 1
-        	    store_hist = True  # Store histogram data for this k
-        	else:
-        	    store_hist = False
-        
-                # Move all walks one step
-                r = np.random.uniform(0, 1, size=num_walks)
-                steps = np.where(r <= p, -1, 1)
-                current_pos += steps
-                position[k+1]  = np.sum(current_pos)
-                position2[k+1] = np.sum(current_pos**2)
-                if store_hist:
-                    pos_hist[:,num_times_counter] = current_pos
-            return position, position2, pos_hist, np.array(pos_hist_times)
+    def random_walks1D2_vec1(x0, N, p, num_walks=1, num_times=1):
+        """Vectorized version of random_walks1D2."""
+        position  = np.zeros(N+1)    # Accumulated positions
+        position2 = np.zeros(N+1)    # Accumulated positions**2
+        # Histogram at num_times selected time points
+        pos_hist = np.zeros((num_walks, num_times))
+        pos_hist_times = [(N//num_times)*i for i in range(num_times)]
+    
+        current_pos = np.zeros(num_walks)
+        current_pos[0] = x0
+        num_times_counter = -1
+    
+        for k in range(N):
+            if k in pos_hist_times:
+    	    num_times_counter += 1
+    	    store_hist = True  # Store histogram data for this k
+    	else:
+    	    store_hist = False
+    
+            # Move all walks one step
+            r = np.random.uniform(0, 1, size=num_walks)
+            steps = np.where(r <= p, -1, 1)
+            current_pos += steps
+            position[k+1]  = np.sum(current_pos)
+            position2[k+1] = np.sum(current_pos**2)
+            if store_hist:
+                pos_hist[:,num_times_counter] = current_pos
+        return position, position2, pos_hist, np.array(pos_hist_times)
 
 This function runs significantly faster than the ``random_walks1D_vec1``
 function above, typically 1.7 times faster. The code is also more appropriate
@@ -6724,59 +6824,59 @@ We arrive at the test function below.
 
 .. code-block:: python
 
-        def test_random_walks1D():
-            # For fixed seed, check that scalar and vectorized versions
-            # produce the same result
-            x0 = 0;  N = 4;  p = 0.5
-        
-            # First, check that random_walks1D for 1 walk reproduces
-            # the walk in random_walk1D
-            num_walks = 1
-            np.random.seed(10)
-            computed = random_walks1D(
-                x0, N, p, num_walks, random=np.random)
-            np.random.seed(10)
-            expected = random_walk1D(
-                x0, N, p, random=np.random)
-            assert (computed[0] == expected).all()
-        
-            # Same for vectorized versions
-            np.random.seed(10)
-            computed = random_walks1D_vec1(x0, N, p, num_walks)
-            np.random.seed(10)
-            expected = random_walk1D_vec(x0, N, p)
-            assert (computed[0] == expected).all()
-            np.random.seed(10)
-            computed = random_walks1D_vec2(x0, N, p, num_walks)
-            np.random.seed(10)
-            expected = random_walk1D_vec(x0, N, p)
-            assert (computed[0] == expected).all()
-        
-            # Second, check multiple walks: scalar == vectorized
-            num_walks = 3
-            num_times = N
-            np.random.seed(10)
-            serial_computed = random_walks1D(
-                x0, N, p, num_walks, num_times, random=np.random)
-            np.random.seed(10)
-            vectorized1_computed = random_walks1D_vec1(
-                x0, N, p, num_walks, num_times)
-            np.random.seed(10)
-            vectorized2_computed = random_walks1D_vec2(
-                x0, N, p, num_walks, num_times)
-            # positions: [0`, 1, 0, 1, 2]
-            # Can test without tolerance since everything is +/- 1
-            return_values = ['pos', 'pos2', 'pos_hist', 'pos_hist_times']
-            for s, v, r in zip(serial_computed,
-                               vectorized1_computed,
-                               return_values):
-                msg = '%s: %s (serial) vs %s (vectorized)' % (r, s, v)
-                assert (s == v).all(), msg
-            for s, v, r in zip(serial_computed,
-                               vectorized2_computed,
-                               return_values):
-                msg = '%s: %s (serial) vs %s (vectorized)' % (r, s, v)
-                assert (s == v).all(), msg
+    def test_random_walks1D():
+        # For fixed seed, check that scalar and vectorized versions
+        # produce the same result
+        x0 = 0;  N = 4;  p = 0.5
+    
+        # First, check that random_walks1D for 1 walk reproduces
+        # the walk in random_walk1D
+        num_walks = 1
+        np.random.seed(10)
+        computed = random_walks1D(
+            x0, N, p, num_walks, random=np.random)
+        np.random.seed(10)
+        expected = random_walk1D(
+            x0, N, p, random=np.random)
+        assert (computed[0] == expected).all()
+    
+        # Same for vectorized versions
+        np.random.seed(10)
+        computed = random_walks1D_vec1(x0, N, p, num_walks)
+        np.random.seed(10)
+        expected = random_walk1D_vec(x0, N, p)
+        assert (computed[0] == expected).all()
+        np.random.seed(10)
+        computed = random_walks1D_vec2(x0, N, p, num_walks)
+        np.random.seed(10)
+        expected = random_walk1D_vec(x0, N, p)
+        assert (computed[0] == expected).all()
+    
+        # Second, check multiple walks: scalar == vectorized
+        num_walks = 3
+        num_times = N
+        np.random.seed(10)
+        serial_computed = random_walks1D(
+            x0, N, p, num_walks, num_times, random=np.random)
+        np.random.seed(10)
+        vectorized1_computed = random_walks1D_vec1(
+            x0, N, p, num_walks, num_times)
+        np.random.seed(10)
+        vectorized2_computed = random_walks1D_vec2(
+            x0, N, p, num_walks, num_times)
+        # positions: [0`, 1, 0, 1, 2]
+        # Can test without tolerance since everything is +/- 1
+        return_values = ['pos', 'pos2', 'pos_hist', 'pos_hist_times']
+        for s, v, r in zip(serial_computed,
+                           vectorized1_computed,
+                           return_values):
+            msg = '%s: %s (serial) vs %s (vectorized)' % (r, s, v)
+            assert (s == v).all(), msg
+        for s, v, r in zip(serial_computed,
+                           vectorized2_computed,
+                           return_values):
+            msg = '%s: %s (serial) vs %s (vectorized)' % (r, s, v)
+            assert (s == v).all(), msg
 
 Such test functions are indispensable for further development of the code
 as we can at any time test whether the basic computations remain correct or not.
@@ -6851,27 +6951,27 @@ when the point :math:`x=-1` is reached. We use a spacing :math:`\Delta x = 0.05`
 
 .. code-block:: python
 
-        def run_random_walk():
-            from scitools.avplotter import Plotter
-            import time, numpy as np
-            p = Plotter(-1, 1, width=75)   # Horizontal axis: 75 chars wide
-            dx = 0.05
-            np.random.seed(10)
-        
-            x = 0
-            while True:
-                random_step = 1 if np.random.random() > 0.5 else -1
-                x = x + dx*random_step
-                if x < -1:
-                    break                  # Destination reached!
-                print p.plot(0, x)
-        
-                # Allow Ctrl+c to abort the simulation
-                try:
-                    time.sleep(0.1)  # Wait for interrupt
-                except KeyboardInterrupt:
-                    print 'Interrupted by Ctrl+c'
-                    break
+    def run_random_walk():
+        from scitools.avplotter import Plotter
+        import time, numpy as np
+        p = Plotter(-1, 1, width=75)   # Horizontal axis: 75 chars wide
+        dx = 0.05
+        np.random.seed(10)
+    
+        x = 0
+        while True:
+            random_step = 1 if np.random.random() > 0.5 else -1
+            x = x + dx*random_step
+            if x < -1:
+                break                  # Destination reached!
+            print p.plot(0, x)
+    
+            # Allow Ctrl+c to abort the simulation
+            try:
+                time.sleep(0.1)  # Wait for interrupt
+            except KeyboardInterrupt:
+                print 'Interrupted by Ctrl+c'
+                break
 
 Observe that we implement an infinite loop, but allow a smooth interrupt
 of the program by ``Ctrl+c`` through Python's ``KeyboardInterrupt``
@@ -6881,24 +6981,24 @@ The output looks typically like
 
 .. code-block:: text
 
-                                    *         |
-                                      *       |
-                                    *         |
-                                      *       |
-                                    *         |
-                                      *       |
-                                        *     |
-                                      *       |
-                                    *         |
-                                  *           |
-                                *             |
-                              *               |
-                                *             |
-                              *               |
-                             *                |
-                           *                  |
-                         *                    |
-                       *                      |
+                                *         |
+                                  *       |
+                                *         |
+                                  *       |
+                                *         |
+                                  *       |
+                                    *     |
+                                  *       |
+                                *         |
+                              *           |
+                            *             |
+                          *               |
+                            *             |
+                          *               |
+                         *                |
+                       *                  |
+                     *                    |
+                   *                      |
 
 Positions beyond the limits of the :math:`x` axis appear with a value.
 `A file <http://bit.ly/1UbULeH>`__.
@@ -7005,25 +7105,25 @@ with equal probability :math:`\frac{1}{4}`.
 
 .. code-block:: python
 
-        def random_walk2D(x0, N, p, random=random):
-            """2D random walk with 1 particle and N moves: N, E, W, S."""
-            # Store position in step k in position[k]
-            d = len(x0)
-            position = np.zeros((N+1, d))
-            position[0,:] = x0
-            current_pos = np.array(x0, dtype=float)
-            for k in range(N):
-                r = random.uniform(0, 1)
-                if r <= 0.25:
-                    current_pos += np.array([0, 1])   # Move north
-                elif 0.25 < r <= 0.5:
-                    current_pos += np.array([1, 0])   # Move east
-                elif 0.5 < r <= 0.75:
-                    current_pos += np.array([0, -1])  # Move south
-                else:
-                    current_pos += np.array([-1, 0])  # Move west
-                position[k+1,:] = current_pos
-            return position
+    def random_walk2D(x0, N, p, random=random):
+        """2D random walk with 1 particle and N moves: N, E, W, S."""
+        # Store position in step k in position[k]
+        d = len(x0)
+        position = np.zeros((N+1, d))
+        position[0,:] = x0
+        current_pos = np.array(x0, dtype=float)
+        for k in range(N):
+            r = random.uniform(0, 1)
+            if r <= 0.25:
+                current_pos += np.array([0, 1])   # Move north
+            elif 0.25 < r <= 0.5:
+                current_pos += np.array([1, 0])   # Move east
+            elif 0.5 < r <= 0.75:
+                current_pos += np.array([0, -1])  # Move south
+            else:
+                current_pos += np.array([-1, 0])  # Move west
+            position[k+1,:] = current_pos
+        return position
 
 The left plot in Figure :ref:`diffu:randomwalk:2D:fig:rect_vs_diag` provides
 an example on 200 steps with this kind of walk. We may refer to this walk
@@ -7052,22 +7152,22 @@ trivially write code that works in any number of spatial directions:
 
 .. code-block:: python
 
-        def random_walkdD(x0, N, p, random=random):
-            """Any-D (diagonal) random walk with 1 particle and N moves."""
-            # Store position in step k in position[k]
-            d = len(x0)
-            position = np.zeros((N+1, d))
-            position[0,:] = x0
-            current_pos = np.array(x0, dtype=float)
-            for k in range(N):
-                for i in range(d):
-                    r = random.uniform(0, 1)
-                    if r <= p:
-                        current_pos[i] -= 1
-                    else:
-                        current_pos[i] += 1
-                position[k+1,:] = current_pos
-            return position
+    def random_walkdD(x0, N, p, random=random):
+        """Any-D (diagonal) random walk with 1 particle and N moves."""
+        # Store position in step k in position[k]
+        d = len(x0)
+        position = np.zeros((N+1, d))
+        position[0,:] = x0
+        current_pos = np.array(x0, dtype=float)
+        for k in range(N):
+            for i in range(d):
+                r = random.uniform(0, 1)
+                if r <= p:
+                    current_pos[i] -= 1
+                else:
+                    current_pos[i] += 1
+            position[k+1,:] = current_pos
+        return position
 
 A vectorized version is desired. We follow the ideas from the section :ref:`diffu:randomwalk:1D:code1`, but each step is now a vector in :math:`d`
 spatial dimensions. We therefore need to draw :math:`Nd` random numbers in ``r``,
@@ -7079,31 +7179,31 @@ the vectors, as this demo shows:
 
 .. code-block:: python
 
-        >>> a = np.arange(6).reshape(3,2)
-        >>> a
-        array([[0, 1],
-               [2, 3],
-               [4, 5]])
-        >>> np.cumsum(a, axis=0)
-        array([[ 0,  1],
-               [ 2,  4],
-               [ 6,  9]])
+    >>> a = np.arange(6).reshape(3,2)
+    >>> a
+    array([[0, 1],
+           [2, 3],
+           [4, 5]])
+    >>> np.cumsum(a, axis=0)
+    array([[ 0,  1],
+           [ 2,  4],
+           [ 6,  9]])
 
 With such summation of step vectors, we get all the positions to be
 filled in the ``position`` array:
 
 .. code-block:: python
 
-        def random_walkdD_vec(x0, N, p):
-            """Vectorized version of random_walkdD."""
-            d = len(x0)
-            # Store position in step k in position[k]
-            position = np.zeros((N+1,d))
-            position[0] = np.array(x0, dtype=float)
-            r = np.random.uniform(0, 1, size=N*d)
-            steps = np.where(r <= p, -1, 1).reshape(N,d)
-            position[1:,:] = x0 + np.cumsum(steps, axis=0)
-            return position
+    def random_walkdD_vec(x0, N, p):
+        """Vectorized version of random_walkdD."""
+        d = len(x0)
+        # Store position in step k in position[k]
+        position = np.zeros((N+1,d))
+        position[0] = np.array(x0, dtype=float)
+        r = np.random.uniform(0, 1, size=N*d)
+        steps = np.where(r <= p, -1, 1).reshape(N,d)
+        position[1:,:] = x0 + np.cumsum(steps, axis=0)
+        return position
 
 .. _diffu:randomwalk:2D:fig:samples:
 
@@ -7125,33 +7225,33 @@ As always, we start with implementing the scalar case:
 
 .. code-block:: python
 
-        def random_walksdD(x0, N, p, num_walks=1, num_times=1,
-                           random=random):
-            """Simulate num_walks random walks from x0 with N steps."""
-            d = len(x0)
-            position  = np.zeros((N+1, d))   # Accumulated positions
-            position2 = np.zeros((N+1, d))   # Accumulated positions**2
-            # Histogram at num_times selected time points
-            pos_hist = np.zeros((num_walks, num_times, d))
-            pos_hist_times = [(N//num_times)*i for i in range(num_times)]
-        
-            for n in range(num_walks):
-                num_times_counter = 0
-                current_pos = np.array(x0, dtype=float)
-                for k in range(N):
-                    if k in pos_hist_times:
-                        pos_hist[n,num_times_counter,:] = current_pos
-                        num_times_counter += 1
-                    # current_pos corresponds to step k+1
-                    for i in range(d):
-                        r = random.uniform(0, 1)
-                        if r <= p:
-                            current_pos[i] -= 1
-                        else:
-                            current_pos[i] += 1
-                    position [k+1,:] += current_pos
-                    position2[k+1,:] += current_pos**2
-            return position, position2, pos_hist, np.array(pos_hist_times)
+    def random_walksdD(x0, N, p, num_walks=1, num_times=1,
+                       random=random):
+        """Simulate num_walks random walks from x0 with N steps."""
+        d = len(x0)
+        position  = np.zeros((N+1, d))   # Accumulated positions
+        position2 = np.zeros((N+1, d))   # Accumulated positions**2
+        # Histogram at num_times selected time points
+        pos_hist = np.zeros((num_walks, num_times, d))
+        pos_hist_times = [(N//num_times)*i for i in range(num_times)]
+    
+        for n in range(num_walks):
+            num_times_counter = 0
+            current_pos = np.array(x0, dtype=float)
+            for k in range(N):
+                if k in pos_hist_times:
+                    pos_hist[n,num_times_counter,:] = current_pos
+                    num_times_counter += 1
+                # current_pos corresponds to step k+1
+                for i in range(d):
+                    r = random.uniform(0, 1)
+                    if r <= p:
+                        current_pos[i] -= 1
+                    else:
+                        current_pos[i] += 1
+                position [k+1,:] += current_pos
+                position2[k+1,:] += current_pos**2
+        return position, position2, pos_hist, np.array(pos_hist_times)
 
 Vectorized code          (2)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -7162,24 +7262,24 @@ code.
 
 .. code-block:: python
 
-        def random_walksdD_vec(x0, N, p, num_walks=1, num_times=1):
-            """Vectorized version of random_walks1D; no loops."""
-            d = len(x0)
-            position  = np.zeros((N+1, d))  # Accumulated positions
-            position2 = np.zeros((N+1, d))  # Accumulated positions**2
-            walks = np.zeros((num_walks, N+1, d))  # Positions of each walk
-            walks[:,0,:] = x0
-            # Histogram at num_times selected time points
-            pos_hist = np.zeros((num_walks, num_times, d))
-            pos_hist_times = [(N//num_times)*i for i in range(num_times)]
-        
-            r = np.random.uniform(0, 1, size=N*num_walks*d)
-            steps = np.where(r <= p, -1, 1).reshape(num_walks, N, d)
-            walks[:,1:,:] = x0 + np.cumsum(steps, axis=1)
-            position  = np.sum(walks,    axis=0)
-            position2 = np.sum(walks**2, axis=0)
-            pos_hist[:,:,:] = walks[:,pos_hist_times,:]
-            return position, position2, pos_hist, np.array(pos_hist_times)
+    def random_walksdD_vec(x0, N, p, num_walks=1, num_times=1):
+        """Vectorized version of random_walks1D; no loops."""
+        d = len(x0)
+        position  = np.zeros((N+1, d))  # Accumulated positions
+        position2 = np.zeros((N+1, d))  # Accumulated positions**2
+        walks = np.zeros((num_walks, N+1, d))  # Positions of each walk
+        walks[:,0,:] = x0
+        # Histogram at num_times selected time points
+        pos_hist = np.zeros((num_walks, num_times, d))
+        pos_hist_times = [(N//num_times)*i for i in range(num_times)]
+    
+        r = np.random.uniform(0, 1, size=N*num_walks*d)
+        steps = np.where(r <= p, -1, 1).reshape(num_walks, N, d)
+        walks[:,1:,:] = x0 + np.cumsum(steps, axis=1)
+        position  = np.sum(walks,    axis=0)
+        position2 = np.sum(walks**2, axis=0)
+        pos_hist[:,:,:] = walks[:,pos_hist_times,:]
+        return position, position2, pos_hist, np.array(pos_hist_times)
 
 .. 2D N=4M
 
@@ -7848,7 +7948,7 @@ Exercise 6: Stabilizing the Crank-Nicolson method by Rannacher time stepping
 It is well known that the Crank-Nicolson method may give rise to
 non-physical oscillations in the solution of diffusion equations
 if the initial data exhibit jumps (see the section :ref:`diffu:pde1:analysis:CN`).
-Rannacher [Ref5]_ suggested a stabilizing technique
+Rannacher [Ref6]_ suggested a stabilizing technique
 consisting of using the Backward Euler scheme for the first two
 time steps with step length :math:`\frac{1}{2}\Delta t`. One can generalize
 this idea to taking :math:`2m` time steps of size :math:`\frac{1}{2}\Delta t` with

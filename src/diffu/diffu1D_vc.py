@@ -21,7 +21,7 @@ x     Mesh points in space.
 t     Mesh points in time.
 n     Index counter in time.
 u     Unknown at current/new time level.
-u_1   u at the previous time level.
+u_n   u at the previous time level.
 dx    Constant mesh spacing in x.
 dt    Constant mesh spacing in t.
 ===== ==========================================================
@@ -76,7 +76,7 @@ def solver(I, a, f, L, Nx, D, T, theta=0.5, u_L=1, u_R=0,
         u_R = lambda t: u_R_
 
     u   = zeros(Nx+1)   # solution array at t[n+1]
-    u_1 = zeros(Nx+1)   # solution at t[n]
+    u_n = zeros(Nx+1)   # solution at t[n]
 
     """
     Basic formula in the scheme:
@@ -117,16 +117,16 @@ def solver(I, a, f, L, Nx, D, T, theta=0.5, u_L=1, u_R=0,
 
     # Set initial condition
     for i in range(0,Nx+1):
-        u_1[i] = I(x[i])
+        u_n[i] = I(x[i])
 
     if user_action is not None:
-        user_action(u_1, x, t, 0)
+        user_action(u_n, x, t, 0)
 
     # Time loop
     for n in range(0, Nt):
-        b[1:-1] = u_1[1:-1] + Dr*(
-            (a[2:] + a[1:-1])*(u_1[2:] - u_1[1:-1]) -
-            (a[1:-1] + a[0:-2])*(u_1[1:-1] - u_1[:-2])) + \
+        b[1:-1] = u_n[1:-1] + Dr*(
+            (a[2:] + a[1:-1])*(u_n[2:] - u_n[1:-1]) -
+            (a[1:-1] + a[0:-2])*(u_n[1:-1] - u_n[:-2])) + \
             dt*theta*f(x[1:-1], t[n+1]) + \
             dt*(1-theta)*f(x[1:-1], t[n])
         # Boundary conditions
@@ -139,7 +139,7 @@ def solver(I, a, f, L, Nx, D, T, theta=0.5, u_L=1, u_R=0,
             user_action(u, x, t, n+1)
 
         # Switch variables before next step
-        u_1, u = u, u_1
+        u_n, u = u, u_n
 
     t1 = time.clock()
     return t1-t0

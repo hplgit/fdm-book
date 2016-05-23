@@ -43,7 +43,8 @@ def solver(H, C_R, dt, T, eps_v=0.01, eps_h=0.01):
     raise ValueError('T=%g is too short simulation time' % T)
 
 import matplotlib.pyplot as plt
-h, v, t = solver(H=1, C_R=0.8, T=100, dt=0.0001, eps_v=0.01, eps_h=0.01)
+h, v, t = solver(
+    H=1, C_R=0.8, T=100, dt=0.0001, eps_v=0.01, eps_h=0.01)
 plt.plot(t, h)
 plt.legend('h')
 plt.savefig('tmp_h.png'); plt.savefig('tmp_h.pdf')
