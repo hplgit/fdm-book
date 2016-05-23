@@ -39,13 +39,13 @@ Written out,
 
 !bt
 \begin{align}
-\frac{u^{n+1}_{i,j}-u^n_{i,j}}{\Delta t} &=
-\theta (\dfc
+& \frac{u^{n+1}_{i,j}-u^n_{i,j}}{\Delta t} =\nonumber\\
+&\qquad \theta (\dfc
 (\frac{u^{n+1}_{i-1,j} - 2^{n+1}_{i,j} + u^{n+1}_{i+1,j}}{\Delta x^2} +
 \frac{u^{n+1}_{i,j-1} - 2^{n+1}_{i,j} + u^{n+1}_{i,j+1}}{\Delta y^2}) +
 f^{n+1}_{i,j})
 + \nonumber\\
-&\quad (1-\theta)(\dfc
+&\qquad (1-\theta)(\dfc
 (\frac{u^{n}_{i-1,j} - 2^{n}_{i,j} + u^{n}_{i+1,j}}{\Delta x^2} +
 \frac{u^{n}_{i,j-1} - 2^{n}_{i,j} + u^{n}_{i,j+1}}{\Delta y^2}) +
 f^{n}_{i,j})
@@ -61,14 +61,15 @@ F_x
 (u^{n+1}_{i-1,j} - 2^{n+1}_{i,j} + u^{n+1}_{i,j}) +
 F_y
 (u^{n+1}_{i,j-1} - 2^{n+1}_{i,j} + u^{n+1}_{i,j+1})\right)
-= u^n_{i,j} + \nonumber\\
+= \nonumber\\
 &\qquad
 (1-\theta)\left(
 F_x
 (u^{n}_{i-1,j} - 2^{n}_{i,j} + u^{n}_{i,j}) +
 F_y
 (u^{n}_{i,j-1} - 2^{n}_{i,j} + u^{n}_{i,j+1})\right) + \nonumber\\
-&\qquad \theta \Delta t f^{n+1}_{i,j} + (1-\theta) \Delta t f^{n}_{i,j},
+&\qquad \theta \Delta t f^{n+1}_{i,j} + (1-\theta) \Delta t f^{n}_{i,j}
++ u^n_{i,j},
 label{diffu:2D:theta_scheme2}
 \end{align}
 !et
@@ -97,18 +98,18 @@ Figure ref{diffu:2D:fig:mesh3x2}.  The equations at the boundary just
 implement the boundary condition $u=0$:
 
 !bt
-\[
-u^{n+1}_{0,0}=
+\begin{align*}
+& u^{n+1}_{0,0}=
 u^{n+1}_{1,0}=
 u^{n+1}_{2,0}=
 u^{n+1}_{3,0}=
-u^{n+1}_{0,1}=
-u^{n+1}_{3,1}=
+u^{n+1}_{0,1}=\\
+& u^{n+1}_{3,1}=
 u^{n+1}_{0,2}=
 u^{n+1}_{1,2}=
 u^{n+1}_{2,2}=
 u^{n+1}_{3,2}= 0\tp
-\]
+\end{align*}
 !et
 We are left with two interior points, with $i=1$, $j=1$ and $i=2$, $j=1$.
 The corresponding equations are
@@ -121,14 +122,15 @@ F_x
 (u^{n+1}_{i-1,j} - 2^{n+1}_{i,j} + u^{n+1}_{i,j}) +
 F_y
 (u^{n+1}_{i,j-1} - 2^{n+1}_{i,j} + u^{n+1}_{i,j+1})\right)
-= u^n_{i,j} + \\
+=  \\
 &\qquad
 (1-\theta)\left(
 F_x
 (u^{n}_{i-1,j} - 2^{n}_{i,j} + u^{n}_{i,j}) +
 F_y
 (u^{n}_{i,j-1} - 2^{n}_{i,j} + u^{n}_{i,j+1})\right) + \\
-&\qquad \theta \Delta t f^{n+1}_{i,j} + (1-\theta) \Delta t f^{n}_{i,j},
+&\qquad \theta \Delta t f^{n+1}_{i,j} + (1-\theta) \Delta t f^{n}_{i,j}
++ u^n_{i,j},
 \end{align*}
 !et
 
@@ -167,7 +169,7 @@ and then progress one ``horizontal'' mesh line at a time.
 In Figure ref{diffu:2D:fig:mesh3x2} you can see that the $(i,j)$ and the
 corresponding single index ($p$) are listed for each mesh point.
 
-We could equally well numbered the equations in other ways, e.g.,
+We could equally well have numbered the equations in other ways, e.g.,
 let the $j$ index be the fastest varying index:
 $p = m(i,j) = i(N_y+1) + j$.
 
@@ -408,9 +410,9 @@ label{diffu:2D:impl:dense}
 idx{diffusion equation!2D, implementation}
 
 The goal now is to map the algorithms in the previous section to
-Python code. One should for computational efficiency reasons take
+Python code. One should, for computational efficiency reasons, take
 advantage of the fact that the coefficient matrix is sparse and/or
-banded, i.e., take advantage of all the zeros; however, we first demonstrate
+banded, i.e., take advantage of all the zeros. However, we first demonstrate
 how to fill an $N\times N$ dense square matrix, where $N$ is the number
 of unknowns, here $N=(N_x+1)(N_y+1)$. The dense matrix is much easier
 to understand than the sparse matrix case.
@@ -675,13 +677,13 @@ idx{diffusion equation!2D, verification (conv. rates)}
 
 For 2D verification with convergence rate computations, the expressions
 and computations just build naturally on what we saw for 1D diffusion.
-Truncation error analysis and other forms of error analysis point to a 
+Truncation error analysis and other forms of error analysis point to a
 numerical error formula like
 
 !bt
 \[ E = C_t\Delta t^p + C_x\Delta x^2 + C_y\Delta y^2,\]
 !et
-where $p$, $C_t$, $C_x$, and $C_y$ are unknown constants. A Crank-Nicolson 
+where $p$, $C_t$, $C_x$, and $C_y$ are constants. A Crank-Nicolson
 method has $p=2$, while the Forward and Backward Euler schemes have $p=1$.
 
 When checking the error formula empirically, we need to reduce it to
@@ -844,7 +846,7 @@ upper[m(1,j):m(Nx,j)] = - theta*Fx
 !ec
 The subdiagonal (`lower` array), however, has its index 0
 corresponding to row 1, so there is an offset of 1 in indices compared to
-the matrix. The first nonzero occurs (interior point) at a mesh line $j=\hbox{const}$ corresponds to matrix row $m(1,j)$, and the corresponding array index
+the matrix. The first nonzero occurs (interior point) at a mesh line $j=\hbox{const}$ corresponding to matrix row $m(1,j)$, and the corresponding array index
 in `lower` is then $m(1,j)$. To fill the entries from $m(1,j)$ to $m(N_x-1,j)$
 we set the following slice in `lower`:
 
@@ -989,30 +991,23 @@ for n in It[0:-1]:
     # Update u_n before next step
     u_n, u = u, u_n
 !ec
-The most tricky part of this code snippet is the loading of values in
+The most tricky part of this code snippet is the loading of values from
 the one-dimensional array `c`
 into the two-dimensional array `u`. With our numbering of unknowns
 from left to right along ``horizontal'' mesh lines, the correct
 reordering of the one-dimensional array `c` as a two-dimensional array
-requires first a reshaping as an `(Ny+1,Nx+1)` two-dimensional
+requires first a reshaping to an `(Ny+1,Nx+1)` two-dimensional
 array and then taking the transpose. The result is an `(Nx+1,Ny+1)`
 array compatible with `u` both in size and appearance of the function values.
 
-The `spsolve` function in `scipy.sparse.linalg` is an efficient version
-of Gaussian elimination suited for matrices described by diagonals.
-Actually, only the matrix elements within the bands (from `lower2`
-to `upper2`) are computed with, and these elements constitute only a
-fraction of all $N^2$ matrix elements, a crucial property to exploit.
-The Gaussian elimination algorithm for banded matrices is therefore
-much faster and requires much less storage than standard Gaussian elimination
-for a dense matrix.
-More precisely, with $b=N_x+1$ as the *bandwidth* of the matrix
-[[[
+The `spsolve` function in `scipy.sparse.linalg` is an efficient
+version of Gaussian elimination suited for matrices described by
+diagonals.  The algorithm is known as *sparse Gaussian elimination*,
+and `spsolve` calls up a well-tested C code called "SuperLU":
+"http://crd-legacy.lbl.gov/~xiaoye/SuperLU/".
 
-[hpl: Problem: if $N_x\gg N_y$ one should number the unknowns in $y$
-direction to get a smaller bandwidth. S: enough to just comment it?]
-
-The complete code is found in the `solver_sparse` function in the file
+The complete code utilizing `spsolve`
+is found in the `solver_sparse` function in the file
 "`diffu2D_u0.py`": "${src_diffu}/diffu2D_u0.py".
 
 === Verification ===
@@ -1089,13 +1084,13 @@ side:
 
 !bt
 \begin{align}
-& u^{n+1,r+1}_{i,j} = (1+2F_x +2F_y)^{-1}((
+& u^{n+1,r+1}_{i,j} = (1+2F_x +2F_y)^{-1}\left(
 F_x
 (u^{n+1,r}_{i-1,j} + u^{n+1,r}_{i,j}) +
 F_y
-(u^{n+1,r}_{i,j-1} + u^{n+1,r}_{i,j+1})) +
+(u^{n+1,r}_{i,j-1} + u^{n+1,r}_{i,j+1})\right)
 \nonumber\\ &\qquad
-u^n_{i,j} + \Delta t f^{n+1}_{i,j})
++ u^n_{i,j} + \Delta t f^{n+1}_{i,j}
 label{diffu:2D:Jacobi}
 \end{align}
 !et
@@ -1184,7 +1179,7 @@ notation for $u^{n+1,r}_{i,j}$, and $u^{(s)}_{i,j}$ denotes
 $u^{n+1-s}_{i,j}$.  That is, $u_{i,j}$ is the unknown, $u^{-}_{i,j}$
 is its most recently computed approximation, and $s$ counts time
 levels backwards in time. The Jacobi method
-(ref(ref{diffu:2D:Jacobi})) takes the following form with the new
+(ref{diffu:2D:Jacobi})) takes the following form with the new
 notation:
 
 !bt
@@ -1302,7 +1297,7 @@ is vectorized.
 [hpl: Make references to 1D and 2D wave equation vectorization.]
 
 The first natural verification is to use the test problem
-from in the function `quadratic` from
+in the function `quadratic` from
 Section ref{diffu:2D:verify}. This problem is known to have no
 approximation error, but any iterative method will produce an
 approximate solution with unknown error. For a tolerance $10^{-k}$
@@ -1344,7 +1339,7 @@ It can be shown that
 
 !bt
 \begin{equation}
-\uex = Ae^{-\dfc\pi^2(L_x^{-2} + L_y^{-2})}
+\uex = Ae^{-\dfc\pi^2(L_x^{-2} + L_y^{-2})t}
 \sin\left(\frac{\pi}{L_x}x\right)\sin\left(\frac{\pi}{L_y}y\right),
 label{diffu:2D:Jacobi:impl:hill:uex}
 \end{equation}
@@ -1356,7 +1351,8 @@ This solution vanishes at the boundaries,
 and the initial condition is the product of two sines.
 We may choose $A=1$ for simplicity.
 
-It is difficult to know if our Jacobi method works properly since we
+It is difficult to know if our solver based on the
+Jacobi method works properly since we
 are faced with two sources of errors: one from the discretization,
 $E_\Delta$, and one from the iterative Jacobi method, $E_i$. The total
 error in the computed $u$ can be represented as
@@ -1500,7 +1496,7 @@ idx{Gauss-Seidel method}
 If we update the mesh points according to the
 Jacobi method (ref{diffu:2D:Jacobi0})
 for a Backward Euler discretization with a loop over
-$i=1,\ldots,N_x-1$ and $j=1,\ldots,Ny-1$, we realize that
+$i=1,\ldots,N_x-1$ and $j=1,\ldots,N_y-1$, we realize that
 when $u^{n+1,r+1}_{i,j}$ is computed, $u^{n+1,r+1}_{i-1,j}$
 and $u^{n+1,r+1}_{i,j-1}$ are already computed, so these new
 values can be used rather than
@@ -1794,7 +1790,7 @@ u[ic,jc] = omega*u_new[ic,jc] + (1-omega)*u_[ic,jc]
 The Gauss-Seidel (or SOR) updates need four different steps.
 The `ic` and `jc` slices are specified above. For each of these,
 we must specify the corresponding `im1`, `ip1`, `jm1`, and `jp1`
-slices. The code below contain the details.
+slices. The code below contains the details.
 
 !bc pycod
 # Red points
@@ -1891,7 +1887,7 @@ LU and Cholesky factorization as well as forward and backward
 substitution (`scipy.linalg` is the relevant Python package).
 
 Finite difference discretizations lead to sparse coefficient matrices.
-An extreme case arose in Section ref{diffu:pde1:BE} where $A$ is
+An extreme case arose in Section ref{diffu:pde1:BE} where $A$ was
 tridiagonal. For a tridiagonal matrix, the amount of arithmetic
 operations in the LU and Cholesky factorization algorithms is just of
 the order $N$, not $N^3$. Tridiagonal matrices are special cases of
@@ -1900,10 +1896,16 @@ bands.  Finite difference methods on regularly numbered rectangular
 and box-shaped meshes give rise to such banded matrices, with 5 bands
 in 2D and 7 in 3D for diffusion problems.  Gaussian elimination only
 needs to work within the bands, leading to much more efficient
-algorithms. For example, factorization of more general, sparse
-matrices can often take advantage of the sparsity through modified
-Gaussian elimination algorithms. The relevant Python package is
-`scipy.sparse.linalg`.
+algorithms.
+
+If $A_{i,j}=0$ for $j> i+p$ and $j< i-p$, $p$ is the *half-bandwidth*
+of the matrix. We have in our 2D problem $p=N_x+2$, while in 3D,
+$p=(N_x+1)(N_y+1)+2$. The cost of Gaussian elimination is then
+$\Oof{Np^2}$, so with $p\ll N$, we see that banded matrices are much
+more efficient to compute with. By reordering the unknowns in clever
+ways, one can reduce the work of Gaussian elimination
+further. Fortunately, the Python programmer has access to such
+algorithms through the `scipy.sparse.linalg` package.
 
 Although a direct method is an exact algorithm, rounding errors
 may in practice accumulate and pollute the solution. The effect
@@ -2147,3 +2149,19 @@ but is unfortunately not available from the `cg` function. Therefore,
 we perform a trick: in each iteration a user function `CG_callback`
 is called where we accumulate the number of iterations in a list
 `CG_iter`.
+
+===== What is the recommended method for solving linear systems? =====
+
+There is no clear answer to this question. If you have enough memory
+and computing time available, direct methods such as `spsolve` are
+to be preferred since they are easy to use and finds almost an exact
+solution. However, in larger 2D and in 3D problems, direct methods
+usually run too slowly or required too much memory, so one is forced
+to use iterative methods. The fastest and most reliable methods are
+in the Conjugate Gradient family, but these requires suitable
+preconditioners. ILU is an all-round preconditioner, but it is not
+suited for parallel computing. The Jacobi and SOR iterative methods
+are easy to implement, and popular of that reason, but run slowly. Jacobi
+iteration is not an option in real problems, but SOR may be.
+#As we have showed, Jacobi is equivalent to running a Forward Euler scheme
+#until the stationary state is reached

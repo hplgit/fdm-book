@@ -2713,3 +2713,212 @@ part of this equation gives
 !et
 Can plot as function of $\half\tilde\omega\Delta t$ in $[0,\pi/2]$.
 # #endif
+
+======= Staggered mesh =======
+
+A more intuitive discretization than the Euler-Cromer method, yet
+equivalent, employs solely centered differences in a natural way
+for the $2\times 2$ first-order ODE system.
+The scheme is in fact fully equivalent to the second-order scheme for
+(ref{stag:vib:ODE2nd}), also for the first time step.
+Such a scheme needs to operate on a *staggered mesh* in time.
+Staggered meshes are very popular in many physical application, maybe foremost
+fluid dynamics and electromagnetics, so the topic is important to learn.
+
+
+===== The Euler-Cromer scheme on a staggered mesh =====
+label{vib:model2x2:staggered}
+
+idx{staggered mesh}
+idx{staggered Euler-Cromer scheme}
+idx{alternating mesh}
+
+[hpl: Do the equations in different sequence, first vel, then pos.]
+
+In a staggered mesh, the unknowns are sought at different points in
+the mesh. Specifically, $u$ is sought at
+integer time points $t_n$ and $v$ is sought at $t_{n+1/2}$
+*between* two $u$ points.
+The unknowns are then $u^1, v^{3/2}, u^2, v^{5/2}$, and so on.
+We typically use the notation
+$u^n$ and $v^{n+\half}$ for the two unknown mesh functions.
+Figure ref{staggered:EC:fig1} presents a graphical sketch of two
+mesh functions $u$ and $v$ on a staggered mesh.
+
+FIGURE: [fig-vib/staggered_time, width=500 frac=0.8] Examples on mesh functions on a staggered mesh in time. label{staggered:EC:fig1}
+
+
+On a staggered mesh it is natural to
+use centered difference approximations, expressed
+in operator notation as
+
+!bt
+\begin{align}
+\lbrack D_t u &= v\rbrack^{n+\half},\\
+\lbrack D_t v &= -\omega u\rbrack^{n+1}
+\tp
+\end{align}
+!et
+or if we switch the sequence of the equations:
+
+!bt
+\begin{align}
+\lbrack D_t v &= -\omega u\rbrack^{n},\\
+\lbrack D_t u &= v\rbrack^{n+\half},
+\tp
+\end{align}
+!et
+Writing out the formulas gives
+
+!bt
+\begin{align}
+v^{n+\frac{1}{2}} &= v^{n-\half} -\Delta t \omega^2u^{n+1}
+label{vib:model2x2:EulerCromer:veq1s2},\\
+u^{n+1} &= u^{n} + \Delta t v^{n+\half},
+label{vib:model2x2:EulerCromer:ueq1s2}
+\tp
+\end{align}
+!et
+#We shall use the names
+#*forward-backward Euler-Cromer* and *staggered Euler-Cromer*
+#to distinguish the two schemes.
+
+We can eliminate the $v$
+values and get back the centered scheme based on the second-order
+differential equation, so all these three schemes are equivalent.
+However, they differ somewhat in the treatment of the initial
+conditions.
+
+Suppose we have $u(0)=I$ and $u'(0)=v(0)=0$ as mathematical
+initial conditions. This means $u^0=I$ and
+
+!bt
+\[ v(0)\approx \half(v^{-\half} + v^{\half}) = 0,
+\quad\Rightarrow\quad v^{-\half} =- v^\half\tp\]
+!et
+Using the discretized equation (ref{vib:model2x2:EulerCromer:veq1s2}) for
+$n=0$ yields
+
+!bt
+\[ v^\half = v^{-\half} -\Delta t\omega^2 I,\]
+!et
+and eliminating $v^{-\half} =- v^{\half}$
+results in $v^\half = -\half\Delta t\omega^2I$ and
+
+!bt
+\[ u^1 = u^0 - \half\Delta t^2\omega^2 I,\]
+!et
+which is exactly the same equation for $u^1$ as we had in the
+centered scheme based on the second-order differential equation
+(and hence corresponds to a centered difference approximation of
+the initial condition for $u'(0)$).
+The conclusion is that a staggered mesh is fully equivalent with
+that scheme, while the forward-backward version gives a slight
+deviation in the computation of $u^1$.
+
+We can redo the derivation of the initial conditions when $u'(0)=V$:
+
+!bt
+\[ v(0)\approx \half(v^{-\half} + v^{\half}) = V,
+\quad\Rightarrow\quad v^{-\half} = 2V - v^\half\tp\]
+!et
+Using this $v^{-\half}$ in
+
+!bt
+\[ v^\half = v^{-\half} -\Delta t\omega^2 I,\]
+!et
+then gives $v^\half = V - \half\Delta t\omega^2 I$.
+The general initial conditions are therefore
+
+!bt
+\begin{align}
+u^0 &= I,
+label{vib:ode2:staggered:u0}\\
+v^\half &= V - \half\Delta t\omega^2I
+label{vib:ode2:staggered:v0}\tp
+\end{align}
+!et
+
+
+===== Implementation of the scheme on a staggered mesh =====
+
+The algorithm goes like this:
+
+ o Set the initial values (ref{vib:ode2:staggered:u0}) and
+   (ref{vib:ode2:staggered:v0}).
+ o For $n=1,2,\ldots$:
+   o Compute $u^{n}$ from (ref{vib:model2x2:EulerCromer:ueq1s2}).
+   o Compute $v^{n+\half}$ from (ref{vib:model2x2:EulerCromer:veq1s2}).
+
+=== Implementation with integer indices ===
+
+Translating the schemes (ref{vib:model2x2:EulerCromer:ueq1s2})
+and (ref{vib:model2x2:EulerCromer:veq1s2}) to computer code
+faces the problem of how to store and access $v^{n+\half}$,
+since arrays only allow integer indices with base 0.
+We must then introduce a convention: $v^{1+\half}$ is stored
+in `v[n]` while $v^{1-\half}$ is stored in `v[n-1]`.
+We can then write the algorithm in Python as
+
+!bc pycod
+def solver(I, w, dt, T):
+    dt = float(dt)
+    Nt = int(round(T/dt))
+    u = zeros(Nt+1)
+    v = zeros(Nt+1)
+    t = linspace(0, Nt*dt, Nt+1)  # mesh for u
+    t_v = t + dt/2                # mesh for v
+
+    u[0] = I
+    v[0] = 0 - 0.5*dt*w**2*u[0]
+    for n in range(1, Nt+1):
+        u[n] = u[n-1] + dt*v[n-1]
+        v[n] = v[n-1] - dt*w**2*u[n]
+    return u, t, v, t_v
+!ec
+Note that $u$ and $v$ are returned together with the mesh points such
+that the complete mesh function for $u$ is described by `u` and `t`,
+while `v` and `t_v` represent the mesh function for $v$.
+
+=== Implementation with half-integer indices ===
+
+Some prefer to see a closer relationship between the code and
+the mathematics for the quantities with half-integer indices.
+For example, we would like to replace the updating equation for
+`v[n]` by
+
+!bc pycod
+v[n+half] = v[n-half] - dt*w**2*u[n]
+!ec
+This is easy to do if we could be sure that `n+half` means `n` and
+`n-half` means `n-1`. A possible solution is to define `half` as a
+special object such that an integer plus `half` results in the integer,
+while an integer minus `half` equals the integer minus 1.
+A simple Python class may realize the `half` object:
+
+!bc pycod
+class HalfInt:
+    def __radd__(self, other):
+        return other
+
+    def __rsub__(self, other):
+        return other - 1
+
+half = HalfInt()
+!ec
+The `__radd__` function is invoked for all expressions `n+half`
+("right add" with `self` as `half` and `other` as `n`). Similarly,
+the `__rsub__` function is invoked for `n-half` and results in `n-1`.
+
+Using the `half` object, we can implement the algorithms in an even
+more readable way:
+
+@@@CODE src-vib/vib_undamped_staggered.py fromto: def solver\(@def test_staggered
+
+Verification of this code is easy as we can just compare the computed
+`u` with the `u` produced by the `solver` function in
+`vib_undamped.py` (which solves $u''+\omega^2u=0$ directly).  The
+values should coincide to machine precision since the two numerical
+methods are mathematically equivalent.  We refer to the file
+"`vib_undamped_staggered.py`": "${src_vib}/vib_undamped_staggered.py"
+for the details of a unit test (`test_staggered`) that checks this property.

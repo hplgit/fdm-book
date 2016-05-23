@@ -195,7 +195,7 @@ def test_random_walks1D():
     np.random.seed(10)
     vectorized2_computed = random_walks1D_vec2(
         x0, N, p, num_walks, num_times)
-    # positions: [0`, 1, 0, 1, 2]
+    # positions: [0, 1, 0, 1, 2]
     # Can test without tolerance since everything is +/- 1
     return_values = ['pos', 'pos2', 'pos_hist', 'pos_hist_times']
     for s, v, r in zip(serial_computed,

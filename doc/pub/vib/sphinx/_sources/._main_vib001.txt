@@ -105,7 +105,7 @@ A centered finite difference scheme
 -----------------------------------
 
 To formulate a finite difference method for the model
-problem  :ref:`(1) <Eq:vib:ode1>` we follow the `four steps <http://tinyurl.com/opdfafk/pub/sphinx-decay/main_decay.html#the-forward-euler-scheme>`__ explained in [Ref1]_.
+problem  :ref:`(1) <Eq:vib:ode1>` we follow the `four steps <http://tinyurl.com/pu5uyfn/pub/sphinx-decay/main_decay.html#the-forward-euler-scheme>`__ explained in [Ref1]_.
 
 .. index::
    single: mesh; finite differences
@@ -285,7 +285,7 @@ Operator notation
 
 We may write the scheme using a compact difference notation
 (see also 
-`examples <http://tinyurl.com/opdfafk/pub/sphinx-decay/main_decay.html#compact-operator-notation-for-finite-differences>`__ in [Ref1]_).
+`examples <http://tinyurl.com/pu5uyfn/pub/sphinx-decay/main_decay.html#compact-operator-notation-for-finite-differences>`__ in [Ref1]_).
 The difference :ref:`(4) <Eq:vib:ode1:step3>` has the operator
 notation :math:`[D_tD_t u]^n` such that we can write:
 
@@ -523,7 +523,7 @@ the algorithm, is to compute :math:`u^1`, :math:`u^2`, and :math:`u^3`
 with the aid of a calculator
 and make a function for comparing these results with those from the ``solver``
 function. The ``test_three_steps`` function in
-the file `vib_undamped.py <http://tinyurl.com/nm5587k/vib/vib_undamped.py>`__
+the file `vib_undamped.py <http://tinyurl.com/nu656p2/vib/vib_undamped.py>`__
 shows the details of how we use the hand calculations to test the code:
 
 .. code-block:: python
@@ -1273,7 +1273,7 @@ maximum points:
              for n in range(min(len(minima),len(maxima)))]
         return np.array(a)
 
-The code segments are found in the file `vib_empirical_analysis.py <http://tinyurl.com/nm5587k/vib/vib_empirical_analysis.py>`__.
+The code segments are found in the file `vib_empirical_analysis.py <http://tinyurl.com/nu656p2/vib/vib_empirical_analysis.py>`__.
 
 Since ``a[i]`` and ``p[i]`` correspond to
 the :math:`i`-th amplitude estimate and the :math:`i`-th period estimate, respectively,
@@ -1487,7 +1487,7 @@ left plot in Figure :ref:`vib:ode1:2dt`.
 Figure :ref:`vib:ode1:tildeomega:plot` plots the discrete frequency
 :ref:`(18) <Eq:vib:ode1:tildeomega>` and its approximation
 :ref:`(19) <Eq:vib:ode1:tildeomega:series>` for :math:`\omega =1` (based on the
-program `vib_plot_freq.py <http://tinyurl.com/nm5587k/vib/vib_plot_freq.py>`__).
+program `vib_plot_freq.py <http://tinyurl.com/nu656p2/vib/vib_plot_freq.py>`__).
 Although :math:`\tilde\omega` is a function of :math:`\Delta t` in
 :ref:`(19) <Eq:vib:ode1:tildeomega:series>`, it is misleading to think of
 :math:`\Delta t` as the important discretization parameter. It is the
@@ -2193,7 +2193,7 @@ a sketch of the code.
             u, t = solver.solve(t_mesh)
 
 There is quite some more code dealing with plots also, and we refer
-to the source file `vib_undamped_odespy.py <http://tinyurl.com/nm5587k/vib/vib_undamped_odespy.py>`__
+to the source file `vib_undamped_odespy.py <http://tinyurl.com/nu656p2/vib/vib_undamped_odespy.py>`__
 for details. Observe that keyword arguments in ``f(u,t,w=1)`` can
 be supplied through a solver parameter ``f_kwargs`` (dictionary of
 additional keyword arguments to ``f``).
@@ -2632,7 +2632,7 @@ The convergence rates of the quantity ``e_E_norm`` can be used for
 verification.  The value of ``e_E_norm`` is also useful for comparing
 schemes through their ability to preserve energy. Below is a table
 demonstrating the relative error in total energy for various schemes
-(computed by the `vib_undamped_odespy.py <http://tinyurl.com/nm5587k/vib/vib_undamped_odespy.py>`__ program). The test problem is
+(computed by the `vib_undamped_odespy.py <http://tinyurl.com/nu656p2/vib/vib_undamped_odespy.py>`__ program). The test problem is
 :math:`u^{\prime\prime} + 4\pi^2 u =0` with :math:`u(0)=1` and :math:`u'(0)=0`, so the
 period is 1 and :math:`E(t)\approx 4.93`. We clearly see that the
 Crank-Nicolson and the Runge-Kutta schemes are superior to the Forward
@@ -2965,7 +2965,7 @@ Implementation          (2)
 Solver function
 ~~~~~~~~~~~~~~~
 
-The function below, found in `vib_undamped_EulerCromer.py <http://tinyurl.com/nm5587k/vib/vib_undamped_EulerCromer.py>`__, implements the Euler-Cromer scheme
+The function below, found in `vib_undamped_EulerCromer.py <http://tinyurl.com/nu656p2/vib/vib_undamped_EulerCromer.py>`__, implements the Euler-Cromer scheme
 :ref:`(54) <Eq:vib:model2x2:EulerCromer:veq1b>`-:ref:`(55) <Eq:vib:model2x2:EulerCromer:ueq1b>`:
 
 .. code-block:: python
@@ -3199,4 +3199,291 @@ rounding errors, is
 It has, according to [Ref3]_, better
 properties in this regard than the direct scheme for the second-order
 ODE.
+
+Staggered mesh
+==============
+
+A more intuitive discretization than the Euler-Cromer method, yet
+equivalent, employs solely centered differences in a natural way
+for the :math:`2\times 2` first-order ODE system.
+The scheme is in fact fully equivalent to the second-order scheme for
+(:ref:`stag:vib:ODE2nd`), also for the first time step.
+Such a scheme needs to operate on a *staggered mesh* in time.
+Staggered meshes are very popular in many physical application, maybe foremost
+fluid dynamics and electromagnetics, so the topic is important to learn.
+
+.. _vib:model2x2:staggered:
+
+The Euler-Cromer scheme on a staggered mesh
+-------------------------------------------
+
+.. index:: staggered mesh
+
+.. index:: staggered Euler-Cromer scheme
+
+.. index:: alternating mesh
+
+In a staggered mesh, the unknowns are sought at different points in
+the mesh. Specifically, :math:`u` is sought at
+integer time points :math:`t_n` and :math:`v` is sought at :math:`t_{n+1/2}`
+*between* two :math:`u` points.
+The unknowns are then :math:`u^1, v^{3/2}, u^2, v^{5/2}`, and so on.
+We typically use the notation
+:math:`u^n` and :math:`v^{n+\frac{1}{2}}` for the two unknown mesh functions.
+Figure :ref:`staggered:EC:fig1` presents a graphical sketch of two
+mesh functions :math:`u` and :math:`v` on a staggered mesh.
+
+.. _staggered:EC:fig1:
+
+.. figure:: staggered_time.png
+   :width: 500
+
+   *Examples on mesh functions on a staggered mesh in time*
+
+On a staggered mesh it is natural to
+use centered difference approximations, expressed
+in operator notation as
+
+.. _Eq:_auto26:
+
+.. math::
+
+    \tag{63}
+    \lbrack D_t u = v\rbrack^{n+\frac{1}{2}},
+        
+        
+
+.. _Eq:_auto27:
+
+.. math::
+
+    \tag{64}
+    \lbrack D_t v = -\omega u\rbrack^{n+1}
+        {\thinspace .}
+        
+        
+
+or if we switch the sequence of the equations:
+
+.. _Eq:_auto28:
+
+.. math::
+
+    \tag{65}
+    \lbrack D_t v = -\omega u\rbrack^{n},
+        
+        
+
+.. _Eq:_auto29:
+
+.. math::
+
+    \tag{66}
+    \lbrack D_t u = v\rbrack^{n+\frac{1}{2}},
+        {\thinspace .}
+        
+        
+
+Writing out the formulas gives
+
+.. _Eq:vib:model2x2:EulerCromer:veq1s2:
+
+.. math::
+
+    \tag{67}
+    v^{n+\frac{1}{2}} = v^{n-\frac{1}{2}} -\Delta t \omega^2u^{n+1}
+        ,
+        
+
+.. _Eq:vib:model2x2:EulerCromer:ueq1s2:
+
+.. math::
+
+    \tag{68}
+    u^{n+1} = u^{n} + \Delta t v^{n+\frac{1}{2}},
+        
+        {\thinspace .}
+        
+
+.. We shall use the names
+
+.. *forward-backward Euler-Cromer* and *staggered Euler-Cromer*
+
+.. to distinguish the two schemes.
+
+We can eliminate the :math:`v`
+values and get back the centered scheme based on the second-order
+differential equation, so all these three schemes are equivalent.
+However, they differ somewhat in the treatment of the initial
+conditions.
+
+Suppose we have :math:`u(0)=I` and :math:`u'(0)=v(0)=0` as mathematical
+initial conditions. This means :math:`u^0=I` and
+
+.. math::
+         v(0)\approx \frac{1}{2}(v^{-\frac{1}{2}} + v^{\frac{1}{2}}) = 0,
+        \quad\Rightarrow\quad v^{-\frac{1}{2}} =- v^\frac{1}{2}{\thinspace .}
+
+Using the discretized equation :ref:`(67) <Eq:vib:model2x2:EulerCromer:veq1s2>` for
+:math:`n=0` yields
+
+.. math::
+         v^\frac{1}{2} = v^{-\frac{1}{2}} -\Delta t\omega^2 I,
+
+and eliminating :math:`v^{-\frac{1}{2}} =- v^{\frac{1}{2}}`
+results in :math:`v^\frac{1}{2} = -\frac{1}{2}\Delta t\omega^2I` and
+
+.. math::
+         u^1 = u^0 - \frac{1}{2}\Delta t^2\omega^2 I,
+
+which is exactly the same equation for :math:`u^1` as we had in the
+centered scheme based on the second-order differential equation
+(and hence corresponds to a centered difference approximation of
+the initial condition for :math:`u'(0)`).
+The conclusion is that a staggered mesh is fully equivalent with
+that scheme, while the forward-backward version gives a slight
+deviation in the computation of :math:`u^1`.
+
+We can redo the derivation of the initial conditions when :math:`u'(0)=V`:
+
+.. math::
+         v(0)\approx \frac{1}{2}(v^{-\frac{1}{2}} + v^{\frac{1}{2}}) = V,
+        \quad\Rightarrow\quad v^{-\frac{1}{2}} = 2V - v^\frac{1}{2}{\thinspace .}
+
+Using this :math:`v^{-\frac{1}{2}}` in
+
+.. math::
+         v^\frac{1}{2} = v^{-\frac{1}{2}} -\Delta t\omega^2 I,
+
+then gives :math:`v^\frac{1}{2} = V - \frac{1}{2}\Delta t\omega^2 I`.
+The general initial conditions are therefore
+
+.. _Eq:vib:ode2:staggered:u0:
+
+.. math::
+
+    \tag{69}
+    u^0 = I,
+        
+        
+
+.. _Eq:vib:ode2:staggered:v0:
+
+.. math::
+
+    \tag{70}
+    v^\frac{1}{2} = V - \frac{1}{2}\Delta t\omega^2I
+        {\thinspace .}
+        
+
+Implementation of the scheme on a staggered mesh
+------------------------------------------------
+
+The algorithm goes like this:
+
+1. Set the initial values :ref:`(69) <Eq:vib:ode2:staggered:u0>` and
+   :ref:`(70) <Eq:vib:ode2:staggered:v0>`.
+
+2. For :math:`n=1,2,\ldots`:
+
+  a. Compute :math:`u^{n}` from :ref:`(68) <Eq:vib:model2x2:EulerCromer:ueq1s2>`.
+
+  b. Compute :math:`v^{n+\frac{1}{2}}` from :ref:`(67) <Eq:vib:model2x2:EulerCromer:veq1s2>`.
+
+Implementation with integer indices
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Translating the schemes :ref:`(68) <Eq:vib:model2x2:EulerCromer:ueq1s2>`
+and :ref:`(67) <Eq:vib:model2x2:EulerCromer:veq1s2>` to computer code
+faces the problem of how to store and access :math:`v^{n+\frac{1}{2}}`,
+since arrays only allow integer indices with base 0.
+We must then introduce a convention: :math:`v^{1+\frac{1}{2}}` is stored
+in ``v[n]`` while :math:`v^{1-\frac{1}{2}}` is stored in ``v[n-1]``.
+We can then write the algorithm in Python as
+
+.. code-block:: python
+
+    def solver(I, w, dt, T):
+        dt = float(dt)
+        Nt = int(round(T/dt))
+        u = zeros(Nt+1)
+        v = zeros(Nt+1)
+        t = linspace(0, Nt*dt, Nt+1)  # mesh for u
+        t_v = t + dt/2                # mesh for v
+    
+        u[0] = I
+        v[0] = 0 - 0.5*dt*w**2*u[0]
+        for n in range(1, Nt+1):
+            u[n] = u[n-1] + dt*v[n-1]
+            v[n] = v[n-1] - dt*w**2*u[n]
+        return u, t, v, t_v
+
+Note that :math:`u` and :math:`v` are returned together with the mesh points such
+that the complete mesh function for :math:`u` is described by ``u`` and ``t``,
+while ``v`` and ``t_v`` represent the mesh function for :math:`v`.
+
+Implementation with half-integer indices
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Some prefer to see a closer relationship between the code and
+the mathematics for the quantities with half-integer indices.
+For example, we would like to replace the updating equation for
+``v[n]`` by
+
+.. code-block:: python
+
+    v[n+half] = v[n-half] - dt*w**2*u[n]
+
+This is easy to do if we could be sure that ``n+half`` means ``n`` and
+``n-half`` means ``n-1``. A possible solution is to define ``half`` as a
+special object such that an integer plus ``half`` results in the integer,
+while an integer minus ``half`` equals the integer minus 1.
+A simple Python class may realize the ``half`` object:
+
+.. code-block:: python
+
+    class HalfInt:
+        def __radd__(self, other):
+            return other
+    
+        def __rsub__(self, other):
+            return other - 1
+    
+    half = HalfInt()
+
+The ``__radd__`` function is invoked for all expressions ``n+half``
+("right add" with ``self`` as ``half`` and ``other`` as ``n``). Similarly,
+the ``__rsub__`` function is invoked for ``n-half`` and results in ``n-1``.
+
+Using the ``half`` object, we can implement the algorithms in an even
+more readable way:
+
+.. code-block:: python
+
+    def solver(I, w, dt, T):
+        """
+        Solve u'=v, v' = - w**2*u for t in (0,T], u(0)=I and v(0)=0,
+        by a central finite difference method with time step dt.
+        """
+        dt = float(dt)
+        Nt = int(round(T/dt))
+        u = zeros(Nt+1)
+        v = zeros(Nt+1)
+        t = linspace(0, Nt*dt, Nt+1)  # mesh for u
+        t_v = t + dt/2                # mesh for v
+    
+        u[0] = I
+        v[0+half] = 0 - 0.5*dt*w**2*u[0]
+        for n in range(1, Nt+1):
+            u[n] = u[n-1] + dt*v[n-half]
+            v[n+half] = v[n-half] - dt*w**2*u[n]
+        return u, t, v, t_v
+
+Verification of this code is easy as we can just compare the computed
+``u`` with the ``u`` produced by the ``solver`` function in
+``vib_undamped.py`` (which solves :math:`u''+\omega^2u=0` directly).  The
+values should coincide to machine precision since the two numerical
+methods are mathematically equivalent.  We refer to the file
+`vib_undamped_staggered.py <http://tinyurl.com/nu656p2/vib/vib_undamped_staggered.py>`__
+for the details of a unit test (``test_staggered``) that checks this property.
 

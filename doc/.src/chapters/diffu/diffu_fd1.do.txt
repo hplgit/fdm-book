@@ -547,7 +547,10 @@ ref{diffu:pde1:FE:fig:F=0.5} at four time levels.
 MOVIE: [mov-diffu/diffu1D_u0_FE_plug/movie.ogg]
 
 # "movie": "${doc_notes}/pub/diffu/html/mov-diffu/diffu1D_u0_FE_plug/movie.ogg"
-% endif
+# Does not work:
+#http://tinyurl.com/pu5uyfn/pub/diffu/html/mov-diffu/diffu1D_u0_FE_plug/movie.ogg
+# Works:
+#https://raw.githubusercontent.com/hplgit/fdm-book/master/doc/.src/book/mov-diffu/diffu1D_u0_FE_plug/movie.ogg
 
 We see that the curves have saw-tooth waves in the beginning of the
 simulation. This non-physical noise is smoothed out with time, but
@@ -604,7 +607,7 @@ restriction, $F\leq\half$, which means $\Delta t \leq \Delta x^2/(2\dfc)$,
 may be relevant in the beginning of the diffusion process, when the
 solution changes quite fast, but as time increases, the process slows
 down, and a small $\Delta t$ may be inconvenient. By using
-*implicit schemes*, which lead to a coupled system of linear equations
+*implicit schemes*, which lead to coupled systems of linear equations
 to be solved at each time level, any size of $\Delta t$ is possible
 (but the accuracy decreases with increasing $\Delta t$).
 The Backward Euler scheme, derived and implemented below, is the
@@ -685,8 +688,8 @@ the solution of coupled equations, i.e., a matrix system, at each time level.
 !enotice
 
 In the general case, (ref{diffu:pde1:step3bBE}) gives rise to
-a coupled $(Nx-1)\times (Nx-1)$ system of algebraic equations for
-all the unknown $u^n_i$ at the interior spatial points $i=1,\ldots,Nx-1$.
+a coupled $(N_x-1)\times (N_x-1)$ system of algebraic equations for
+all the unknown $u^n_i$ at the interior spatial points $i=1,\ldots,N_x-1$.
 Collecting the unknowns on the left-hand side,
 (ref{diffu:pde1:step3bBE}) can be written
 
@@ -697,12 +700,12 @@ u_{i-1}^{n-1},
 label{diffu:pde1:step4BE}
 \end{equation}
 !et
-for $i=1,\ldots,Nx-1$.
+for $i=1,\ldots,N_x-1$.
 One can either view these equations as a system for where the
 $u^{n}_i$ values at the internal mesh points, $i=1,\ldots,N_x-1$, are
 unknown, or we may append the boundary values $u^n_0$ and $u^n_{N_x}$
 to the system. In the latter case, all $u^n_i$ for $i=0,\ldots,N_x$
-are unknown and we must add the boundary equations to
+are considered unknown, and we must add the boundary equations to
 the $N_x-1$ equations in (ref{diffu:pde1:step4BE}):
 
 !bt
@@ -757,7 +760,7 @@ A_{i,i} &= 1+ 2F\\
 A_{i,i+1} &= -F
 \end{align}
 !et
-for the equations for internal points, $i=1,\ldots,N_x-1$. The first and last
+in the equations for internal points, $i=1,\ldots,N_x-1$. The first and last
 equation correspond to the boundary condition, where we know the solution,
 and therefore we must have
 
@@ -843,26 +846,26 @@ idx{diffusion equation! 1D, verification (BE)}
 label{diffu:pde1:impl:sparse}
 idx{diffusion equation! 1D, tridiagonal matrix}
 
-We have seen from (ref{diffu:pde1:matrix:sparsity}) that the matrix $A$
-is tridiagonal. The code segment above used a full, dense matrix
+We have seen from (ref{diffu:pde1:matrix:sparsity}) that the matrix
+$A$ is tridiagonal. The code segment above used a full, dense matrix
 representation of $A$, which stores a lot of values we know are zero
-beforehand, and worse, the solution algorithm computes with all these zeros.
-With $N_x+1$ unknowns, the work by the solution algorithm is $\frac{1}{3}
-(N_x+1)^3$ and the storage requirements $(N_x+1)^2$. By utilizing
-the fact that $A$ is tridiagonal and employing corresponding software
-tools that work with the three diagonals,
-the work and storage demands can be proportional to $N_x$ only.
-This leads to a dramatic improvement: with $N_x=200$, which is an often
-needed resolution, the code runs about 40,000 times faster and reduces
-the storage to just 1.5%! It is no doubt that we need to take advantage
-of the fact that $A$ is tridiagonal.
+beforehand, and worse, the solution algorithm computes with all these
+zeros.  With $N_x+1$ unknowns, the work by the solution algorithm is
+$\frac{1}{3} (N_x+1)^3$ and the storage requirements $(N_x+1)^2$. By
+utilizing the fact that $A$ is tridiagonal and employing corresponding
+software tools that work with the three diagonals, the work and
+storage demands can be proportional to $N_x$ only.  This leads to a
+dramatic improvement: with $N_x=200$, which is a realistic resolution,
+the code runs about 40,000 times faster and reduces the storage to
+just 1.5%! It is no doubt that we should take advantage of the fact
+that $A$ is tridiagonal.
 
-The key idea is to apply a data structure for a
-tridiagonal or sparse matrix. The `scipy.sparse` package has
-relevant utilities. For example, we can store the nonzero diagonals of
-a matrix. The package also has linear system solvers that operate on
-sparse matrix data structures. The code below illustrates how we
-can store only the main diagonal and the upper and lower diagonals.
+The key idea is to apply a data structure for a tridiagonal or sparse
+matrix. The `scipy.sparse` package has relevant utilities. For
+example, we can store only the nonzero diagonals of a matrix. The
+package also has linear system solvers that operate on sparse matrix
+data structures. The code below illustrates how we can store only the
+main diagonal and the upper and lower diagonals.
 
 !bc pycod
 # Representation of sparse matrix and right-hand side
@@ -896,7 +899,7 @@ for n in range(0, Nt):
     u_n[:] = u
 !ec
 The `scipy.sparse.linalg.spsolve` function utilizes the sparse storage
-structure of `A` and performs in this case a very efficient Gaussian
+structure of `A` and performs, in this case, a very efficient Gaussian
 elimination solve.
 
 The program "`diffu1D_u0.py`": "${src_diffu}/diffu1D_u0.py"
@@ -977,11 +980,11 @@ different entries:
 !bt
 \begin{align}
 A_{i,i-1} &= -\half F\\
-A_{i,i} &= \half + F\\
+A_{i,i} &= 1 + F\\
 A_{i,i+1} &= -\half F
 \end{align}
 !et
-for the equations for internal points, $i=1,\ldots,N_x-1$. The equations
+in the equations for internal points, $i=1,\ldots,N_x-1$. The equations
 for the boundary points correspond to
 
 !bt
@@ -1034,7 +1037,7 @@ For the equation
 \[ \frac{\partial u}{\partial t} = G(u),\]
 !et
 where $G(u)$ is some
-a spatial differential operator, the $\theta$-rule
+spatial differential operator, the $\theta$-rule
 looks like
 
 !bt
@@ -1113,9 +1116,9 @@ the discontinuity looks sharper in the Crank-Nicolson
 simulations with larger $F$.
 
 The Crank-Nicolson method produces smooth solutions for small $F$,
-$F\leq\half$, but small noise is more and more evident as $F$
+$F\leq\half$, but small noise gets more and more evident as $F$
 increases. Figures ref{diffu:pde1:CN:fig:F=3} and ref{diffu:pde1:CN:fig:F=10}
-demonstrates the effect for $F=3$ and $F=10$, respectively.
+demonstrate the effect for $F=3$ and $F=10$, respectively.
 Section ref{diffu:pde1:analysis} explains why such noise occur.
 
 FIGURE: [fig-diffu/plug_CN_F3, width=800 frac=1] Crank-Nicolson scheme for $F=3$. label{diffu:pde1:CN:fig:F=3}
