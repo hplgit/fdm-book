@@ -1,4 +1,4 @@
-======= Generalization: damping, nonlinearities, and external excitation =======
+======= Generalization: damping, nonlinearities, and excitation =======
 label{vib:model2}
 
 idx{nonlinear restoring force}
@@ -511,6 +511,100 @@ However, since the scheme is essentially centered differences for
 the ODE system on a staggered mesh, we do not go into detail here,
 but refer to Section ref{vib:ode2:staggered}.
 
+===== A staggered Euler-Cromer scheme for a generalized model =====
+label{vib:ode2:staggered}
+
+The more general model for vibration problems,
+
+!bt
+\begin{equation}
+mu'' + f(u') + s(u) = F(t),\quad u(0)=I,\ u'(0)=V,\ t\in (0,T],
+\end{equation}
+!et
+can be rewritten as a first-order ODE system
+
+!bt
+\begin{align}
+v' &= m^{-1}\left(F(t) - f(v) - s(u)\right),
+label{vib:ode2:staggered:veq}\\
+u' &= v\tp
+label{vib:ode2:staggered:ueq}
+\end{align}
+!et
+It is natural to introduce a staggered mesh (see Section ref{vib:model2x2:staggered}) and seek $u$ at mesh points $t_n$ (the numerical value is
+denoted by $u^n$) and $v$ between mesh points at $t_{n+1/2}$ (the numerical
+value is denoted by $v^{n+\half}$).
+A centered difference approximation to (ref{vib:ode2:staggered:ueq})-(ref{vib:ode2:staggered:veq}) can then be written in operator notation as
+
+!bt
+\begin{align}
+\lbrack D_tv &= m^{-1}\left(F(t) - f(v) - s(u)\right)\rbrack^n,
+label{vib:ode2:staggered:dveq}\\
+\lbrack D_t u &= v\rbrack^{n+\half}\tp
+label{vib:ode2:staggered:dueq}
+\end{align}
+!et
+Written out,
+
+!bt
+\begin{align}
+\frac{v^{n+\half} - v^{n-\half}}{\Delta t}
+&= m^{-1}\left(F^n - f(v^n) - s(u^n)\right),
+label{vib:ode2:staggered:dveq2}\\
+\frac{u^n - u^{n-1}}{\Delta t} &= v^{n+\half}\tp
+label{vib:ode2:staggered:dueq2}
+\end{align}
+!et
+
+With linear damping, $f(v)=bv$, we can use an arithmetic mean
+for $f(v^n)$: $f(v^n)\approx = \half(f(v^{n-\half}) +
+f(v^{n+\half}))$. The system
+(ref{vib:ode2:staggered:dveq2})-(ref{vib:ode2:staggered:dueq2})
+can then be solved with respect to the unknowns $u^n$ and $v^{n+\half}$:
+
+!bt
+\begin{align}
+v^{n+\half} &= \left(1 + \frac{b}{2m}\Delta t\right)^{-1}\left(
+v^{n-\half} + {\Delta t}
+m^{-1}\left(F^n - {\half}f(v^{n-\half}) - s(u^n)\right)\right),
+label{vib:ode2:staggered:v:scheme:lin}\\
+u^n & = u^{n-1} + {\Delta t}v^{n-\half}\tp
+label{vib:ode2:staggered:u:scheme:lin}
+\end{align}
+!et
+
+In case of quadratic damping, $f(v)=b|v|v$, we can use a geometric mean:
+$f(v^n)\approx b|v^{n-\half}|v^{n+\half}$. Inserting this approximation
+in (ref{vib:ode2:staggered:dveq2})-(ref{vib:ode2:staggered:dueq2}) and
+solving for the unknowns $u^n$ and $v^{n+\half}$ results in
+
+!bt
+\begin{align}
+v^{n+\half} &= (1 + \frac{b}{m}|v^{n-\half}|\Delta t)^{-1}\left(
+v^{n-\half} + {\Delta t}
+m^{-1}\left(F^n - s(u^n)\right)\right),
+label{vib:ode2:staggered:v:scheme:quad}\\
+u^n & = u^{n-1} + {\Delta t}v^{n-\half}\tp
+label{vib:ode2:staggered:u:scheme:quad}
+\end{align}
+!et
+
+The initial conditions are derived at the end of
+Section ref{vib:model2x2:staggered}:
+
+!bt
+\begin{align}
+u^0 &= I,
+label{vib:ode2:staggered:u02}\\
+v^\half &= V - \half\Delta t\omega^2I
+label{vib:ode2:staggered:v02}\tp
+\end{align}
+!et
+
+[hpl: Must deal with two things: how to set initial conditions on $v$, and
+how to make phase-space plots with $v$ at integer mesh points. See
+article.]
+
 ===== The PEFRL 4th-order accurate algorithm =====
 label{vib:ode2:PEFRL}
 
@@ -884,11 +978,11 @@ Dormand-Prince adaptive method from Odespy, and then call `solver`
 @@@CODE exer-vib/vib_undamped_adaptive.py
 
 The program may produce the plots seen in
-Figure ref{vib:exer:fig:undamped_adaptive},
+the figure below,
 which shows how the adaptive solution clearly outperforms the simpler method,
 regardless of the accuracy level.
 
-FIGURE: [fig-vib/vib_undamped_adaptive, width=800 frac=1.0] Comparison of adaptive solver and simple finite difference solver using the same number of points. label{vib:exer:fig:undamped_adaptive}
+FIGURE: [fig-vib/vib_undamped_adaptive, width=800 frac=1.0]
 
 !esol
 
@@ -1109,9 +1203,10 @@ E &= \left(\frac{2}{\omega\Delta t}\right)^2 \left(-\frac{1}{2}\left( \left(1-2\
 
 @@@CODE exer-vib/vib_plot_fd_exp_error.py
 
-From the plot seen in Figure ref{vib:exer:fig:error_fraction}, we see how the error fraction $E$ deviates from unity as $p$ grows.
+From the plot seen below, we realize
+how the error fraction $E$ deviates from unity as $p$ grows.
 
-FIGURE: [fig-vib/error_fraction, width=600 frac=1.0] The error fraction as a function of $p$. label{vib:exer:fig:error_fraction}
+FIGURE: [fig-vib/error_fraction, width=600 frac=1.0]
 
 !esol
 
@@ -1410,11 +1505,6 @@ the 2nd- and 3rd-order Adams-Bashforth methods (`AdamsBashforth2`,
 (`Backward2Step`).  The relevant governing equations are listed in
 the beginning of Section ref{vib:model2x2}.
 
-!bsol
-We modify the proposed code to the following:
-
-@@@CODE exer-vib/vib_amplitude_errors.py
-
 Running the code, we get the plots seen in Figure ref{vib:exer:fig:ampl_RK34},
 ref{vib:exer:fig:ampl_CNB2}, and ref{vib:exer:fig:ampl_AB}. They
 show that `RK4` is superior to the others, but that also `CrankNicolson` performs well. In fact, with `RK4` the amplitude changes by less than $0.1$ per cent over the interval.
@@ -1424,6 +1514,12 @@ FIGURE: [fig-vib/Amplitudes_RK3_RK4, width=600 frac=1.0] The amplitude as it cha
 FIGURE: [fig-vib/Amplitudes_CrankNicolson_Backward2Step, width=600 frac=1.0] The amplitude as it changes over 100 periods for Crank-Nicolson and Backward 2 step. label{vib:exer:fig:ampl_CNB2}
 
 FIGURE: [fig-vib/Amplitudes_AdamsBashforth2_AdamsBashforth3, width=600 frac=1.0] The amplitude as it changes over 100 periods for Adams-Bashforth 2 and 3. label{vib:exer:fig:ampl_AB}
+
+
+!bsol
+We modify the proposed code to the following:
+
+@@@CODE exer-vib/vib_amplitude_errors.py
 
 !esol
 
@@ -1801,7 +1897,9 @@ the functions that have to be changed:
 
 @@@CODE exer-vib/vib_gen_bwdamping.py
 
-FIGURE: [fig-vib/vib_gen_bwdamping, width=800 frac=1] Comparison of standard method (2nd order) and backward differences for damping (1st order) for 10 (left) and 40 (right) time steps per period.
+Here is a comparison of standard method (2nd order) and backward differences for damping (1st order) for 10 (left) and 40 (right) time steps per period:
+
+FIGURE: [fig-vib/vib_gen_bwdamping, width=800 frac=1]
 
 !esol
 
@@ -1874,3 +1972,46 @@ are then all the same as derived in Section ref{vib:ode1:analysis}.
 #This proves that the solution of the Euler-Cromer scheme
 #coincides
 !esol
+
+===== Exercise: Use the forward-backward scheme with quadratic damping =====
+label{vib:exer:quad:damping:fwbw}
+file=vib_gen_bwdamping
+
+We consider the generalized model with quadratic damping, expressed
+as a system of two first-order equations as in Section ref{vib:ode2:staggered}:
+
+!bt
+\begin{align*}
+u^{\prime} &= v,\\
+v' &= \frac{1}{m}\left( F(t) - \beta |v|v - s(u)\right)\tp
+\end{align*}
+!et
+However, contrary to what is done in Section ref{vib:ode2:staggered},
+we want to apply the idea of a forward-backward discretization:
+$u$ is marched forward by a one-sided Forward Euler scheme applied
+to the first equation, and
+thereafter $v$ can be marched forward by a Backward Euler scheme in the
+second
+% if BOOK == "book":
+equation, see in Section ref{vib:model2x2:EulerCromer}.
+% else:
+equation.
+% endif
+Express the idea in operator notation and write out the
+scheme. Unfortunately, the backward difference for the $v$ equation
+creates a nonlinearity $|v^{n+1}|v^{n+1}$.  To linearize this
+nonlinearity, use the known value $v^n$ inside the absolute value
+factor, i.e., $|v^{n+1}|v^{n+1}\approx |v^n|v^{n+1}$.  Show that the
+resulting scheme is equivalent to the one in Section
+ref{vib:ode2:staggered} for some time level $n\geq 1$.
+
+What we learn from this exercise is that the first-order differences
+and the linearization trick play together in ``the right way'' such that
+the scheme is as good as when we (in Section ref{vib:ode2:staggered})
+carefully apply centered differences and a geometric mean on a
+staggered mesh to achieve second-order accuracy.
+% if BOOK == "book":
+There is a
+difference in the handling of the initial conditions, though, as
+explained at the end of Section ref{vib:model2x2:EulerCromer}.
+% endif
