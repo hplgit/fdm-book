@@ -38,29 +38,36 @@ idx{Laplace equation}
 Typical diffusion problems may experience rapid change in the very
 beginning, but then the evolution of $u$ becomes slower and slower.
 The solution is usually very smooth, and after some time, one cannot
-recognize the initial shape of $u$. This is in sharp contrast to solutions
-of the wave equation where the initial shape is preserved - the solution
-is basically a moving initial condition. The standard wave equation
-$u_{tt}=c^2u_{xx}$ has solutions that propagates with speed $c$ forever,
-without  changing shape, while the diffusion equation converges to
-a *stationary solution* $\bar u(x)$ as $t\rightarrow\infty$. In this
-limit, $u_t=0$, and $\bar u$ is governed by $\bar u''(x)=0$.
-This stationary limit of the diffusion equation is called
-the *Laplace* equation and arises in a very wide range of applications
-throughout the sciences.
+recognize the initial shape of $u$. This is in sharp contrast to
+solutions of the wave equation where the initial shape is preserved in
+homogeneous media -- the solution is then basically a moving initial
+condition. The standard wave equation $u_{tt}=c^2u_{xx}$ has solutions
+that propagates with speed $c$ forever, without changing shape, while
+the diffusion equation converges to a *stationary solution* $\bar
+u(x)$ as $t\rightarrow\infty$. In this limit, $u_t=0$, and $\bar u$ is
+governed by $\bar u''(x)=0$.  This stationary limit of the diffusion
+equation is called the *Laplace* equation and arises in a very wide
+range of applications throughout the sciences.
 
-It is possible to solve for $u(x,t)$ using an explicit scheme, as we do
-in Section ref{diffu:pde1:FEsec}, but the time step restrictions soon
-become much less favorable than for an explicit scheme for the wave
-equation. And of more importance, since the solution $u$ of the
-diffusion equation is very smooth and changes slowly, small time steps
-are not convenient and not required by accuracy as the diffusion
+It is possible to solve for $u(x,t)$ using an explicit scheme, as we
+do in Section ref{diffu:pde1:FEsec}, but the time step restrictions
+soon become much less favorable than for an explicit scheme applied to
+the wave equation. And of more importance, since the solution $u$ of
+the diffusion equation is very smooth and changes slowly, small time
+steps are not convenient and not required by accuracy as the diffusion
 process converges to a stationary state. Therefore, implicit schemes
-as described in Section ref{diffu:pde1:implicit} are popular, but
+(as described in Section ref{diffu:pde1:implicit}) are popular, but
 these require solutions of systems of algebraic equations. We shall
 use ready-made software for this purpose, but also program some simple
 iterative methods.
 
+
+======= An explicit method for the 1D diffusion equation =======
+label{diffu:pde1:FEsec}
+
+Explicit finite difference methods for the wave equation $u_{tt}=c^2u_{xx}$
+can be used, with small modifications, for solving $u_t = \dfc u_{xx}$
+as well.
 % if BOOK == "book":
 The exposition below assumes that the reader is familiar with the
 basic ideas of discretization and implementation of wave
@@ -70,10 +77,6 @@ midpoint) discretization methods in time should consult, e.g.,
 ref[Section ref{decay:basics}][ in cite{Langtangen_decay}][the
 section "Finite difference methods": "http://hplgit.github.io/decay-book/doc/pub/book/sphinx/._book002.html#finite-difference-methods" in cite{Langtangen_decay}].
 % endif
-
-======= An explicit method for the 1D diffusion equation =======
-label{diffu:pde1:FEsec}
-
 
 ===== The initial-boundary value problem for 1D diffusion =====
 
@@ -127,8 +130,8 @@ label{diffu:pde1:bc:L}
 With only a first-order derivative in time,
 only one *initial condition* is needed, while the second-order
 derivative in space leads to a demand for two *boundary conditions*.
-We have added a source term $f=f(x,t)$ for
-convenience when testing implementations.
+We have added a source term $f=f(x,t)$, which is
+convenient when testing implementations.
 
 idx{diffusion equation!source term}
 
@@ -136,8 +139,8 @@ Diffusion equations like (ref{diffu:pde1}) have a wide range of
 applications throughout physical, biological, and financial sciences.
 One of the most common applications is propagation of heat, where
 $u(x,t)$ represents the temperature of some substance at point $x$ and
-time $t$.
-## Section ref{diffu:app} goes into several widely occurring applications.
+time $t$. Other applications are listed in Section ref{diffu:app}.
+
 
 ===== Forward Euler scheme =====
 label{diffu:pde1:FE}
@@ -221,7 +224,7 @@ F = \dfc\frac{\Delta t}{\Delta x^2}\tp
 !bnotice $F$ is the key parameter in the discrete diffusion equation
 Note that $F$ is a *dimensionless* number that lumps the key physical
 parameter in the problem, $\dfc$, and the discretization parameters
-$\Delta x$ and $\Delta t$ into a single parameter. All the properties
+$\Delta x$ and $\Delta t$ into a single parameter. Properties
 of the numerical method are critically dependent upon the value of
 $F$ (see Section ref{diffu:pde1:analysis} for details).
 !enotice
@@ -310,7 +313,7 @@ containing the solution at time level `n`, `x` holds all the
 spatial mesh points, while `t` holds all the temporal mesh points.
 Apart from the vectorized loop over the spatial mesh points, the
 callback function, and a bit more complicated setting of the source
-`f` it is not specified (`None`), the `solver_FE` is identical to
+`f` it is not specified (`None`), the `solver_FE` function is identical to
 `solver_FE_simple` above:
 
 @@@CODE src-diffu/diffu1D_u0.py fromto: def solver_FE\(@def solver_BE_simple
@@ -433,8 +436,13 @@ def test_solver_FE():
     assert diff < tol, 'max diff solver_FE, vectorized: %g' % diff
 !ec
 We emphasize that the value `F=0.5` is critical: the tests above
-will fail if `F` has a larger value (this is because the Forward
-Euler scheme is unstable for $F>1/2$).
+will fail if `F` has a larger value. This is because the Forward
+Euler scheme is unstable for $F>1/2$. (The reader may wonder if
+$F=1/2$ is safe or if $F<1/2$ should be required. Experiments show
+that $F=1/2$ works fine for $u_t=\dfc u_{xx}$ --
+there is no accumulation of rounding
+errors in this case.)
+
 
 === Checking convergence rates ===
 label{diffu:pde1:FE:verify:convrates}
@@ -533,15 +541,12 @@ Terminal> python -c 'from diffu1D_u0 import gaussian
           gaussian("solver_FE", F=0.5, dt=0.0002)'
 !ec
 
-The $u(x,t)$ curve as a function of $x$ is shown
-in Figure ref{diffu:pde1:FE:fig:F=0.5} at four time
-% if FORMAT == "pdflatex":
-levels (see also a
-"movie": "${doc_notes}/mov-diffu/diffu1D_u0_FE_plug/movie.ogg").
-% else:
-levels.
+The $u(x,t)$ curve as a function of $x$ is shown in Figure
+ref{diffu:pde1:FE:fig:F=0.5} at four time levels.
 
 MOVIE: [mov-diffu/diffu1D_u0_FE_plug/movie.ogg]
+
+# "movie": "${doc_notes}/pub/diffu/html/mov-diffu/diffu1D_u0_FE_plug/movie.ogg"
 % endif
 
 We see that the curves have saw-tooth waves in the beginning of the
