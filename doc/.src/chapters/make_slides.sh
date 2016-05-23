@@ -10,6 +10,7 @@ if [ ! -f $dofile ]; then
   echo "No such file: $dofile"
   exit 1
 fi
+nickname=$2
 
 filename=`echo $dofile | sed 's/\.do\.txt//'`
 
@@ -74,7 +75,7 @@ doconce split_html ${html}.html --method=space8
 # LaTeX Beamer
 rm -f *.aux
 preprocess -DFORMAT=pdflatex ../newcommands_keep.p.tex > newcommands_keep.tex
-system doconce format pdflatex $filename --latex_title_layout=beamer --latex_table_format=footnotesize --latex_admon_title_no_period --latex_code_style=pyg
+system doconce format pdflatex $filename --latex_title_layout=beamer --latex_table_format=footnotesize --latex_admon_title_no_period --latex_code_style=pyg --movie_prefix=https://raw.githubusercontent.com/hplgit/fdm-book/master/doc/.src/chapters/${nickname}/[[[
 system doconce slides_beamer $filename --beamer_slide_theme=red_shadow
 system pdflatex -shell-escape $filename
 pdflatex -shell-escape $filename

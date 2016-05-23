@@ -1,7 +1,5 @@
 .. !split
 
-[**hpl 1**: Here is a todo list.]
-
  * There are few index entries, see the "wave equation" index entries and
    how many sub-entries we have there...
 
@@ -50,25 +48,25 @@ methods.
 Typical diffusion problems may experience rapid change in the very
 beginning, but then the evolution of :math:`u` becomes slower and slower.
 The solution is usually very smooth, and after some time, one cannot
-recognize the initial shape of :math:`u`. This is in sharp contrast to solutions
-of the wave equation where the initial shape is preserved - the solution
-is basically a moving initial condition. The standard wave equation
-:math:`u_{tt}=c^2u_{xx}` has solutions that propagates with speed :math:`c` forever,
-without  changing shape, while the diffusion equation converges to
-a *stationary solution* :math:`\bar u(x)` as :math:`t\rightarrow\infty`. In this
-limit, :math:`u_t=0`, and :math:`\bar u` is governed by :math:`\bar u''(x)=0`.
-This stationary limit of the diffusion equation is called
-the *Laplace* equation and arises in a very wide range of applications
-throughout the sciences.
+recognize the initial shape of :math:`u`. This is in sharp contrast to
+solutions of the wave equation where the initial shape is preserved in
+homogeneous media - the solution is then basically a moving initial
+condition. The standard wave equation :math:`u_{tt}=c^2u_{xx}` has solutions
+that propagates with speed :math:`c` forever, without changing shape, while
+the diffusion equation converges to a *stationary solution* :math:`\bar
+u(x)` as :math:`t\rightarrow\infty`. In this limit, :math:`u_t=0`, and :math:`\bar u` is
+governed by :math:`\bar u''(x)=0`.  This stationary limit of the diffusion
+equation is called the *Laplace* equation and arises in a very wide
+range of applications throughout the sciences.
 
-It is possible to solve for :math:`u(x,t)` using an explicit scheme, as we do
-in the section :ref:`diffu:pde1:FEsec`, but the time step restrictions soon
-become much less favorable than for an explicit scheme for the wave
-equation. And of more importance, since the solution :math:`u` of the
-diffusion equation is very smooth and changes slowly, small time steps
-are not convenient and not required by accuracy as the diffusion
+It is possible to solve for :math:`u(x,t)` using an explicit scheme, as we
+do in the section :ref:`diffu:pde1:FEsec`, but the time step restrictions
+soon become much less favorable than for an explicit scheme applied to
+the wave equation. And of more importance, since the solution :math:`u` of
+the diffusion equation is very smooth and changes slowly, small time
+steps are not convenient and not required by accuracy as the diffusion
 process converges to a stationary state. Therefore, implicit schemes
-as described in the section :ref:`diffu:pde1:implicit` are popular, but
+(as described in the section :ref:`diffu:pde1:implicit`) are popular, but
 these require solutions of systems of algebraic equations. We shall
 use ready-made software for this purpose, but also program some simple
 iterative methods.
@@ -77,6 +75,10 @@ iterative methods.
 
 An explicit method for the 1D diffusion equation
 ================================================
+
+Explicit finite difference methods for the wave equation :math:`u_{tt}=c^2u_{xx}`
+can be used, with small modifications, for solving :math:`u_t = {\alpha} u_{xx}`
+as well.
 
 The initial-boundary value problem for 1D diffusion
 ---------------------------------------------------
@@ -145,8 +147,8 @@ space dimension can then be specified as
 With only a first-order derivative in time,
 only one *initial condition* is needed, while the second-order
 derivative in space leads to a demand for two *boundary conditions*.
-We have added a source term :math:`f=f(x,t)` for
-convenience when testing implementations.
+We have added a source term :math:`f=f(x,t)`, which is
+convenient when testing implementations.
 
 .. index::
    single: diffusion equation; source term
@@ -155,7 +157,7 @@ Diffusion equations like :ref:`(1) <Eq:diffu:pde1>` have a wide range of
 applications throughout physical, biological, and financial sciences.
 One of the most common applications is propagation of heat, where
 :math:`u(x,t)` represents the temperature of some substance at point :math:`x` and
-time :math:`t`.
+time :math:`t`. Other applications are listed in the section :ref:`diffu:app`.
 
 .. _diffu:pde1:FE:
 
@@ -273,7 +275,7 @@ where we have introduced the *mesh Fourier number*:
 
    Note that :math:`F` is a *dimensionless* number that lumps the key physical
    parameter in the problem, :math:`{\alpha}`, and the discretization parameters
-   :math:`\Delta x` and :math:`\Delta t` into a single parameter. All the properties
+   :math:`\Delta x` and :math:`\Delta t` into a single parameter. Properties
    of the numerical method are critically dependent upon the value of
    :math:`F` (see the section :ref:`diffu:pde1:analysis` for details).
 
@@ -336,7 +338,7 @@ Implementation          (1)
 .. index::
    single: diffusion equation;  1D, implementation (FE)
 
-The file `diffu1D_u0.py <http://tinyurl.com/nm5587k/diffu/diffu1D_u0.py>`__
+The file `diffu1D_u0.py <http://tinyurl.com/nu656p2/diffu/diffu1D_u0.py>`__
 contains a complete function ``solver_FE_simple``
 for solving the 1D diffusion equation with :math:`u=0` on the boundary
 as specified in the algorithm above:
@@ -416,7 +418,7 @@ containing the solution at time level ``n``, ``x`` holds all the
 spatial mesh points, while ``t`` holds all the temporal mesh points.
 Apart from the vectorized loop over the spatial mesh points, the
 callback function, and a bit more complicated setting of the source
-``f`` it is not specified (``None``), the ``solver_FE`` is identical to
+``f`` it is not specified (``None``), the ``solver_FE`` function is identical to
 ``solver_FE_simple`` above:
 
 .. code-block:: python
@@ -451,7 +453,8 @@ callback function, and a bit more complicated setting of the source
             # Update all inner points
             if version == 'scalar':
                 for i in range(1, Nx):
-                    u[i] = u_n[i] + F*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) +\ 
+                    u[i] = u_n[i] +\ 
+                           F*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) +\ 
                            dt*f(x[i], t[n])
     
             elif version == 'vectorized':
@@ -594,8 +597,12 @@ time interval:
         assert diff < tol, 'max diff solver_FE, vectorized: %g' % diff
 
 We emphasize that the value ``F=0.5`` is critical: the tests above
-will fail if ``F`` has a larger value (this is because the Forward
-Euler scheme is unstable for :math:`F>1/2`).
+will fail if ``F`` has a larger value. This is because the Forward
+Euler scheme is unstable for :math:`F>1/2`. (The reader may wonder if
+:math:`F=1/2` is safe or if :math:`F<1/2` should be required. Experiments show
+that :math:`F=1/2` works fine for :math:`u_t={\alpha} u_{xx}` -
+there is no accumulation of rounding
+errors in this case.)
 
 .. _diffu:pde1:FE:verify:convrates:
 
@@ -669,7 +676,7 @@ and a smooth Gaussian function,
 .. math::
          I(x) = e^{-\frac{1}{2\sigma^2}(x-L/2)^2}{\thinspace .}
 
-The functions ``plug`` and ``gaussian`` in `diffu1D_u0.py <http://tinyurl.com/nm5587k/diffu/diffu1D_u0.py>`__ run the two cases,
+The functions ``plug`` and ``gaussian`` in `diffu1D_u0.py <http://tinyurl.com/nu656p2/diffu/diffu1D_u0.py>`__ run the two cases,
 respectively:
 
 .. code-block:: python
@@ -742,8 +749,6 @@ hardly any problem with storing a lot of such solutions for moderate
 values of :math:`N_x` in 1D problems, but for 2D and 3D problems, this
 technique cannot be used and solutions must be stored in files.
 
-[**hpl 2**: Better to show the scalable file solution here?]
-
 Our experiments employ a time step :math:`\Delta t = 0.0002` and
 simulate for :math:`t\in [0,0.1]`. First we try the highest value of
 :math:`F`: :math:`F=0.5`. This resolution corresponds to
@@ -754,9 +759,8 @@ simulate for :math:`t\in [0,0.1]`. First we try the highest value of
     Terminal> python -c 'from diffu1D_u0 import gaussian
               gaussian("solver_FE", F=0.5, dt=0.0002)'
 
-The :math:`u(x,t)` curve as a function of :math:`x` is shown
-in Figure :ref:`diffu:pde1:FE:fig:F=0.5` at four time
-levels.
+The :math:`u(x,t)` curve as a function of :math:`x` is shown in Figure
+:ref:`diffu:pde1:FE:fig:F=0.5` at four time levels.
 
 .. raw:: html
         
@@ -775,6 +779,16 @@ levels.
           document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
         </script>
         
+
+.. `movie <http://tinyurl.com/pu5uyfn/pub/pub/diffu/html/mov-diffu/diffu1D_u0_FE_plug/movie.ogg>`__
+
+.. Does not work:
+
+.. http://tinyurl.com/pu5uyfn/pub/diffu/html/mov-diffu/diffu1D_u0_FE_plug/movie.ogg
+
+.. Works:
+
+.. https://raw.githubusercontent.com/hplgit/fdm-book/master/doc/.src/book/mov-diffu/diffu1D_u0_FE_plug/movie.ogg
 
 We see that the curves have saw-tooth waves in the beginning of the
 simulation. This non-physical noise is smoothed out with time, but
@@ -880,7 +894,7 @@ restriction, :math:`F\leq\frac{1}{2}`, which means :math:`\Delta t \leq \Delta x
 may be relevant in the beginning of the diffusion process, when the
 solution changes quite fast, but as time increases, the process slows
 down, and a small :math:`\Delta t` may be inconvenient. By using
-*implicit schemes*, which lead to a coupled system of linear equations
+*implicit schemes*, which lead to coupled systems of linear equations
 to be solved at each time level, any size of :math:`\Delta t` is possible
 (but the accuracy decreases with increasing :math:`\Delta t`).
 The Backward Euler scheme, derived and implemented below, is the
@@ -996,8 +1010,8 @@ the unknowns :math:`u^n_1` and :math:`u^n_2`. The equivalent matrix form is
 
 
 In the general case, :ref:`(11) <Eq:diffu:pde1:step3bBE>` gives rise to
-a coupled :math:`(Nx-1)\times (Nx-1)` system of algebraic equations for
-all the unknown :math:`u^n_i` at the interior spatial points :math:`i=1,\ldots,Nx-1`.
+a coupled :math:`(N_x-1)\times (N_x-1)` system of algebraic equations for
+all the unknown :math:`u^n_i` at the interior spatial points :math:`i=1,\ldots,N_x-1`.
 Collecting the unknowns on the left-hand side,
 :ref:`(11) <Eq:diffu:pde1:step3bBE>` can be written
 
@@ -1011,12 +1025,12 @@ Collecting the unknowns on the left-hand side,
         
         
 
-for :math:`i=1,\ldots,Nx-1`.
+for :math:`i=1,\ldots,N_x-1`.
 One can either view these equations as a system for where the
 :math:`u^{n}_i` values at the internal mesh points, :math:`i=1,\ldots,N_x-1`, are
 unknown, or we may append the boundary values :math:`u^n_0` and :math:`u^n_{N_x}`
 to the system. In the latter case, all :math:`u^n_i` for :math:`i=0,\ldots,N_x`
-are unknown and we must add the boundary equations to
+are considered unknown, and we must add the boundary equations to
 the :math:`N_x-1` equations in :ref:`(16) <Eq:diffu:pde1:step4BE>`:
 
 .. _Eq:diffu:pde1:step4BE:BC:0:
@@ -1103,7 +1117,7 @@ The nonzero elements are given by
         
         
 
-for the equations for internal points, :math:`i=1,\ldots,N_x-1`. The first and last
+in the equations for internal points, :math:`i=1,\ldots,N_x-1`. The first and last
 equation correspond to the boundary condition, where we know the solution,
 and therefore we must have
 
@@ -1244,26 +1258,26 @@ Sparse matrix implementation
 .. index::
    single: diffusion equation;  1D, tridiagonal matrix
 
-We have seen from :ref:`(19) <Eq:diffu:pde1:matrix:sparsity>` that the matrix :math:`A`
-is tridiagonal. The code segment above used a full, dense matrix
+We have seen from :ref:`(19) <Eq:diffu:pde1:matrix:sparsity>` that the matrix
+:math:`A` is tridiagonal. The code segment above used a full, dense matrix
 representation of :math:`A`, which stores a lot of values we know are zero
-beforehand, and worse, the solution algorithm computes with all these zeros.
-With :math:`N_x+1` unknowns, the work by the solution algorithm is :math:`\frac{1}{3}
-(N_x+1)^3` and the storage requirements :math:`(N_x+1)^2`. By utilizing
-the fact that :math:`A` is tridiagonal and employing corresponding software
-tools that work with the three diagonals,
-the work and storage demands can be proportional to :math:`N_x` only.
-This leads to a dramatic improvement: with :math:`N_x=200`, which is an often
-needed resolution, the code runs about 40,000 times faster and reduces
-the storage to just 1.5%! It is no doubt that we need to take advantage
-of the fact that :math:`A` is tridiagonal.
+beforehand, and worse, the solution algorithm computes with all these
+zeros.  With :math:`N_x+1` unknowns, the work by the solution algorithm is
+:math:`\frac{1}{3} (N_x+1)^3` and the storage requirements :math:`(N_x+1)^2`. By
+utilizing the fact that :math:`A` is tridiagonal and employing corresponding
+software tools that work with the three diagonals, the work and
+storage demands can be proportional to :math:`N_x` only.  This leads to a
+dramatic improvement: with :math:`N_x=200`, which is a realistic resolution,
+the code runs about 40,000 times faster and reduces the storage to
+just 1.5%! It is no doubt that we should take advantage of the fact
+that :math:`A` is tridiagonal.
 
-The key idea is to apply a data structure for a
-tridiagonal or sparse matrix. The ``scipy.sparse`` package has
-relevant utilities. For example, we can store the nonzero diagonals of
-a matrix. The package also has linear system solvers that operate on
-sparse matrix data structures. The code below illustrates how we
-can store only the main diagonal and the upper and lower diagonals.
+The key idea is to apply a data structure for a tridiagonal or sparse
+matrix. The ``scipy.sparse`` package has relevant utilities. For
+example, we can store only the nonzero diagonals of a matrix. The
+package also has linear system solvers that operate on sparse matrix
+data structures. The code below illustrates how we can store only the
+main diagonal and the upper and lower diagonals.
 
 .. code-block:: python
 
@@ -1298,10 +1312,10 @@ can store only the main diagonal and the upper and lower diagonals.
         u_n[:] = u
 
 The ``scipy.sparse.linalg.spsolve`` function utilizes the sparse storage
-structure of ``A`` and performs in this case a very efficient Gaussian
+structure of ``A`` and performs, in this case, a very efficient Gaussian
 elimination solve.
 
-The program `diffu1D_u0.py <http://tinyurl.com/nm5587k/diffu/diffu1D_u0.py>`__
+The program `diffu1D_u0.py <http://tinyurl.com/nu656p2/diffu/diffu1D_u0.py>`__
 contains a function ``solver_BE``, which implements the Backward Euler scheme
 sketched above.
 As mentioned in the section :ref:`diffu:pde1:FE`,
@@ -1400,7 +1414,7 @@ different entries:
 .. math::
 
     \tag{33}
-    A_{i,i} = \frac{1}{2} + F
+    A_{i,i} = 1 + F
         
         
 
@@ -1413,7 +1427,7 @@ different entries:
         
         
 
-for the equations for internal points, :math:`i=1,\ldots,N_x-1`. The equations
+in the equations for internal points, :math:`i=1,\ldots,N_x-1`. The equations
 for the boundary points correspond to
 
 .. _Eq:_auto21:
@@ -1517,7 +1531,7 @@ For the equation
          \frac{\partial u}{\partial t} = G(u),
 
 where :math:`G(u)` is some
-a spatial differential operator, the :math:`\theta`-rule
+spatial differential operator, the :math:`\theta`-rule
 looks like
 
 .. math::
@@ -1596,9 +1610,9 @@ the discontinuity looks sharper in the Crank-Nicolson
 simulations with larger :math:`F`.
 
 The Crank-Nicolson method produces smooth solutions for small :math:`F`,
-:math:`F\leq\frac{1}{2}`, but small noise is more and more evident as :math:`F`
+:math:`F\leq\frac{1}{2}`, but small noise gets more and more evident as :math:`F`
 increases. Figures :ref:`diffu:pde1:CN:fig:F=3` and :ref:`diffu:pde1:CN:fig:F=10`
-demonstrates the effect for :math:`F=3` and :math:`F=10`, respectively.
+demonstrate the effect for :math:`F=3` and :math:`F=10`, respectively.
 The section :ref:`diffu:pde1:analysis` explains why such noise occur.
 
 .. _diffu:pde1:CN:fig:F=3:
@@ -1649,8 +1663,6 @@ is illegal and leads to instability.
 We may interpret this time stepping
 as solving the equation system from :math:`-u_{xx}=f` by iterating on a
 pseudo time variable.
-
-[**hpl 3**: Better to say the last sentence when we treat iterative methods.]
 
 .. _diffu:pde1:analysis:
 
@@ -1826,8 +1838,7 @@ the pulse diffuse and flatten out.
 Solution for a sine component
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For example, :ref:`(42) <Eq:diffu:pde1:eq>`
-admits a solution of the form
+Also, :ref:`(42) <Eq:diffu:pde1:eq>` admits a solution of the form
 
 .. _Eq:diffu:pde1:sol1:
 
@@ -1852,8 +1863,10 @@ undergoes a damping :math:`\exp{(-{\alpha} k^2t)}`, meaning that
 rapid oscillations in space, corresponding to large :math:`k`, are very much
 faster dampened than slow oscillations in space, corresponding to small
 :math:`k`. This feature leads to a smoothing of the initial condition with time.
+(In fact, one can use a few steps of the diffusion equation as
+a method for removing noise in signal processing.)
 
-The following example illustrate the damping properties of
+The following example illustrates the damping properties of
 :ref:`(49) <Eq:diffu:pde1:sol1>`. We consider the specific problem
 
 .. math::
@@ -2448,7 +2461,7 @@ To demonstrate the oscillatory behavior of the Crank-Nicolson scheme,
 we choose an initial condition that leads to short waves with
 significant amplitude. A discontinuous :math:`I(x)` will in particular serve
 this purpose: Figures :ref:`diffu:pde1:CN:fig:F=3` and
-:ref:`diffu:pde1:CN:fig:F=10` corresponds to :math:`F=3` and :math:`F=10`,
+:ref:`diffu:pde1:CN:fig:F=10` correspond to :math:`F=3` and :math:`F=10`,
 respectively, and we see how short waves pollute the overall solution.
 
 .. _diffu:2D:analysis:
@@ -2660,7 +2673,7 @@ That these waves then oscillate in a non-physical way for
 :math:`F=0.5` is not a visible effect. The oscillations
 in time in the amplitude :math:`(1-4F)^n` disappear for :math:`F\leq\frac{1}{4}`,
 and that is why also the discontinuous initial condition always leads to
-smooth solutions in Figure ref:ref:`diffu:pde1:FE:fig:F=0.25`, where
+smooth solutions in Figure :ref:`diffu:pde1:FE:fig:F=0.25`, where
 :math:`F=\frac{1}{4}`.
 
 Turning the attention to the Backward Euler scheme and the experiments
@@ -2881,8 +2894,8 @@ Consider a diffusion equation with a linear :math:`u` term:
          u_t = {\alpha} u_{xx} + \beta u{\thinspace .}
 
 **a)**
-Derive in detail a Forward Euler scheme, a Backward Euler scheme,
-and a Crank-Nicolson for this type of diffusion model.
+Derive in detail the Forward Euler, Backward Euler,
+and Crank-Nicolson schemes for this type of diffusion model.
 Thereafter, formulate a :math:`\theta`-rule to summarize the three schemes.
 
 **b)**
@@ -2992,10 +3005,10 @@ We can discretize :ref:`(69) <Eq:diffu:pde2>` by a :math:`\theta`-rule in time
 and centered differences in space:
 
 .. math::
-         \lbrack D_t u\rbrack^{n+\frac{1}{2}}_i = \theta\lbrack D_x\overline{{\alpha}}^x
-        D_x u + f\rbrack^{n+1}_i +
-        (1-\theta)\lbrack D_x\overline{{\alpha}}^x
-        D_x u + f\rbrack^{n}_i{\thinspace .}
+         \lbrack D_t u\rbrack^{n+\frac{1}{2}}_i = \theta\lbrack D_x(\overline{{\alpha}}^x
+        D_x u) + f\rbrack^{n+1}_i +
+        (1-\theta)\lbrack D_x(\overline{{\alpha}}^x
+        D_x u) + f\rbrack^{n}_i{\thinspace .}
 
 Written out, this becomes
 
@@ -3091,7 +3104,7 @@ Since the Fourier number has no meaning for varying
             # Switch variables before next step
             u_n, u = u, u_n
 
-The code is found in the file `diffu1D_vc.py <http://tinyurl.com/nm5587k/diffu/diffu1D_vc.py>`__.
+The code is found in the file `diffu1D_vc.py <http://tinyurl.com/nu656p2/diffu/diffu1D_vc.py>`__.
 
 .. _diffu:varcoeff:stationary:
 
@@ -3140,7 +3153,7 @@ Piecewise constant medium
    single: diffusion coefficient;  piecewise constant
 
 Consider a medium built of :math:`M` layers. The layer boundaries
-are denoted by :math:`b_0, \ldots, b_M`,
+are denoted :math:`b_0, \ldots, b_M`,
 where :math:`b_0=0` and :math:`b_M=L`.
 If the layers potentially have different material properties, but
 these properties are constant within each layer, we can express :math:`\alpha` as a
@@ -3192,13 +3205,13 @@ Implementation of diffusion in a piecewise constant medium
 .. index::
    single: diffusion equation;  implementation
 
-Programming with piecewise function definition quickly becomes
+Programming with piecewise function definitions quickly becomes
 cumbersome as the most naive approach is to test for which interval
 :math:`x` lies, and then start evaluating a formula like
 :ref:`(76) <Eq:diffu:fd2:pde:st:sol:pc>`. In Python, vectorized expressions may
 help to speed up the computations.
 The convenience classes ``PiecewiseConstant`` and
-``IntegratedPiecewiseConstant`` in the `Heaviside <http://tinyurl.com/nm5587k/diffu/Heaviside.py>`__
+``IntegratedPiecewiseConstant`` in the `Heaviside <http://tinyurl.com/nu656p2/diffu/Heaviside.py>`__
 module were made to simplify programming with
 functions like :ref:`(75) <Eq:diffu:fd2:pde:st:pc:alpha>` and expressions like
 :ref:`(76) <Eq:diffu:fd2:pde:st:sol:pc>`. These utilities not only represent
@@ -3215,7 +3228,7 @@ corresponding value :math:`\alpha_i`, for :math:`i=0,\ldots,M-1`. Given :math:`b
 list ``data``.
 
 In our application, we want to represent :math:`\alpha` and :math:`1/\alpha`
-as piecewise constant function, in addition to the :math:`u(x)` function
+as piecewise constant functions, in addition to the :math:`u(x)` function
 which involves the integrals of :math:`1/\alpha`. A class creating the
 functions we need and a method for evaluating :math:`u`, can take the
 form
@@ -3664,8 +3677,12 @@ Written out,
 
 .. math::
         
-        \frac{u^{n+1}_{i,j}-u^n_{i,j}}{\Delta t} =
-        \theta ({\alpha}
+         \frac{u^{n+1}_{i,j}-u^n_{i,j}}{\Delta t} =\nonumber
+        
+
+.. math::
+          
+        \qquad \theta ({\alpha}
         (\frac{u^{n+1}_{i-1,j} - 2^{n+1}_{i,j} + u^{n+1}_{i+1,j}}{\Delta x^2} +
         \frac{u^{n+1}_{i,j-1} - 2^{n+1}_{i,j} + u^{n+1}_{i,j+1}}{\Delta y^2}) +
         f^{n+1}_{i,j})
@@ -3677,7 +3694,7 @@ Written out,
 .. math::
 
     \tag{90}
-    \quad (1-\theta)({\alpha}
+    \qquad (1-\theta)({\alpha}
         (\frac{u^{n}_{i-1,j} - 2^{n}_{i,j} + u^{n}_{i+1,j}}{\Delta x^2} +
         \frac{u^{n}_{i,j-1} - 2^{n}_{i,j} + u^{n}_{i,j+1}}{\Delta y^2}) +
         f^{n}_{i,j})
@@ -3694,7 +3711,7 @@ We collect the unknowns on the left-hand side
         (u^{n+1}_{i-1,j} - 2^{n+1}_{i,j} + u^{n+1}_{i,j}) +
         F_y
         (u^{n+1}_{i,j-1} - 2^{n+1}_{i,j} + u^{n+1}_{i,j+1})\right)
-        = u^n_{i,j} + \nonumber
+        = \nonumber
         
 
 .. math::
@@ -3712,7 +3729,8 @@ We collect the unknowns on the left-hand side
 .. math::
 
     \tag{91}
-    \qquad \theta \Delta t f^{n+1}_{i,j} + (1-\theta) \Delta t f^{n}_{i,j},
+    \qquad \theta \Delta t f^{n+1}_{i,j} + (1-\theta) \Delta t f^{n}_{i,j}
+        + u^n_{i,j},
         
         
 
@@ -3752,12 +3770,12 @@ implement the boundary condition :math:`u=0`:
 
 .. math::
         
-        u^{n+1}_{0,0}=
+        & u^{n+1}_{0,0}=
         u^{n+1}_{1,0}=
         u^{n+1}_{2,0}=
         u^{n+1}_{3,0}=
-        u^{n+1}_{0,1}=
-        u^{n+1}_{3,1}=
+        u^{n+1}_{0,1}=\\ 
+        & u^{n+1}_{3,1}=
         u^{n+1}_{0,2}=
         u^{n+1}_{1,2}=
         u^{n+1}_{2,2}=
@@ -3775,14 +3793,15 @@ The corresponding equations are
         (u^{n+1}_{i-1,j} - 2^{n+1}_{i,j} + u^{n+1}_{i,j}) +
         F_y
         (u^{n+1}_{i,j-1} - 2^{n+1}_{i,j} + u^{n+1}_{i,j+1})\right)
-        = u^n_{i,j} + \\ 
+        =  \\ 
         &\qquad
         (1-\theta)\left(
         F_x
         (u^{n}_{i-1,j} - 2^{n}_{i,j} + u^{n}_{i,j}) +
         F_y
         (u^{n}_{i,j-1} - 2^{n}_{i,j} + u^{n}_{i,j+1})\right) + \\ 
-        &\qquad \theta \Delta t f^{n+1}_{i,j} + (1-\theta) \Delta t f^{n}_{i,j},
+        &\qquad \theta \Delta t f^{n+1}_{i,j} + (1-\theta) \Delta t f^{n}_{i,j}
+        + u^n_{i,j},
         
 
 There are in total 12 unknowns :math:`u^{n+1}_{i,j}` for :math:`i=0,1,2,3` and
@@ -3820,7 +3839,7 @@ and then progress one "horizontal" mesh line at a time.
 In Figure :ref:`diffu:2D:fig:mesh3x2` you can see that the :math:`(i,j)` and the
 corresponding single index (:math:`p`) are listed for each mesh point.
 
-We could equally well numbered the equations in other ways, e.g.,
+We could equally well have numbered the equations in other ways, e.g.,
 let the :math:`j` index be the fastest varying index:
 :math:`p = m(i,j) = i(N_y+1) + j`.
 
@@ -3996,8 +4015,6 @@ We must now number the unknowns at the interior points:
 
 for :math:`i=1,\ldots,N_x-1`, :math:`j=1,\ldots,N_y-1`.
 
-[**hpl 4**: Fill in details.]
-
 .. Nx=4, Ny=3
 
 .. _diffu:2D:fig:mesh4x3:
@@ -4142,9 +4159,9 @@ Implementation with a dense coefficient matrix
    single: diffusion equation; 2D, implementation
 
 The goal now is to map the algorithms in the previous section to
-Python code. One should for computational efficiency reasons take
+Python code. One should, for computational efficiency reasons, take
 advantage of the fact that the coefficient matrix is sparse and/or
-banded, i.e., take advantage of all the zeros; however, we first demonstrate
+banded, i.e., take advantage of all the zeros. However, we first demonstrate
 how to fill an :math:`N\times N` dense square matrix, where :math:`N` is the number
 of unknowns, here :math:`N=(N_x+1)(N_y+1)`. The dense matrix is much easier
 to understand than the sparse matrix case.
@@ -4294,7 +4311,7 @@ is stated below.
 
 
 The code shown above is available in the ``solver_dense`` function
-in the file `diffu2D_u0.py <http://tinyurl.com/nm5587k/diffu/diffu2D_u0.py>`__, differing only
+in the file `diffu2D_u0.py <http://tinyurl.com/nu656p2/diffu/diffu2D_u0.py>`__, differing only
 in the boundary conditions, which in the code can be an arbitrary function along
 each side of the domain.
 
@@ -4433,13 +4450,13 @@ Verification: convergence rates
 
 For 2D verification with convergence rate computations, the expressions
 and computations just build naturally on what we saw for 1D diffusion.
-Truncation error analysis and other forms of error analysis point to a 
+Truncation error analysis and other forms of error analysis point to a
 numerical error formula like
 
 .. math::
          E = C_t\Delta t^p + C_x\Delta x^2 + C_y\Delta y^2,
 
-where :math:`p`, :math:`C_t`, :math:`C_x`, and :math:`C_y` are unknown constants. A Crank-Nicolson 
+where :math:`p`, :math:`C_t`, :math:`C_x`, and :math:`C_y` are constants. A Crank-Nicolson
 method has :math:`p=2`, while the Forward and Backward Euler schemes have :math:`p=1`.
 
 When checking the error formula empirically, we need to reduce it to
@@ -4490,7 +4507,7 @@ where :math:`p` can be arbitrary. The required source term is
          f = ({\alpha}(k_x^2 + k_y^2) - p){u_{\small\mbox{e}}}{\thinspace .}
 
 The function ``convergence_rates`` in
-`diffu2D_u0.py <http://tinyurl.com/nm5587k/diffu/diffu2D_u0.py>`__ implements a convergence
+`diffu2D_u0.py <http://tinyurl.com/nu656p2/diffu/diffu2D_u0.py>`__ implements a convergence
 rate test. Two potential difficulties are important to be aware of:
 
 1. The error formula is assumed to be
@@ -4609,7 +4626,7 @@ to be set go from :math:`m(1,j)` to :math:`m(N_x-1,j)`:
 
 The subdiagonal (``lower`` array), however, has its index 0
 corresponding to row 1, so there is an offset of 1 in indices compared to
-the matrix. The first nonzero occurs (interior point) at a mesh line :math:`j=\hbox{const}` corresponds to matrix row :math:`m(1,j)`, and the corresponding array index
+the matrix. The first nonzero occurs (interior point) at a mesh line :math:`j=\hbox{const}` corresponding to matrix row :math:`m(1,j)`, and the corresponding array index
 in ``lower`` is then :math:`m(1,j)`. To fill the entries from :math:`m(1,j)` to :math:`m(N_x-1,j)`
 we set the following slice in ``lower``:
 
@@ -4758,30 +4775,23 @@ loops over the ``i`` index:
         # Update u_n before next step
         u_n, u = u, u_n
 
-The most tricky part of this code snippet is the loading of values in
+The most tricky part of this code snippet is the loading of values from
 the one-dimensional array ``c``
 into the two-dimensional array ``u``. With our numbering of unknowns
 from left to right along "horizontal" mesh lines, the correct
 reordering of the one-dimensional array ``c`` as a two-dimensional array
-requires first a reshaping as an ``(Ny+1,Nx+1)`` two-dimensional
+requires first a reshaping to an ``(Ny+1,Nx+1)`` two-dimensional
 array and then taking the transpose. The result is an ``(Nx+1,Ny+1)``
 array compatible with ``u`` both in size and appearance of the function values.
 
-The ``spsolve`` function in ``scipy.sparse.linalg`` is an efficient version
-of Gaussian elimination suited for matrices described by diagonals.
-Actually, only the matrix elements within the bands (from ``lower2``
-to ``upper2``) are computed with, and these elements constitute only a
-fraction of all :math:`N^2` matrix elements, a crucial property to exploit.
-The Gaussian elimination algorithm for banded matrices is therefore
-much faster and requires much less storage than standard Gaussian elimination
-for a dense matrix.
-More precisely, with :math:`b=N_x+1` as the *bandwidth* of the matrix
-[[[
+The ``spsolve`` function in ``scipy.sparse.linalg`` is an efficient
+version of Gaussian elimination suited for matrices described by
+diagonals.  The algorithm is known as *sparse Gaussian elimination*,
+and ``spsolve`` calls up a well-tested C code called `SuperLU <http://crd-legacy.lbl.gov/~xiaoye/SuperLU/>`__.
 
-[**hpl 5**: Problem: if :math:`N_x\gg N_y` one should number the unknowns in :math:`y` direction to get a smaller bandwidth. S: enough to just comment it?]
-
-The complete code is found in the ``solver_sparse`` function in the file
-`diffu2D_u0.py <http://tinyurl.com/nm5587k/diffu/diffu2D_u0.py>`__.
+The complete code utilizing ``spsolve``
+is found in the ``solver_sparse`` function in the file
+`diffu2D_u0.py <http://tinyurl.com/nu656p2/diffu/diffu2D_u0.py>`__.
 
 Verification          (2)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -4877,11 +4887,11 @@ side:
 
 .. math::
         
-         u^{n+1,r+1}_{i,j} = (1+2F_x +2F_y)^{-1}((
+         u^{n+1,r+1}_{i,j} = (1+2F_x +2F_y)^{-1}\left(
         F_x
         (u^{n+1,r}_{i-1,j} + u^{n+1,r}_{i,j}) +
         F_y
-        (u^{n+1,r}_{i,j-1} + u^{n+1,r}_{i,j+1})) +
+        (u^{n+1,r}_{i,j-1} + u^{n+1,r}_{i,j+1})\right)
         \nonumber
         
 
@@ -4891,7 +4901,7 @@ side:
 
     \tag{100}
     \qquad
-        u^n_{i,j} + \Delta t f^{n+1}_{i,j})
+        + u^n_{i,j} + \Delta t f^{n+1}_{i,j}
         
         
 
@@ -5009,7 +5019,7 @@ notation for :math:`u^{n+1,r}_{i,j}`, and :math:`u^{(s)}_{i,j}` denotes
 :math:`u^{n+1-s}_{i,j}`.  That is, :math:`u_{i,j}` is the unknown, :math:`u^{-}_{i,j}`
 is its most recently computed approximation, and :math:`s` counts time
 levels backwards in time. The Jacobi method
-(ref:ref:`(100) <Eq:diffu:2D:Jacobi>`) takes the following form with the new
+:ref:`(100) <Eq:diffu:2D:Jacobi>`) takes the following form with the new
 notation:
 
 .. math::
@@ -5144,10 +5154,9 @@ With a :math:`\theta` rule in time, the time loop can be coded like this:
 The vectorized version should be quite straightforward to understand
 once one has an understanding of how a standard 2D finite stencil
 is vectorized.
-[**hpl 6**: Make references to 1D and 2D wave equation vectorization.]
 
 The first natural verification is to use the test problem
-from in the function ``quadratic`` from
+in the function ``quadratic`` from
 the section :ref:`diffu:2D:verify`. This problem is known to have no
 approximation error, but any iterative method will produce an
 approximate solution with unknown error. For a tolerance :math:`10^{-k}`
@@ -5195,7 +5204,7 @@ It can be shown that
 .. math::
 
     \tag{109}
-    {u_{\small\mbox{e}}} = Ae^{-{\alpha}\pi^2(L_x^{-2} + L_y^{-2})}
+    {u_{\small\mbox{e}}} = Ae^{-{\alpha}\pi^2(L_x^{-2} + L_y^{-2})t}
         \sin\left(\frac{\pi}{L_x}x\right)\sin\left(\frac{\pi}{L_y}y\right),
         
         
@@ -5207,7 +5216,8 @@ This solution vanishes at the boundaries,
 and the initial condition is the product of two sines.
 We may choose :math:`A=1` for simplicity.
 
-It is difficult to know if our Jacobi method works properly since we
+It is difficult to know if our solver based on the
+Jacobi method works properly since we
 are faced with two sources of errors: one from the discretization,
 :math:`E_\Delta`, and one from the iterative Jacobi method, :math:`E_i`. The total
 error in the computed :math:`u` can be represented as
@@ -5250,7 +5260,7 @@ two consecutive approximations, which is not exactly the error
 due to the iteration, but it is a kind of measure, and it should
 have about the same size as :math:`E_i`.
 
-The function ``demo_classic_iterative`` in `diffu2D_u0.py <http://tinyurl.com/nm5587k/diffu/diffu2D_u0.py>`__ implements the idea above (also for the
+The function ``demo_classic_iterative`` in `diffu2D_u0.py <http://tinyurl.com/nu656p2/diffu/diffu2D_u0.py>`__ implements the idea above (also for the
 methods in the section :ref:`diffu:2D:SOR`). The value of :math:`E_i` is in
 particular printed at each time level. By changing the tolerance in
 the convergence criterion in the Jacobi method, we can see that :math:`E_i`
@@ -5353,7 +5363,7 @@ The Gauss-Seidel and SOR methods
 If we update the mesh points according to the
 Jacobi method :ref:`(99) <Eq:diffu:2D:Jacobi0>`
 for a Backward Euler discretization with a loop over
-:math:`i=1,\ldots,N_x-1` and :math:`j=1,\ldots,Ny-1`, we realize that
+:math:`i=1,\ldots,N_x-1` and :math:`j=1,\ldots,N_y-1`, we realize that
 when :math:`u^{n+1,r+1}_{i,j}` is computed, :math:`u^{n+1,r+1}_{i-1,j}`
 and :math:`u^{n+1,r+1}_{i,j-1}` are already computed, so these new
 values can be used rather than
@@ -5688,7 +5698,7 @@ The relaxed Jacobi iteration can be implemented by
 The Gauss-Seidel (or SOR) updates need four different steps.
 The ``ic`` and ``jc`` slices are specified above. For each of these,
 we must specify the corresponding ``im1``, ``ip1``, ``jm1``, and ``jp1``
-slices. The code below contain the details.
+slices. The code below contains the details.
 
 .. code-block:: python
 
@@ -5735,12 +5745,10 @@ slices. The code below contain the details.
     u[c,c] = omega*u_new[c,c] + (1-omega)*u_[c,c]
 
 The function ``solver_classic_iterative`` in
-`diffu2D_u0.py <http://tinyurl.com/nm5587k/diffu/diffu2D_u0.py>`__
+`diffu2D_u0.py <http://tinyurl.com/nu656p2/diffu/diffu2D_u0.py>`__
 contains a unified implementation of the relaxed Jacobi and SOR
 methods in scalar and vectorized versions using the techniques
 explained above.
-
-[**hpl 7**: Experiments with SOR, benefits. Rerun the Jacobi experiments. Just mention the most important conclusions. We can have more comprehensive experiments with comparison of all methods in a later section, after CG with preconditioning.]
 
 .. _diffu:2D:direct_vs_iter:
 
@@ -5785,7 +5793,7 @@ LU and Cholesky factorization as well as forward and backward
 substitution (``scipy.linalg`` is the relevant Python package).
 
 Finite difference discretizations lead to sparse coefficient matrices.
-An extreme case arose in the section :ref:`diffu:pde1:BE` where :math:`A` is
+An extreme case arose in the section :ref:`diffu:pde1:BE` where :math:`A` was
 tridiagonal. For a tridiagonal matrix, the amount of arithmetic
 operations in the LU and Cholesky factorization algorithms is just of
 the order :math:`N`, not :math:`N^3`. Tridiagonal matrices are special cases of
@@ -5794,10 +5802,16 @@ bands.  Finite difference methods on regularly numbered rectangular
 and box-shaped meshes give rise to such banded matrices, with 5 bands
 in 2D and 7 in 3D for diffusion problems.  Gaussian elimination only
 needs to work within the bands, leading to much more efficient
-algorithms. For example, factorization of more general, sparse
-matrices can often take advantage of the sparsity through modified
-Gaussian elimination algorithms. The relevant Python package is
-``scipy.sparse.linalg``.
+algorithms.
+
+If :math:`A_{i,j}=0` for :math:`j> i+p` and :math:`j< i-p`, :math:`p` is the *half-bandwidth*
+of the matrix. We have in our 2D problem :math:`p=N_x+2`, while in 3D,
+:math:`p=(N_x+1)(N_y+1)+2`. The cost of Gaussian elimination is then
+:math:`{\mathcal{O}(Np^2)}`, so with :math:`p\ll N`, we see that banded matrices are much
+more efficient to compute with. By reordering the unknowns in clever
+ways, one can reduce the work of Gaussian elimination
+further. Fortunately, the Python programmer has access to such
+algorithms through the ``scipy.sparse.linalg`` package.
 
 Although a direct method is an exact algorithm, rounding errors
 may in practice accumulate and pollute the solution. The effect
@@ -5895,8 +5909,6 @@ Finally, we mention that there is a variant of the SOR method, called
 Symmetric Successive Overrelaxation method, known as SSOR, where
 one runs a standard SOR sweep through the mesh points and then a
 new sweep but visiting the points in reverse order.
-
-[**hpl 8**: Line Jacobi/SOR?]
 
 .. _diffu:2D:CG:
 
@@ -6063,6 +6075,25 @@ we perform a trick: in each iteration a user function ``CG_callback``
 is called where we accumulate the number of iterations in a list
 ``CG_iter``.
 
+What is the recommended method for solving linear systems?
+----------------------------------------------------------
+
+There is no clear answer to this question. If you have enough memory
+and computing time available, direct methods such as ``spsolve`` are
+to be preferred since they are easy to use and finds almost an exact
+solution. However, in larger 2D and in 3D problems, direct methods
+usually run too slowly or required too much memory, so one is forced
+to use iterative methods. The fastest and most reliable methods are
+in the Conjugate Gradient family, but these requires suitable
+preconditioners. ILU is an all-round preconditioner, but it is not
+suited for parallel computing. The Jacobi and SOR iterative methods
+are easy to implement, and popular of that reason, but run slowly. Jacobi
+iteration is not an option in real problems, but SOR may be.
+
+.. As we have showed, Jacobi is equivalent to running a Forward Euler scheme
+
+.. until the stationary state is reached
+
 .. _diffu:randomwalk:
 
 Random walk
@@ -6081,7 +6112,8 @@ centroid of the volume. This means that concentration, temperature,
 and velocity at a space-time point represent averages around the
 point in a small time interval and small spatial volume.
 
-Random walk is a principally totally different kind of modeling procedure.
+Random walk is a principally totally different kind of modeling procedure
+compared to a partial differential equation.
 The idea is to have a large number of "particles" that undergo
 random movements. Averaging can then be used afterwards to compute
 macroscopic quantities like concentration. The "particles" and their
@@ -6130,8 +6162,6 @@ random walks with :math:`N=200`.
 
 Statistical considerations
 --------------------------
-
-[**hpl 9**: Need to distinguish between scaled and unscaled position in the notation here!]
 
 Let :math:`S_k` be the stochastic variable representing a step to the left
 or to the right in step number :math:`k`. We have that :math:`S_k=-1` with
@@ -6309,7 +6339,7 @@ number generator to some chosen integer, e.g.,
 Calls to ``random_walk1D_vec`` give positions of the particle as
 depicted in Figure :ref:`diffu:randomwalk:1D:code1:fig1`. The particle starts
 at the origin and moves with :math:`p=\frac{1}{2}`. Since the seed is the same,
-the plot to the left is just a magnification of the first 1/50 steps in
+the plot to the left is just a magnification of the first 1,000 steps in
 the plot to the right.
 
 .. demo_random_walk1D produced the plots
@@ -6392,7 +6422,7 @@ without unit spacings.
 Let :math:`P^{n+1}_i` be the probability of finding the particle at mesh point
 :math:`\bar x_i` at time :math:`\bar t_{n+1}`. We can reach mesh point :math:`(i,n+1)` in two
 ways: either coming in from the left from :math:`(i-1,n)` or from the
-right (:math:`i+1,n)`. Both has probability :math:`\frac{1}{2}` (if we assume
+right (:math:`i+1,n)`. Each has probability :math:`\frac{1}{2}` (if we assume
 :math:`p=q=\frac{1}{2}`). The fundamental equation for :math:`P^{n+1}_i` is
 
 .. _Eq:diffu:randomwalk:1D:pde:Markov:
@@ -6680,7 +6710,7 @@ summarized:
 
 What is the gain of the vectorized implementations? One important gain
 is that each vectorized operation can be automatically parallelized
-if one applies a parallel ``numpy`` library like `Numba <http://numba.pydata.org>`__. One a single CPU, however, the speed up of the vectorized operations
+if one applies a parallel ``numpy`` library like `Numba <http://numba.pydata.org>`__. On a single CPU, however, the speed up of the vectorized operations
 is also significant. With :math:`N=1,000` and 50,000 repeated walks,
 the two vectorized versions run about 25 and 18 times faster than the scalar
 version, with ``random_walks1D_vec1`` being fastest.
@@ -6864,7 +6894,7 @@ We arrive at the test function below.
         np.random.seed(10)
         vectorized2_computed = random_walks1D_vec2(
             x0, N, p, num_walks, num_times)
-        # positions: [0`, 1, 0, 1, 2]
+        # positions: [0, 1, 0, 1, 2]
         # Can test without tolerance since everything is +/- 1
         return_values = ['pos', 'pos2', 'pos_hist', 'pos_hist_times']
         for s, v, r in zip(serial_computed,
@@ -7001,7 +7031,7 @@ The output looks typically like
                    *                      |
 
 Positions beyond the limits of the :math:`x` axis appear with a value.
-`A file <http://bit.ly/1UbULeH>`__.
+`A file <http://bit.ly/1UbULeH>`__
 contains the complete ascii plot corresponding to the
 function ``run_random_walk`` above.
 
@@ -7256,7 +7286,7 @@ As always, we start with implementing the scalar case:
 Vectorized code          (2)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Significant speed-ups can be obtained by vectorization. We can get rid of
+Significant speed-ups can be obtained by vectorization. We get rid of
 the loops in the previous function and arrive at the following vectorized
 code.
 
@@ -7302,8 +7332,6 @@ code.
 Applications
 ============
 
-[**hpl 10**: Remaining: comment on boundary conditions for diffusion of substance and heat conduction (include Robin/cooling).]
-
 .. _diffu:app:substance:
 
 Diffusion of a substance
@@ -7343,8 +7371,8 @@ during a small time interval :math:`\Delta t`, is
 .. math::
          \int\limits_V \varrho (c(\boldsymbol{x},t+\Delta t) - c(\boldsymbol{x},t)) dV,
 
-assuming :math:`\varrho` is constant, which is reasonable.
-
+assuming :math:`\varrho` is constant, which is reasonable. The outflow of mass
+balances the loss of mass in :math:`V`, which is the increase with a minus sign.
 Setting the two contributions equal to each other ensures balance of
 mass inside :math:`V`. Dividing by :math:`\Delta t` gives
 
@@ -7445,9 +7473,9 @@ Heat conduction
 Heat conduction is a well-known diffusion process. The governing PDE
 is in this case based on the first law of thermodynamics: the increase
 in energy of a system is equal to the work done on the system, plus
-the supplied heat. Here, we shall media at rest and neglect the work
+the supplied heat. Here, we shall consider media at rest and neglect work
 done on the system. The principle then reduces to a balance between
-increase in internal energy and the supplied heat flow by conduction.
+increase in internal energy and supplied heat flow by conduction.
 
 Let :math:`e(x,t)` be the *internal energy* per unit mass. The increase of
 the internal energy in a small volume :math:`\Delta V` in a small time
@@ -7583,7 +7611,7 @@ which simply states that heat flows from hot to cold areas, along the
 path of greatest variation. In a solid medium, :math:`k` depends on the
 material of the medium, and in multi-material media one must regard
 :math:`k` as spatially dependent. In a fluid, it is common to assume that
-:math:`k` is a constant. The value of :math:`k` reflects how easy heat is
+:math:`k` is constant. The value of :math:`k` reflects how easy heat is
 conducted through the medium, and :math:`k` is named the *coefficient of
 heat conduction*.
 
@@ -7622,7 +7650,7 @@ the deformation of the medium. The famous Darcy's law relates
 :math:`\boldsymbol{q}` to :math:`p`:
 
 .. math::
-         \boldsymbol{q} = -\frac{K}{mu}(\nabla p - \varrho\boldsymbol{g}),
+         \boldsymbol{q} = -\frac{K}{\mu}(\nabla p - \varrho\boldsymbol{g}),
 
 where :math:`K` is the permeability of the medium, :math:`\mu` is the dynamic
 viscosity of the fluid, :math:`\varrho` is the density of the fluid, and :math:`\boldsymbol{g}`
@@ -7647,7 +7675,7 @@ Potential fluid flow
 Let :math:`\boldsymbol{v}` be the velocity of a fluid. The condition :math:`\nabla\times\boldsymbol{v} =0`
 is relevant for many flows, especially in geophysics when viscous effects
 are negligible. From vector calculus it is known
-that :math:`\nabla\times\boldsymbol{v} 0` implies that :math:`v` can be derived
+that :math:`\nabla\times\boldsymbol{v} =0` implies that :math:`v` can be derived
 from a scalar potential field :math:`\phi`: :math:`\boldsymbol{v} = \nabla\phi`. If the
 fluid is incompressible, :math:`\nabla\cdot\boldsymbol{v} = 0`, it follows that
 :math:`\nabla\cdot\nabla\phi = 0`, or
@@ -7667,7 +7695,11 @@ describe the fluid motion. This type of flow is known as
 One very important application where potential flow is a good model
 is water waves.
 As boundary condition we must prescribe
-:math:`\boldsymbol{v}\cdot\boldsymbol{n} =\partial\phi/\partial n`.
+:math:`\boldsymbol{v}\cdot\boldsymbol{n} =\partial\phi/\partial n`. This gives rise to
+what is known as a pure Neumann problem and will cause numerical
+difficulties because :math:`\phi` and :math:`\phi` plus any constant are two
+solutions of the problem. The simplest remedy is to fix the value of
+:math:`\phi` at a point.
 
 Streamlines for 2D fluid flow
 -----------------------------
@@ -7675,7 +7707,7 @@ Streamlines for 2D fluid flow
 The streamlines in a two-dimensional
 stationary fluid flow are lines tangential to the flow.
 The `stream function <https://en.wikipedia.org/wiki/Stream_function>`__
-:math:`\psi` is often introduced in two-dimensional
+:math:`\psi` is often introduced in two-dimensional flow
 such that its contour
 lines, :math:`\psi = \hbox{const}`, gives the streamlines. The relation
 between :math:`\psi` and the velocity field :math:`\boldsymbol{v}=(u,v)` is
@@ -7684,8 +7716,8 @@ between :math:`\psi` and the velocity field :math:`\boldsymbol{v}=(u,v)` is
          u = \frac{\partial\psi}{\partial y},\quad v = -
         \frac{\partial\psi}{\partial x}{\thinspace .}
 
-It follows that :math:`\nabla\boldsymbol{v} = \psi_{yx} - \psi{xy}=0`, so the stream function
-can be only be used for incompressible flows.
+It follows that :math:`\nabla\boldsymbol{v} = \psi_{yx} - \psi_{xy}=0`, so the stream function
+can only be used for incompressible flows.
 Since
 
 .. math::
@@ -7731,9 +7763,6 @@ therefore governed by the Poisson equation
     \nabla^2\varphi = \frac{\rho}{\epsilon_0}{\thinspace .}
         
         
-
-[**hpl 11**: What are appropriate boundary conditions?]
-[**hpl 12**: Svein, can you get this generalized to electric field inside some heterogeneous medium? Think we get some variable coefficient equation in that case (anisotropic conduction?). Can you figure it out?]
 
 .. _diffu:app:Couette:
 
@@ -7809,8 +7838,6 @@ the adjusted boundary condition
 
 .. math::
          u(L,t) = U_L(t){\thinspace .}
-
-[**hpl 13**: Exercises based on this diffusion model.]
 
 .. _diffu:app:pipeflow:
 
@@ -7902,8 +7929,6 @@ equation :math:`\nabla\boldsymbol{q} = 0` gives a diffusion PDE for :math:`p`:
         
 
 The boundary conditions must involve :math:`p` or :math:`\boldsymbol{q}` at the boundary.
-
-[**hpl 14**: Exercise!]
 
 Propagation of electrical signals in the brain
 ----------------------------------------------
@@ -8472,23 +8497,22 @@ Filename: ``axisymm_flow``.
 Problem 11: Scaling a welding problem
 -------------------------------------
 
-Welding equipment makes a very localized heat source that moves
-in time. We shall investigate the heating due to welding and choose,
-for maximum simplicity, a one-dimensional heat equation with a
-fixed temperature at the ends, and we neglect melting.
-We shall scale the problem, and
-besides solving such a problem numerically, the aim is to investigate
-the appropriateness of alternative scalings.
+Welding equipment makes a very localized heat source that moves in
+time. We shall investigate the heating due to welding and choose, for
+maximum simplicity, a one-dimensional heat equation with a fixed
+temperature at the ends, and we neglect melting.  We shall scale the
+problem, and besides solving such a problem numerically, the aim is to
+investigate the appropriateness of alternative scalings.
 
 The governing PDE problem reads
 
 .. math::
-        
+        \begin{alignat*}{2}
         \varrho c\frac{\partial u}{\partial t} &= k\frac{\partial^2 u}{\partial x^2}
         + f, & x\in (0,L),\ t\in (0,T),\\ 
         u(x,0) &= U_s, & x\in [0,L],\\ 
         u(0,t) = u(L,t) &= 0, & t\in (0,T].
-        
+        \end{alignat*}
 
 Here, :math:`u` is the temperature, :math:`\varrho` the density of the material,
 :math:`c` a heat capacity, :math:`k` the heat conduction coefficient, :math:`f` is

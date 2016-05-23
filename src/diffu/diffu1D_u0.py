@@ -113,7 +113,8 @@ def solver_FE(I, a, f, L, dt, F, T,
         # Update all inner points
         if version == 'scalar':
             for i in range(1, Nx):
-                u[i] = u_n[i] + F*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) +\
+                u[i] = u_n[i] +\
+                       F*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) +\
                        dt*f(x[i], t[n])
 
         elif version == 'vectorized':
