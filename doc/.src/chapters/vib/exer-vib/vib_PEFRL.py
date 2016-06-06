@@ -175,7 +175,7 @@ def orbit_error_with_dt_10000_years_fixed(f, g, solvers):
         plt.xlabel('dt')
         plt.ylabel('CPU (in hours) for 10000 years sim')
         plt.title(solver_ID)
-        filename = solver_ID + '_CPU_10000years_changing_dt'
+        filename = solver_ID + '_CPU_after10000years_changing_dt'
         plt.savefig(filename + '.png') 
         plt.savefig(filename + '.pdf')
         plt.show()
@@ -196,9 +196,9 @@ def orbit_error_with_dt_10000_years_fixed(f, g, solvers):
                  dt_values, 
                  E_of_dt(dt_values, p[0], p[1], p[2], p[3], p[4]), 'r--')
         plt.xlabel('dt')
-        plt.ylabel('orbit error after 10000 years')
+        plt.ylabel('orbit error after 10000 years (per cent)')
         plt.title(solver_ID)        
-        filename = solver_ID + '_orbit_error_10000years_changing_dt'
+        filename = solver_ID + '_E_after10000years_changing_dt'
         plt.savefig(filename + '.png') 
         plt.savefig(filename + '.pdf')
         plt.show()
@@ -243,7 +243,7 @@ def orbit_error_with_years_dt_fixed(f, g, solvers):
         plt.xlabel('Number of years (in 1000 periods)')
         plt.ylabel('CPU (in hours, fixed dt)')
         plt.title(solver_ID)        
-        filename = solver_ID + 'CPU_fixed_dt'
+        filename = solver_ID + '_CPU_during100000years_fixed_dt'
         plt.savefig(filename + '.png') 
         plt.savefig(filename + '.pdf')
         plt.show()
@@ -266,7 +266,7 @@ def orbit_error_with_years_dt_fixed(f, g, solvers):
         plt.xlabel('Number of years (in 1000 periods)')
         plt.ylabel('orbit error (in per cent, fixed dt)')
         plt.title(solver_ID)        
-        filename = solver_ID + 'orbit_error_with_no_of_years_and_fixed_dt'
+        filename = solver_ID + '_E_during100000years_fixed_dt'
         plt.savefig(filename + '.png') 
         plt.savefig(filename + '.pdf')
         plt.show()
