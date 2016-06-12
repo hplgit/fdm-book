@@ -12,7 +12,7 @@ def solver_v1(I, w, dt, T):
     u = zeros(Nt+1)
     v = zeros(Nt+1)
     t = linspace(0, Nt*dt, Nt+1)  # mesh for u
-    t_v = t + dt/2                # mesh for v
+    t_v = (t + dt/2)[:-1]         # mesh for v
 
     u[0] = I
     v[0] = 0 - 0.5*dt*w**2*u[0]
@@ -38,7 +38,8 @@ half = HalfInt()  # singleton object
 def solver(I, w, dt, T):
     """
     Solve u'=v, v' = - w**2*u for t in (0,T], u(0)=I and v(0)=0,
-    by a central finite difference method with time step dt.
+    by a central finite difference method with time step dt on
+    a staggered mesh with v as unknown at (i+1/2)*dt time points.
     """
     dt = float(dt)
     Nt = int(round(T/dt))
@@ -52,7 +53,7 @@ def solver(I, w, dt, T):
     for n in range(1, Nt+1):
         u[n] = u[n-1] + dt*v[n-half]
         v[n+half] = v[n-half] - dt*w**2*u[n]
-    return u, t, v, t_v
+    return u, t, v[:-1], t_v[:-1]
 
 def test_staggered():
     I = 1.2; w = 2.0; T = 5; dt = 2/w

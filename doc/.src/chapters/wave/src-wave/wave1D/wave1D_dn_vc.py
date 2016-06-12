@@ -37,6 +37,8 @@ def solver(
     user_action=None, version='scalar',
     stability_safety_factor=1.0):
     """Solve u_tt=(c^2*u_x)_x + f on (0,L)x(0,T]."""
+
+    # --- Compute time and space mesh ---
     Nt = int(round(T/dt))
     t = np.linspace(0, Nt*dt, Nt+1)      # Mesh points in time
 
@@ -52,7 +54,7 @@ def solver(
     dx = x[1] - x[0]
     dt = t[1] - t[0]
 
-    # Treat c(x) as array
+    # Make c(x) available as array
     if isinstance(c, (float,int)):
         c = np.zeros(x.shape) + c
     elif callable(c):
@@ -65,7 +67,7 @@ def solver(
     q = c**2
     C2 = (dt/dx)**2; dt2 = dt*dt    # Help variables in the scheme
 
-    # Wrap user-given f, I, V, U_0, U_L if None or 0
+    # --- Wrap user-given f, I, V, U_0, U_L if None or 0 ---
     if f is None or f == 0:
         f = (lambda x, t: 0) if version == 'scalar' else \
             lambda x, t: np.zeros(x.shape)
@@ -82,7 +84,7 @@ def solver(
         if isinstance(U_L, (float,int)) and U_L == 0:
             U_L = lambda t: 0
 
-    # Make hash of all input data
+    # --- Make hash of all input data ---
     import hashlib, inspect
     data = inspect.getsource(I) + '_' + inspect.getsource(V) + \
            '_' + inspect.getsource(f) + '_' + str(c) + '_' + \
@@ -95,23 +97,25 @@ def solver(
         # Simulation is already run
         return -1, hashed_input
 
+    # --- Allocate memomry for solutions ---
     u   = np.zeros(Nx+1)   # Solution array at new time level
     u_1 = np.zeros(Nx+1)   # Solution at 1 time level back
     u_2 = np.zeros(Nx+1)   # Solution at 2 time levels back
 
     import time;  t0 = time.clock()  # CPU time measurement
 
+    # --- Valid indices for space and time mesh ---
     Ix = range(0, Nx+1)
     It = range(0, Nt+1)
 
-    # Load initial condition into u_1
+    # --- Load initial condition into u_1 ---
     for i in range(0,Nx+1):
         u_1[i] = I(x[i])
 
     if user_action is not None:
         user_action(u_1, x, t, 0)
 
-    # Special formula for the first step
+    # --- Special formula for the first step ---
     for i in Ix[1:-1]:
         u[i] = u_1[i] + dt*V(x[i]) + \
         0.5*C2*(0.5*(q[i] + q[i+1])*(u_1[i+1] - u_1[i]) - \
@@ -149,6 +153,7 @@ def solver(
     #u_2[:] = u_1;  u_1[:] = u  # safe, but slower
     u_2, u_1, u = u_1, u, u_2
 
+    # --- Time loop ---
     for n in It[1:-1]:
         # Update all inner points
         if version == 'scalar':
@@ -197,12 +202,8 @@ def solver(
                 break
 
         # Update data structures for next step
-        #u_2[:] = u_1;  u_1[:] = u  # safe, but slower
         u_2, u_1, u = u_1, u, u_2
 
-    # Important to correct the mathematically wrong u=u_2 above
-    # before returning u
-    u = u_1
     cpu_time = time.clock() - t0
     return cpu_time, hashed_input
 
@@ -687,6 +688,45 @@ def pulse(
         action.close_file(hashed_input)
         action.make_movie_file()
     print 'cpu (-1 means no new data generated):', cpu
+
+def convergence_rates(
+    u_exact,
+    I, V, f, c, U_0, U_L, L,
+    dt_0, num_meshes,
+    C, T, version='scalar',
+    stability_safety_factor=1.0):
+    """
+    Half the time step and estimate convergence rates for
+    for num_meshes simulations.
+    """
+    class ComputeError:
+        def __init__(self, norm_type):
+            self.norm_type = norm_type
+            self.E = []
+
+        def __call__(u, x, t, n):
+            error = u - u_exact(x, t[n])
+            if self.norm_type == 'L2':
+                dx = x[1] - x[0]
+                error_norm = np.sqrt(np.sum(dx*error**2))
+            elif self.norm_type == 'Linf':
+                error_norm = error.max()
+            else:
+                raise ValueError(
+                    'norm=%s illegal value', self.norm_type)
+            self.E.append(error_norm)
+
+        def get_space_time_error_norm():
+            return np.max(self.E)
+
+    E = []
+    h = []
+    for i in range(num_meshes):
+        error_calculator = ComputeError('Linf')
+        solver(I, V, f, c, U_0, U_L, L, dt, C, T,
+               user_action=None, version='scalar',
+               stability_safety_factor=1.0
+    )
 
 if __name__ == '__main__':
     pass

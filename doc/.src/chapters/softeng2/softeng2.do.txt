@@ -60,7 +60,7 @@ time and space, with arithmetic mean for the variable coefficient
 
 !bt
 \begin{equation}
-[D_tD_t u = \varrho^{-1}D_x\overline{q}^xD_x u + f]^n_i
+[D_tD_t u = D_x\overline{q}^xD_x u + f]^n_i
 \tp
 \end{equation}
 !et
@@ -80,7 +80,7 @@ cite{Langtangen_deqbook_wave}].
 
 The general initial-boundary value problem
 (ref{wave:pde2:software:ueq2})-(ref{wave:pde2:software:bcL2})
-solved by finite difference methods can be implemented in
+solved by finite difference methods can be implemented as shown in
 the following `solver` function (taken from the
 file "`wave1D_dn_vc.py`": "${src_wave}/wave1D/wave_dn_vc.py").
 This function builds on
@@ -93,10 +93,12 @@ the document "Finite difference methods for wave motion":
 cite{Langtangen_deqbook_wave}].
 There are several quite advanced
 constructs that will be commented upon later.
+The code is lengthy, but that is because we provide a lot of
+flexibility with respect to input arguments,
+boundary conditions, and optimization
+(scalar versus vectorized loops).
 
 @@@CODE src-wave/wave1D/wave1D_dn_vc.py def solver@def test_quadratic
-
-Or maybe copy section by section...?
 
 
 ======= Saving large arrays in files =======
@@ -107,7 +109,7 @@ needs to store these arrays on disk. Several methods are available
 in Python. We recommend to use tailored solutions for large arrays and
 not standard file storage tools such as `pickle` (`cPickle` for speed
 in Python version 2) and `shelve`, because the tailored solutions have
-been optimized for array data and are hence much more faster than the
+been optimized for array data and are hence much faster than the
 standard tools.
 
 ===== Using `savez` to store arrays in files =====
@@ -194,17 +196,17 @@ see ref[Section ref{sec:scale:decay:prog}][in cite{Langtangen_scaling}][the docu
 ===== Using a hash to create a file or directory name =====
 label{softeng2:wave1D:filestorage:hash}
 
-The user of array storage techniques like those outlined in
-Sections ref{softeng2:wave1D:filestorage:joblib} and
-ref{softeng2:wave1D:filestorage:savez} demand the user to assign
-a name for the file(s) or directory where the solution is to be
+Array storage techniques like those outlined in Sections
+ref{softeng2:wave1D:filestorage:joblib} and
+ref{softeng2:wave1D:filestorage:savez} demand the user to assign a
+name for the file(s) or directory where the solution is to be
 stored. Ideally, this name should reflect parameters in the problem
-such that one can recognize an already run simulation. One
-technique is to make a hash string out of the input data.
-A hash string is a 40-character long hexadecimal string that uniquely
-reflects another potentially much longer string. (You may be used
-to hash strings from the Git version control system: every committed
-version of the files in Git is recognized by a hash string.)
+such that one can recognize an already run simulation. One technique
+is to make a hash string out of the input data.  A hash string is a
+40-character long hexadecimal string that uniquely reflects another
+potentially much longer string. (You may be used to hash strings from
+the Git version control system: every committed version of the files
+in Git is recognized by a hash string.)
 
 Suppose you have some input data in the form of functions,
 `numpy` arrays, and other objects. To turn these input data
@@ -229,7 +231,7 @@ def myfunction(func1, func2, array1, array2, obj1, obj2):
 !ec
 It is wise to use `joblib.hash` and not try to do a
 `str(array1)`, since that string can be *very* long, and
-`joblib.hash` is more efficient than `hashlib` to turn
+`joblib.hash` is more efficient than `hashlib` when turning
 these data into a hash.
 
 !bwarning Remark: turning function objects into their source code is unreliable!
@@ -239,16 +241,16 @@ Suppose we have some function
 
 !bc pycod
 x0 = 0.1
-f = lambda x: 0 of x <= x0 else 1
+f = lambda x: 0 if x <= x0 else 1
 !ec
-The source code will be `f = lambda x: 0 of x <= x0 else 1`, so if the
+The source code will be `f = lambda x: 0 if x <= x0 else 1`, so if the
 calling code changes the value of `x0` (which `f` remembers - it is
 a closure), the source remains unchanged, the hash is the same,
 and the change in input data is unnoticed. Consequently, the technique
 above must be used with care. The user can always just remove the
 stored files in disk and thereby force a recomputation (provided the software
-applies to hash to test if a zip archive or `joblib` subdirectory
-exists and if so avoids recomputation).
+applies a hash to test if a zip archive or `joblib` subdirectory
+exists, and if so, avoids recomputation).
 !ewarning
 
 ======= Software for the 1D wave equation =======
@@ -259,8 +261,8 @@ Such actions must be
 taken care of outside the `solver` function, more precisely in the
 `user_action` function that is called at every time level.
 
-We have in the "`wave1D_dn_vc.py`": "${src_wave}/wave1D/wave_dn_vc.py"
-code implemented the `user_action`
+We have, in the "`wave1D_dn_vc.py`": "${src_wave}/wave1D/wave_dn_vc.py"
+code, implemented the `user_action`
 callback function as a class `PlotAndStoreSolution` with a
 `__call__(self, x, t, t, n)` method for the `user_action` function.
 Basically, `__call__` stores and plots the solution.
