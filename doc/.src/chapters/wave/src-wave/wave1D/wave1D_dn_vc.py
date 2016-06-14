@@ -692,7 +692,7 @@ def pulse(
 def convergence_rates(
     u_exact,
     I, V, f, c, U_0, U_L, L,
-    dt_0, num_meshes,
+    dt0, num_meshes,
     C, T, version='scalar',
     stability_safety_factor=1.0):
     """
@@ -701,32 +701,54 @@ def convergence_rates(
     """
     class ComputeError:
         def __init__(self, norm_type):
-            self.norm_type = norm_type
-            self.E = []
+            self.error = 0
 
-        def __call__(u, x, t, n):
-            error = u - u_exact(x, t[n])
-            if self.norm_type == 'L2':
-                dx = x[1] - x[0]
-                error_norm = np.sqrt(np.sum(dx*error**2))
-            elif self.norm_type == 'Linf':
-                error_norm = error.max()
-            else:
-                raise ValueError(
-                    'norm=%s illegal value', self.norm_type)
-            self.E.append(error_norm)
-
-        def get_space_time_error_norm():
-            return np.max(self.E)
+        def __call__(self, u, x, t, n):
+            """Store norm of the error in self.E."""
+            error = np.abs(u - u_exact(x, t[n])).max()
+            self.error = max(self.error, error)
 
     E = []
-    h = []
+    h = []  # dt, solver adjusts dx such that C=dt*c/dx
+    dt = dt0
     for i in range(num_meshes):
         error_calculator = ComputeError('Linf')
         solver(I, V, f, c, U_0, U_L, L, dt, C, T,
-               user_action=None, version='scalar',
-               stability_safety_factor=1.0
-    )
+               user_action=error_calculator,
+               version='scalar',
+               stability_safety_factor=1.0)
+        E.append(error_calculator.error)
+        h.append(dt)
+        dt /= 2  # halve the time step for next simulation
+    print 'E:', E
+    print 'h:', h
+    r = [np.log(E[i]/E[i-1])/np.log(h[i]/h[i-1])
+         for i in range(1,num_meshes)]
+    return r
+
+def test_convrate_sincos():
+    n = m = 2
+    L = 1.0
+    u_exact = lambda x, t: np.cos(m*np.pi/L*t)*np.sin(m*np.pi/L*x)
+
+    r = convergence_rates(
+        u_exact=u_exact,
+        I=lambda x: u_exact(x, 0),
+        V=lambda x: 0,
+        f=0,
+        c=1,
+        U_0=0,
+        U_L=0,
+        L=L,
+        dt0=0.1,
+        num_meshes=6,
+        C=0.9,
+        T=1,
+        version='scalar',
+        stability_safety_factor=1.0)
+    print 'rates sin(x)*cos(t) solution:', \
+          [round(r_,2) for r_ in r]
+    assert abs(r[-1] - 2) < 0.002
 
 if __name__ == '__main__':
-    pass
+    test_convrate_sincos()

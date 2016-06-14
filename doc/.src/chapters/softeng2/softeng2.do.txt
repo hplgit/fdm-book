@@ -349,7 +349,6 @@ data = inspect.getsource(I) + '_' + inspect.getsource(V) + \
        '_' + str(stability_safety_factor)
 hashed_input = hashlib.sha1(data).hexdigest()
 !ec
-NOTE: All this is now explained!
 
 To get the source code of a function `f` as a string,
 we use `inspect.getsource(f)`. All input, functions as
@@ -392,11 +391,13 @@ if cpu > 0:  # did we generate new data?
 
 ===== Verification =====
 
+=== Vanishing approximation error ===
+
 Exact solutions of the numerical equations are always attractive for
 verification purposes since the software should reproduce such
 solutions to machine precision. With Dirichlet boundary conditions
 we can construct a function that is linear in $t$ and quadratic in
-$x$ that is an exact solution of the scheme, while with Neumann
+$x$ that is also an exact solution of the scheme, while with Neumann
 conditions we are left with testing just a constant solution
 (see comments in ref[Section ref{wave:pde1:verify}][ in
 cite{Langtangen_deqbook_wave}][in
@@ -404,15 +405,52 @@ the document "Finite difference methods for wave motion":
 "http://tinyurl.com/k3sdbuv/pub/wave"
 cite{Langtangen_deqbook_wave}]).
 
-A more general method for verification is to check the convergence rates.
+=== Convergence rates ===
 
-[hpl: Do convergence rates here!]
+A more general method for verification is to check the convergence rates.
+We must introduce one discretization parameter $h$ and assume an error
+model $E=Ch^r$, where $C$ and $r$ are constants to be determine (i.e.,
+$r$ is the rate that we are interested in). Given two experiments with
+different resolutions $h_i$ and $h_i{-1}$, we can estimate $r$ by
+
+!bt
+\[ r = \frac{\ln(E_{i}/E_{i-1})}{\ln(h_{i}h_{i-1}},tp\]
+!et
+where $E_i$ is the error corresponding to $h_i$ and $E_{i-1}$ corresponds to
+$h_{i-1}$. ref[Section ref{wave:pde2:fd:standing:waves}}{ in cite{Langtangen_deqbook_wave}][The
+section "Using an analytical solution of physical significance": ""
+in cite{Langtangen_deqbook_wave}] explains the details of this type of verification and how
+we introduce the single discretiztion parameter $h=\Delta t = \hat c\Delta t$,
+for some constant $\har c$. To compute the error, we had to rely on
+a global variable in the user action function. Below is an implementation
+where we have a more elegant solution in terms of a class: the `error`
+variable is not a class attribute and there is no need for a global
+error (which is always considered as an advantage).
+
+@@@CODE src-wave/wave1D/wave1D_dn_vc.py def convergence_rates@def test_convrate_sincos
+The returned sequence `r` should connverge to 2 since the error
+analysis in ref[Section ref{wave:pde1:analysis}][in
+cite{Langtangen_deqbook_wave}][the section "Analysis of the difference
+equations": "" in cite{Langtangen_deqbook_wave}] predicts various error measures to behave
+like $\Oof{\Delta t^2} + \Oof{\Delta x^2}$. We can easily run
+the case with standing waves and the analytical solution
+$u(x,t) = \cos(\frac{2\pi}{L}t)\sin(\frac{2\pi}{L}x)$. The call will
+be very similar to the one provided in the `test_convrate_sincos` function
+in ref[Section ref{wave:pde1:impl:verify:rate}][ in cite{Langtangen_deqbook_wave}][the section "Verification: convergence rates": "" in
+cite{Langtangen_deqbook_wave}], see the file "`wave1D_dn_vc.py`":
+"${src_wave}/wave1D/wave_dn_vc.py" for details.
+
 
 ======= Programming the solver with classes =======
 
-Many who knows about class programming prefer to organize their software
-in terms of classes. We can easily port our function-based code in ...
-to a class version.
+Many who know about class programming prefer to organize their software
+in terms of classes. This gives a richer application programming interface
+(API) since a function solver must have all its input data in terms
+of arguments, while a class-based solver naturally has a mix of method
+arguments and user-supplied methods. (Well, to be more precise,
+our solvers have demanded `user_action`
+to be a function provided by the user, so it is possible to mix variables
+and functions in the input also in a solver function.)
 
 We will create a class `Problem` to hold the physical parameters of the
 problem and a class `Solver` to hold the numerical parameters and
@@ -425,7 +463,7 @@ a class `Function` for a mesh function (mesh point values and its mesh).
 ===== Class Mesh =====
 
 The `Mesh` class can be made valid for a space-time mesh in any number
-of space dimensions. To make versatile, the constructor accepts
+of space dimensions. To make the class versatile, the constructor accepts
 either a tuple/list of number of cells in each spatial dimension or
 a tuple/list of cell spacings. In addition, we need the size of the
 hypercube mesh as a tuple/list of 2-tuples with lower and upper limits
@@ -688,7 +726,7 @@ the Python program for the wave equation:
 import wave2D_u0_loop_cy
 advance = wave2D_u0_loop_cy.advance
 ...
-for n in It[1:-1:                  # time loop
+for n in It[1:-1]:                  # time loop
     f_a[:,:] = f(xv, yv, t[n])     # precompute, size as u
     u = advance(u, u_n, u_nm1, f_a, x, y, t, Cx2, Cy2, dt2)
 !ec
@@ -1093,8 +1131,8 @@ u = advance(u, u_n, u_nm1, f_a, Cx2, Cy2, dt2)
 In this example, the C and Fortran code runs at the same speed, and there
 are no significant differences in the efficiency of the wrapper code.
 The overhead implied by the wrapper code is negligible as long as
-we do not work with very small meshes and consequently little numerical
-work in the `advance` function.
+there is little numerical work in the `advance` function, or in other
+words, that we work with small meshes.
 
 ======= Migrating loops to C via f2py =======
 

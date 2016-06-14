@@ -220,7 +220,67 @@ def guitar(C):
               animate=True, tool='scitools')
 
 
+def convergence_rates(
+    u_exact,                 # Python function for exact solution
+    I, V, f, c, L,           # physical parameters
+    dt0, num_meshes, C, T):  # numerical parameters
+    """
+    Half the time step and estimate convergence rates for
+    for num_meshes simulations.
+    """
+    # First define an appropriate user action function
+    global error
+    error = 0  # error computed in the user action function
+
+    def compute_error(u, x, t, n):
+        global error  # must be global to be altered here
+        # (otherwise error is a local variable, different
+        # from error defined in the parent function)
+        if n == 0:
+            error = 0
+        else:
+            error = max(error, np.abs(u - u_exact(x, t[n])).max())
+
+    # Run finer and finer resolutions and compute true errors
+    E = []
+    h = []  # dt, solver adjusts dx such that C=dt*c/dx
+    dt = dt0
+    for i in range(num_meshes):
+        solver(I, V, f, c, L, dt, C, T,
+               user_action=compute_error)
+        # error is computed in the final call to compute_error
+        E.append(error)
+        h.append(dt)
+        dt /= 2  # halve the time step for next simulation
+    print 'E:', E
+    print 'h:', h
+    # Convergence rates for two consecutive experiments
+    r = [np.log(E[i]/E[i-1])/np.log(h[i]/h[i-1])
+         for i in range(1,num_meshes)]
+    return r
+
+def test_convrate_sincos():
+    n = m = 2
+    L = 1.0
+    u_exact = lambda x, t: np.cos(m*np.pi/L*t)*np.sin(m*np.pi/L*x)
+
+    r = convergence_rates(
+        u_exact=u_exact,
+        I=lambda x: u_exact(x, 0),
+        V=lambda x: 0,
+        f=0,
+        c=1,
+        L=L,
+        dt0=0.1,
+        num_meshes=6,
+        C=0.9,
+        T=1)
+    print 'rates sin(x)*cos(t) solution:', \
+          [round(r_,2) for r_ in r]
+    assert abs(r[-1] - 2) < 0.002
+
 if __name__ == '__main__':
+    test_constant()
     test_quadratic()
     import sys
     try:
@@ -229,4 +289,5 @@ if __name__ == '__main__':
     except IndexError:
         C = 0.85
     print 'Courant number: %.2f' % C
-    guitar(C)
+    #guitar(C)
+    test_convrate_sincos()
