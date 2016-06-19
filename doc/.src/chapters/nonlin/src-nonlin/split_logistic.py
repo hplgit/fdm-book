@@ -22,25 +22,75 @@ def solver(dt, T, f, f_0, f_1):
         # Forward Euler method
         u_FE[n+1] = u_FE[n] + dt*f(u_FE[n])
 
+        # --- Ordinary splitting ---
+        # First step
+        u_s_n = u_split1[n]
+        u_s = u_s_n + dt*f_0(u_s_n)
+        # Second step
+        u_ss_n = u_s
+        u_ss = u_ss_n + dt*f_1(u_ss_n)
+        u_split1[n+1] = u_ss
+
+        # --- Strang splitting ---
+        # First step
+        u_s_n = u_split2[n]
+        u_s = u_s_n + dt/2.*f_0(u_s_n)
+        # Second step
+        u_sss_n = u_s
+        u_sss = u_sss_n + dt*f_1(u_sss_n)
+        # Third step
+        u_ss_n = u_sss
+        u_ss = u_ss_n + dt/2.*f_0(u_ss_n)
+        u_split2[n+1] = u_ss
+
+        # --- Strang splitting using exact integrator for u'=f_0 ---
+        # First step
+        u_s = u_split3[n]
+        u_snp1 = u_s*np.exp(dt/2.)  # exact
+        # Second step
+        u_sss = u_snp1
+        u_sssnp1 = u_sss + dt*f_1(u_sss)
+        # Third step
+        u_ss = u_sssnp1
+        u_ssnp1 = u_ss*np.exp(dt/2.)  # exact
+        u_split3[n+1] = u_ssnp1
+
+    return u_FE, u_split1, u_split2, u_split3, t
+
+def solver_v2(dt, T, f, f_0, f_1):
+    """
+    As solver, but shorter code in the splitting steps.
+    """
+    Nt = int(round(T/float(dt)))
+    t = np.linspace(0, Nt*dt, Nt+1)
+    u_FE = np.zeros(len(t))
+    u_split1 = np.zeros(len(t))  # 1st-order splitting
+    u_split2 = np.zeros(len(t))  # 2nd-order splitting
+    u_split3 = np.zeros(len(t))  # 2nd-order splitting w/exact f_0
+
+    # Set initial values
+    u_FE[0] = 0.1
+    u_split1[0] = 0.1
+    u_split2[0] = 0.1
+    u_split3[0] = 0.1
+
+    for n in range(len(t)-1):
+        # Forward Euler method
+        u_FE[n+1] = u_FE[n] + dt*f(u_FE[n])
+
         # Ordinary splitting
-        u_s = u_split1[n]
-        u_snp1 = u_s + dt*f_0(u_s)
-        u_ss = u_snp1
-        u_ssnp1 = u_ss + dt*f_1(u_ss)
-        u_split1[n+1] = u_ssnp1
-        # original
-        u_0 = u_split1[n] + dt*f_0(u_split1[n])
-        u_split1[n+1] = u_0 + dt*f_1(u_0)
+        u_s = u_split1[n] + dt*f_0(u_split1[n])
+        u_split1[n+1] = u_s + dt*f_1(u_s)
 
         # Strang splitting
-        u_0 = u_split2[n] + dt/2.*f_0(u_split2[n])
-        u_1 = u_0 + dt*f_1(u_0)
-        u_split2[n+1] = u_1 + dt/2.*f_0(u_1)
+        u_s = u_split2[n] + dt/2.*f_0(u_split2[n])
+        u_sss = u_s + dt*f_1(u_s)
+        u_split2[n+1] = u_sss + dt/2.*f_0(u_sss)
 
         # Strang splitting using exact integrator for u'=f_0
-        u_0 = u_split3[n]*np.exp(dt/2.)  # exact
-        u_1 = u_0 + dt*f_1(u_0)
-        u_split3[n+1] = u_1*np.exp(dt/2.)
+        u_s = u_split3[n]*np.exp(dt/2.)  # exact
+        u_ss = u_s + dt*f_1(u_s)
+        u_split3[n+1] = u_ss*np.exp(dt/2.)
 
     return u_FE, u_split1, u_split2, u_split3, t
 
