@@ -45,15 +45,15 @@ def solver(dt, T, f, f_0, f_1):
 
         # --- Strang splitting using exact integrator for u'=f_0 ---
         # First step
-        u_s = u_split3[n]
-        u_snp1 = u_s*np.exp(dt/2.)  # exact
+        u_s_n = u_split3[n]
+        u_s = u_s_n*np.exp(dt/2.)  # exact
         # Second step
-        u_sss = u_snp1
-        u_sssnp1 = u_sss + dt*f_1(u_sss)
+        u_sss_n = u_s
+        u_sss = u_sss_n + dt*f_1(u_sss_n)
         # Third step
-        u_ss = u_sssnp1
-        u_ssnp1 = u_ss*np.exp(dt/2.)  # exact
-        u_split3[n+1] = u_ssnp1
+        u_ss_n = u_sss
+        u_ss = u_ss_n*np.exp(dt/2.)  # exact
+        u_split3[n+1] = u_ss
 
     return u_FE, u_split1, u_split2, u_split3, t
 
