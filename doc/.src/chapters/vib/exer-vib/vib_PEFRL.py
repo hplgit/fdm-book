@@ -279,7 +279,7 @@ def orbit_error_vs_years(
         # E and cpu_time are for every N_orbit_groups cycle
         print 'E_values (fixed dt, changing no of years):', E
         print 'CPU (hours):', cpu_time
-        years = range(0, orbit_group_size)
+        years = range(0, N_orbit_groups)
 
         # Now make empirical formula
 
@@ -350,7 +350,8 @@ def compute_orbit_error_and_CPU():
 
     print 'Compute orbit error as fu. of no of years (fixed dt)...'
     solvers = ['PEFRL']    
-    N_orbit_groups=10000
+    #N_orbit_groups=10000
+    N_orbit_groups=10
     orbit_group_size=10
     N_time_steps = 1600    # no of steps per orbit cycle
     orbit_error_vs_years(
