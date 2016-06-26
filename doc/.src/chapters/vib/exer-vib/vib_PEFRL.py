@@ -80,8 +80,8 @@ def compute_orbit_and_error(
     the 2D position error and cpu time (as lists).
     '''
     def u_exact(t):
-        return np.array([np.cos(t), np.sin(t)])    
-    
+        return np.array([np.cos(t), np.sin(t)])
+
     w = 1
     P = 2*np.pi/w       # scaled period (1 year becomes 2*pi)
     dt = P/timesteps_per_period
@@ -117,13 +117,15 @@ def compute_orbit_and_error(
             ui, ti = solver.solve(time_points)
             #find error (correct final pos:  x=1, y=0)
             if E_measure == 'final_E':
-                orbit_error = np.sqrt( (1-ui[-1,0])**2 + (0-ui[-1,2])**2)*100
+                orbit_error = np.sqrt((1-ui[-1,0])**2 +
+                                      (0-ui[-1,2])**2)*100
             elif E_measure == 'max_E':
-                orbit_error = np.sqrt(
-                      (ui[:,0]-u_e[:,0])**2 + (ui[:,2]-u_e[:,1])**2).max()
+                orbit_error = np.sqrt((ui[:,0]-u_e[:,0])**2 +
+                                      (ui[:,2]-u_e[:,1])**2).max()
             elif E_measure == 'all_E':
                 orbit_error = np.sqrt(
-                     dt*np.sum((ui[:,0]-u_e[:,0])**2 + (ui[:,2]-u_e[:,1])**2))        
+                dt*np.sum((ui[:,0]-u_e[:,0])**2 +
+                          (ui[:,2]-u_e[:,1])**2))
             else:
                 print 'Unknown error measure requested!'
                 sys.exit(1)
@@ -133,13 +135,15 @@ def compute_orbit_and_error(
             ui, ti = solver.solve(time_points)
             #find error (correct final pos:  x=1, y=0)
             if E_measure == 'final_E':
-                orbit_error = np.sqrt( (1-ui[-1,1])**2 + (0-ui[-1,3])**2)*100
+                orbit_error = np.sqrt((1-ui[-1,1])**2 +
+                                      (0-ui[-1,3])**2)*100
             elif E_measure == 'max_E':
-                orbit_error = np.sqrt(
-                      (ui[:,1]-u_e[:,0])**2 + (ui[:,3]-u_e[:,1])**2).max()
+                orbit_error = np.sqrt((ui[:,1]-u_e[:,0])**2 +
+                                      (ui[:,3]-u_e[:,1])**2).max()
             elif E_measure == 'all_E':
                 orbit_error = np.sqrt(
-                     dt*np.sum((ui[:,1]-u_e[:,0])**2 + (ui[:,3]-u_e[:,1])**2))        
+                    dt*np.sum((ui[:,1]-u_e[:,0])**2 +
+                              (ui[:,3]-u_e[:,1])**2))
             else:
                 print 'Unknown error measure requested!'
                 sys.exit(1)
@@ -148,13 +152,16 @@ def compute_orbit_and_error(
             ui, vi, ti = solver_PEFRL(I, V, f, dt, T_interval)
             #find error (correct final pos:  x=1, y=0)
             if E_measure == 'final_E':
-                orbit_error = np.sqrt( (1-ui[-1,0])**2 + (0-ui[-1,1])**2)*100
+                orbit_error = np.sqrt((1-ui[-1,0])**2 +
+                                      (0-ui[-1,1])**2)*100
             elif E_measure == 'max_E':
                 orbit_error = np.sqrt(
-                      (ui[:,0]-u_e[:,0])**2 + (ui[:,1]-u_e[:,1])**2).max()
+                    (ui[:,0]-u_e[:,0])**2 +
+                    (ui[:,1]-u_e[:,1])**2).max()
             elif E_measure == 'all_E':
                 orbit_error = np.sqrt(
-                     dt*np.sum((ui[:,0]-u_e[:,0])**2 + (ui[:,1]-u_e[:,1])**2))        
+                    dt*np.sum((ui[:,0]-u_e[:,0])**2 +
+                              (ui[:,1]-u_e[:,1])**2))
             else:
                 print 'Unknown error measure requested!'
                 sys.exit(1)
@@ -195,8 +202,9 @@ def orbit_error_vs_dt(
         dt_values = []
         cpu_values = []
         #for timesteps_per_period in 400, 800, 1600, 3200:
-        for timesteps_per_period in 50, 100, 200, 400, 800, 1600, 3200:
-            print '.......time steps per period: ', timesteps_per_period
+        for timesteps_per_period in \
+                50, 100, 200, 400, 800, 1600, 3200:
+            print '... steps per period: ', timesteps_per_period
             if solver_ID == 'RK4':
                 dt, E, cpu_time = compute_orbit_and_error(
                     f_RK4,
@@ -225,10 +233,10 @@ def orbit_error_vs_dt(
                 print 'Unknown solver requested!'
                 sys.exit(1)
 
-            #print 'CPU (in hours):', cpu_time
             dt_values.append(dt)
             E_values.append(E[-1])  # need only after 10 000 cycles
             cpu_values.append(cpu_time[-1])
+            #print 'CPU (in hours):', cpu_time
         #print 'E_values (10 000 years, changing dt):', E_values
         #print 'dt_values (10 000 years):', dt_values
         #print 'cpu_values (10 000 years, changing dt):', cpu_values
@@ -248,18 +256,18 @@ def orbit_error_vs_dt(
         E_values =  np.array(E_values)
         dt_values = np.array(dt_values)
         m = len(E_values)
-               
+
         r = [np.log(E_values[i-1]/E_values[i])/
              np.log(dt_values[i-1]/dt_values[i])
              for i in range(1, m, 1)]
         print 'convergence rates (%s): %s' % (solver_ID, r)
-        
+
         #tol = 0.1
         #if solver_ID == 'EC':   # should be 1st order
         #    assert abs(r[-1] - 1.0) < tol
         #else:   # RK4 and PEFRL should be 4th order
         #    assert abs(r[-1] - 4.0) < tol
-        
+
 
 def orbit_error_vs_years(
     f_EC, f_RK4, g, solvers,

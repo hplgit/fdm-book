@@ -85,7 +85,7 @@ function edit_solution_admons {
 
 function compile {
     options="$@"
-system doconce format pdflatex $name --allow_refs_to_external_docs $opt1 --exercise_numbering=chapter --exercise_solution=admon --latex_admon_envir_map=2 --latex_style=Springer_T4 --latex_title_layout=titlepage --latex_list_of_exercises=loe --latex_admon=mdfbox --latex_admon_color=1,1,1 --latex_table_format=left --latex_admon_title_no_period --latex_no_program_footnotelink --latex_copyright=titlepages "--latex_code_style=default:lst[style=blue1_bluegreen]@pypro:lst[style=blue1bar_bluegreen]@pypro2:lst[style=greenblue]@pycod2:lst[style=greenblue]@dat:lst[style=gray]@sys:vrb[frame=lines,label=\\fbox{{\tiny Terminal}},framesep=2.5mm,framerule=0.7pt,fontsize=\fontsize{9pt}{9pt}]" --movie_prefix=https://raw.githubusercontent.com/hplgit/fdm-book/master/doc/.src/book/ $options
+system doconce format pdflatex $name $opt1 --exercise_numbering=chapter --exercise_solution=admon --latex_admon_envir_map=2 --latex_style=Springer_T4 --latex_title_layout=titlepage --latex_list_of_exercises=loe --latex_admon=mdfbox --latex_admon_color=1,1,1 --latex_table_format=left --latex_admon_title_no_period --latex_no_program_footnotelink --latex_copyright=titlepages "--latex_code_style=default:lst[style=blue1_bluegreen]@pypro:lst[style=blue1bar_bluegreen]@pypro2:lst[style=greenblue]@pycod2:lst[style=greenblue]@dat:lst[style=gray]@sys:vrb[frame=lines,label=\\fbox{{\tiny Terminal}},framesep=2.5mm,framerule=0.7pt,fontsize=\fontsize{9pt}{9pt}]" --movie_prefix=https://raw.githubusercontent.com/hplgit/fdm-book/master/doc/.src/book/ --latex_list_of_exercises=toc $options
 
 # Auto edits
 edit_solution_admons

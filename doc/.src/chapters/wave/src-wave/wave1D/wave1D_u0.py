@@ -43,7 +43,7 @@ def solver(I, V, f, c, L, dt, C, T, user_action=None):
     u_1 = np.zeros(Nx+1)   # Solution at 1 time level back
     u_2 = np.zeros(Nx+1)   # Solution at 2 time levels back
 
-    import time;  t0 = time.clock()  # for measuring CPU time
+    import time;  t0 = time.clock()  # Measure CPU time
 
     # Load initial condition into u_1
     for i in range(0,Nx+1):

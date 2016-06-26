@@ -222,21 +222,19 @@ label{wave:pde1:step3a}
 
 === Interpretation of the equation as a stencil ===
 
-A typical feature of (ref{wave:pde1:step3b}) is that it involves
-$u$ values from neighboring points only:
-$u_i^{n+1}$, $u^n_{i\pm 1}$, $u^n_i$, and $u^{n-1}_i$.
-The circles in Figure
+A characteristic feature of (ref{wave:pde1:step3b}) is that it
+involves $u$ values from neighboring points only: $u_i^{n+1}$,
+$u^n_{i\pm 1}$, $u^n_i$, and $u^{n-1}_i$.  The circles in Figure
 ref{wave:pde1:fig:mesh} illustrate such neighboring mesh points that
-contribute to an algebraic equation. In this
-particular case, we have sampled the PDE at the point $(2,2)$
-and constructed (ref{wave:pde1:step3b}), which then
-involves a coupling of $u_2^1$, $u_1^2$, $u_2^2$, $u_3^2$, and $u_2^3$.
-The term *stencil* is often used about the algebraic equation
-at a mesh point, and the geometry of a typical stencil is
-illustrated in Figure ref{wave:pde1:fig:mesh}. One also often refers
-to the algebraic equations as *discrete equations*,
-*(finite) difference equations* or a *finite difference
-scheme*.
+contribute to an algebraic equation. In this particular case, we have
+sampled the PDE at the point $(2,2)$ and constructed
+(ref{wave:pde1:step3b}), which then involves a coupling of $u_2^1$,
+$u_1^2$, $u_2^2$, $u_3^2$, and $u_2^3$.  The term *stencil* is often
+used about the algebraic equation at a mesh point, and the geometry of
+a typical stencil is illustrated in Figure
+ref{wave:pde1:fig:mesh}. One also often refers to the algebraic
+equations as *discrete equations*, *(finite) difference equations* or
+a *finite difference scheme*.
 
 FIGURE: [mov-wave/wave1D_PDE_Dirichlet_stencil_gpl/stencil_n_interior, width=500] Mesh in space and time. The circles show points connected in a finite difference equation. label{wave:pde1:fig:mesh}
 
@@ -246,18 +244,15 @@ FIGURE: [mov-wave/wave1D_PDE_Dirichlet_stencil_gpl/stencil_n_interior, width=500
 We also need to replace the derivative in the initial condition
 (ref{wave:pde1:ic:ut}) by a finite difference approximation.
 A centered difference of the type
+
 !bt
 \[
-\frac{\partial}{\partial t} u(x_i,t_n)\approx
+\frac{\partial}{\partial t} u(x_i,t_0)\approx
 \frac{u^1_i - u^{-1}_i}{2\Delta t} = [D_{2t} u]^0_i,
 \]
 !et
-seems appropriate. In operator notation the initial condition is
-written as
-!bt
-\[ [D_{2t} u]^n_i = 0,\quad n=0 \tp  \]
-!et
-Writing out this equation and ordering the terms give
+seems appropriate. Writing out this equation and ordering the terms give
+
 !bt
 \begin{equation}
 u^{-1}_i=u^{1}_i,\quad i=0,\ldots,N_x\tp
@@ -274,19 +269,20 @@ The other initial condition can be computed by
 ===== Formulating a recursive algorithm =====
 label{wave:string:alg}
 
-We assume that $u^n_i$ and
-$u^{n-1}_i$ are already computed for $i=0,\ldots,N_x$.
-The only unknown quantity in (ref{wave:pde1:step3b}) is
-therefore $u^{n+1}_i$, which we can solve for:
+We assume that $u^n_i$ and $u^{n-1}_i$ are available for
+$i=0,\ldots,N_x$.  The only unknown quantity in
+(ref{wave:pde1:step3b}) is therefore $u^{n+1}_i$, which we now can
+solve for:
 
 !bt
 \begin{equation}
 u^{n+1}_i = -u^{n-1}_i + 2u^n_i + C^2
-\left(u^{n}_{i+1}-2u^{n}_{i} + u^{n}_{i-1}\right),
+\left(u^{n}_{i+1}-2u^{n}_{i} + u^{n}_{i-1}\right)\tp
 label{wave:pde1:step4}
 \end{equation}
 !et
-where we have introduced the parameter
+We have here introduced the parameter
+
 !bt
 \begin{equation}
 C = c\frac{\Delta t}{\Delta x},
@@ -294,19 +290,20 @@ C = c\frac{\Delta t}{\Delta x},
 !et
 known as the *Courant number*.
 
+
 !bnotice $C$ is the key parameter in the discrete wave equation
-We see that the
-discrete version of the PDE features only one parameter, $C$,
-which is therefore the key parameter that governs the
-quality of the numerical solution (see Section ref{wave:pde1:analysis}
-for details). Both the primary
-physical parameter $c$ and the numerical parameters $\Delta x$ and $\Delta t$
+
+We see that the discrete version of the PDE features only one
+parameter, $C$, which is therefore the key parameter, together with
+$N_x$, that governs the quality of the numerical solution (see Section
+ref{wave:pde1:analysis} for details). Both the primary physical
+parameter $c$ and the numerical parameters $\Delta x$ and $\Delta t$
 are lumped together in $C$. Note that $C$ is a dimensionless
 parameter.
+
 !enotice
 
-
-Given that $u^{n-1}_i$ and $u^n_i$ are computed for $i=0,\ldots,N_x$,
+Given that $u^{n-1}_i$ and $u^n_i$ are known for $i=0,\ldots,N_x$,
 we find new values at the next time level by applying the formula
 (ref{wave:pde1:step4}) for $i=1,\ldots,N_x-1$. Figure
 ref{wave:pde1:fig:mesh} illustrates the points that are used to
@@ -314,8 +311,14 @@ compute $u^3_2$. For the boundary points, $i=0$ and $i=N_x$, we apply
 the boundary conditions $u_i^{n+1}=0$.
 
 
-A problem with (ref{wave:pde1:step4}) arises when $n=0$ since the
-formula for $u^1_i$ involves $u^{-1}_i$, which is an undefined
+Even though sound reasoning leads up to
+(ref{wave:pde1:step4}), there is still a minor challenge with it that needs
+to be resolved. Think of the very first computational step to be made.
+The scheme (ref{wave:pde1:step4}) is supposed to start at $n=1$, which means
+that we compute $u^2$ from $u^1$ and $u^0$. Unfortunately, we do not know the
+value of $u^1$, so how to proceed? A standard procedure in such cases is to
+apply (ref{wave:pde1:step4}) also for $n=0$. This immediately seems strange,
+since it involves $u^{-1}_i$, which is an undefined
 quantity outside the time mesh (and the time domain). However, we can
 use the initial condition (ref{wave:pde1:step3c}) in combination with
 (ref{wave:pde1:step4}) when $n=0$ to eliminate $u^{-1}_i$ and
@@ -503,7 +506,7 @@ We have no knowledge of the precise size of the error in
 this approximation, and therefore we can never know if discrepancies
 between $u^n_i$ and $\uex(x_i,t_n)$ are caused
 by mathematical approximations or programming errors.
-In particular, if a plot of the computed solution $u^n_i$ and
+In particular, if plots of the computed solution $u^n_i$ and
 the exact one (ref{wave:pde2:test:ue}) look similar, many
 are tempted to claim that the implementation works. However,
 even if color plots look nice and the accuracy is ``deemed good'',
@@ -511,9 +514,10 @@ there can still be serious programming errors present!
 
 The only way to use exact physical solutions like
 (ref{wave:pde2:test:ue}) for serious and thorough verification is to
-run a series of finer and finer meshes, measure the integrated error
-in each mesh, and from this information estimate the empirical convergence
-rate of the method.
+run a series of simulations on finer and finer meshes, measure the
+integrated error in each mesh, and from this information estimate the
+empirical convergence rate of the method.
+
 !enotice
 
 An introduction to the computing of convergence rates is given in
@@ -566,26 +570,25 @@ u_t(x,0) &= V(x) = x(L-x)\tp
 
 To verify the code, we compute the convergence rates in a series of
 simulations, letting each simulation use a finer mesh than the
-previous one. Such empirical estimation of convergence rates
-tests relies on an assumption that some
-measure $E$ of the numerical error is related to the discretization
-parameters through
+previous one. Such empirical estimation of convergence rates relies on
+an assumption that some measure $E$ of the numerical error is related
+to the discretization parameters through
 
 !bt
 \[ E = C_t\Delta t^r + C_x\Delta x^p,\]
 !et
-where $C_t$, $C_x$, $r$, and $p$ are constants. The constants
-$r$ and $p$ are known as the *convergence rates* in time and space,
-respectively.
-From the
-accuracy in the finite difference approximations, we expect $r=p=2$,
-since the error terms are of order $\Delta t^2$ and $\Delta x^2$.
-This is confirmed by truncation error analysis and other types of analysis.
+where $C_t$, $C_x$, $r$, and $p$ are constants. The constants $r$ and
+$p$ are known as the *convergence rates* in time and space,
+respectively.  From the accuracy in the finite difference
+approximations, we expect $r=p=2$, since the error terms are of order
+$\Delta t^2$ and $\Delta x^2$.  This is confirmed by truncation error
+analysis and other types of analysis.
 
 By using an exact solution of the PDE problem, we will next compute
 the error measure $E$ on a sequence of refined meshes and see if
 the rates $r=p=2$ are obtained. We will not be concerned with estimating
-the constants $C_t$ and $C_x$.
+the constants $C_t$ and $C_x$, simply because we are not interested in
+their values.
 
 It is advantageous to introduce a single discretization parameter
 $h=\Delta t=\hat c \Delta x$ for some constant $\hat c$.  Since
@@ -751,15 +754,16 @@ $\partial \uex/\partial t = V(x_i)$ at $t=0$, and
 $\uex(x_0,t)=\uex(x_{N_x},0)=0$. Also the modified scheme for the
 first time step is fulfilled by $\uex(x_i,t_n)$.
 
-Therefore, the exact solution $\uex(x,t)=x(L-x)(1+t/2)$
-of the PDE problem is also an exact solution of the discrete problem.
-We can use this result to check that the computed $u^n_i$ values from
-an implementation equals $\uex(x_i,t_n)$ within machine precision,
-*regardless of the mesh spacings* $\Delta x$ and $\Delta t$!
-Nevertheless, there might be stability
-restrictions on $\Delta x$ and $\Delta t$, so the test can only be
-run for a mesh that is compatible with the stability criterion (which
-in the present case is $C\leq 1$, to be derived later).
+Therefore, the exact solution $\uex(x,t)=x(L-x)(1+t/2)$ of the PDE
+problem is also an exact solution of the discrete problem.  This means
+that we know beforehand what numbers the numerical algorithm should
+produce.  We can use this fact to check that the computed $u^n_i$
+values from an implementation equals $\uex(x_i,t_n)$, within machine
+precision.  This result is valid *regardless of the mesh spacings*
+$\Delta x$ and $\Delta t$!  Nevertheless, there might be stability
+restrictions on $\Delta x$ and $\Delta t$, so the test can only be run
+for a mesh that is compatible with the stability criterion (which in
+the present case is $C\leq 1$, to be derived later).
 
 !bnotice
 A product of quadratic or linear expressions in the various

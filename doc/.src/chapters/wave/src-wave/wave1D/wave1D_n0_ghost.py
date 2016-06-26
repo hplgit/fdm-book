@@ -59,7 +59,7 @@ def solver(I, V, f, c, L, dt, C, T, user_action=None):
     Ix = range(1, u.shape[0]-1)
     It = range(0, t.shape[0])
 
-    import time;  t0 = time.clock()  # for measuring CPU time
+    import time;  t0 = time.clock()  # CPU time measurement
 
     # Load initial condition into u_1
     for i in Ix:

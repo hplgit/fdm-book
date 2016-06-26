@@ -100,7 +100,7 @@ function edit_solution_admons {
 
 function compile {
     options="$@"
-    system doconce format pdflatex ${mainname} $preprocessor_opt $comments --latex_table_format=center "--latex_code_style=default:lst[style=blue1_bluegreen]@pypro:lst[style=blue1bar_bluegreen]@pypro2:lst[style=greenblue]@pycod2:lst[style=greenblue]@dat:lst[style=gray]@sys:vrb[frame=lines,label=\\fbox{{\tiny Terminal}},framesep=2.5mm,framerule=0.7pt,fontsize=\fontsize{9pt}{9pt}]" --allow_refs_to_external_docs --exercise_solution=admon --movie_prefix=https://raw.githubusercontent.com/hplgit/fdm-book/master/doc/.src/chapters/${nickname}/ --latex_admon_envir_map=2 $options --debug
+    system doconce format pdflatex ${mainname} $preprocessor_opt $comments --latex_table_format=center "--latex_code_style=default:lst[style=blue1_bluegreen]@pypro:lst[style=blue1bar_bluegreen]@pypro2:lst[style=greenblue]@pycod2:lst[style=greenblue]@dat:lst[style=gray]@sys:vrb[frame=lines,label=\\fbox{{\tiny Terminal}},framesep=2.5mm,framerule=0.7pt,fontsize=\fontsize{9pt}{9pt}]" --allow_refs_to_external_docs --exercise_solution=admon --movie_prefix=https://raw.githubusercontent.com/hplgit/fdm-book/master/doc/.src/chapters/${nickname}/ --latex_admon_envir_map=2 --latex_list_of_exercises=toc $options
 edit_solution_admons
 system doconce latex_exercise_toc ${mainname}
 doconce subst 'frametitlebackgroundcolor=.*?,' 'frametitlebackgroundcolor=blue!5,' ${mainname}.tex

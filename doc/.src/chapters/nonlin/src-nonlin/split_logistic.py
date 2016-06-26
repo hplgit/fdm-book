@@ -57,7 +57,7 @@ def solver(dt, T, f, f_0, f_1):
 
     return u_FE, u_split1, u_split2, u_split3, t
 
-def solver_v2(dt, T, f, f_0, f_1):
+def solver_compact(dt, T, f, f_0, f_1):
     """
     As solver, but shorter code in the splitting steps.
     """
@@ -94,9 +94,8 @@ def solver_v2(dt, T, f, f_0, f_1):
 
     return u_FE, u_split1, u_split2, u_split3, t
 
-def demo():
+def demo(dt=0.2):
     u_exact = lambda t: 1./(9*np.exp(-t) + 1)
-    dt = 0.2
     u_FE, u_split1, u_split2, u_split3, t = solver(
         dt, 8, f = lambda u: u*(1-u),
         f_0=lambda u: u, f_1=lambda u: -u**2)
@@ -105,7 +104,7 @@ def demo():
     plt.plot(t, u_FE, 'r-', t, u_split1, 'b-',
              t, u_split2, 'g-', t, u_split3, 'y-',
              t, u_exact(t), 'k--')
-    plt.legend(['no split', 'split', 'strang', 'exact'],
+    plt.legend(['no split', 'split', 'strang', r'strang w/exact $f_0$', 'exact'],
                loc='lower right')
     plt.xlabel('t'); plt.ylabel('u')
     plt.title('Time step: %g' % dt)
@@ -114,9 +113,6 @@ def demo():
 
 def test_solver():
     np.set_printoptions(precision=15)
-    u_FE, u_split1, u_split2, u_split3, t = solver(
-        dt=0.2, T=4, f=lambda u: u*(1-u),
-        f_0=lambda u: u, f_1=lambda u: -u**2)
     u_FE_expected = np.array([float(x) for x in list("""
 [ 0.1                0.118              0.1388152          0.162724308049792
   0.189973329573694  0.220750022298569  0.255153912289319
@@ -149,11 +145,15 @@ def test_solver():
   0.570374606392027  0.608827962442147  0.643553318053156
   0.674226057210925  0.700777592993228  0.723351459147494
   0.742244162719702  0.757844497686122]"""[2:-1].split())])
-    for quantity in 'u_FE', 'u_split1', 'u_split2', 'u_split3':
-        diff = np.abs(eval(quantity + '_expected') -
-                      eval(quantity)).max()
-        assert diff < 1E-14
+    for func in solver, solver_compact:
+        u_FE, u_split1, u_split2, u_split3, t = solver(
+            dt=0.2, T=4, f=lambda u: u*(1-u),
+            f_0=lambda u: u, f_1=lambda u: -u**2)
+        for quantity in 'u_FE', 'u_split1', 'u_split2', 'u_split3':
+            diff = np.abs(eval(quantity + '_expected') -
+                          eval(quantity)).max()
+            assert diff < 1E-14
 
 if __name__ == '__main__':
-    #demo()
     test_solver()
+    demo(0.05)
