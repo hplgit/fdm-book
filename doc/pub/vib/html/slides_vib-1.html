@@ -53,7 +53,11 @@ div { text-align: justify; text-justify: inter-word; }
 
 <!-- tocinfo
 {'highest level': 1,
- 'sections': [('A simple vibration problem', 1, None, '___sec0'),
+ 'sections': [('Table of contents',
+               1,
+               'table_of_contents',
+               'table_of_contents'),
+              ('A simple vibration problem', 1, None, '___sec0'),
               ('A centered finite difference scheme; step 1 and 2',
                2,
                'vib:model1:fdm',
@@ -262,12 +266,12 @@ $$
 <center>[3] <b>Department of Process, Energy and Environmental Technology, University College of Southeast Norway</b></center>
 <br>
 <p>
-<center><h4>May 23, 2016</h4></center> <!-- date -->
+<center><h4>Jun 27, 2016</h4></center> <!-- date -->
 <br>
 <p>
 <!-- !split --><br><br><br><br><br><br><br><br>
 
-<h2>Table of contents</h2>
+<h1 id="table_of_contents">Table of contents</h2>
 
 <p>
 <a href="#___sec0"> A simple vibration problem </a><br>
@@ -738,7 +742,7 @@ The next function estimates convergence rates, i.e., it
     r <span style="color: #666666">=</span> [np<span style="color: #666666">.</span>log(E_values[i<span style="color: #666666">-1</span>]<span style="color: #666666">/</span>E_values[i])<span style="color: #666666">/</span>
          np<span style="color: #666666">.</span>log(dt_values[i<span style="color: #666666">-1</span>]<span style="color: #666666">/</span>dt_values[i])
          <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>, m, <span style="color: #666666">1</span>)]
-    <span style="color: #008000; font-weight: bold">return</span> r
+    <span style="color: #008000; font-weight: bold">return</span> r, E_values, dt_values
 </pre></div>
 <p>
 Result: <code>r</code> contains values equal to 2.00 - as expected!
@@ -755,14 +759,32 @@ Use final <code>r[-1]</code> in a unit test:
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
 <div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_convergence_rates</span>():
-    r <span style="color: #666666">=</span> convergence_rates(m<span style="color: #666666">=5</span>, solver_function<span style="color: #666666">=</span>solver, num_periods<span style="color: #666666">=8</span>)
+    r, E, dt <span style="color: #666666">=</span> convergence_rates(
+        m<span style="color: #666666">=5</span>, solver_function<span style="color: #666666">=</span>solver, num_periods<span style="color: #666666">=8</span>)
     <span style="color: #408080; font-style: italic"># Accept rate to 1 decimal place</span>
     tol <span style="color: #666666">=</span> <span style="color: #666666">0.1</span>
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">abs</span>(r[<span style="color: #666666">-1</span>] <span style="color: #666666">-</span> <span style="color: #666666">2.0</span>) <span style="color: #666666">&lt;</span> tol
     <span style="color: #408080; font-style: italic"># Test that adjusted w obtains 4th order convergence</span>
-    r <span style="color: #666666">=</span> convergence_rates(m<span style="color: #666666">=5</span>, solver_function<span style="color: #666666">=</span>solver_adjust_w, num_periods<span style="color: #666666">=8</span>)
+    r, E, dt <span style="color: #666666">=</span> convergence_rates(
+        m<span style="color: #666666">=5</span>, solver_function<span style="color: #666666">=</span>solver_adjust_w, num_periods<span style="color: #666666">=8</span>)
     <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;adjust w rates:&#39;</span>, r
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">abs</span>(r[<span style="color: #666666">-1</span>] <span style="color: #666666">-</span> <span style="color: #666666">4.0</span>) <span style="color: #666666">&lt;</span> tol
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">plot_convergence_rates</span>():
+    r2, E2, dt2 <span style="color: #666666">=</span> convergence_rates(
+        m<span style="color: #666666">=5</span>, solver_function<span style="color: #666666">=</span>solver, num_periods<span style="color: #666666">=8</span>)
+    plt<span style="color: #666666">.</span>loglog(dt2, E2)
+    r4, E4, dt4 <span style="color: #666666">=</span> convergence_rates(
+        m<span style="color: #666666">=5</span>, solver_function<span style="color: #666666">=</span>solver_adjust_w, num_periods<span style="color: #666666">=8</span>)
+    plt<span style="color: #666666">.</span>loglog(dt4, E4)
+    plt<span style="color: #666666">.</span>legend([<span style="color: #BA2121">&#39;original scheme&#39;</span>, <span style="color: #BA2121">r&#39;adjusted $\omega$&#39;</span>],
+               loc<span style="color: #666666">=</span><span style="color: #BA2121">&#39;upper left&#39;</span>)
+    plt<span style="color: #666666">.</span>title(<span style="color: #BA2121">&#39;Convergence of finite difference methods&#39;</span>)
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">plotslopes</span> <span style="color: #008000; font-weight: bold">import</span> slope_marker
+    slope_marker((dt2[<span style="color: #666666">1</span>], E2[<span style="color: #666666">1</span>]), (<span style="color: #666666">2</span>,<span style="color: #666666">1</span>))
+    slope_marker((dt4[<span style="color: #666666">1</span>], E4[<span style="color: #666666">1</span>]), (<span style="color: #666666">4</span>,<span style="color: #666666">1</span>))
+    plt<span style="color: #666666">.</span>savefig(<span style="color: #BA2121">&#39;tmp_convrate.png&#39;</span>); plt<span style="color: #666666">.</span>savefig(<span style="color: #BA2121">&#39;tmp_convrate.pdf&#39;</span>)
+    plt<span style="color: #666666">.</span>show()
 </pre></div>
 <p>
 Complete code in <a href="http://tinyurl.com/nu656p2/vib/vib_undamped.py" target="_self"><tt>vib_undamped.py</tt></a>.
@@ -778,7 +800,7 @@ Complete code in <a href="http://tinyurl.com/nu656p2/vib/vib_undamped.py" target
 <h2 id="___sec21">Effect of the time step on long simulations </h2>
 
 <p>
-<center><p><img src="fig-vib/vib_freq_err1.png" align="bottom" width=800></p></center>
+<br /><br /><center><p><img src="fig-vib/vib_freq_err1.png" align="bottom" width=800></p></center><br /><br />
 
 <ul>
  <p><li> The numerical solution seems to have right amplitude.</li>
@@ -818,7 +840,7 @@ Example:
    simultaneously</li>
 </ul>
 
-<center><p>
+<br /><br /><center><p>
 <!-- Bokeh plot -->
 <script type="text/javascript">
             Bokeh.$(function() {
@@ -836,7 +858,7 @@ Example:
                 Bokeh.index[modelid] = view
             });
         </script>
-<div class="plotdiv" id="0f25ebfd-72b7-4caf-8bae-1aa3afbfcd89"></div></p></center>
+<div class="plotdiv" id="0f25ebfd-72b7-4caf-8bae-1aa3afbfcd89"></div></p></center><br /><br />
 
 <p>
 !splot
@@ -921,7 +943,7 @@ Can we understand the frequency error?
 
 
 <p>
-<center><p><img src="fig-vib/vib_freq_err1.png" align="bottom" width=800></p></center>
+<br /><br /><center><p><img src="fig-vib/vib_freq_err1.png" align="bottom" width=800></p></center><br /><br />
 
 <p>
 <!-- !split --><br><br><br><br><br><br><br><br>
@@ -1050,7 +1072,7 @@ The numerical frequency is too large (to fast oscillations).
 <h2 id="___sec31">Plot of the frequency error </h2>
 
 <p>
-<center><p><img src="fig-vib/discrete_freq.png" align="bottom" width=600></p></center>
+<br /><br /><center><p><img src="fig-vib/discrete_freq.png" align="bottom" width=600></p></center><br /><br />
 
 <p>
 Recommendation: 25-30 points per period.
@@ -1154,7 +1176,7 @@ $$
 Try \( \Delta t = \frac{2}{\omega} + 9.01\cdot 10^{-5} \) (<em>slightly</em> too big!):
 
 <p>
-<center><p><img src="fig-vib/vib_unstable.png" align="bottom" width=400></p></center>
+<br /><br /><center><p><img src="fig-vib/vib_unstable.png" align="bottom" width=400></p></center><br /><br />
 
 <p>
 <!-- !split --><br><br><br><br><br><br><br><br>
@@ -1352,7 +1374,7 @@ Two plot types:
 <h2 id="___sec44">Phase plane plot of the numerical solutions </h2>
 
 <p>
-<center><p><img src="fig-vib/vib_theta_1_pp.png" align="bottom" width=800></p></center>
+<br /><br /><center><p><img src="fig-vib/vib_theta_1_pp.png" align="bottom" width=800></p></center><br /><br />
 
 <p>
 Note: CrankNicolson in Odespy leads to the name MidpointImplicit in plots.
@@ -1388,10 +1410,10 @@ Note: CrankNicolson in Odespy leads to the name MidpointImplicit in plots.
 <h2 id="___sec47">Runge-Kutta methods of order 2 and 4; short time series </h2>
 
 <p>
-<center><p><img src="fig-vib/vib_RK_1_pp.png" align="bottom" width=800></p></center>
+<br /><br /><center><p><img src="fig-vib/vib_RK_1_pp.png" align="bottom" width=800></p></center><br /><br />
 
 <p>
-<center><p><img src="fig-vib/vib_RK_1_u.png" align="bottom" width=800></p></center>
+<br /><br /><center><p><img src="fig-vib/vib_RK_1_u.png" align="bottom" width=800></p></center><br /><br />
 
 <p>
 <!-- !split --><br><br><br><br><br><br><br><br>
@@ -1399,10 +1421,10 @@ Note: CrankNicolson in Odespy leads to the name MidpointImplicit in plots.
 <h2 id="___sec48">Runge-Kutta methods of order 2 and 4; longer time series </h2>
 
 <p>
-<center><p><img src="fig-vib/vib_RK_10_pp.png" align="bottom" width=800></p></center>
+<br /><br /><center><p><img src="fig-vib/vib_RK_10_pp.png" align="bottom" width=800></p></center><br /><br />
 
 <p>
-<center><p><img src="fig-vib/vib_RK_10_u.png" align="bottom" width=800></p></center>
+<br /><br /><center><p><img src="fig-vib/vib_RK_10_u.png" align="bottom" width=800></p></center><br /><br />
 
 <p>
 <!-- !split --><br><br><br><br><br><br><br><br>
@@ -1410,10 +1432,10 @@ Note: CrankNicolson in Odespy leads to the name MidpointImplicit in plots.
 <h2 id="___sec49">Crank-Nicolson; longer time series </h2>
 
 <p>
-<center><p><img src="fig-vib/vib_CN_10_pp.png" align="bottom" width=800></p></center>
+<br /><br /><center><p><img src="fig-vib/vib_CN_10_pp.png" align="bottom" width=800></p></center><br /><br />
 
 <p>
-<center><p><img src="fig-vib/vib_CN_10_u.png" align="bottom" width=800></p></center>
+<br /><br /><center><p><img src="fig-vib/vib_CN_10_u.png" align="bottom" width=800></p></center><br /><br />
 
 <p>
 (MidpointImplicit means CrankNicolson in Odespy)
@@ -1799,7 +1821,7 @@ $$
 This results in a <a href="http://tinyurl.com/pu5uyfn/pub/mov-vib/vib_generalized_dt0.05/index.html" target="_self">moving window following the function</a> on the screen.
 
 <p>
-<center><p><img src="fig-vib/vib_gen_demo.png" align="bottom" width=600></p></center>
+<br /><br /><center><p><img src="fig-vib/vib_gen_demo.png" align="bottom" width=600></p></center><br /><br />
 
 <p>
 <!-- !split --><br><br><br><br><br><br><br><br>

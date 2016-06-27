@@ -90,17 +90,35 @@ def convergence_rates(m, solver_function, num_periods=8):
     r = [np.log(E_values[i-1]/E_values[i])/
          np.log(dt_values[i-1]/dt_values[i])
          for i in range(1, m, 1)]
-    return r
+    return r, E_values, dt_values
 
 def test_convergence_rates():
-    r = convergence_rates(m=5, solver_function=solver, num_periods=8)
+    r, E, dt = convergence_rates(
+        m=5, solver_function=solver, num_periods=8)
     # Accept rate to 1 decimal place
     tol = 0.1
     assert abs(r[-1] - 2.0) < tol
     # Test that adjusted w obtains 4th order convergence
-    r = convergence_rates(m=5, solver_function=solver_adjust_w, num_periods=8)
+    r, E, dt = convergence_rates(
+        m=5, solver_function=solver_adjust_w, num_periods=8)
     print 'adjust w rates:', r
     assert abs(r[-1] - 4.0) < tol
+
+def plot_convergence_rates():
+    r2, E2, dt2 = convergence_rates(
+        m=5, solver_function=solver, num_periods=8)
+    plt.loglog(dt2, E2)
+    r4, E4, dt4 = convergence_rates(
+        m=5, solver_function=solver_adjust_w, num_periods=8)
+    plt.loglog(dt4, E4)
+    plt.legend(['original scheme', r'adjusted $\omega$'],
+               loc='upper left')
+    plt.title('Convergence of finite difference methods')
+    from plotslopes import slope_marker
+    slope_marker((dt2[1], E2[1]), (2,1))
+    slope_marker((dt4[1], E4[1]), (4,1))
+    plt.savefig('tmp_convrate.png'); plt.savefig('tmp_convrate.pdf')
+    plt.show()
 
 def main(solver_function=solver):
     import argparse
@@ -313,5 +331,6 @@ def demo_bokeh():
 
 if __name__ == '__main__':
     #main()
-    demo_bokeh()
+    #demo_bokeh()
+    plot_convergence_rates()
     raw_input()
