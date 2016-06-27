@@ -113,66 +113,106 @@ When going one time step of length <span class="math">\(\Delta t\)</span> from <
 <p>or</p>
 <div class="math" id="eq-nonlin-splitting-ode-step1">
 \[\tag{72}
-u^* = u(t_n)e^{a\Delta t},\]</div>
+u^{*} = u(t_n)e^{a\Delta t},\]</div>
 <div class="math" id="eq-nonlin-splitting-ode-step2">
 \[\tag{73}
-u(t_{n+1}) = u^*e^{b\Delta t}\]</div>
+u(t_{n+1}) = u^{*} e^{b\Delta t}\]</div>
 <p>The first step <a class="reference internal" href="#eq-nonlin-splitting-ode-step1"><span class="std std-ref">(72)</span></a> means solving
 <span class="math">\(u'=f_0\)</span> over a time interval <span class="math">\(\Delta t\)</span> with <span class="math">\(u(t_n)\)</span> as start value.
 The second step <a class="reference internal" href="#eq-nonlin-splitting-ode-step2"><span class="std std-ref">(73)</span></a> means solving
 <span class="math">\(u'=f_1\)</span> over a time interval <span class="math">\(\Delta t\)</span> with the value at the end
 of the first step as start value.
 That is, we progress the solution in two steps and solve
-two ODEs <span class="math">\(u'=f_1\)</span> ad <span class="math">\(u'=f_2\)</span>. The order of the equations is not
+two ODEs <span class="math">\(u'=f_0\)</span> and <span class="math">\(u'=f_1\)</span>. The order of the equations is not
 important. From the derivation above we see that solving <span class="math">\(u'=f_1\)</span>
 prior to <span class="math">\(u'=f_0\)</span> can equally well be done.</p>
 <p>The technique is exact if the ODEs are linear. For nonlinear ODEs it is
 only an approximate method with error <span class="math">\(\Delta t\)</span>. The technique can
-be extended to <span class="math">\(n+1\)</span> steps:</p>
-<div class="math">
-\[u' = \sum_{i=0}^n f_i(u),\]</div>
-<p>which is solved by <span class="math">\(n+1\)</span> steps over <span class="math">\([t_n, t_{n+1}]\)</span>:</p>
-<div class="math">
-\[\begin{split}\frac{du^{(0)}}{dt} &amp;= f_0(u^{(0)}),\quad u^{(0)}(t_n)=u(t_n),\\
-\frac{du^{(i)}}{dt} &amp;= f_i(u^{(i)}),\quad u^{(i)}(t_n)=u^{(i-1)}(t_{n+1}),\\\end{split}\]</div>
-<p>for <span class="math">\(i=1,\ldots,n\)</span>. We take the final solution
-<span class="math">\(u(t_{n+1})\)</span> as <span class="math">\(u^{(n)}(t_{n+1})\)</span>.</p>
+be extended to an arbitrary number of steps; i.e., we may split the PDE
+system into any number of subsystems. Examples will illuminate this principle.</p>
 </div>
 <div class="section" id="strang-splitting-for-odes">
 <span id="nonlin-splitting-ode-strang"></span><h2>Strang splitting for ODEs<a class="headerlink" href="#strang-splitting-for-odes" title="Permalink to this headline">¶</a></h2>
 <p id="index-3">The accuracy of the splitting method in the section <a class="reference internal" href="#nonlin-splitting-ode"><span class="std std-ref">Ordinary operator splitting for ODEs</span></a>
 can be improved from <span class="math">\({\mathcal{O}(\Delta t)}\)</span> to <span class="math">\({\mathcal{O}(\Delta t^2)}\)</span> using so-called
-<em>Strang splitting</em>, where we take half a step with the <span class="math">\(f_1\)</span> operator,
-a full step with the <span class="math">\(f_2\)</span> operator, and finally half another step with
-the <span class="math">\(f_1\)</span> operator. During a time interval <span class="math">\(\Delta t\)</span> the algorithm can
+<em>Strang splitting</em>, where we take half a step with the <span class="math">\(f_0\)</span> operator,
+a full step with the <span class="math">\(f_1\)</span> operator, and finally half another step with
+the <span class="math">\(f_0\)</span> operator. During a time interval <span class="math">\(\Delta t\)</span> the algorithm can
 be written as follows.</p>
 <div class="math">
-\[\begin{split}\frac{du^{(0)}}{dt} &amp;= f_0(u^{(0)}),\quad u^{(0)}(t_n)=u(t_n),
-\quad t\in [0,\frac{1}{2}\Delta t],\\
-\frac{du^{(\frac{1}{2})}}{dt} &amp;= f_1(u^{(\frac{1}{2})}),\quad u^{(\frac{1}{2})}(t_n)=u^{(0)}(t_{n+\frac{1}{2}}),
-\quad t\in [0,\Delta t],\\
-\frac{du^{(1)}}{dt} &amp;= f_0(u^{(1)}),\quad u^{(1)}(t_n)=u^{(\frac{1}{2})}(t_{n+1})
-{\thinspace .}\\\end{split}\]</div>
-<p>There is no use in applying higher-order methods when performing
+\[\begin{split}\begin{align*}
+\frac{du^{{*}}}{dt} &amp;= f_0(u^{{*}}),
+\quad u^{{*}}(t_n)=u(t_n),
+\quad t\in [t_n,t_n+\frac{1}{2}\Delta t],\\
+\frac{du^{{***}}}{dt} &amp;= f_1(u^{{***}}),
+\quad u^{{***}}(t_n)=u^{{*}}(t_{n+\frac{1}{2}}),
+\quad t\in [t_n,t_n+\Delta t],\\
+\frac{du^{{**}}}{dt}  &amp;= f_0(u^{{**}}),
+\quad u^{{**}}(t_n)=u^{{***}}(t_{n+1}),
+\quad t\in [t_n+\frac{1}{2}\Delta t, t_n+\Delta t]{\thinspace .}
+\end{align*}\end{split}\]</div>
+<p>The global solution is set as <span class="math">\(u(t_{n+1}) = u^{{**}}(t_{n+1})\)</span>.</p>
+<p>There is no use in combining higher-order methods with
 ordinary splitting since the error due to splitting is <span class="math">\(\Oof{\Delta
 t}\)</span>, but for Strang splitting it makes sense to use schemes of order
 <span class="math">\({\mathcal{O}(\Delta t^2)}\)</span>.</p>
+<p>With the notation introduced for Strang splitting, we may express
+ordinary first-order splitting as</p>
+<div class="math">
+\[\begin{split}\begin{align*}
+\frac{du^{{*}}}{dt} &amp;= f_0(u^{{*}}),\quad u^{{*}}(t_n)=u(t_n),
+\quad t\in [t_n,t_n+\Delta t],\\
+\frac{du^{{**}}}{dt} &amp;= f_1(u^{{**}}),\quad u^{{**}}(t_n)=u^{{*}}(t_{n+1}),
+\quad t\in [t_n,t_n+\Delta t],
+\end{align*}\end{split}\]</div>
+<p>with global solution set as <span class="math">\(u(t_{n+1}) = u^{{**}}(t_{n+1})\)</span>.</p>
 </div>
 <div class="section" id="example-logistic-growth">
-<h2>Example: Logistic growth<a class="headerlink" href="#example-logistic-growth" title="Permalink to this headline">¶</a></h2>
+<span id="nonlin-splitting-logistic"></span><h2>Example: Logistic growth<a class="headerlink" href="#example-logistic-growth" title="Permalink to this headline">¶</a></h2>
 <p>Let us split the (scaled) logistic equation</p>
 <div class="math">
-\[u'=u(1-u),\quad u'(0)=0.1,\]</div>
+\[u'=u(1-u),\quad u(0)=0.1,\]</div>
 <p>with solution <span class="math">\(u=(9e^{-t}+1)^{-1}\)</span>, into</p>
 <div class="math">
 \[u'=u - u^2 = f_0(u) + f_1(u), \quad f_0(u)=u,\quad f_1(u)=-u^2{\thinspace .}\]</div>
 <p>We solve <span class="math">\(u'=f_0(u)\)</span> and <span class="math">\(u'=f_2(u)\)</span> by a Forward Euler step.
 In addition, we add a method where we solve <span class="math">\(u'=f_0(u)\)</span> analytically,
-since the equation is actually <span class="math">\(u'=u\)</span> with solution <span class="math">\(e^t\)</span>.</p>
+since the equation is actually <span class="math">\(u'=u\)</span> with solution <span class="math">\(e^t\)</span>.
+The software that accompanies the following methods is the file
+<a class="reference external" href="http://tinyurl.com/nu656p2/nonlin/split_logistic.py">split_logistic.py</a>.</p>
+<p>Ordinary splitting takes a Forward Euler step for each of the ODEs
+according to</p>
+<div class="math" id="eq-auto33">
+\[\tag{74}
+\frac{u^{{*},n+1} - u^{{*},n}}{\Delta t} =
+    f_0(u^{{*},n}),\quad
+    u^{{*},n} = u(t_n),\quad t\in [t_n,t_n+\Delta t],\]</div>
+<div class="math" id="eq-auto34">
+\[\tag{75}
+\frac{u^{{**},n+1} - u^{{**}, n}}{\Delta t} = f_1(u^{{**},n}),\quad
+    u^{{**},n} = u^{{*},n+1},\quad t\in [t_n,t_n+\Delta t],\]</div>
+<p>with <span class="math">\(u(t_{n+1}) = u^{{**},n+1}\)</span>.</p>
+<p>Strang splitting takes the form</p>
+<div class="math" id="eq-auto35">
+\[\tag{76}
+\frac{u^{{*},n+\frac{1}{2}} - u^{{*},n}}{\frac{1}{2}\Delta t} =
+    f_0(u^{{*},n}),\quad
+    u^{{*},n} = u(t_n),\quad t\in [t_n,t_n+\frac{1}{2}\Delta t],\]</div>
+<div class="math" id="eq-auto36">
+\[\tag{77}
+\frac{u^{{***},n+1}-u^{{***},n}}{\Delta t} =
+    f_1(u^{{***},n}),\quad
+    u^{{***},n} = u^{{*}, n+\frac{1}{2}},\quad t\in [t_n,t_n+\Delta t],\]</div>
+<div class="math" id="eq-auto37">
+\[\tag{78}
+\frac{u^{{**}, n+\frac{1}{2}} - u^{{**}, n}}{\frac{1}{2}\Delta t} =
+    f_0(u^{{**},n+\frac{1}{2}}),\quad
+    u^{{**},n+\frac{1}{2}} = u^{{***},n+\frac{1}{2}},\quad
+    t\in [t_n+\frac{1}{2}\Delta t, t_n+\Delta t]{\thinspace .}\]</div>
 <p>The following function computes four solutions arising from the Forward
 Euler method, ordinary splitting, Strang splitting, as well as Strang splitting
 with exact treatment of <span class="math">\(u'=f_0(u)\)</span>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
 <span class="k">def</span> <span class="nf">solver</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">f_0</span><span class="p">,</span> <span class="n">f_1</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -182,56 +222,205 @@ with exact treatment of <span class="math">\(u'=f_0(u)\)</span>:</p>
     <span class="n">Nt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dt</span><span class="p">)))</span>
     <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> <span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">u_FE</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
-    <span class="n">u_split1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>  <span class="c"># 1st-order splitting</span>
-    <span class="n">u_split2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>  <span class="c"># 2nd-order splitting</span>
-    <span class="n">u_split3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>  <span class="c"># 2nd-order splitting w/exact f_0</span>
+    <span class="n">u_split1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>  <span class="c1"># 1st-order splitting</span>
+    <span class="n">u_split2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>  <span class="c1"># 2nd-order splitting</span>
+    <span class="n">u_split3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>  <span class="c1"># 2nd-order splitting w/exact f_0</span>
 
-    <span class="c"># Set initial values</span>
+    <span class="c1"># Set initial values</span>
     <span class="n">u_FE</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.1</span>
     <span class="n">u_split1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.1</span>
     <span class="n">u_split2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.1</span>
     <span class="n">u_split3</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.1</span>
 
     <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
-        <span class="c"># Forward Euler method</span>
+        <span class="c1"># Forward Euler method</span>
         <span class="n">u_FE</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_FE</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f</span><span class="p">(</span><span class="n">u_FE</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
 
-        <span class="c"># Ordinary splitting</span>
-        <span class="n">u_0</span> <span class="o">=</span> <span class="n">u_split1</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f_0</span><span class="p">(</span><span class="n">u_split1</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
-        <span class="n">u_split1</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_0</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f_1</span><span class="p">(</span><span class="n">u_0</span><span class="p">)</span>
+        <span class="c1"># --- Ordinary splitting ---</span>
+        <span class="c1"># First step</span>
+        <span class="n">u_s_n</span> <span class="o">=</span> <span class="n">u_split1</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">u_s</span> <span class="o">=</span> <span class="n">u_s_n</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f_0</span><span class="p">(</span><span class="n">u_s_n</span><span class="p">)</span>
+        <span class="c1"># Second step</span>
+        <span class="n">u_ss_n</span> <span class="o">=</span> <span class="n">u_s</span>
+        <span class="n">u_ss</span> <span class="o">=</span> <span class="n">u_ss_n</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f_1</span><span class="p">(</span><span class="n">u_ss_n</span><span class="p">)</span>
+        <span class="n">u_split1</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_ss</span>
 
-        <span class="c"># Strang splitting</span>
-        <span class="n">u_0</span> <span class="o">=</span> <span class="n">u_split2</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">+</span> <span class="n">dt</span><span class="o">/</span><span class="mf">2.</span><span class="o">*</span><span class="n">f_0</span><span class="p">(</span><span class="n">u_split2</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
-        <span class="n">u_1</span> <span class="o">=</span> <span class="n">u_0</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f_1</span><span class="p">(</span><span class="n">u_0</span><span class="p">)</span>
-        <span class="n">u_split2</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_1</span> <span class="o">+</span> <span class="n">dt</span><span class="o">/</span><span class="mf">2.</span><span class="o">*</span><span class="n">f_0</span><span class="p">(</span><span class="n">u_1</span><span class="p">)</span>
+        <span class="c1"># --- Strang splitting ---</span>
+        <span class="c1"># First step</span>
+        <span class="n">u_s_n</span> <span class="o">=</span> <span class="n">u_split2</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">u_s</span> <span class="o">=</span> <span class="n">u_s_n</span> <span class="o">+</span> <span class="n">dt</span><span class="o">/</span><span class="mf">2.</span><span class="o">*</span><span class="n">f_0</span><span class="p">(</span><span class="n">u_s_n</span><span class="p">)</span>
+        <span class="c1"># Second step</span>
+        <span class="n">u_sss_n</span> <span class="o">=</span> <span class="n">u_s</span>
+        <span class="n">u_sss</span> <span class="o">=</span> <span class="n">u_sss_n</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f_1</span><span class="p">(</span><span class="n">u_sss_n</span><span class="p">)</span>
+        <span class="c1"># Third step</span>
+        <span class="n">u_ss_n</span> <span class="o">=</span> <span class="n">u_sss</span>
+        <span class="n">u_ss</span> <span class="o">=</span> <span class="n">u_ss_n</span> <span class="o">+</span> <span class="n">dt</span><span class="o">/</span><span class="mf">2.</span><span class="o">*</span><span class="n">f_0</span><span class="p">(</span><span class="n">u_ss_n</span><span class="p">)</span>
+        <span class="n">u_split2</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_ss</span>
 
-        <span class="c"># Strang splitting using exact integrator for u&#39;=f_0</span>
-        <span class="n">u_0</span> <span class="o">=</span> <span class="n">u_split3</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">dt</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>  <span class="c"># exact</span>
-        <span class="n">u_1</span> <span class="o">=</span> <span class="n">u_0</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f_1</span><span class="p">(</span><span class="n">u_0</span><span class="p">)</span>
-        <span class="n">u_split3</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_1</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">dt</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+        <span class="c1"># --- Strang splitting using exact integrator for u&#39;=f_0 ---</span>
+        <span class="c1"># First step</span>
+        <span class="n">u_s_n</span> <span class="o">=</span> <span class="n">u_split3</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">u_s</span> <span class="o">=</span> <span class="n">u_s_n</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">dt</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>  <span class="c1"># exact</span>
+        <span class="c1"># Second step</span>
+        <span class="n">u_sss_n</span> <span class="o">=</span> <span class="n">u_s</span>
+        <span class="n">u_sss</span> <span class="o">=</span> <span class="n">u_sss_n</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f_1</span><span class="p">(</span><span class="n">u_sss_n</span><span class="p">)</span>
+        <span class="c1"># Third step</span>
+        <span class="n">u_ss_n</span> <span class="o">=</span> <span class="n">u_sss</span>
+        <span class="n">u_ss</span> <span class="o">=</span> <span class="n">u_ss_n</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">dt</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>  <span class="c1"># exact</span>
+        <span class="n">u_split3</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_ss</span>
 
     <span class="k">return</span> <span class="n">u_FE</span><span class="p">,</span> <span class="n">u_split1</span><span class="p">,</span> <span class="n">u_split2</span><span class="p">,</span> <span class="n">u_split3</span><span class="p">,</span> <span class="n">t</span>
 </pre></div>
 </div>
-<p>Figure <a class="reference internal" href="#nonlin-splitting-ode-logistic-fig"><span class="std std-ref">Effect of ordinary and Strang splitting for the logistic equation</span></a> shows that the impact
-of splitting is significant. The Forward Euler method is much more accurate
-than any of the splitting schemes. We also see that Strang splitting is
-definitely more accurate than ordinary splitting and that it helps a bit
-to use an exact solution of <span class="math">\(u'=f_0(u)\)</span>. As technique for solving
-nonlinear ODEs, we realize that the present example is not particularly
-illustrating, as the Forward Euler method both linearizes the original
-problem and provides a solution that is more accurate than the splitting.</p>
-<div class="figure" id="id1">
+<p>We have used quite many lines for the steps in the splitting methods.
+Many will prefer to condense the code a bit, as done here:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Ordinary splitting</span>
+<span class="n">u_s</span> <span class="o">=</span> <span class="n">u_split1</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f_0</span><span class="p">(</span><span class="n">u_split1</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
+<span class="n">u_split1</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_s</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f_1</span><span class="p">(</span><span class="n">u_s</span><span class="p">)</span>
+<span class="c1"># Strang splitting</span>
+<span class="n">u_s</span> <span class="o">=</span> <span class="n">u_split2</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">+</span> <span class="n">dt</span><span class="o">/</span><span class="mf">2.</span><span class="o">*</span><span class="n">f_0</span><span class="p">(</span><span class="n">u_split2</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
+<span class="n">u_sss</span> <span class="o">=</span> <span class="n">u_s</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f_1</span><span class="p">(</span><span class="n">u_s</span><span class="p">)</span>
+<span class="n">u_split2</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_sss</span> <span class="o">+</span> <span class="n">dt</span><span class="o">/</span><span class="mf">2.</span><span class="o">*</span><span class="n">f_0</span><span class="p">(</span><span class="n">u_sss</span><span class="p">)</span>
+<span class="c1"># Strang splitting using exact integrator for u&#39;=f_0</span>
+<span class="n">u_s</span> <span class="o">=</span> <span class="n">u_split3</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">dt</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>  <span class="c1"># exact</span>
+<span class="n">u_ss</span> <span class="o">=</span> <span class="n">u_s</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f_1</span><span class="p">(</span><span class="n">u_s</span><span class="p">)</span>
+<span class="n">u_split3</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_ss</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">dt</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Figure <a class="reference internal" href="#nonlin-splitting-ode-logistic-fig"><span class="std std-ref">Effect of ordinary and Strang splitting for the logistic equation</span></a> shows that the impact of
+splitting is significant. Interestingly, however,
+the Forward Euler method applied to the entire problem directly is much more
+accurate than any of the splitting schemes. We also see that Strang
+splitting is definitely more accurate than ordinary splitting and that
+it helps a bit to use an exact solution of <span class="math">\(u'=f_0(u)\)</span>.  With a large
+time step (<span class="math">\(\Delta t = 0.2\)</span>, left plot in Figure
+<a class="reference internal" href="#nonlin-splitting-ode-logistic-fig"><span class="std std-ref">Effect of ordinary and Strang splitting for the logistic equation</span></a>), the asymptotic values are off
+by 20-30%.  A more reasonable time step (<span class="math">\(\Delta t = 0.05\)</span>, right plot
+in Figure <a class="reference internal" href="#nonlin-splitting-ode-logistic-fig"><span class="std std-ref">Effect of ordinary and Strang splitting for the logistic equation</span></a>) gives better
+results, but still the asymptotic values are up to 10% wrong.</p>
+<p>As technique for solving nonlinear ODEs, we realize that the present
+case study is not particularly promising, as the Forward Euler method
+both linearizes the original problem and provides a solution that is
+much more accurate than the splitting.
+In complicated multi-physics settings, splitting
+may be the only feasible way to go, and sometimes you really need to apply
+different numerics to different parts of a PDE problem.
+But in very simple problems, like the logistic ODE, splitting is just an
+inferior technique. Still, the logistic ODE is ideal for introducing all
+the mathematical details and for analyzing the behavior.</p>
+<div class="figure" id="id3">
 <span id="nonlin-splitting-ode-logistic-fig"></span><a class="reference internal image-reference" href="_images/split_logistic.png"><img alt="_images/split_logistic.png" src="_images/split_logistic.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text"><em>Effect of ordinary and Strang splitting for the logistic equation</em></span></p>
 </div>
 </div>
 <div class="section" id="reaction-diffusion-equation">
-<h2>Reaction-diffusion equation<a class="headerlink" href="#reaction-diffusion-equation" title="Permalink to this headline">¶</a></h2>
+<span id="nonlin-splitting-rd"></span><h2>Reaction-diffusion equation<a class="headerlink" href="#reaction-diffusion-equation" title="Permalink to this headline">¶</a></h2>
 <p>Consider a diffusion equation coupled to chemical reactions modeled by
 a nonlinear term <span class="math">\(f(u)\)</span>:</p>
 <div class="math">
-\[\frac{\partial u}{\partial t} = {\alpha}\nabla^2 + f(u){\thinspace .}\]</div>
+\[\frac{\partial u}{\partial t} = {\alpha}\nabla^2u + f(u){\thinspace .}\]</div>
+<p>This is a physical process composed of two individual processes:
+<span class="math">\(u\)</span> is the concentration of a substance that is locally generated by
+a chemical reaction <span class="math">\(f(u)\)</span>, while <span class="math">\(u\)</span> is spreading in space because
+of diffusion. There are obviously two time scales: one for the chemical
+reaction and one for diffusion. Typically, fast chemical reactions require
+much finer time stepping than slower diffusion processes.
+It could therefore be advantageous to split
+the two physical effects in separate models and use different numerical methods
+for the two.</p>
+<p>A natural spitting in the present case is</p>
+<div class="math" id="eq-nonlin-splitting-rd-eq-diffu">
+\[\tag{79}
+\frac{\partial u^{{*}}}{\partial t} = {\alpha}\nabla^2 u^{{*}},\]</div>
+<div class="math" id="eq-nonlin-splitting-rd-eq-decay">
+\[\tag{80}
+\frac{\partial u^{{**}}}{\partial t} = f(u^{{**}})
+    {\thinspace .}\]</div>
+<p>Looking at these familiar problems,
+we may apply a <span class="math">\(\theta\)</span> rule (implicit) scheme for
+<a class="reference internal" href="#eq-nonlin-splitting-rd-eq-diffu"><span class="std std-ref">(79)</span></a> and avoid dealing with nonlinearities
+by applying an explicit scheme for <a class="reference internal" href="#eq-nonlin-splitting-rd-eq-decay"><span class="std std-ref">(80)</span></a>.</p>
+<p>Suppose we have some solution <span class="math">\(u\)</span> at time level <span class="math">\(t_n\)</span>. For flexibility,
+we define a <span class="math">\(\theta\)</span> method for the diffusion part
+<a class="reference internal" href="#eq-nonlin-splitting-rd-eq-diffu"><span class="std std-ref">(79)</span></a> by</p>
+<div class="math">
+\[[D_t u^{*} =
+{\alpha} (D_xD_x u^{*} + D_y D_y u^{*})]^{n+\theta}{\thinspace .}\]</div>
+<p>We use <span class="math">\(u\)</span> as initial condition for <span class="math">\(u^{*}\)</span>.</p>
+<p>The reaction part, which is defined at each mesh point (without coupling
+values in different mesh points), can employ any scheme for an ODE.
+Here we use an Adams-Bashforth method of order 2. Recall that the overall
+accuracy of the splitting method
+is maximum <span class="math">\({\mathcal{O}(\Delta t^2)}\)</span> for Strang splitting,
+otherwise it is just <span class="math">\({\mathcal{O}(\Delta t)}\)</span>. Higher-order methods for ODEs will
+therefore be a waste of work. The 2nd-order Adams-Bashforth method reads</p>
+<div class="math" id="eq-auto38">
+\[\tag{81}
+u^{{**},n+1}_{i,j} = u^{{**},n}_{i,j} +
+    \frac{1}{2}\Delta t\left( 3f(u^{{**}, n}_{i,j}, t_n) -
+    f(u^{{**}, n-1}_{i,j}, t_{n-1})
+    \right)
+    {\thinspace .}\]</div>
+<p>We can use a Forward Euler step to start the method, i.e, compute
+<span class="math">\(u^{{**},1}_{i,j}\)</span>.</p>
+<p>The algorithm goes like this:</p>
+<ol class="arabic simple">
+<li>Solve the diffusion problem for one time step as usual.</li>
+<li>Solve the reaction ODEs at each mesh point in <span class="math">\([t_n,t_n+\Delta t]\)</span>,
+using the diffusion solution in 1. as initial condition.
+The solution of the ODEs constitute the solution of the original problem
+at the end of each time step.</li>
+</ol>
+<p>We may use a much smaller time step when solving the reaction part, adapted
+to the dynamics of the problem <span class="math">\(u'=f(u)\)</span>. This gives great flexibility in
+splitting methods.</p>
+</div>
+<div class="section" id="analysis-of-the-splitting-method">
+<h2>Analysis of the splitting method<a class="headerlink" href="#analysis-of-the-splitting-method" title="Permalink to this headline">¶</a></h2>
+<p>Let us address a linear PDE problem for which we can develop analytical
+solutions of the discrete equations, with and without splitting, and discuss
+these. Choosing <span class="math">\(f(u)=-\beta u\)</span> for a constant <span class="math">\(\beta\)</span> gives a linear
+problem. We use the Forward Euler method for both the PDE and ODE problems.</p>
+<p>We seek a 1D Fourier wave component solution of the problem, assuming
+homogeneous Dirichlet conditions at <span class="math">\(x=0\)</span> and <span class="math">\(x=L\)</span>:</p>
+<div class="math">
+\[u = e^{-{\alpha} k^2 t - \beta t}\sin kx,\quad k = \frac{\pi}{L}{\thinspace .}\]</div>
+<p>This component fits the 1D PDE problem (<span class="math">\(f=0\)</span>). On complex form we can
+write</p>
+<div class="math">
+\[u = e^{-{\alpha} k^2 t - \beta t + ikx},\]</div>
+<p>where <span class="math">\(i=\sqrt{-1}\)</span> and the imaginary part is taken as the physical solution.</p>
+<p>We refer to the section &#8220;Analysis of schemes for
+the diffusion equation&#8221;: &#8220;&#8221; in <a class="reference internal" href="._main_nonlin007.html#ref2" id="id1">[Ref2]</a> and to
+the book <a class="reference internal" href="._main_nonlin007.html#ref3" id="id2">[Ref3]</a> for a discussion of exact numerical
+solutions to diffusion and decay problems, respectively.  The key idea
+is to search for solutions <span class="math">\(A^ne^{ikx}\)</span> and determine <span class="math">\(A\)</span>.  For the
+diffusion problem solved by a Forward Euler method one has</p>
+<div class="math">
+\[A = 1 - 4F\sin^p,\]</div>
+<p>where <span class="math">\(F={\alpha}\Delta t/\Delta x^2\)</span> is the mesh Fourier number and <span class="math">\(p=k\Delta x/2\)</span>
+is a dimensionless number reflecting the spatial resolution (number of points
+per wave length in space). For the decay problem <span class="math">\(u'=-\beta u\)</span>, we have
+<span class="math">\(A=1 - q\)</span>, where <span class="math">\(q\)</span> is a dimensionless parameter reflecting the resolution
+in the decay problem: <span class="math">\(q = \beta\Delta t\)</span>.</p>
+<p>The original model problem can also be discretized by a Forward Euler scheme,</p>
+<div class="math">
+\[[D^+_t u = {\alpha} D_xD_x u - \beta u]^n_i{\thinspace .}\]</div>
+<p>Assuming <span class="math">\(A^ne^{ikx}\)</span> we find that</p>
+<div class="math">
+\[u^n_i = (1 - 4F\sin^p -q)^n\sin kx{\thinspace .}\]</div>
+<p>We are particularly interested in what happens at one time step. That is,</p>
+<div class="math">
+\[u^{n}_{i} = (1-4F\sin^2 p)u^{n-1}_i{\thinspace .}\]</div>
+<p>In the two stage algorithm, we first compute the diffusion step</p>
+<div class="math">
+\[u^{{*},n+1}_i = (1 - 4F\sin^2 p)u^{n-1}_i{\thinspace .}\]</div>
+<p>Then we use this as input to the decay algorithm and arrive at</p>
+<div class="math">
+\[u^{{**},n+1} = (1-q)u^{{*},n+1} = (1-q)(1-4F\sin^2 p) u^{n-1}_i{\thinspace .}\]</div>
+<p>The splitting approximation over one step is therefore</p>
+<div class="math">
+\[E = 1 - 4F\sin^p -q - (1-q)(1-4F\sin^2 p) = -q(2 - F\sin^2 p))\]</div>
 </div>
 </div>
 
@@ -253,6 +442,7 @@ a nonlinear term <span class="math">\(f(u)\)</span>:</p>
 <li><a class="reference internal" href="#strang-splitting-for-odes">Strang splitting for ODEs</a></li>
 <li><a class="reference internal" href="#example-logistic-growth">Example: Logistic growth</a></li>
 <li><a class="reference internal" href="#reaction-diffusion-equation">Reaction-diffusion equation</a></li>
+<li><a class="reference internal" href="#analysis-of-the-splitting-method">Analysis of the splitting method</a></li>
 </ul>
 </li>
 </ul>
@@ -278,9 +468,6 @@ a nonlinear term <span class="math">\(f(u)\)</span>:</p>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -307,7 +494,7 @@ a nonlinear term <span class="math">\(f(u)\)</span>:</p>
     <a href="http://cbc.simula.no"><img src="_static/cbc_banner.png" width="100%"><a>
     <br />
     <br />
-      &copy;H. P. Langtangen.
+      &copy;2016, Hans Petter Langtangen, Svein Linge. Released under CC Attribution 4.0 license.
   </div>
 </div>
 

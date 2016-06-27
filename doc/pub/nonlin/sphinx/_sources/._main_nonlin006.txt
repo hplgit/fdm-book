@@ -64,7 +64,7 @@ or
 .. math::
 
     \tag{72}
-    u^* = u(t_n)e^{a\Delta t},
+    u^{*} = u(t_n)e^{a\Delta t},
         
         
 
@@ -73,7 +73,7 @@ or
 .. math::
 
     \tag{73}
-    u(t_{n+1}) = u^*e^{b\Delta t}
+    u(t_{n+1}) = u^{*} e^{b\Delta t}
         
         
 
@@ -83,27 +83,14 @@ The second step :ref:`(73) <Eq:nonlin:splitting:ODE:step2>` means solving
 :math:`u'=f_1` over a time interval :math:`\Delta t` with the value at the end
 of the first step as start value.
 That is, we progress the solution in two steps and solve
-two ODEs :math:`u'=f_1` ad :math:`u'=f_2`. The order of the equations is not
+two ODEs :math:`u'=f_0` and :math:`u'=f_1`. The order of the equations is not
 important. From the derivation above we see that solving :math:`u'=f_1`
 prior to :math:`u'=f_0` can equally well be done.
 
 The technique is exact if the ODEs are linear. For nonlinear ODEs it is
 only an approximate method with error :math:`\Delta t`. The technique can
-be extended to :math:`n+1` steps:
-
-.. math::
-         u' = \sum_{i=0}^n f_i(u),
-
-which is solved by :math:`n+1` steps over :math:`[t_n, t_{n+1}]`:
-
-.. math::
-        
-        \frac{du^{(0)}}{dt} &= f_0(u^{(0)}),\quad u^{(0)}(t_n)=u(t_n),\\ 
-        \frac{du^{(i)}}{dt} &= f_i(u^{(i)}),\quad u^{(i)}(t_n)=u^{(i-1)}(t_{n+1}),\\ 
-        
-
-for :math:`i=1,\ldots,n`. We take the final solution
-:math:`u(t_{n+1})` as :math:`u^{(n)}(t_{n+1})`.
+be extended to an arbitrary number of steps; i.e., we may split the PDE
+system into any number of subsystems. Examples will illuminate this principle.
 
 .. _nonlin:splitting:ODE_Strang:
 
@@ -114,25 +101,45 @@ Strang splitting for ODEs
 
 The accuracy of the splitting method in the section :ref:`nonlin:splitting:ODE`
 can be improved from :math:`{\mathcal{O}(\Delta t)}` to :math:`{\mathcal{O}(\Delta t^2)}` using so-called
-*Strang splitting*, where we take half a step with the :math:`f_1` operator,
-a full step with the :math:`f_2` operator, and finally half another step with
-the :math:`f_1` operator. During a time interval :math:`\Delta t` the algorithm can
+*Strang splitting*, where we take half a step with the :math:`f_0` operator,
+a full step with the :math:`f_1` operator, and finally half another step with
+the :math:`f_0` operator. During a time interval :math:`\Delta t` the algorithm can
 be written as follows.
 
 .. math::
-        
-        \frac{du^{(0)}}{dt} &= f_0(u^{(0)}),\quad u^{(0)}(t_n)=u(t_n),
-        \quad t\in [0,\frac{1}{2}\Delta t],\\ 
-        \frac{du^{(\frac{1}{2})}}{dt} &= f_1(u^{(\frac{1}{2})}),\quad u^{(\frac{1}{2})}(t_n)=u^{(0)}(t_{n+\frac{1}{2}}),
-        \quad t\in [0,\Delta t],\\ 
-        \frac{du^{(1)}}{dt} &= f_0(u^{(1)}),\quad u^{(1)}(t_n)=u^{(\frac{1}{2})}(t_{n+1})
-        {\thinspace .}\\ 
-        
+        \begin{align*}
+        \frac{du^{{*}}}{dt} &= f_0(u^{{*}}),
+        \quad u^{{*}}(t_n)=u(t_n),
+        \quad t\in [t_n,t_n+\frac{1}{2}\Delta t],\\ 
+        \frac{du^{{***}}}{dt} &= f_1(u^{{***}}),
+        \quad u^{{***}}(t_n)=u^{{*}}(t_{n+\frac{1}{2}}),
+        \quad t\in [t_n,t_n+\Delta t],\\ 
+        \frac{du^{{**}}}{dt}  &= f_0(u^{{**}}),
+        \quad u^{{**}}(t_n)=u^{{***}}(t_{n+1}),
+        \quad t\in [t_n+\frac{1}{2}\Delta t, t_n+\Delta t]{\thinspace .}
+        \end{align*}
 
-There is no use in applying higher-order methods when performing
+The global solution is set as :math:`u(t_{n+1}) = u^{{**}}(t_{n+1})`.
+
+There is no use in combining higher-order methods with
 ordinary splitting since the error due to splitting is :math:`\Oof{\Delta
 t}`, but for Strang splitting it makes sense to use schemes of order
 :math:`{\mathcal{O}(\Delta t^2)}`.
+
+With the notation introduced for Strang splitting, we may express
+ordinary first-order splitting as
+
+.. math::
+        \begin{align*}
+        \frac{du^{{*}}}{dt} &= f_0(u^{{*}}),\quad u^{{*}}(t_n)=u(t_n),
+        \quad t\in [t_n,t_n+\Delta t],\\ 
+        \frac{du^{{**}}}{dt} &= f_1(u^{{**}}),\quad u^{{**}}(t_n)=u^{{*}}(t_{n+1}),
+        \quad t\in [t_n,t_n+\Delta t],
+        \end{align*}
+
+with global solution set as :math:`u(t_{n+1}) = u^{{**}}(t_{n+1})`.
+
+.. _nonlin:splitting:logistic:
 
 Example: Logistic growth
 ------------------------
@@ -140,7 +147,7 @@ Example: Logistic growth
 Let us split the (scaled) logistic equation
 
 .. math::
-         u'=u(1-u),\quad u'(0)=0.1,
+         u'=u(1-u),\quad u(0)=0.1,
 
 with solution :math:`u=(9e^{-t}+1)^{-1}`, into
 
@@ -150,6 +157,70 @@ with solution :math:`u=(9e^{-t}+1)^{-1}`, into
 We solve :math:`u'=f_0(u)` and :math:`u'=f_2(u)` by a Forward Euler step.
 In addition, we add a method where we solve :math:`u'=f_0(u)` analytically,
 since the equation is actually :math:`u'=u` with solution :math:`e^t`.
+The software that accompanies the following methods is the file
+`split_logistic.py <http://tinyurl.com/nu656p2/nonlin/split_logistic.py>`__.
+
+Ordinary splitting takes a Forward Euler step for each of the ODEs
+according to
+
+.. _Eq:_auto33:
+
+.. math::
+
+    \tag{74}
+    \frac{u^{{*},n+1} - u^{{*},n}}{\Delta t} =
+        f_0(u^{{*},n}),\quad
+        u^{{*},n} = u(t_n),\quad t\in [t_n,t_n+\Delta t],
+        
+        
+
+.. _Eq:_auto34:
+
+.. math::
+
+    \tag{75}
+    \frac{u^{{**},n+1} - u^{{**}, n}}{\Delta t} = f_1(u^{{**},n}),\quad
+        u^{{**},n} = u^{{*},n+1},\quad t\in [t_n,t_n+\Delta t],
+        
+        
+
+with :math:`u(t_{n+1}) = u^{{**},n+1}`.
+
+Strang splitting takes the form
+
+.. _Eq:_auto35:
+
+.. math::
+
+    \tag{76}
+    \frac{u^{{*},n+\frac{1}{2}} - u^{{*},n}}{\frac{1}{2}\Delta t} =
+        f_0(u^{{*},n}),\quad
+        u^{{*},n} = u(t_n),\quad t\in [t_n,t_n+\frac{1}{2}\Delta t],
+        
+        
+
+.. _Eq:_auto36:
+
+.. math::
+
+    \tag{77}
+    \frac{u^{{***},n+1}-u^{{***},n}}{\Delta t} =
+        f_1(u^{{***},n}),\quad
+        u^{{***},n} = u^{{*}, n+\frac{1}{2}},\quad t\in [t_n,t_n+\Delta t],
+        
+        
+
+.. _Eq:_auto37:
+
+.. math::
+
+    \tag{78}
+    \frac{u^{{**}, n+\frac{1}{2}} - u^{{**}, n}}{\frac{1}{2}\Delta t} =
+        f_0(u^{{**},n+\frac{1}{2}}),\quad
+        u^{{**},n+\frac{1}{2}} = u^{{***},n+\frac{1}{2}},\quad
+        t\in [t_n+\frac{1}{2}\Delta t, t_n+\Delta t]{\thinspace .}
+        
+        
 
 The following function computes four solutions arising from the Forward
 Euler method, ordinary splitting, Strang splitting, as well as Strang splitting
@@ -181,30 +252,80 @@ with exact treatment of :math:`u'=f_0(u)`:
             # Forward Euler method
             u_FE[n+1] = u_FE[n] + dt*f(u_FE[n])
     
-            # Ordinary splitting
-            u_0 = u_split1[n] + dt*f_0(u_split1[n])
-            u_split1[n+1] = u_0 + dt*f_1(u_0)
+            # --- Ordinary splitting ---
+            # First step
+            u_s_n = u_split1[n]
+            u_s = u_s_n + dt*f_0(u_s_n)
+            # Second step
+            u_ss_n = u_s
+            u_ss = u_ss_n + dt*f_1(u_ss_n)
+            u_split1[n+1] = u_ss
     
-            # Strang splitting
-            u_0 = u_split2[n] + dt/2.*f_0(u_split2[n])
-            u_1 = u_0 + dt*f_1(u_0)
-            u_split2[n+1] = u_1 + dt/2.*f_0(u_1)
+            # --- Strang splitting ---
+            # First step
+            u_s_n = u_split2[n]
+            u_s = u_s_n + dt/2.*f_0(u_s_n)
+            # Second step
+            u_sss_n = u_s
+            u_sss = u_sss_n + dt*f_1(u_sss_n)
+            # Third step
+            u_ss_n = u_sss
+            u_ss = u_ss_n + dt/2.*f_0(u_ss_n)
+            u_split2[n+1] = u_ss
     
-            # Strang splitting using exact integrator for u'=f_0
-            u_0 = u_split3[n]*np.exp(dt/2.)  # exact
-            u_1 = u_0 + dt*f_1(u_0)
-            u_split3[n+1] = u_1*np.exp(dt/2.)
+            # --- Strang splitting using exact integrator for u'=f_0 ---
+            # First step
+            u_s_n = u_split3[n]
+            u_s = u_s_n*np.exp(dt/2.)  # exact
+            # Second step
+            u_sss_n = u_s
+            u_sss = u_sss_n + dt*f_1(u_sss_n)
+            # Third step
+            u_ss_n = u_sss
+            u_ss = u_ss_n*np.exp(dt/2.)  # exact
+            u_split3[n+1] = u_ss
     
         return u_FE, u_split1, u_split2, u_split3, t
 
-Figure :ref:`nonlin:splitting:ODE:logistic:fig` shows that the impact
-of splitting is significant. The Forward Euler method is much more accurate
-than any of the splitting schemes. We also see that Strang splitting is
-definitely more accurate than ordinary splitting and that it helps a bit
-to use an exact solution of :math:`u'=f_0(u)`. As technique for solving
-nonlinear ODEs, we realize that the present example is not particularly
-illustrating, as the Forward Euler method both linearizes the original
-problem and provides a solution that is more accurate than the splitting.
+We have used quite many lines for the steps in the splitting methods.
+Many will prefer to condense the code a bit, as done here:
+
+.. code-block:: python
+
+    # Ordinary splitting
+    u_s = u_split1[n] + dt*f_0(u_split1[n])
+    u_split1[n+1] = u_s + dt*f_1(u_s)
+    # Strang splitting
+    u_s = u_split2[n] + dt/2.*f_0(u_split2[n])
+    u_sss = u_s + dt*f_1(u_s)
+    u_split2[n+1] = u_sss + dt/2.*f_0(u_sss)
+    # Strang splitting using exact integrator for u'=f_0
+    u_s = u_split3[n]*np.exp(dt/2.)  # exact
+    u_ss = u_s + dt*f_1(u_s)
+    u_split3[n+1] = u_ss*np.exp(dt/2.)
+
+Figure :ref:`nonlin:splitting:ODE:logistic:fig` shows that the impact of
+splitting is significant. Interestingly, however,
+the Forward Euler method applied to the entire problem directly is much more
+accurate than any of the splitting schemes. We also see that Strang
+splitting is definitely more accurate than ordinary splitting and that
+it helps a bit to use an exact solution of :math:`u'=f_0(u)`.  With a large
+time step (:math:`\Delta t = 0.2`, left plot in Figure
+:ref:`nonlin:splitting:ODE:logistic:fig`), the asymptotic values are off
+by 20-30%.  A more reasonable time step (:math:`\Delta t = 0.05`, right plot
+in Figure :ref:`nonlin:splitting:ODE:logistic:fig`) gives better
+results, but still the asymptotic values are up to 10% wrong.
+
+As technique for solving nonlinear ODEs, we realize that the present
+case study is not particularly promising, as the Forward Euler method
+both linearizes the original problem and provides a solution that is
+much more accurate than the splitting.
+In complicated multi-physics settings, splitting
+may be the only feasible way to go, and sometimes you really need to apply
+different numerics to different parts of a PDE problem.
+But in very simple problems, like the logistic ODE, splitting is just an
+inferior technique. Still, the logistic ODE is ideal for introducing all
+the mathematical details and for analyzing the behavior.
 
 .. _nonlin:splitting:ODE:logistic:fig:
 
@@ -213,6 +334,12 @@ problem and provides a solution that is more accurate than the splitting.
 
    *Effect of ordinary and Strang splitting for the logistic equation*
 
+.. Cannot analyze logistic method because we have no exact solution
+
+.. of the discrete equations. But in the next linear problem we can analyze.
+
+.. _nonlin:splitting:RD:
+
 Reaction-diffusion equation
 ---------------------------
 
@@ -220,5 +347,155 @@ Consider a diffusion equation coupled to chemical reactions modeled by
 a nonlinear term :math:`f(u)`:
 
 .. math::
-         \frac{\partial u}{\partial t} = {\alpha}\nabla^2 + f(u){\thinspace .}
+         \frac{\partial u}{\partial t} = {\alpha}\nabla^2u + f(u){\thinspace .}
+
+This is a physical process composed of two individual processes:
+:math:`u` is the concentration of a substance that is locally generated by
+a chemical reaction :math:`f(u)`, while :math:`u` is spreading in space because
+of diffusion. There are obviously two time scales: one for the chemical
+reaction and one for diffusion. Typically, fast chemical reactions require
+much finer time stepping than slower diffusion processes.
+It could therefore be advantageous to split
+the two physical effects in separate models and use different numerical methods
+for the two.
+
+A natural spitting in the present case is
+
+.. _Eq:nonlin:splitting:RD:eq:diffu:
+
+.. math::
+
+    \tag{79}
+    \frac{\partial u^{{*}}}{\partial t} = {\alpha}\nabla^2 u^{{*}},
+        
+        
+
+.. _Eq:nonlin:splitting:RD:eq:decay:
+
+.. math::
+
+    \tag{80}
+    \frac{\partial u^{{**}}}{\partial t} = f(u^{{**}})
+        {\thinspace .}
+        
+
+Looking at these familiar problems,
+we may apply a :math:`\theta` rule (implicit) scheme for
+:ref:`(79) <Eq:nonlin:splitting:RD:eq:diffu>` and avoid dealing with nonlinearities
+by applying an explicit scheme for :ref:`(80) <Eq:nonlin:splitting:RD:eq:decay>`.
+
+Suppose we have some solution :math:`u` at time level :math:`t_n`. For flexibility,
+we define a :math:`\theta` method for the diffusion part
+:ref:`(79) <Eq:nonlin:splitting:RD:eq:diffu>` by
+
+.. math::
+         [D_t u^{*} =
+        {\alpha} (D_xD_x u^{*} + D_y D_y u^{*})]^{n+\theta}{\thinspace .}
+
+We use :math:`u` as initial condition for :math:`u^{*}`.
+
+The reaction part, which is defined at each mesh point (without coupling
+values in different mesh points), can employ any scheme for an ODE.
+Here we use an Adams-Bashforth method of order 2. Recall that the overall
+accuracy of the splitting method
+is maximum :math:`{\mathcal{O}(\Delta t^2)}` for Strang splitting,
+otherwise it is just :math:`{\mathcal{O}(\Delta t)}`. Higher-order methods for ODEs will
+therefore be a waste of work. The 2nd-order Adams-Bashforth method reads
+
+.. _Eq:_auto38:
+
+.. math::
+
+    \tag{81}
+    u^{{**},n+1}_{i,j} = u^{{**},n}_{i,j} +
+        \frac{1}{2}\Delta t\left( 3f(u^{{**}, n}_{i,j}, t_n) -
+        f(u^{{**}, n-1}_{i,j}, t_{n-1})
+        \right)
+        {\thinspace .}
+        
+        
+
+We can use a Forward Euler step to start the method, i.e, compute
+:math:`u^{{**},1}_{i,j}`.
+
+The algorithm goes like this:
+
+1. Solve the diffusion problem for one time step as usual.
+
+2. Solve the reaction ODEs at each mesh point in :math:`[t_n,t_n+\Delta t]`,
+   using the diffusion solution in 1. as initial condition.
+   The solution of the ODEs constitute the solution of the original problem
+   at the end of each time step.
+
+We may use a much smaller time step when solving the reaction part, adapted
+to the dynamics of the problem :math:`u'=f(u)`. This gives great flexibility in
+splitting methods.
+
+Analysis of the splitting method
+--------------------------------
+
+Let us address a linear PDE problem for which we can develop analytical
+solutions of the discrete equations, with and without splitting, and discuss
+these. Choosing :math:`f(u)=-\beta u` for a constant :math:`\beta` gives a linear
+problem. We use the Forward Euler method for both the PDE and ODE problems.
+
+We seek a 1D Fourier wave component solution of the problem, assuming
+homogeneous Dirichlet conditions at :math:`x=0` and :math:`x=L`:
+
+.. math::
+         u = e^{-{\alpha} k^2 t - \beta t}\sin kx,\quad k = \frac{\pi}{L}{\thinspace .}
+
+This component fits the 1D PDE problem (:math:`f=0`). On complex form we can
+write
+
+.. math::
+         u = e^{-{\alpha} k^2 t - \beta t + ikx},
+
+where :math:`i=\sqrt{-1}` and the imaginary part is taken as the physical solution.
+
+We refer to the section "Analysis of schemes for
+the diffusion equation": "" in [Ref2]_ and to
+the book [Ref3]_ for a discussion of exact numerical
+solutions to diffusion and decay problems, respectively.  The key idea
+is to search for solutions :math:`A^ne^{ikx}` and determine :math:`A`.  For the
+diffusion problem solved by a Forward Euler method one has
+
+.. math::
+         A = 1 - 4F\sin^p, 
+
+where :math:`F={\alpha}\Delta t/\Delta x^2` is the mesh Fourier number and :math:`p=k\Delta x/2`
+is a dimensionless number reflecting the spatial resolution (number of points
+per wave length in space). For the decay problem :math:`u'=-\beta u`, we have
+:math:`A=1 - q`, where :math:`q` is a dimensionless parameter reflecting the resolution
+in the decay problem: :math:`q = \beta\Delta t`.
+
+The original model problem can also be discretized by a Forward Euler scheme,
+
+.. math::
+         [D^+_t u = {\alpha} D_xD_x u - \beta u]^n_i{\thinspace .}
+
+Assuming :math:`A^ne^{ikx}` we find that
+
+.. math::
+         u^n_i = (1 - 4F\sin^p -q)^n\sin kx{\thinspace .}
+
+We are particularly interested in what happens at one time step. That is,
+
+.. math::
+         u^{n}_{i} = (1-4F\sin^2 p)u^{n-1}_i{\thinspace .}
+
+In the two stage algorithm, we first compute the diffusion step
+
+.. math::
+         u^{{*},n+1}_i = (1 - 4F\sin^2 p)u^{n-1}_i{\thinspace .}
+
+Then we use this as input to the decay algorithm and arrive at
+
+.. math::
+         u^{{**},n+1} = (1-q)u^{{*},n+1} = (1-q)(1-4F\sin^2 p) u^{n-1}_i{\thinspace .}
+
+The splitting approximation over one step is therefore
+
+.. math::
+         E = 1 - 4F\sin^p -q - (1-q)(1-4F\sin^2 p) = -q(2 - F\sin^2 p)) 
 

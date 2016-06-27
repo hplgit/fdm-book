@@ -27,6 +27,15 @@ code { color: inherit; background-color: transparent; }
    max-height: 400px;
    overflow-x: hidden;
 }
+
+/* Adds an invisible element before each target to offset for the navigation
+   bar */
+.anchor::before {
+  content:"";
+  display:block;
+  height:60px;      /* fixed header height for style bootswatch_journal */
+  margin:-60px 0 0; /* negative fixed header height */
+}
 </style>
 
 
@@ -34,7 +43,11 @@ code { color: inherit; background-color: transparent; }
 
 <!-- tocinfo
 {'highest level': 1,
- 'sections': [('Introduction of basic concepts',
+ 'sections': [('Table of contents',
+               1,
+               'table_of_contents',
+               'table_of_contents'),
+              ('Introduction of basic concepts',
                1,
                'nonlin:timediscrete:logistic',
                'nonlin:timediscrete:logistic'),
@@ -165,8 +178,15 @@ code { color: inherit; background-color: transparent; }
                2,
                'nonlin:splitting:ODE_Strang',
                'nonlin:splitting:ODE_Strang'),
-              ('Example: Logistic growth', 2, None, '___sec53'),
-              ('Reaction-diffusion equation', 2, None, '___sec54'),
+              ('Example: Logistic growth',
+               2,
+               'nonlin:splitting:logistic',
+               'nonlin:splitting:logistic'),
+              ('Reaction-diffusion equation',
+               2,
+               'nonlin:splitting:RD',
+               'nonlin:splitting:RD'),
+              ('Analysis of the splitting method', 2, None, '___sec55'),
               ('Exercises', 1, 'nonlin:exer', 'nonlin:exer'),
               ('Problem 1: Determine if equations are nonlinear or not',
                2,
@@ -228,7 +248,7 @@ code { color: inherit; background-color: transparent; }
                2,
                'nonlin:exer:continuation:1DnNflow',
                'nonlin:exer:continuation:1DnNflow'),
-              ('Bibliography', 1, None, '___sec71')]}
+              ('Bibliography', 1, None, '___sec72')]}
 end of tocinfo -->
 
 <body>
@@ -258,6 +278,9 @@ $$
 \newcommand{\dfc}{\alpha}  % diffusion coefficient
 \newcommand{\Ix}{\mathcal{I}_x}
 \newcommand{\Iy}{\mathcal{I}_y}
+\newcommand{\stepzero}{*}
+\newcommand{\stephalf}{***}
+\newcommand{\stepone}{**}
 \newcommand{\baspsi}{\psi}
 $$
 
@@ -281,6 +304,7 @@ $$
       <li class="dropdown">
         <a href="#" class="dropdown-toggle" data-toggle="dropdown">Contents <b class="caret"></b></a>
         <ul class="dropdown-menu">
+     <!-- navigation toc: --> <li><a href="._nonlin-sol000.html#table_of_contents" style="font-size: 80%;"><b>Table of contents</b></a></li>
      <!-- navigation toc: --> <li><a href="._nonlin-sol001.html#nonlin:timediscrete:logistic" style="font-size: 80%;"><b>Introduction of basic concepts</b></a></li>
      <!-- navigation toc: --> <li><a href="._nonlin-sol001.html#___sec1" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Linear versus nonlinear equations</a></li>
      <!-- navigation toc: --> <li><a href="._nonlin-sol001.html#___sec2" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Algebraic equations</a></li>
@@ -334,8 +358,9 @@ $$
      <!-- navigation toc: --> <li><a href="#nonlin:splitting" style="font-size: 80%;"><b>Operator splitting methods</b></a></li>
      <!-- navigation toc: --> <li><a href="#nonlin:splitting:ODE" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Ordinary operator splitting for ODEs</a></li>
      <!-- navigation toc: --> <li><a href="#nonlin:splitting:ODE_Strang" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Strang splitting for ODEs</a></li>
-     <!-- navigation toc: --> <li><a href="#___sec53" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Example: Logistic growth</a></li>
-     <!-- navigation toc: --> <li><a href="#___sec54" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Reaction-diffusion equation</a></li>
+     <!-- navigation toc: --> <li><a href="#nonlin:splitting:logistic" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Example: Logistic growth</a></li>
+     <!-- navigation toc: --> <li><a href="#nonlin:splitting:RD" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Reaction-diffusion equation</a></li>
+     <!-- navigation toc: --> <li><a href="#___sec55" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Analysis of the splitting method</a></li>
      <!-- navigation toc: --> <li><a href="._nonlin-sol007.html#nonlin:exer" style="font-size: 80%;"><b>Exercises</b></a></li>
      <!-- navigation toc: --> <li><a href="._nonlin-sol007.html#nonlin:exer:lin:vs:nonlin" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Problem 1: Determine if equations are nonlinear or not</a></li>
      <!-- navigation toc: --> <li><a href="._nonlin-sol007.html#nonlin:exer:logistic:gen" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Problem 2: Derive and investigate a generalized logistic model</a></li>
@@ -352,7 +377,7 @@ $$
      <!-- navigation toc: --> <li><a href="._nonlin-sol007.html#nonlin:exer:2D:heat:nonlinear:fd" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Exercise 13: Crank-Nicolson for a nonlinear 3D diffusion equation</a></li>
      <!-- navigation toc: --> <li><a href="._nonlin-sol007.html#nonlin:exer:sparsity:Jacobian" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Problem 14: Find the sparsity of the Jacobian</a></li>
      <!-- navigation toc: --> <li><a href="._nonlin-sol007.html#nonlin:exer:continuation:1DnNflow" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Problem 15: Investigate a 1D problem with a continuation method</a></li>
-     <!-- navigation toc: --> <li><a href="._nonlin-sol007.html#___sec71" style="font-size: 80%;"><b>Bibliography</b></a></li>
+     <!-- navigation toc: --> <li><a href="._nonlin-sol007.html#___sec72" style="font-size: 80%;"><b>Bibliography</b></a></li>
 
         </ul>
       </li>
@@ -368,7 +393,7 @@ $$
 <a name="part0006"></a>
 <!-- !split -->
 
-<h1 id="nonlin:splitting">Operator splitting methods</h1>
+<h1 id="nonlin:splitting" class="anchor">Operator splitting methods</h1>
 
 <p>
 Operator splitting is a natural and old idea. When a PDE or system of PDEs
@@ -389,7 +414,7 @@ dimensions and solve a 2D or 3D problem as two or three
 consecutive 1D problems, but this type of splitting
 is not to be further considered here.
 
-<h2 id="nonlin:splitting:ODE">Ordinary operator splitting for ODEs</h2>
+<h2 id="nonlin:splitting:ODE" class="anchor">Ordinary operator splitting for ODEs</h2>
 
 <p>
 Consider first an ODE where the right-hand side is split into two
@@ -416,9 +441,9 @@ or
 
 $$
 \begin{align}
-u^* &= u(t_n)e^{a\Delta t},
+u^\stepzero &= u(t_n)e^{a\Delta t},
 \tag{72}\\ 
-u(t_{n+1}) &= u^*e^{b\Delta t}
+u(t_{n+1}) &= u^\stepzero e^{b\Delta t}
 \tag{73}
 \end{align}
 $$
@@ -429,62 +454,69 @@ The second step <a href="#mjx-eqn-73">(73)</a> means solving
 \( u'=f_1 \) over a time interval \( \Delta t \) with the value at the end
 of the first step as start value.
 That is, we progress the solution in two steps and solve
-two ODEs \( u'=f_1 \) ad \( u'=f_2 \). The order of the equations is not
+two ODEs \( u'=f_0 \) and \( u'=f_1 \). The order of the equations is not
 important. From the derivation above we see that solving \( u'=f_1 \)
 prior to \( u'=f_0 \) can equally well be done.
 
 <p>
 The technique is exact if the ODEs are linear. For nonlinear ODEs it is
 only an approximate method with error \( \Delta t \). The technique can
-be extended to \( n+1 \) steps:
+be extended to an arbitrary number of steps; i.e., we may split the PDE
+system into any number of subsystems. Examples will illuminate this principle.
 
-$$ u' = \sum_{i=0}^n f_i(u),$$
-
-which is solved by \( n+1 \) steps over \( [t_n, t_{n+1}] \):
-
-$$
-\begin{align*}
-\frac{du^{(0)}}{dt} &= f_0(u^{(0)}),\quad u^{(0)}(t_n)=u(t_n),\\ 
-\frac{du^{(i)}}{dt} &= f_i(u^{(i)}),\quad u^{(i)}(t_n)=u^{(i-1)}(t_{n+1}),\\ 
-\end{align*}
-$$
-
-for \( i=1,\ldots,n \). We take the final solution
-\( u(t_{n+1}) \) as \( u^{(n)}(t_{n+1}) \).
-
-<h2 id="nonlin:splitting:ODE_Strang">Strang splitting for ODEs</h2>
+<h2 id="nonlin:splitting:ODE_Strang" class="anchor">Strang splitting for ODEs</h2>
 
 <p>
 The accuracy of the splitting method in the section <a href="#nonlin:splitting:ODE">Ordinary operator splitting for ODEs</a>
 can be improved from \( \Oof{\Delta t} \) to \( \Oof{\Delta t^2} \) using so-called
-<em>Strang splitting</em>, where we take half a step with the \( f_1 \) operator,
-a full step with the \( f_2 \) operator, and finally half another step with
-the \( f_1 \) operator. During a time interval \( \Delta t \) the algorithm can
+<em>Strang splitting</em>, where we take half a step with the \( f_0 \) operator,
+a full step with the \( f_1 \) operator, and finally half another step with
+the \( f_0 \) operator. During a time interval \( \Delta t \) the algorithm can
 be written as follows.
 
 $$
 \begin{align*}
-\frac{du^{(0)}}{dt} &= f_0(u^{(0)}),\quad u^{(0)}(t_n)=u(t_n),
-\quad t\in [0,\half\Delta t],\\ 
-\frac{du^{(\half)}}{dt} &= f_1(u^{(\half)}),\quad u^{(\half)}(t_n)=u^{(0)}(t_{n+\half}),
-\quad t\in [0,\Delta t],\\ 
-\frac{du^{(1)}}{dt} &= f_0(u^{(1)}),\quad u^{(1)}(t_n)=u^{(\half)}(t_{n+1})
-\tp\\ 
+\frac{du^{\stepzero}}{dt} &= f_0(u^{\stepzero}),
+\quad u^{\stepzero}(t_n)=u(t_n),
+\quad t\in [t_n,t_n+\half\Delta t],\\ 
+\frac{du^{\stephalf}}{dt} &= f_1(u^{\stephalf}),
+\quad u^{\stephalf}(t_n)=u^{\stepzero}(t_{n+\half}),
+\quad t\in [t_n,t_n+\Delta t],\\ 
+\frac{du^{\stepone}}{dt}  &= f_0(u^{\stepone}),
+\quad u^{\stepone}(t_n)=u^{\stephalf}(t_{n+1}),
+\quad t\in [t_n+\half\Delta t, t_n+\Delta t]\tp
 \end{align*}
 $$
 
+The global solution is set as \( u(t_{n+1}) = u^{\stepone}(t_{n+1}) \).
+
 <p>
-There is no use in applying higher-order methods when performing
+There is no use in combining higher-order methods with
 ordinary splitting since the error due to splitting is \( \Oof{\Delta
 t} \), but for Strang splitting it makes sense to use schemes of order
 \( \Oof{\Delta t^2} \).
 
-<h2 id="___sec53">Example: Logistic growth </h2>
+<p>
+With the notation introduced for Strang splitting, we may express
+ordinary first-order splitting as
+
+$$
+\begin{align*}
+\frac{du^{\stepzero}}{dt} &= f_0(u^{\stepzero}),\quad u^{\stepzero}(t_n)=u(t_n),
+\quad t\in [t_n,t_n+\Delta t],\\ 
+\frac{du^{\stepone}}{dt} &= f_1(u^{\stepone}),\quad u^{\stepone}(t_n)=u^{\stepzero}(t_{n+1}),
+\quad t\in [t_n,t_n+\Delta t],
+\end{align*}
+$$
+
+with global solution set as \( u(t_{n+1}) = u^{\stepone}(t_{n+1}) \).
+
+<h2 id="nonlin:splitting:logistic" class="anchor">Example: Logistic growth</h2>
 
 <p>
 Let us split the (scaled) logistic equation
 
-$$ u'=u(1-u),\quad u'(0)=0.1,$$
+$$ u'=u(1-u),\quad u(0)=0.1,$$
 
 with solution \( u=(9e^{-t}+1)^{-1} \), into
 
@@ -493,6 +525,47 @@ $$ u'=u - u^2 = f_0(u) + f_1(u), \quad f_0(u)=u,\quad f_1(u)=-u^2\tp$$
 We solve \( u'=f_0(u) \) and \( u'=f_2(u) \) by a Forward Euler step.
 In addition, we add a method where we solve \( u'=f_0(u) \) analytically,
 since the equation is actually \( u'=u \) with solution \( e^t \).
+The software that accompanies the following methods is the file
+<a href="http://tinyurl.com/nu656p2/nonlin/split_logistic.py" target="_self"><tt>split_logistic.py</tt></a>.
+
+<p>
+Ordinary splitting takes a Forward Euler step for each of the ODEs
+according to
+
+$$
+\begin{align}
+\frac{u^{\stepzero,n+1} - u^{\stepzero,n}}{\Delta t} &=
+f_0(u^{\stepzero,n}),\quad
+u^{\stepzero,n} = u(t_n),\quad t\in [t_n,t_n+\Delta t],
+\tag{74}\\ 
+\frac{u^{\stepone,n+1} - u^{\stepone, n}}{\Delta t} &= f_1(u^{\stepone,n}),\quad
+u^{\stepone,n} = u^{\stepzero,n+1},\quad t\in [t_n,t_n+\Delta t],
+\tag{75}
+\end{align}
+$$
+
+with \( u(t_{n+1}) = u^{\stepone,n+1} \).
+
+<p>
+Strang splitting takes the form
+
+$$
+\begin{align}
+\frac{u^{\stepzero,n+\half} - u^{\stepzero,n}}{\half\Delta t} &=
+f_0(u^{\stepzero,n}),\quad
+u^{\stepzero,n} = u(t_n),\quad t\in [t_n,t_n+\half\Delta t],
+\tag{76}\\ 
+\frac{u^{\stephalf,n+1}-u^{\stephalf,n}}{\Delta t} &=
+f_1(u^{\stephalf,n}),\quad
+u^{\stephalf,n} = u^{\stepzero, n+\half},\quad t\in [t_n,t_n+\Delta t],
+\tag{77}\\ 
+\frac{u^{\stepone, n+\half} - u^{\stepone, n}}{\half\Delta t} &=
+f_0(u^{\stepone,n+\half}),\quad
+u^{\stepone,n+\half} = u^{\stephalf,n+\half},\quad
+t\in [t_n+\half\Delta t, t_n+\Delta t]\tp
+\tag{78}
+\end{align}
+$$
 
 <p>
 The following function computes four solutions arising from the Forward
@@ -502,7 +575,7 @@ with exact treatment of \( u'=f_0(u) \):
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
 
 <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solver</span>(dt, T, f, f_0, f_1):
     <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
@@ -526,31 +599,84 @@ with exact treatment of \( u'=f_0(u) \):
         <span style="color: #408080; font-style: italic"># Forward Euler method</span>
         u_FE[n<span style="color: #666666">+1</span>] <span style="color: #666666">=</span> u_FE[n] <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>f(u_FE[n])
 
-        <span style="color: #408080; font-style: italic"># Ordinary splitting</span>
-        u_0 <span style="color: #666666">=</span> u_split1[n] <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>f_0(u_split1[n])
-        u_split1[n<span style="color: #666666">+1</span>] <span style="color: #666666">=</span> u_0 <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>f_1(u_0)
+        <span style="color: #408080; font-style: italic"># --- Ordinary splitting ---</span>
+        <span style="color: #408080; font-style: italic"># First step</span>
+        u_s_n <span style="color: #666666">=</span> u_split1[n]
+        u_s <span style="color: #666666">=</span> u_s_n <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>f_0(u_s_n)
+        <span style="color: #408080; font-style: italic"># Second step</span>
+        u_ss_n <span style="color: #666666">=</span> u_s
+        u_ss <span style="color: #666666">=</span> u_ss_n <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>f_1(u_ss_n)
+        u_split1[n<span style="color: #666666">+1</span>] <span style="color: #666666">=</span> u_ss
 
-        <span style="color: #408080; font-style: italic"># Strang splitting</span>
-        u_0 <span style="color: #666666">=</span> u_split2[n] <span style="color: #666666">+</span> dt<span style="color: #666666">/2.*</span>f_0(u_split2[n])
-        u_1 <span style="color: #666666">=</span> u_0 <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>f_1(u_0)
-        u_split2[n<span style="color: #666666">+1</span>] <span style="color: #666666">=</span> u_1 <span style="color: #666666">+</span> dt<span style="color: #666666">/2.*</span>f_0(u_1)
+        <span style="color: #408080; font-style: italic"># --- Strang splitting ---</span>
+        <span style="color: #408080; font-style: italic"># First step</span>
+        u_s_n <span style="color: #666666">=</span> u_split2[n]
+        u_s <span style="color: #666666">=</span> u_s_n <span style="color: #666666">+</span> dt<span style="color: #666666">/2.*</span>f_0(u_s_n)
+        <span style="color: #408080; font-style: italic"># Second step</span>
+        u_sss_n <span style="color: #666666">=</span> u_s
+        u_sss <span style="color: #666666">=</span> u_sss_n <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>f_1(u_sss_n)
+        <span style="color: #408080; font-style: italic"># Third step</span>
+        u_ss_n <span style="color: #666666">=</span> u_sss
+        u_ss <span style="color: #666666">=</span> u_ss_n <span style="color: #666666">+</span> dt<span style="color: #666666">/2.*</span>f_0(u_ss_n)
+        u_split2[n<span style="color: #666666">+1</span>] <span style="color: #666666">=</span> u_ss
 
-        <span style="color: #408080; font-style: italic"># Strang splitting using exact integrator for u&#39;=f_0</span>
-        u_0 <span style="color: #666666">=</span> u_split3[n]<span style="color: #666666">*</span>np<span style="color: #666666">.</span>exp(dt<span style="color: #666666">/2.</span>)  <span style="color: #408080; font-style: italic"># exact</span>
-        u_1 <span style="color: #666666">=</span> u_0 <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>f_1(u_0)
-        u_split3[n<span style="color: #666666">+1</span>] <span style="color: #666666">=</span> u_1<span style="color: #666666">*</span>np<span style="color: #666666">.</span>exp(dt<span style="color: #666666">/2.</span>)
+        <span style="color: #408080; font-style: italic"># --- Strang splitting using exact integrator for u&#39;=f_0 ---</span>
+        <span style="color: #408080; font-style: italic"># First step</span>
+        u_s_n <span style="color: #666666">=</span> u_split3[n]
+        u_s <span style="color: #666666">=</span> u_s_n<span style="color: #666666">*</span>np<span style="color: #666666">.</span>exp(dt<span style="color: #666666">/2.</span>)  <span style="color: #408080; font-style: italic"># exact</span>
+        <span style="color: #408080; font-style: italic"># Second step</span>
+        u_sss_n <span style="color: #666666">=</span> u_s
+        u_sss <span style="color: #666666">=</span> u_sss_n <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>f_1(u_sss_n)
+        <span style="color: #408080; font-style: italic"># Third step</span>
+        u_ss_n <span style="color: #666666">=</span> u_sss
+        u_ss <span style="color: #666666">=</span> u_ss_n<span style="color: #666666">*</span>np<span style="color: #666666">.</span>exp(dt<span style="color: #666666">/2.</span>)  <span style="color: #408080; font-style: italic"># exact</span>
+        u_split3[n<span style="color: #666666">+1</span>] <span style="color: #666666">=</span> u_ss
 
     <span style="color: #008000; font-weight: bold">return</span> u_FE, u_split1, u_split2, u_split3, t
 </pre></div>
 <p>
-Figure <a href="#nonlin:splitting:ODE:logistic:fig">3</a> shows that the impact
-of splitting is significant. The Forward Euler method is much more accurate
-than any of the splitting schemes. We also see that Strang splitting is
-definitely more accurate than ordinary splitting and that it helps a bit
-to use an exact solution of \( u'=f_0(u) \). As technique for solving
-nonlinear ODEs, we realize that the present example is not particularly
-illustrating, as the Forward Euler method both linearizes the original
-problem and provides a solution that is more accurate than the splitting.
+We have used quite many lines for the steps in the splitting methods.
+Many will prefer to condense the code a bit, as done here:
+
+<p>
+
+<!-- code=python (!bc pycod) typeset with pygments style "default" -->
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #408080; font-style: italic"># Ordinary splitting</span>
+u_s <span style="color: #666666">=</span> u_split1[n] <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>f_0(u_split1[n])
+u_split1[n<span style="color: #666666">+1</span>] <span style="color: #666666">=</span> u_s <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>f_1(u_s)
+<span style="color: #408080; font-style: italic"># Strang splitting</span>
+u_s <span style="color: #666666">=</span> u_split2[n] <span style="color: #666666">+</span> dt<span style="color: #666666">/2.*</span>f_0(u_split2[n])
+u_sss <span style="color: #666666">=</span> u_s <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>f_1(u_s)
+u_split2[n<span style="color: #666666">+1</span>] <span style="color: #666666">=</span> u_sss <span style="color: #666666">+</span> dt<span style="color: #666666">/2.*</span>f_0(u_sss)
+<span style="color: #408080; font-style: italic"># Strang splitting using exact integrator for u&#39;=f_0</span>
+u_s <span style="color: #666666">=</span> u_split3[n]<span style="color: #666666">*</span>np<span style="color: #666666">.</span>exp(dt<span style="color: #666666">/2.</span>)  <span style="color: #408080; font-style: italic"># exact</span>
+u_ss <span style="color: #666666">=</span> u_s <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>f_1(u_s)
+u_split3[n<span style="color: #666666">+1</span>] <span style="color: #666666">=</span> u_ss<span style="color: #666666">*</span>np<span style="color: #666666">.</span>exp(dt<span style="color: #666666">/2.</span>)
+</pre></div>
+<p>
+Figure <a href="#nonlin:splitting:ODE:logistic:fig">3</a> shows that the impact of
+splitting is significant. Interestingly, however,
+the Forward Euler method applied to the entire problem directly is much more
+accurate than any of the splitting schemes. We also see that Strang
+splitting is definitely more accurate than ordinary splitting and that
+it helps a bit to use an exact solution of \( u'=f_0(u) \).  With a large
+time step (\( \Delta t = 0.2 \), left plot in Figure
+<a href="#nonlin:splitting:ODE:logistic:fig">3</a>), the asymptotic values are off
+by 20-30%.  A more reasonable time step (\( \Delta t = 0.05 \), right plot
+in Figure <a href="#nonlin:splitting:ODE:logistic:fig">3</a>) gives better
+results, but still the asymptotic values are up to 10% wrong.
+
+<p>
+As technique for solving nonlinear ODEs, we realize that the present
+case study is not particularly promising, as the Forward Euler method
+both linearizes the original problem and provides a solution that is
+much more accurate than the splitting.
+In complicated multi-physics settings, splitting
+may be the only feasible way to go, and sometimes you really need to apply
+different numerics to different parts of a PDE problem.
+But in very simple problems, like the logistic ODE, splitting is just an
+inferior technique. Still, the logistic ODE is ideal for introducing all
+the mathematical details and for analyzing the behavior.
 
 <p>
 <center> <!-- figure label: --> <div id="nonlin:splitting:ODE:logistic:fig"></div> <!-- FIGURE -->
@@ -559,13 +685,155 @@ problem and provides a solution that is more accurate than the splitting.
 <p><img src="fig-nonlin/split_logistic.png" align="bottom" width=800></p>
 </center>
 
-<h2 id="___sec54">Reaction-diffusion equation </h2>
+<p>
+<!-- Cannot analyze logistic method because we have no exact solution -->
+<!-- of the discrete equations. But in the next linear problem we can analyze. -->
+
+<h2 id="nonlin:splitting:RD" class="anchor">Reaction-diffusion equation</h2>
 
 <p>
 Consider a diffusion equation coupled to chemical reactions modeled by
 a nonlinear term \( f(u) \):
 
-$$ \frac{\partial u}{\partial t} = \dfc\nabla^2 + f(u)\tp$$
+$$ \frac{\partial u}{\partial t} = \dfc\nabla^2u + f(u)\tp$$
+
+This is a physical process composed of two individual processes:
+\( u \) is the concentration of a substance that is locally generated by
+a chemical reaction \( f(u) \), while \( u \) is spreading in space because
+of diffusion. There are obviously two time scales: one for the chemical
+reaction and one for diffusion. Typically, fast chemical reactions require
+much finer time stepping than slower diffusion processes.
+It could therefore be advantageous to split
+the two physical effects in separate models and use different numerical methods
+for the two.
+
+<p>
+A natural spitting in the present case is
+
+$$
+\begin{align}
+\frac{\partial u^{\stepzero}}{\partial t} &= \dfc\nabla^2 u^{\stepzero},
+\tag{79}\\ 
+\frac{\partial u^{\stepone}}{\partial t} &= f(u^{\stepone})
+\tag{80}\tp
+\end{align}
+$$
+
+Looking at these familiar problems,
+we may apply a \( \theta \) rule (implicit) scheme for
+<a href="#mjx-eqn-79">(79)</a> and avoid dealing with nonlinearities
+by applying an explicit scheme for <a href="#mjx-eqn-80">(80)</a>.
+
+<p>
+Suppose we have some solution \( u \) at time level \( t_n \). For flexibility,
+we define a \( \theta \) method for the diffusion part
+<a href="#mjx-eqn-79">(79)</a> by
+
+$$ [D_t u^\stepzero =
+\dfc (D_xD_x u^\stepzero + D_y D_y u^\stepzero)]^{n+\theta}\tp$$
+
+We use \( u \) as initial condition for \( u^\stepzero \).
+
+<p>
+The reaction part, which is defined at each mesh point (without coupling
+values in different mesh points), can employ any scheme for an ODE.
+Here we use an Adams-Bashforth method of order 2. Recall that the overall
+accuracy of the splitting method
+is maximum \( \Oof{\Delta t^2} \) for Strang splitting,
+otherwise it is just \( \Oof{\Delta t} \). Higher-order methods for ODEs will
+therefore be a waste of work. The 2nd-order Adams-Bashforth method reads
+
+$$
+\begin{equation}
+u^{\stepone,n+1}_{i,j} = u^{\stepone,n}_{i,j} +
+\half\Delta t\left( 3f(u^{\stepone, n}_{i,j}, t_n) -
+f(u^{\stepone, n-1}_{i,j}, t_{n-1})
+\right)
+\tp
+\tag{81}
+\end{equation}
+$$
+
+We can use a Forward Euler step to start the method, i.e, compute
+\( u^{\stepone,1}_{i,j} \).
+
+<p>
+The algorithm goes like this:
+
+<ol>
+<li> Solve the diffusion problem for one time step as usual.</li>
+<li> Solve the reaction ODEs at each mesh point in \( [t_n,t_n+\Delta t] \),
+   using the diffusion solution in 1. as initial condition.
+   The solution of the ODEs constitute the solution of the original problem
+   at the end of each time step.</li>
+</ol>
+
+We may use a much smaller time step when solving the reaction part, adapted
+to the dynamics of the problem \( u'=f(u) \). This gives great flexibility in
+splitting methods.
+
+<h2 id="___sec55" class="anchor">Analysis of the splitting method </h2>
+
+<p>
+Let us address a linear PDE problem for which we can develop analytical
+solutions of the discrete equations, with and without splitting, and discuss
+these. Choosing \( f(u)=-\beta u \) for a constant \( \beta \) gives a linear
+problem. We use the Forward Euler method for both the PDE and ODE problems.
+
+<p>
+We seek a 1D Fourier wave component solution of the problem, assuming
+homogeneous Dirichlet conditions at \( x=0 \) and \( x=L \):
+
+$$ u = e^{-\dfc k^2 t - \beta t}\sin kx,\quad k = \frac{\pi}{L}\tp$$
+
+This component fits the 1D PDE problem (\( f=0 \)). On complex form we can
+write
+
+$$ u = e^{-\dfc k^2 t - \beta t + ikx},$$
+
+where \( i=\sqrt{-1} \) and the imaginary part is taken as the physical solution.
+
+<p>
+We refer to the section "Analysis of schemes for
+the diffusion equation": "" in <a href="._nonlin-sol007.html#Langtangen_Linge">[2]</a> and to
+the book <a href="._nonlin-sol007.html#Langtangen_decay">[3]</a> for a discussion of exact numerical
+solutions to diffusion and decay problems, respectively.  The key idea
+is to search for solutions \( A^ne^{ikx} \) and determine \( A \).  For the
+diffusion problem solved by a Forward Euler method one has
+
+$$ A = 1 - 4F\sin^p, $$
+
+where \( F=\dfc\Delta t/\Delta x^2 \) is the mesh Fourier number and \( p=k\Delta x/2 \)
+is a dimensionless number reflecting the spatial resolution (number of points
+per wave length in space). For the decay problem \( u'=-\beta u \), we have
+\( A=1 - q \), where \( q \) is a dimensionless parameter reflecting the resolution
+in the decay problem: \( q = \beta\Delta t \).
+
+<p>
+The original model problem can also be discretized by a Forward Euler scheme,
+
+$$ [D^+_t u = \dfc D_xD_x u - \beta u]^n_i\tp$$
+
+Assuming \( A^ne^{ikx} \) we find that
+
+$$ u^n_i = (1 - 4F\sin^p -q)^n\sin kx\tp$$
+
+We are particularly interested in what happens at one time step. That is,
+
+$$ u^{n}_{i} = (1-4F\sin^2 p)u^{n-1}_i\tp$$
+
+<p>
+In the two stage algorithm, we first compute the diffusion step
+
+$$ u^{\stepzero,n+1}_i = (1 - 4F\sin^2 p)u^{n-1}_i\tp$$
+
+Then we use this as input to the decay algorithm and arrive at
+
+$$ u^{\stepone,n+1} = (1-q)u^{\stepzero,n+1} = (1-q)(1-4F\sin^2 p) u^{n-1}_i\tp$$
+
+The splitting approximation over one step is therefore
+
+$$ E = 1 - 4F\sin^p -q - (1-q)(1-4F\sin^2 p) = -q(2 - F\sin^2 p)) $$
 
 <p>
 <p>
@@ -590,6 +858,11 @@ $$ \frac{\partial u}{\partial t} = \dfc\nabla^2 + f(u)\tp$$
 <a href="http://..."><img width="250" align=right src="http://..."></a>
 </footer>
 -->
+
+
+<center style="font-size:80%">
+<!-- copyright only on the titlepage -->
+</center>
 
 
 </body>

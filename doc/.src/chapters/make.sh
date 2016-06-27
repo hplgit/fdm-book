@@ -116,7 +116,6 @@ pdflatex ${mainname}
 compile --device=screen
 cp ${mainname}.pdf ${nickname}-sol.pdf
 rm -f ${mainname}.pdf
-exit
 
 # See http://www2.warwick.ac.uk/fac/sci/statistics/staff/academic-research/firth/software/pdfjam for examples on pdfnup and pdfjam
 

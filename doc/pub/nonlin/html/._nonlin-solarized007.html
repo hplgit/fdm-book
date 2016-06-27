@@ -61,7 +61,11 @@ div { text-align: justify; text-justify: inter-word; }
 
 <!-- tocinfo
 {'highest level': 1,
- 'sections': [('Introduction of basic concepts',
+ 'sections': [('Table of contents',
+               1,
+               'table_of_contents',
+               'table_of_contents'),
+              ('Introduction of basic concepts',
                1,
                'nonlin:timediscrete:logistic',
                'nonlin:timediscrete:logistic'),
@@ -192,8 +196,15 @@ div { text-align: justify; text-justify: inter-word; }
                2,
                'nonlin:splitting:ODE_Strang',
                'nonlin:splitting:ODE_Strang'),
-              ('Example: Logistic growth', 2, None, '___sec53'),
-              ('Reaction-diffusion equation', 2, None, '___sec54'),
+              ('Example: Logistic growth',
+               2,
+               'nonlin:splitting:logistic',
+               'nonlin:splitting:logistic'),
+              ('Reaction-diffusion equation',
+               2,
+               'nonlin:splitting:RD',
+               'nonlin:splitting:RD'),
+              ('Analysis of the splitting method', 2, None, '___sec55'),
               ('Exercises', 1, 'nonlin:exer', 'nonlin:exer'),
               ('Problem 1: Determine if equations are nonlinear or not',
                2,
@@ -255,7 +266,7 @@ div { text-align: justify; text-justify: inter-word; }
                2,
                'nonlin:exer:continuation:1DnNflow',
                'nonlin:exer:continuation:1DnNflow'),
-              ('Bibliography', 1, None, '___sec71')]}
+              ('Bibliography', 1, None, '___sec72')]}
 end of tocinfo -->
 
 <body>
@@ -285,6 +296,9 @@ $$
 \newcommand{\dfc}{\alpha}  % diffusion coefficient
 \newcommand{\Ix}{\mathcal{I}_x}
 \newcommand{\Iy}{\mathcal{I}_y}
+\newcommand{\stepzero}{*}
+\newcommand{\stephalf}{***}
+\newcommand{\stepone}{**}
 \newcommand{\baspsi}{\psi}
 $$
 
@@ -347,7 +361,7 @@ a nonlinear growth rate,
 $$
 \begin{equation}
 u^{\prime} = a(u)u,\quad u(0)=I,
-\tag{74}
+\tag{82}
 \end{equation}
 $$
 
@@ -364,7 +378,7 @@ An \( a(u) \) that generalizes the linear choice is the polynomial form
 $$
 \begin{equation}
 a(u) = \varrho(1-u/M)^p,
-\tag{75}
+\tag{83}
 \end{equation}
 $$
 
@@ -373,7 +387,7 @@ where \( p>0 \) is some real number.
 <p>
 <b>a)</b>
 Formulate a Forward Euler, Backward Euler, and a Crank-Nicolson
-scheme for <a href="#mjx-eqn-74">(74)</a>.
+scheme for <a href="#mjx-eqn-82">(82)</a>.
 
 <p>
 <!-- --- begin hint in exercise --- -->
@@ -399,8 +413,8 @@ Formulate Picard and Newton iteration for the Backward Euler scheme in a).
 <p>
 <b>c)</b>
 Implement the numerical solution methods from a) and b).
-Use <a href="http://tinyurl.com/nm5587k/nonlin/logistic.py" target="_self"><tt>logistic.py</tt></a> to compare the case
-\( p=1 \) and the choice <a href="#mjx-eqn-75">(75)</a>.
+Use <a href="http://tinyurl.com/nu656p2/nonlin/logistic.py" target="_self"><tt>logistic.py</tt></a> to compare the case
+\( p=1 \) and the choice <a href="#mjx-eqn-83">(83)</a>.
 
 <p>
 <!-- removed !bsol ... !esol environment (because of the command-line option --without_solutions)
@@ -428,7 +442,7 @@ appropriate tolerance is for testing the asymptotic limit.
 <p>
 <b>e)</b>
 Perform experiments with Newton and Picard iteration for
-the model <a href="#mjx-eqn-75">(75)</a>.
+the model <a href="#mjx-eqn-83">(83)</a>.
 See how sensitive
 the number of iterations is to \( \Delta t \) and \( p \).
 
@@ -450,13 +464,13 @@ Filename: <code>logistic_p</code>.
 <h2 id="nonlin:exer:Newton:problems1">Problem 3: Experience the behavior of Newton's method</h2>
 
 <p>
-The program <a href="http://tinyurl.com/nm5587k/nonlin/Newton_demo.py" target="_self"><tt>Newton_demo.py</tt></a> illustrates
+The program <a href="http://tinyurl.com/nu656p2/nonlin/Newton_demo.py" target="_self"><tt>Newton_demo.py</tt></a> illustrates
 graphically each step in Newton's method and is run like
 
 <p>
 
 <!-- code=text (!bc sys) typeset with pygments style "perldoc" -->
-<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%">Terminal&gt; python Newton_demo.py f dfdx x0 xmin xmax
+<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%"><span></span>Terminal&gt; python Newton_demo.py f dfdx x0 xmin xmax
 </pre></div>
 <p>
 Use this program to investigate potential
@@ -467,7 +481,7 @@ behavior. Just run
 <p>
 
 <!-- code=text (!bc sys) typeset with pygments style "perldoc" -->
-<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%">Terminal&gt;  python Newton_demo.py &#39;0.2 + exp(-0.5*x**2)*cos(pi*x)&#39; \ 
+<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%"><span></span>Terminal&gt;  python Newton_demo.py &#39;0.2 + exp(-0.5*x**2)*cos(pi*x)&#39; \ 
            &#39;-x*exp(-x**2)*cos(pi*x) - pi*exp(-x**2)*sin(pi*x)&#39; \ 
            0.85 -3 3
 </pre></div>
@@ -500,7 +514,7 @@ Consider a nonlinear vibration problem
 $$
 \begin{equation}
 mu^{\prime\prime} + bu^{\prime}|u^{\prime}| + s(u) = F(t),
-\tag{76}
+\tag{84}
 \end{equation}
 $$
 
@@ -561,7 +575,7 @@ we can take the arithmetic mean of each factor \( P \) and \( Q \),
 $$
 \begin{equation}
 [PQ]^{n+\frac{1}{2}} \approx \frac{1}{2}(P^n + P^{n+1})\frac{1}{2}(Q^n + Q^{n+1}),
-\tag{77}
+\tag{85}
 \end{equation}
 $$
 
@@ -570,7 +584,7 @@ or we can take the arithmetic mean of the product \( PQ \):
 $$
 \begin{equation}
 [PQ]^{n+\frac{1}{2}} \approx \frac{1}{2}(P^nQ^n + P^{n+1}Q^{n+1})\tp
-\tag{78}
+\tag{86}
 \end{equation}
 $$
 
@@ -580,14 +594,14 @@ of \( P(t_{n+\frac{1}{2}}) \) is \( \Oof{\Delta t^2} \):
 
 $$ P(t_{n+\frac{1}{2}}) = \frac{1}{2}(P^n + P^{n+1}) +\Oof{\Delta t^2}\tp$$
 
-A fundamental question is whether <a href="#mjx-eqn-77">(77)</a>
-and <a href="#mjx-eqn-78">(78)</a> have different
+A fundamental question is whether <a href="#mjx-eqn-85">(85)</a>
+and <a href="#mjx-eqn-86">(86)</a> have different
 orders of accuracy in \( \Delta t = t_{n+1}-t_n \). To investigate
 this question, expand quantities at \( t_{n+1} \) and \( t_n \) in
 Taylor series around \( t_{n+\frac{1}{2}} \), and subtract the true
 value \( [PQ]^{n+\frac{1}{2}} \) from the approximations
-<a href="#mjx-eqn-77">(77)</a> and
-<a href="#mjx-eqn-78">(78)</a> to see what the
+<a href="#mjx-eqn-85">(85)</a> and
+<a href="#mjx-eqn-86">(86)</a> to see what the
 order of the error terms are.
 
 <p>
@@ -603,7 +617,7 @@ created as follows:
 <p>
 
 <!-- code=python (!bc pyshell) typeset with pygments style "perldoc" -->
-<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%">&gt;&gt;&gt; <span style="color: #8B008B; font-weight: bold">from</span> <span style="color: #008b45; text-decoration: underline">sympy</span> <span style="color: #8B008B; font-weight: bold">import</span> *
+<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%"><span></span>&gt;&gt;&gt; <span style="color: #8B008B; font-weight: bold">from</span> <span style="color: #008b45; text-decoration: underline">sympy</span> <span style="color: #8B008B; font-weight: bold">import</span> *
 &gt;&gt;&gt; t, dt = symbols(<span style="color: #CD5555">&#39;t dt&#39;</span>)
 &gt;&gt;&gt; P = symbols(<span style="color: #CD5555">&#39;P&#39;</span>, cls=Function)
 &gt;&gt;&gt; P(t).series(t, <span style="color: #B452CD">0</span>, <span style="color: #B452CD">4</span>)
@@ -623,7 +637,7 @@ The error of the arithmetic mean, \( \frac{1}{2}(P(-\frac{1}{2}\Delta t)
 <p>
 
 <!-- code=python (!bc pyshell) typeset with pygments style "perldoc" -->
-<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%">&gt;&gt;&gt; P_m = P(t).series(t, <span style="color: #B452CD">0</span>, <span style="color: #B452CD">4</span>).subs(t, -dt/<span style="color: #B452CD">2</span>)
+<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%"><span></span>&gt;&gt;&gt; P_m = P(t).series(t, <span style="color: #B452CD">0</span>, <span style="color: #B452CD">4</span>).subs(t, -dt/<span style="color: #B452CD">2</span>)
 &gt;&gt;&gt; mean = Rational(<span style="color: #B452CD">1</span>,<span style="color: #B452CD">2</span>)*(P_m + P_p)
 &gt;&gt;&gt; error = simplify(expand(mean) - P(<span style="color: #B452CD">0</span>))
 &gt;&gt;&gt; error
@@ -631,8 +645,8 @@ dt**<span style="color: #B452CD">2</span>*Subs(Derivative(P(_x), _x, _x), (_x,),
 </pre></div>
 <p>
 Use these examples to investigate the error of
-<a href="#mjx-eqn-77">(77)</a> and
-<a href="#mjx-eqn-78">(78)</a> for \( n=0 \). (Choosing \( n=0 \)
+<a href="#mjx-eqn-85">(85)</a> and
+<a href="#mjx-eqn-86">(86)</a> for \( n=0 \). (Choosing \( n=0 \)
 is necessary for not making the expressions too complicated for <code>sympy</code>,
 but there is of course no lack of generality by using \( n=0 \) rather
 than an arbitrary \( n \) - the main point is the product and addition
@@ -669,12 +683,12 @@ We consider the problem
 $$
 \begin{equation}
 ((1 + u^2)u^{\prime})^{\prime} = 1,\quad x\in (0,1),\quad u(0)=u(1)=0\tp
-\tag{79}
+\tag{87}
 \end{equation}
 $$
 
 <p>
-Discretize <a href="#mjx-eqn-79">(79)</a> by a centered
+Discretize <a href="#mjx-eqn-87">(87)</a> by a centered
 finite difference method on a uniform mesh.
 Filename: <code>nonlin_1D_coeff_discretize</code>.
 
@@ -692,29 +706,29 @@ We have a two-point boundary value problem
 $$
 \begin{equation}
 ((1 + u^2)u^{\prime})^{\prime} = 1,\quad x\in (0,1),\quad u(0)=u(1)=0\tp
-\tag{80}
+\tag{88}
 \end{equation}
 $$
 
 <p>
 <b>a)</b>
-Construct a Picard iteration method for <a href="#mjx-eqn-80">(80)</a>
+Construct a Picard iteration method for <a href="#mjx-eqn-88">(88)</a>
 without discretizing in space.
 
 <p>
 <b>b)</b>
-Apply Newton's method to <a href="#mjx-eqn-80">(80)</a>
+Apply Newton's method to <a href="#mjx-eqn-88">(88)</a>
 without discretizing in space.
 
 <p>
 <b>c)</b>
-Discretize <a href="#mjx-eqn-80">(80)</a> by a centered finite
+Discretize <a href="#mjx-eqn-88">(88)</a> by a centered finite
 difference scheme. Construct a Picard method for the resulting
 system of nonlinear algebraic equations.
 
 <p>
 <b>d)</b>
-Discretize <a href="#mjx-eqn-80">(80)</a> by a centered finite
+Discretize <a href="#mjx-eqn-88">(88)</a> by a centered finite
 difference scheme. Define the system of nonlinear algebraic equations,
 calculate the Jacobian, and set up Newton's method for solving the system.
 
@@ -735,14 +749,14 @@ We address the so-called Bratu problem
 $$
 \begin{equation}
 u^{\prime\prime} + \lambda e^u=0,\quad x\in (0,1),\quad u(0)=u(1)=0,
-\tag{81}
+\tag{89}
 \end{equation}
 $$
 
 where \( \lambda \) is a given parameter and \( u \) is a function of \( x \).
 This is a widely used model problem for studying numerical
 methods for nonlinear differential equations.
-The problem <a href="#mjx-eqn-81">(81)</a> has an
+The problem <a href="#mjx-eqn-89">(89)</a> has an
 exact solution
 
 $$ \uex(x) = -2\ln\left(\frac{\cosh((x-\half)\theta/2)}{\cosh(\theta/4)}\right),$$
@@ -751,7 +765,7 @@ where \( \theta \) solves
 
 $$ \theta = \sqrt{2\lambda}\cosh(\theta/4)\tp$$
 
-There are two solutions of <a href="#mjx-eqn-81">(81)</a> for
+There are two solutions of <a href="#mjx-eqn-89">(89)</a> for
 \( 0 < \lambda < \lambda_c \) and no solution for \( \lambda >\lambda_c \).
 For \( \lambda = \lambda_c \) there is one unique solution. The critical
 value \( \lambda_c \) solves
@@ -762,7 +776,7 @@ A numerical value is \( \lambda_c = 3.513830719 \).
 
 <p>
 <b>a)</b>
-Discretize <a href="#mjx-eqn-81">(81)</a> by a
+Discretize <a href="#mjx-eqn-89">(89)</a> by a
 centered finite difference method.
 
 <p>
@@ -971,7 +985,7 @@ Picard iteration, both in combination with a continuation method.
 <p>
 <!-- --- end exercise --- -->
 
-<h1 id="___sec71">Bibliography </h1>
+<h1 id="___sec72">Bibliography </h1>
 
 <p>
 <!-- begin bibliography -->
@@ -981,6 +995,18 @@ Picard iteration, both in combination with a continuation method.
     <em>Iterative Methods for Linear and Nonlinear Equations</em>,
     SIAM,
     1995.</li>
+ <li> <div id="Langtangen_Linge"></div> <b>H. P. Langtangen and S. Linge</b>. 
+    <em>Finite Difference Computing with Partial Differential Equations</em>,
+    2016,
+    \urlhttp://tinyurl.com/nho95qh/web,
+    <a href="http://tinyurl.com/nho95qh/web" target="_self"><tt>http://tinyurl.com/nho95qh/web</tt></a>.</li>
+ <li> <div id="Langtangen_decay"></div> <b>H. P. Langtangen</b>. 
+    <em>Finite Difference Computing with Exponential Decay Models</em>,
+    <em>Lecture Notes in Computational Science and Engineering</em>,
+    Springer,
+    2016,
+    \urlhttp://tinyurl.com/nclmcng/web,
+    <a href="http://tinyurl.com/nclmcng/web" target="_self"><tt>http://tinyurl.com/nclmcng/web</tt></a>.</li>
 </ol>
 
 <!-- end bibliography -->
@@ -995,6 +1021,11 @@ Picard iteration, both in combination with a continuation method.
 </p>
 
 <!-- ------------------- end of main content --------------- -->
+
+
+<center style="font-size:80%">
+<!-- copyright only on the titlepage -->
+</center>
 
 
 </body>
