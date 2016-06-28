@@ -79,8 +79,8 @@ def compute_orbit_and_error(
     the 2D position error and cpu time (as lists).
     '''
     def u_exact(t):
-        return np.array([np.cos(t), np.sin(t)])
-
+        return np.array([np.cos(t), np.sin(t)])    
+    
     w = 1
     P = 2*np.pi/w       # scaled period (1 year becomes 2*pi)
     dt = P/timesteps_per_period
@@ -105,69 +105,31 @@ def compute_orbit_and_error(
         print 'Unknown solver requested!'
         sys.exit(1)
 
-    print 'orbit_group_size:', orbit_group_size
-
     t1 = time.clock()
     for i in range(N_orbit_groups):
-        time_points = np.linspace(i*T_interval, (i+1)*T_interval, N+1)
+        time_points = np.linspace(i*T_interval, (i+1)*T_interval,N+1)
         u_e = u_exact(time_points).transpose()
         if solver_ID == 'RK4':
             solver = odespy.RK4(f)
             solver.set_initial_condition(A)
             ui, ti = solver.solve(time_points)
             #find error (correct final pos:  x=1, y=0)
-
-            if E_measure == 'final_E':
-                orbit_error = np.sqrt((1-ui[-1,0])**2 +
-                                      (0-ui[-1,2])**2)*100
-            elif E_measure == 'max_E':
-                orbit_error = np.sqrt((ui[:,0]-u_e[:,0])**2 +
-                                      (ui[:,2]-u_e[:,1])**2).max()
-            elif E_measure == 'all_E':
-                orbit_error = np.sqrt(
-                dt*np.sum((ui[:,0]-u_e[:,0])**2 +
-                          (ui[:,2]-u_e[:,1])**2))
-            else:
-                print 'Unknown error measure requested!'
-                sys.exit(1)
+            orbit_error = np.sqrt(
+                (ui[:,0]-u_e[:,0])**2 + (ui[:,2]-u_e[:,1])**2).max()
         elif solver_ID == 'EC':
             solver = odespy.EulerCromer(f)
             solver.set_initial_condition(A)
             ui, ti = solver.solve(time_points)
             #find error (correct final pos:  x=1, y=0)
-
-            if E_measure == 'final_E':
-                orbit_error = np.sqrt((1-ui[-1,1])**2 +
-                                      (0-ui[-1,3])**2)*100
-            elif E_measure == 'max_E':
-                orbit_error = np.sqrt((ui[:,1]-u_e[:,0])**2 +
-                                      (ui[:,3]-u_e[:,1])**2).max()
-            elif E_measure == 'all_E':
-                orbit_error = np.sqrt(
-                    dt*np.sum((ui[:,1]-u_e[:,0])**2 +
-                              (ui[:,3]-u_e[:,1])**2))
-            else:
-                print 'Unknown error measure requested!'
-                sys.exit(1)
+            orbit_error = np.sqrt(
+                (ui[:,1]-u_e[:,0])**2 + (ui[:,3]-u_e[:,1])**2).max()
         else:   # solver_ID == 'PEFRL':
             # Note: every T_inverval is here counted from time 0
             ui, vi, ti = solver_PEFRL(I, V, f, dt, T_interval)
             #find error (correct final pos:  x=1, y=0)
+            orbit_error = np.sqrt(
+                (ui[:,0]-u_e[:,0])**2 + (ui[:,1]-u_e[:,1])**2).max()
 
-            if E_measure == 'final_E':
-                orbit_error = np.sqrt((1-ui[-1,0])**2 +
-                                      (0-ui[-1,1])**2)*100
-            elif E_measure == 'max_E':
-                orbit_error = np.sqrt(
-                    (ui[:,0]-u_e[:,0])**2 +
-                    (ui[:,1]-u_e[:,1])**2).max()
-            elif E_measure == 'all_E':
-                orbit_error = np.sqrt(
-                    dt*np.sum((ui[:,0]-u_e[:,0])**2 +
-                              (ui[:,1]-u_e[:,1])**2))
-            else:
-                print 'Unknown error measure requested!'
-                sys.exit(1)
         print '      Orbit no. %d,   max error (per cent): %g' % \
                            ((i+1)*orbit_group_size, orbit_error)
 
@@ -188,10 +150,10 @@ def compute_orbit_and_error(
 
 def orbit_error_vs_dt(
     f_EC, f_RK4, g, solvers,
-    N_orbit_groups=1000,
+    N_orbit_groups=1000,    
     orbit_group_size=10):
     '''
-    With each solver in list "solvers": Simulate
+    With each solver in list "solvers": Simulate 
     orbit_group_size*N_orbit_groups orbits with different dt values.
     Collect final 2D position error for each dt and plot all errors.
     '''
@@ -201,11 +163,9 @@ def orbit_error_vs_dt(
         E_values = []
         dt_values = []
         cpu_values = []
-
-        #for timesteps_per_period in 400, 800, 1600, 3200:
-        for timesteps_per_period in \
-                50, 100, 200, 400, 800, 1600, 3200:
-            print '... steps per period: ', timesteps_per_period
+        for timesteps_per_period in 200, 400, 800, 1600:
+            print '.......time steps per period: ', \
+                                      timesteps_per_period
             if solver_ID == 'RK4':
                 dt, E, cpu_time = compute_orbit_and_error(
                     f_RK4,
@@ -232,49 +192,12 @@ def orbit_error_vs_dt(
                 sys.exit(1)
 
             dt_values.append(dt)
-            E_values.append(E[-1])  # need only after 10 000 cycles
-            cpu_values.append(cpu_time[-1])
-            #print 'CPU (in hours):', cpu_time
-        #print 'E_values (10 000 years, changing dt):', E_values
-        #print 'dt_values (10 000 years):', dt_values
-        #print 'cpu_values (10 000 years, changing dt):', cpu_values
-        #plt.figure()
-        #plt.plot(dt_values, cpu_values, 'b*')
-        #plt.xlabel('dt')
-        #plt.ylabel('CPU (hours)')
-        #plt.title(solver_ID)
-        #plt.show()
-        #filename = solver_ID + '_CPU_with_dt'
-        #plt.savefig(filename + '.png')
-        #plt.savefig(filename + '.pdf')
-        #plt.figure()
-        #plt.plot(dt_values, E_values, 'b*')
-        #plt.xlabel('dt')
-        #plt.ylabel('E max')
-        #plt.title(solver_ID)
-        #plt.show()
-        #filename = solver_ID + 'Emax_with_dt'
-        #plt.savefig(filename + '.png')
-        #plt.savefig(filename + '.pdf')
-
-        # Now make empirical formula: C*dt**r
-        # i.e., we only estimate the conv. rate r
-
-        E_values =  np.array(E_values)
-        dt_values = np.array(dt_values)
-        m = len(E_values)
-
-        r = [np.log(E_values[i-1]/E_values[i])/
-             np.log(dt_values[i-1]/dt_values[i])
-             for i in range(1, m, 1)]
-        print 'convergence rates (%s): %s' % (solver_ID, r)
-
-        #tol = 0.1
-        #if solver_ID == 'EC':   # should be 1st order
-        #    assert abs(r[-1] - 1.0) < tol
-        #else:   # RK4 and PEFRL should be 4th order
-        #    assert abs(r[-1] - 4.0) < tol
-
+            E_values.append(np.array(E).max())  
+            cpu_values.append(cpu_time)
+        print 'dt_values:', dt_values
+        print 'E max with dt...:', E_values
+        print 'cpu_values with dt...:', cpu_values
+        
 
 def orbit_error_vs_years(
     f_EC, f_RK4, g, solvers,
@@ -283,10 +206,10 @@ def orbit_error_vs_years(
     N_time_steps = 1000):
     '''
     For each solver in the list solvers:
-    simulate orbit_group_size*N_orbit_groups orbits with a fixed
-    dt corresponding to N_time_steps steps per cycle (year).
-    Collect max 2D position errors for each N_time_steps'th run,
-    plot these errors and CPU. Finally, make an empirical
+    simulate orbit_group_size*N_orbit_groups orbits with a fixed 
+    dt corresponding to N_time_steps steps per cycle (year). 
+    Collect max 2D position errors for each N_time_steps'th run, 
+    plot these errors and CPU. Finally, make an empirical 
     formula for error and CPU as functions of a number
     of cycles.
     '''
@@ -322,20 +245,23 @@ def orbit_error_vs_years(
         # E and cpu_time are for every N_orbit_groups cycle
         print 'E_values (fixed dt, changing no of years):', E
         print 'CPU (hours):', cpu_time
-        years = range(0, N_orbit_groups)
+        years = np.arange(0, 
+                       N_orbit_groups*orbit_group_size, 
+                       orbit_group_size)
 
         # Now make empirical formula
 
         def E_of_years(x, *coeff):
-            return sum(coeff[i]*x*i for i in range(len(coeff)))
+            return sum(coeff[i]*x**float((len(coeff)-1)-i) \
+                       for i in range(len(coeff)))
         E =  np.array(E)
-        years = np.array(years)
         degree = 4
-        p = np.polyfit(years, E, degree+1)
+        # note index: polyfit finds p[0]*x**4 + p[1]*x**3 ...etc.
+        p = np.polyfit(years, E, degree)  
         p_str = map(str, p)
-        formula = ' + '.join([p_str[i] + '*x**' + str(i) for i in range(degree)])
-        #formula = p_str[0] + '*x**4 + ' + p_str[1] + '*x**3 + ' + \
-        #      p_str[2] + '*x**2 + ' + p_str[3] + '*x + ' + p_str[4]
+        formula = ' + '.join([p_str[i] + '*x**' + \
+                        str(degree-i) for i in range(degree+1)])
+
         print 'Empirical formula (E with years):  ', formula
         plt.figure()
         plt.plot(years,
@@ -345,10 +271,15 @@ def orbit_error_vs_years(
         plt.xlabel('Number of years')
         plt.ylabel('orbit error (in per cent, fixed dt)')
         plt.title(solver_ID)
-        filename = solver_ID + '_E_with_dt'
+        filename = solver_ID + '_E_with_years'
         plt.savefig(filename + '.png')
         plt.savefig(filename + '.pdf')
         plt.show()
+        
+        print 'Predicted CPU time in hours (1 billion years):', \
+                                            cpu_time*10000
+        print 'Predicted max error (1 billion years):', \
+                                        E_of_years(1E9, *p)
 
 def compute_orbit_error_and_CPU():
     '''
@@ -381,21 +312,19 @@ def compute_orbit_error_and_CPU():
         d = -(u[0]**2 + u[1]**2)**(-3.0/2)
         return np.array([d*u[0], d*u[1]])
 
-    #print 'Find orbit error as fu. of dt...(10000 orbits)'
-    #solvers = ['RK4', 'EC', 'PEFRL']
-    #N_orbit_groups=1
-    #orbit_group_size=10000
-    #orbit_group_size=1000
-    #orbit_error_vs_dt(
-    #    f_EC, f_RK4, g, solvers,
-    #    N_orbit_groups=N_orbit_groups,
-    #    orbit_group_size=orbit_group_size)
+    print 'Find orbit error as fu. of dt...(10000 orbits)'
+    solvers = ['RK4', 'EC', 'PEFRL']    
+    N_orbit_groups=1
+    orbit_group_size=10000
+    orbit_error_vs_dt(
+        f_EC, f_RK4, g, solvers,
+        N_orbit_groups=N_orbit_groups,
+        orbit_group_size=orbit_group_size)
 
     print 'Compute orbit error as fu. of no of years (fixed dt)...'
-    solvers = ['PEFRL']
-    #N_orbit_groups=10000
-    N_orbit_groups=10
-    orbit_group_size=10
+    solvers = ['PEFRL']    
+    N_orbit_groups=100
+    orbit_group_size=1000   
     N_time_steps = 1600    # no of steps per orbit cycle
     orbit_error_vs_years(
         f_EC, f_RK4, g, solvers,
