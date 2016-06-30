@@ -226,7 +226,7 @@ def test_solvers():
 def convergence_rates(
     u_exact,                 # Python function for exact solution
     I, f, a, b, L,           # physical parameters
-    dt_Rfactor, dt0, num_meshes, F, T):  # numerical parameters
+    dx, dt_Rfactor, dt0, num_meshes, T):  # numerical parameters
     """
     Halve the time step and estimate convergence rates 
     for num_meshes simulations.
@@ -242,13 +242,16 @@ def convergence_rates(
         if n == 0:
             error = 0
         else:
+            print 'u:', u
+            print 'u_exact:', u_exact(x, t[n])
             error = max(error, np.abs(u - u_exact(x, t[n])).max())
 
     # Run finer and finer resolutions and compute true errors
     E = []
-    h = []  # dt, solver adjusts dx such that C=dt*c/dx
+    h = []  # dt
     dt = dt0
     for i in range(num_meshes):
+        F = a*dt/dx**2
         #ordinary_splitting(I=I, a=a, b=b, L=L, dt=dt, 
         #               dt_Rfactor=dt_Rfactor, F=F, T=T,
         #               user_action=compute_error)
@@ -281,12 +284,11 @@ def test_convrate_sinexp():
     a = 3.5
     b = 1
     L = 1.5
-    #Nx = 4
-    Nx = 40
+    Nx = 4
+    #Nx = 40
     k = np.pi/L
-    F=0.5
-    # Compute dt0 from Nx and F
-    dx = L/Nx;    dt0 = F/a*dx**2
+    dx = L/Nx
+    dt0 = dx**2/(4*a)   # max dt according to stability req.
     dt_Rfactor=1   # local time step in reaction-part is dt/dt_Rfactor
 
     def u_exact(x, t):
@@ -305,11 +307,11 @@ def test_convrate_sinexp():
         a=a,
         b=b,
         L=L,
-        dt0=dt0,
+        dx=dx,
         dt_Rfactor=dt_Rfactor,
+        dt0=dt0,        
         num_meshes=6,
-        F=F,
-        T=1)
+        T=0.2)
     print 'Computed rates:', [round(r_,2) for r_ in r]
     assert abs(r[-1] - 2) < 0.002
 
