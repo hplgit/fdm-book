@@ -92,7 +92,7 @@ be written as follows.
 \quad u^{\stephalf}(t_n)=u^{\stepzero}(t_{n+\half}),
 \quad t\in [t_n,t_n+\Delta t],\\
 \frac{du^{\stepone}}{dt}  &= f_0(u^{\stepone}),
-\quad u^{\stepone}(t_n)=u^{\stephalf}(t_{n+1}),
+\quad u^{\stepone}(t_n)=u^{\stephalf}(t_{n+\half}),
 \quad t\in [t_n+\half\Delta t, t_n+\Delta t]\tp
 \end{align*}
 !et
@@ -129,11 +129,13 @@ with solution $u=(9e^{-t}+1)^{-1}$, into
 !bt
 \[ u'=u - u^2 = f_0(u) + f_1(u), \quad f_0(u)=u,\quad f_1(u)=-u^2\tp\]
 !et
-We solve $u'=f_0(u)$ and $u'=f_2(u)$ by a Forward Euler step.
+We solve $u'=f_0(u)$ and $u'=f_1(u)$ by a Forward Euler step.
 In addition, we add a method where we solve $u'=f_0(u)$ analytically,
 since the equation is actually $u'=u$ with solution $e^t$.
 The software that accompanies the following methods is the file
 "`split_logistic.py`": "${src_nonlin}/split_logistic.py".
+
+=== Splitting techniques ===
 
 Ordinary splitting takes a Forward Euler step for each of the ODEs
 according to
@@ -159,12 +161,14 @@ u^{\stepzero,n} = u(t_n),\quad t\in [t_n,t_n+\half\Delta t],\\
 \frac{u^{\stephalf,n+1}-u^{\stephalf,n}}{\Delta t} &=
 f_1(u^{\stephalf,n}),\quad
 u^{\stephalf,n} = u^{\stepzero, n+\half},\quad t\in [t_n,t_n+\Delta t],\\
-\frac{u^{\stepone, n+\half} - u^{\stepone, n}}{\half\Delta t} &=
+\frac{u^{\stepone, n+1} - u^{\stepone, n+\half}}{\half\Delta t} &=
 f_0(u^{\stepone,n+\half}),\quad
-u^{\stepone,n+\half} = u^{\stephalf,n+\half},\quad
+u^{\stepone,n+\half} = u^{\stephalf,n+1},\quad
 t\in [t_n+\half\Delta t, t_n+\Delta t]\tp
 \end{align}
 !et
+
+=== Verbose implementation ===
 
 The following function computes four solutions arising from the Forward
 Euler method, ordinary splitting, Strang splitting, as well as Strang splitting
@@ -172,10 +176,14 @@ with exact treatment of $u'=f_0(u)$:
 
 @@@CODE src-nonlin/split_logistic.py fromto: import numpy@def solver_compact
 
+=== Compact implementation ===
+
 We have used quite many lines for the steps in the splitting methods.
 Many will prefer to condense the code a bit, as done here:
 
 @@@CODE-8 src-nonlin/split_logistic.py fromto: # Ordinary splitting@return u_FE
+
+=== Results ===
 
 Figure ref{nonlin:splitting:ODE:logistic:fig} shows that the impact of
 splitting is significant. Interestingly, however,
@@ -192,13 +200,13 @@ results, but still the asymptotic values are up to 10% wrong.
 As technique for solving nonlinear ODEs, we realize that the present
 case study is not particularly promising, as the Forward Euler method
 both linearizes the original problem and provides a solution that is
-much more accurate than the splitting.
-In complicated multi-physics settings, splitting
+much more accurate than any of the splitting techniques.
+In complicated multi-physics settings, on the other hand, splitting
 may be the only feasible way to go, and sometimes you really need to apply
 different numerics to different parts of a PDE problem.
 But in very simple problems, like the logistic ODE, splitting is just an
 inferior technique. Still, the logistic ODE is ideal for introducing all
-the mathematical details and for analyzing the behavior.
+the mathematical details and for investigating the behavior.
 
 FIGURE: [fig-nonlin/split_logistic, width=800 frac=1] Effect of ordinary and Strang splitting for the logistic equation. label{nonlin:splitting:ODE:logistic:fig}
 
