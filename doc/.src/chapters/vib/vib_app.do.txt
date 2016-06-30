@@ -1854,12 +1854,15 @@ one billion years by $t_c$), which corresponds to about 2000
 
 !bsubex
 Make solvers based on Odespy for the current problem, using the
-4th-order Runge-Kutta and the Euler-Cromer methods. The position error
-achieved with each solver will depend heavily on the size of the time
-step. With each solver, simulate 10000 orbits and plot the maximum
+4th-order Runge-Kutta and the Euler-Cromer methods. Design your code 
+so that it is easy to include other solvers later (below, you will 
+be asked to extend it with the PEFRL algorithm!). With each 
+solver, simulate 10000 orbits and print the maximum
 position error and CPU time as a function of time step. Note that the
 maximum position error does not necessarily occur at the end of the
-simulation.  Let the time step correspond to 100, 200, 400, 800 and
+simulation. The position error
+achieved with each solver will depend heavily on the size of the time
+step. Let the time step correspond to 200, 400, 800 and
 1600 steps per orbit, respectively.
 Are the results as expected?
 Explain briefly.
@@ -1868,6 +1871,29 @@ Explain briefly.
 We develop functions for computing errors and plotting results where we
 can compare different methods. These functions are shown in the solution to
 item d).
+
+Running the code, the time step sizes become
+!bc dat
+dt_values: [0.031415926535897934, 0.015707963267948967, 
+            0.007853981633974483, 0.003926990816987242]
+!ec
+while corresponding maximum errors (per cent) and CPU values (hours) are, for the 4th-order Runge-Kutta:
+!bc dat
+E max with dt...: [1.9039120763533679, 0.078725095822980734, 
+                   0.0024634501803808152, 7.7174645873596024e-05]
+cpu_values with dt...: [0.028877777777777777, 0.05775555555555556, 
+                        0.11530833333333333, 0.23107499999999997]
+!ec
+and for Euler-Cromer:
+!bc dat
+E max with dt...: [2.0162027425437694, 2.0079773949278992, 
+                   1.9634330507586231, 0.67293858584467869]
+cpu_values with dt...: [0.011680555555555605, 0.02339444444444445, 
+                        0.046877777777777775, 0.0938944444444445]
+!ec
+These results are as expected. The Runge-Kutta implementation is much more accurate than Euler-Cromer, but since it requires more computations, more CPU time is needed. For both methods, accuracy and CPU time both increase as
+the step size is reduced.
+
 !esol
 !esubex
 
@@ -1886,8 +1912,24 @@ Here is a solver function with a proper test function for verification:
 
 !bsubex
 The simulations done previously with the 4th-order Runge-Kutta and
-Euler-Cromer is now to be repeated with the PEFRL solver. Comment
+Euler-Cromer are now to be repeated with the PEFRL solver, so the 
+code must be extended accordingly. Then run the simulations and comment
 on the performance of PEFRL compared to the other two.
+
+!bsol
+With the PEFRL algorithm, we get
+!bc dat
+E max with dt...: [0.0010452575786173163, 6.5310955829464402e-05, 
+                   4.0475768394248492e-06, 2.9391302503251016e-07]
+cpu_values with dt...: [0.01873611111111106, 0.037422222222222294, 
+                        0.07511666666666655, 0.14985]
+!ec
+The accuracy is now dramatically improved compared to 4th-order Runge-Kutta (and Euler-Cromer).
+With 1600 steps per orbit, the PEFRL maximum error is just below $3.0e-07$ per cent, while
+the corresponding error with Runge-Kutta was about $7.7e-05$ per cent! This is striking, 
+considering the fact that the 4th-order Runge-Kutta and the PEFRL schemes are both 4th-order accurate.
+
+!esol
 !esubex
 
 !bsubex
@@ -1900,6 +1942,37 @@ total CPU time spent for all 100000 orbits.
 Now, predict the error and required CPU time for a simulation of 1
 billion years (orbits).  Is it feasible on today's computers to
 simulate the planetary motion for one billion years?
+
+!bsol
+
+The complete code (which also produces the printouts given previously) reads:
+
+@@@CODE exer-vib/vib_PEFRL.py 
+
+The maximum error develops with number of orbits as seen in the following plot,
+where the red dashed curve is from the mathematical model:
+
+FIGURE: [fig-vib/PEFRL_E_with_years, width=600 frac=0.8]
+
+We note that the maximum error achieved during the first 100000 orbits is only 
+about $1.2e-06$ per cent. Not bad!
+
+For the printed CPU and empirical formula, we get:
+!bc dat
+CPU (hours): 1.51591388889
+Empirical formula (E with years):   
+3.15992325978e-26*x**4 + -6.1772567063e-21*x**3 + 
+1.87983349496e-16*x**2 + 2.32924158693e-11*x**1 + 
+5.46989368301e-08*x**0
+!ec
+Since the CPU develops linearly, the CPU time for 100000 orbits can just be multiplied by 10000 to get the
+estimated CPU time required for 1 billion years. This gives 15159 CPU hours (631 days), which is also printed.
+
+With the derived empirical formula, the estimated orbit error after 1 billion years becomes 31593055529 per cent.
+
+[sl: Can we really use the plot and the function to predict max E during 1 billion years? Seems hard.]
+
+!esol
 !esubex
 
 !bremarks
