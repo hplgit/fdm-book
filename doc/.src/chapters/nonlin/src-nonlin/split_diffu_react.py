@@ -14,7 +14,6 @@ def diffusion_FE(I, a, f, L, dt, F, t, T, step_no, user_action=None):
     """
 
     Nt = int(round(T/float(dt)))
-    #t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
     dx = np.sqrt(a*dt/F)
     Nx = int(round(L/dx))
     x = np.linspace(0, L, Nx+1)       # Mesh points in space
@@ -45,7 +44,6 @@ def diffusion_FE(I, a, f, L, dt, F, t, T, step_no, user_action=None):
         u[1:Nx] = u_1[1:Nx] +  \
                   F*(u_1[0:Nx-1] - 2*u_1[1:Nx] + u_1[2:Nx+1]) +\
                   dt*f(u_1[1:Nx], t[step_no+n])
-                  #dt*f(x[1:Nx], t[n])   # if f(x,t), not f(u,t)
         
         # Insert boundary conditions
         u[0] = 0;  u[Nx] = 0
@@ -69,9 +67,8 @@ def diffusion_FE(I, a, f, L, dt, F, t, T, step_no, user_action=None):
     return u_1
 
 
-
-def solver_theta(I, a, f, L, dt, F, T, theta=0.5, u_L=0, u_R=0,
-                 user_action=None):
+def diffusion_theta(I, a, f, L, dt, F, t, T, step_no, theta=0.5, 
+                    u_L=0, u_R=0, user_action=None):
     """
     Full solver for the model problem using the theta-rule
     difference approximation in time (no restriction on F,
@@ -79,10 +76,9 @@ def solver_theta(I, a, f, L, dt, F, T, theta=0.5, u_L=0, u_R=0,
     Vectorized implementation and sparse (tridiagonal)
     coefficient matrix.
     """
-    import time;  t0 = time.clock()  # for measuring the CPU time
 
     Nt = int(round(T/float(dt)))
-    t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
+    #t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
     dx = np.sqrt(a*dt/F)
     Nx = int(round(L/dx))
     x = np.linspace(0, L, Nx+1)       # Mesh points in space
@@ -118,30 +114,38 @@ def solver_theta(I, a, f, L, dt, F, T, theta=0.5, u_L=0, u_R=0,
         format='csr')
     #print A.todense()
 
-    # Set initial condition
-    for i in range(0,Nx+1):
-        u_1[i] = I(x[i])
+    # Allow f to be None or 0
+    if f is None or f == 0:
+        f = lambda x, t: np.zeros((x.size)) \
+            if isinstance(x, np.ndarray) else 0
+
+    # Set initial condition  
+    if isinstance(I, np.ndarray):   # I is an array
+        u_1 = np.copy(I)
+    else:                           # I is a function
+        for i in range(0, Nx+1):
+            u_1[i] = I(x[i])
 
     if user_action is not None:
-        user_action(u_1, x, t, 0)
+        user_action(u_1, x, t, step_no+0)        
 
     # Time loop
     for n in range(0, Nt):
         b[1:-1] = u_1[1:-1] + \
                   Fr*(u_1[:-2] - 2*u_1[1:-1] + u_1[2:]) + \
-                  dt*theta*f(x[1:-1], t[n+1]) + \
-                  dt*(1-theta)*f(x[1:-1], t[n])
+                  dt*theta*f(u_1[1:-1], t[step_no+n+1]) + \
+                  dt*(1-theta)*f(u_1[1:-1], t[step_no+n])
         b[0] = u_L; b[-1] = u_R  # boundary conditions
         u[:] = scipy.sparse.linalg.spsolve(A, b)
 
         if user_action is not None:
-            user_action(u, x, t, n+1)
+            user_action(u, x, t, step_no+(n+1))
 
         # Update u_1 before next step
         u_1, u = u, u_1
 
-    t1 = time.clock()
-    return t1-t0
+    # u is now contained in u_1 (swapping)
+    return u_1
 
 
 def reaction_FE(I, f, L, Nx, dt, dt_Rfactor, t, step_no, 
@@ -213,20 +217,18 @@ def ordinary_splitting(I, a, b, f, L, dt,
             user_action(u, x, t, n+1)
 
 
-def Strang_splitting_1stOrder(I, a, b, f, L, dt, 
-                              dt_Rfactor, F, t, T, 
-                              user_action=None):
+def Strang_splitting_1stOrder(I, a, b, f, L, dt, dt_Rfactor, 
+                              F, t, T, user_action=None):
     '''Strang splitting while still using FE for the diffusion
     step and for the reaction step. Gives 1st order scheme.
     Introduce an extra time mesh t2 for the diffusion part, 
-    since it makes twice as many steps (step is dt/2).
+    since it steps dt/2.
     '''
     Nt = int(round(T/float(dt)))
-    # diff step makes twice the number of steps ...
     t2 = np.linspace(0, Nt*dt, (Nt+1)+Nt)   # Mesh points in diff    
     dx = np.sqrt(a*dt/F)
     Nx = int(round(L/dx))
-    x = np.linspace(0, L, Nx+1)       # Mesh points in space
+    x = np.linspace(0, L, Nx+1)     
     u = np.zeros(Nx+1)
         
     # Set initial condition u(x,0) = I(x)
@@ -242,22 +244,79 @@ def Strang_splitting_1stOrder(I, a, b, f, L, dt,
                                                                              
         # Reaction step (1 dt: from t_n to t_n+1)
         # (potentially many smaller steps within dt)
-        u = reaction_FE(I=u_s, f=f, L=L, Nx=Nx, 
+        u_sss = reaction_FE(I=u_s, f=f, L=L, Nx=Nx, 
                         dt=dt, dt_Rfactor=dt_Rfactor, 
                         t=t, step_no=n, 
                         user_action=None)
 
         # Diffusion step (1/2 dt: from t_n+1/2 to t_n)
-        u_s = diffusion_FE(I=u, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0, 
+        u = diffusion_FE(I=u_sss, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0, 
                            t=t2, T=dt/2.0, step_no=2*n+1,
                            user_action=None)
-
-        # set init. cond. for next step
-        u[:] = u_s[:]
 
         if user_action is not None:
             user_action(u, x, t, n+1)
 
+
+def Strang_splitting_2ndOrder(I, a, b, f, L, dt, dt_Rfactor, 
+                              F, t, T, user_action=None):
+    '''Strang splitting using Crank-Nicolson for the diffusion
+    step (theta-rule) and Adams-Bashforth 2 for the reaction step. 
+    Gives 2nd order scheme. Introduce an extra time mesh t2 for 
+    the diffusion part, since it steps dt/2.
+    '''
+    import odespy
+    Nt = int(round(T/float(dt)))
+    t2 = np.linspace(0, Nt*dt, (Nt+1)+Nt)   # Mesh points in diff    
+    dx = np.sqrt(a*dt/F)
+    Nx = int(round(L/dx))
+    x = np.linspace(0, L, Nx+1)     
+    u = np.zeros(Nx+1)
+        
+    # Set initial condition u(x,0) = I(x)
+    for i in range(0, Nx+1):
+        u[i] = I(x[i])
+
+    reaction_solver = odespy.AdamsBashforth2(f)    
+
+    for n in range(0, Nt):    
+        
+        # Diffusion step (1/2 dt: from t_n to t_n+1/2)
+        # Crank-Nicolson (theta = 0.5, gives 2nd order) 
+        u_s = diffusion_theta(I=u, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0, 
+                              t=t2, T=dt/2.0, step_no=2*n, theta=0.5,
+                              u_L=0, u_R=0, user_action=None)
+                                                                 
+        #u_s = diffusion_FE(I=u, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0, 
+        #                   t=t2, T=dt/2.0, step_no=2*n,
+        #                   user_action=None)
+                                                                 
+        # Reaction step (1 dt: from t_n to t_n+1)
+        # (potentially many smaller steps within dt)
+        #sl: testing -----------------------------------
+        reaction_solver.set_initial_condition(u_s)
+        t_points = np.linspace(0, dt, dt_Rfactor+1)
+        u_AB2, t_ = reaction_solver.solve(t_points) # t_ not needed
+        u_sss = u_AB2[-1,:]  # pick sol at last point in time
+        #-----------------------------------------------
+        
+        #u_sss = reaction_FE(I=u_s, f=f, L=L, Nx=Nx, 
+        #                dt=dt, dt_Rfactor=dt_Rfactor, 
+        #                t=t, step_no=n, 
+        #                user_action=None)
+
+        # Diffusion step (1/2 dt: from t_n+1/2 to t_n)
+        # Crank-Nicolson (theta = 0.5, gives 2nd order) 
+        u = diffusion_theta(I=u_sss, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0, 
+                            t=t2, T=dt/2.0, step_no=2*n+1, theta=0.5,
+                            u_L=0, u_R=0, user_action=None)
+
+        #u = diffusion_FE(I=u_sss, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0, 
+        #                   t=t2, T=dt/2.0, step_no=2*n+1,
+        #                   user_action=None)
+
+        if user_action is not None:
+            user_action(u, x, t, n+1)
 
 
 
@@ -317,12 +376,12 @@ def convergence_rates(scheme='diffusion'):
                                       user_action=action)       
         elif scheme == 'Strang_splitting_2ndOrder':
             print 'Running Strang splitting with 2nd order schemes...'
-            print 'Not yet implemented.'        
-            sys.exit(0)
+            Strang_splitting_2ndOrder(I=I, a=a, b=b, f=f, L=L, dt=dt, 
+                                      dt_Rfactor=1, F=F, t=t, T=T,
+                                      user_action=action)       
         else:
             print 'Unknown scheme requested!'
             sys.exit(0)
-                           
                            
         h.append(dt)
         E.append(error)
@@ -342,6 +401,7 @@ if __name__ == '__main__':
                'ordinary_splitting', 
                'Strang_splitting_1stOrder',
                'Strang_splitting_2ndOrder']
+               
     for scheme in schemes:
         convergence_rates(scheme=scheme)
     
