@@ -73,26 +73,26 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
             U_L = lambda t: 0
         # else: U_L(t) is a function
 
-    u   = np.zeros(Nx+1)   # Solution array at new time level
-    u_1 = np.zeros(Nx+1)   # Solution at 1 time level back
-    u_2 = np.zeros(Nx+1)   # Solution at 2 time levels back
+    u     = np.zeros(Nx+1)   # Solution array at new time level
+    u_n   = np.zeros(Nx+1)   # Solution at 1 time level back
+    u_nm1 = np.zeros(Nx+1)   # Solution at 2 time levels back
 
     Ix = range(0, Nx+1)
     It = range(0, Nt+1)
 
     import time;  t0 = time.clock()  # CPU time measurement
 
-    # Load initial condition into u_1
+    # Load initial condition into u_n
     for i in Ix:
-        u_1[i] = I(x[i])
+        u_n[i] = I(x[i])
 
     if user_action is not None:
-        user_action(u_1, x, t, 0)
+        user_action(u_n, x, t, 0)
 
     # Special formula for the first step
     for i in Ix[1:-1]:
-        u[i] = u_1[i] + dt*V(x[i]) + \
-               0.5*C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) + \
+        u[i] = u_n[i] + dt*V(x[i]) + \
+               0.5*C2*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) + \
                0.5*dt2*f(x[i], t[0])
 
     i = Ix[0]
@@ -102,8 +102,8 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
         # x=L: i+1 -> i-1 since u[i+1]=u[i-1])
         ip1 = i+1
         im1 = ip1  # i-1 -> i+1
-        u[i] = u_1[i] + dt*V(x[i]) + \
-               0.5*C2*(u_1[im1] - 2*u_1[i] + u_1[ip1]) + \
+        u[i] = u_n[i] + dt*V(x[i]) + \
+               0.5*C2*(u_n[im1] - 2*u_n[i] + u_n[ip1]) + \
                0.5*dt2*f(x[i], t[0])
     else:
         u[0] = U_0(dt)
@@ -112,8 +112,8 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
     if U_L is None:
         im1 = i-1
         ip1 = im1  # i+1 -> i-1
-        u[i] = u_1[i] + dt*V(x[i]) + \
-               0.5*C2*(u_1[im1] - 2*u_1[i] + u_1[ip1]) + \
+        u[i] = u_n[i] + dt*V(x[i]) + \
+               0.5*C2*(u_n[im1] - 2*u_n[i] + u_n[ip1]) + \
                0.5*dt2*f(x[i], t[0])
     else:
         u[i] = U_L(dt)
@@ -122,20 +122,20 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
         user_action(u, x, t, 1)
 
     # Update data structures for next step
-    #u_2[:] = u_1;  u_1[:] = u  # safe, but slower
-    u_2, u_1, u = u_1, u, u_2
+    #u_nm1[:] = u_n;  u_n[:] = u  # safe, but slower
+    u_nm1, u_n, u = u_n, u, u_nm1
 
     for n in It[1:-1]:
         # Update all inner points
         if version == 'scalar':
             for i in Ix[1:-1]:
-                u[i] = - u_2[i] + 2*u_1[i] + \
-                       C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) + \
+                u[i] = - u_nm1[i] + 2*u_n[i] + \
+                       C2*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) + \
                        dt2*f(x[i], t[n])
 
         elif version == 'vectorized':
-            u[1:-1] = - u_2[1:-1] + 2*u_1[1:-1] + \
-                      C2*(u_1[0:-2] - 2*u_1[1:-1] + u_1[2:]) + \
+            u[1:-1] = - u_nm1[1:-1] + 2*u_n[1:-1] + \
+                      C2*(u_n[0:-2] - 2*u_n[1:-1] + u_n[2:]) + \
                       dt2*f(x[1:-1], t[n])
         else:
             raise ValueError('version=%s' % version)
@@ -148,8 +148,8 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
             # x=L: i+1 -> i-1 since u[i+1]=u[i-1] when du/dn=0
             ip1 = i+1
             im1 = ip1
-            u[i] = - u_2[i] + 2*u_1[i] + \
-                   C2*(u_1[im1] - 2*u_1[i] + u_1[ip1]) + \
+            u[i] = - u_nm1[i] + 2*u_n[i] + \
+                   C2*(u_n[im1] - 2*u_n[i] + u_n[ip1]) + \
                    dt2*f(x[i], t[n])
         else:
             u[0] = U_0(t[n+1])
@@ -158,8 +158,8 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
         if U_L is None:
             im1 = i-1
             ip1 = im1
-            u[i] = - u_2[i] + 2*u_1[i] + \
-                   C2*(u_1[im1] - 2*u_1[i] + u_1[ip1]) + \
+            u[i] = - u_nm1[i] + 2*u_n[i] + \
+                   C2*(u_n[im1] - 2*u_n[i] + u_n[ip1]) + \
                    dt2*f(x[i], t[n])
         else:
             u[i] = U_L(t[n+1])
@@ -169,12 +169,12 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
                 break
 
         # Update data structures for next step
-        #u_2[:] = u_1;  u_1[:] = u  # safe, but slower
-        u_2, u_1, u = u_1, u, u_2
+        #u_nm1[:] = u_n;  u_n[:] = u  # safe, but slower
+        u_nm1, u_n, u = u_n, u, u_nm1
 
-    # Important to correct the mathematically wrong u=u_2 above
+    # Important to correct the mathematically wrong u=u_nm1 above
     # before returning u
-    u = u_1
+    u = u_n
     cpu_time = time.clock() - t0
     return u, x, t, cpu_time
 

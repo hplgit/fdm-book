@@ -32,10 +32,13 @@ store solutions, etc.
 import time, glob, shutil, os
 import numpy as np
 
-def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
-           user_action=None, version='scalar',
-           stability_safety_factor=1.0):
+def solver(
+    I, V, f, c, U_0, U_L, L, dt, C, T,
+    user_action=None, version='scalar',
+    stability_safety_factor=1.0):
     """Solve u_tt=(c^2*u_x)_x + f on (0,L)x(0,T]."""
+
+    # --- Compute time and space mesh ---
     Nt = int(round(T/dt))
     t = np.linspace(0, Nt*dt, Nt+1)      # Mesh points in time
 
@@ -51,7 +54,7 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
     dx = x[1] - x[0]
     dt = t[1] - t[0]
 
-    # Treat c(x) as array
+    # Make c(x) available as array
     if isinstance(c, (float,int)):
         c = np.zeros(x.shape) + c
     elif callable(c):
@@ -64,7 +67,7 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
     q = c**2
     C2 = (dt/dx)**2; dt2 = dt*dt    # Help variables in the scheme
 
-    # Wrap user-given f, I, V, U_0, U_L if None or 0
+    # --- Wrap user-given f, I, V, U_0, U_L if None or 0 ---
     if f is None or f == 0:
         f = (lambda x, t: 0) if version == 'scalar' else \
             lambda x, t: np.zeros(x.shape)
@@ -81,7 +84,7 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
         if isinstance(U_L, (float,int)) and U_L == 0:
             U_L = lambda t: 0
 
-    # Make hash of all input data
+    # --- Make hash of all input data ---
     import hashlib, inspect
     data = inspect.getsource(I) + '_' + inspect.getsource(V) + \
            '_' + inspect.getsource(f) + '_' + str(c) + '_' + \
@@ -94,27 +97,29 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
         # Simulation is already run
         return -1, hashed_input
 
-    u   = np.zeros(Nx+1)   # Solution array at new time level
-    u_1 = np.zeros(Nx+1)   # Solution at 1 time level back
-    u_2 = np.zeros(Nx+1)   # Solution at 2 time levels back
+    # --- Allocate memomry for solutions ---
+    u     = np.zeros(Nx+1)   # Solution array at new time level
+    u_n   = np.zeros(Nx+1)   # Solution at 1 time level back
+    u_nm1 = np.zeros(Nx+1)   # Solution at 2 time levels back
 
     import time;  t0 = time.clock()  # CPU time measurement
 
+    # --- Valid indices for space and time mesh ---
     Ix = range(0, Nx+1)
     It = range(0, Nt+1)
 
-    # Load initial condition into u_1
+    # --- Load initial condition into u_n ---
     for i in range(0,Nx+1):
-        u_1[i] = I(x[i])
+        u_n[i] = I(x[i])
 
     if user_action is not None:
-        user_action(u_1, x, t, 0)
+        user_action(u_n, x, t, 0)
 
-    # Special formula for the first step
+    # --- Special formula for the first step ---
     for i in Ix[1:-1]:
-        u[i] = u_1[i] + dt*V(x[i]) + \
-        0.5*C2*(0.5*(q[i] + q[i+1])*(u_1[i+1] - u_1[i]) - \
-                0.5*(q[i] + q[i-1])*(u_1[i] - u_1[i-1])) + \
+        u[i] = u_n[i] + dt*V(x[i]) + \
+        0.5*C2*(0.5*(q[i] + q[i+1])*(u_n[i+1] - u_n[i]) - \
+                0.5*(q[i] + q[i-1])*(u_n[i] - u_n[i-1])) + \
         0.5*dt2*f(x[i], t[0])
 
     i = Ix[0]
@@ -123,9 +128,9 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
         # when du/dn = 0, on x=L: i+1 -> i-1 since u[i+1]=u[i-1])
         ip1 = i+1
         im1 = ip1  # i-1 -> i+1
-        u[i] = u_1[i] + dt*V(x[i]) + \
-               0.5*C2*(0.5*(q[i] + q[ip1])*(u_1[ip1] - u_1[i])  - \
-                       0.5*(q[i] + q[im1])*(u_1[i] - u_1[im1])) + \
+        u[i] = u_n[i] + dt*V(x[i]) + \
+               0.5*C2*(0.5*(q[i] + q[ip1])*(u_n[ip1] - u_n[i])  - \
+                       0.5*(q[i] + q[im1])*(u_n[i] - u_n[im1])) + \
         0.5*dt2*f(x[i], t[0])
     else:
         u[i] = U_0(dt)
@@ -134,9 +139,9 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
     if U_L is None:
         im1 = i-1
         ip1 = im1  # i+1 -> i-1
-        u[i] = u_1[i] + dt*V(x[i]) + \
-               0.5*C2*(0.5*(q[i] + q[ip1])*(u_1[ip1] - u_1[i])  - \
-                       0.5*(q[i] + q[im1])*(u_1[i] - u_1[im1])) + \
+        u[i] = u_n[i] + dt*V(x[i]) + \
+               0.5*C2*(0.5*(q[i] + q[ip1])*(u_n[ip1] - u_n[i])  - \
+                       0.5*(q[i] + q[im1])*(u_n[i] - u_n[im1])) + \
         0.5*dt2*f(x[i], t[0])
     else:
         u[i] = U_L(dt)
@@ -145,22 +150,23 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
         user_action(u, x, t, 1)
 
     # Update data structures for next step
-    #u_2[:] = u_1;  u_1[:] = u  # safe, but slower
-    u_2, u_1, u = u_1, u, u_2
+    #u_nm1[:] = u_n;  u_n[:] = u  # safe, but slower
+    u_nm1, u_n, u = u_n, u, u_nm1
 
+    # --- Time loop ---
     for n in It[1:-1]:
         # Update all inner points
         if version == 'scalar':
             for i in Ix[1:-1]:
-                u[i] = - u_2[i] + 2*u_1[i] + \
-                    C2*(0.5*(q[i] + q[i+1])*(u_1[i+1] - u_1[i])  - \
-                        0.5*(q[i] + q[i-1])*(u_1[i] - u_1[i-1])) + \
+                u[i] = - u_nm1[i] + 2*u_n[i] + \
+                    C2*(0.5*(q[i] + q[i+1])*(u_n[i+1] - u_n[i])  - \
+                        0.5*(q[i] + q[i-1])*(u_n[i] - u_n[i-1])) + \
                 dt2*f(x[i], t[n])
 
         elif version == 'vectorized':
-            u[1:-1] = - u_2[1:-1] + 2*u_1[1:-1] + \
-            C2*(0.5*(q[1:-1] + q[2:])*(u_1[2:] - u_1[1:-1]) -
-                0.5*(q[1:-1] + q[:-2])*(u_1[1:-1] - u_1[:-2])) + \
+            u[1:-1] = - u_nm1[1:-1] + 2*u_n[1:-1] + \
+            C2*(0.5*(q[1:-1] + q[2:])*(u_n[2:] - u_n[1:-1]) -
+                0.5*(q[1:-1] + q[:-2])*(u_n[1:-1] - u_n[:-2])) + \
             dt2*f(x[1:-1], t[n])
         else:
             raise ValueError('version=%s' % version)
@@ -173,9 +179,9 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
             # x=L: i+1 -> i-1 since u[i+1]=u[i-1] when du/dn=0
             ip1 = i+1
             im1 = ip1
-            u[i] = - u_2[i] + 2*u_1[i] + \
-                   C2*(0.5*(q[i] + q[ip1])*(u_1[ip1] - u_1[i])  - \
-                       0.5*(q[i] + q[im1])*(u_1[i] - u_1[im1])) + \
+            u[i] = - u_nm1[i] + 2*u_n[i] + \
+                   C2*(0.5*(q[i] + q[ip1])*(u_n[ip1] - u_n[i])  - \
+                       0.5*(q[i] + q[im1])*(u_n[i] - u_n[im1])) + \
             dt2*f(x[i], t[n])
         else:
             u[i] = U_0(t[n+1])
@@ -184,9 +190,9 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
         if U_L is None:
             im1 = i-1
             ip1 = im1
-            u[i] = - u_2[i] + 2*u_1[i] + \
-                   C2*(0.5*(q[i] + q[ip1])*(u_1[ip1] - u_1[i])  - \
-                       0.5*(q[i] + q[im1])*(u_1[i] - u_1[im1])) + \
+            u[i] = - u_nm1[i] + 2*u_n[i] + \
+                   C2*(0.5*(q[i] + q[ip1])*(u_n[ip1] - u_n[i])  - \
+                       0.5*(q[i] + q[im1])*(u_n[i] - u_n[im1])) + \
             dt2*f(x[i], t[n])
         else:
             u[i] = U_L(t[n+1])
@@ -196,13 +202,9 @@ def solver(I, V, f, c, U_0, U_L, L, dt, C, T,
                 break
 
         # Update data structures for next step
-        #u_2[:] = u_1;  u_1[:] = u  # safe, but slower
-        u_2, u_1, u = u_1, u, u_2
+        u_nm1, u_n, u = u_n, u, u_nm1
 
-    # Important to correct the mathematically wrong u=u_2 above
-    # before returning u
-    u = u_1
-    cpu_time = t0 - time.clock()
+    cpu_time = time.clock() - t0
     return cpu_time, hashed_input
 
 
@@ -233,12 +235,14 @@ def test_quadratic():
         tol = 1E-13
         assert diff < tol
 
-    solver(I, V, f, c, U_0, U_L, L/2, dt, C, T,
-           user_action=assert_no_error, version='scalar',
-           stability_safety_factor=1)
-    solver(I, V, f, c, U_0, U_L, L/2, dt, C, T,
-           user_action=assert_no_error, version='vectorized',
-           stability_safety_factor=1)
+    solver(
+        I, V, f, c, U_0, U_L, L/2, dt, C, T,
+        user_action=assert_no_error, version='scalar',
+        stability_safety_factor=1)
+    solver(
+        I, V, f, c, U_0, U_L, L/2, dt, C, T,
+        user_action=assert_no_error, version='vectorized',
+        stability_safety_factor=1)
 
 def test_plug():
     """Check that an initial plug is correct back after one period."""
@@ -409,6 +413,7 @@ class PlotAndStoreSolution:
         """
         # Make HTML movie in a subdirectory
         directory = self.casename
+
         if os.path.isdir(directory):
             shutil.rmtree(directory)   # rm -rf directory
         os.mkdir(directory)            # mkdir directory
@@ -416,7 +421,8 @@ class PlotAndStoreSolution:
         for filename in glob.glob('frame_*.png'):
             os.rename(filename, os.path.join(directory, filename))
         os.chdir(directory)        # cd directory
-        fps = 4 # frames per second
+
+        fps = 24 # frames per second
         if self.backend is not None:
             from scitools.std import movie
             movie('frame_*.png', encoder='html',
@@ -432,6 +438,7 @@ class PlotAndStoreSolution:
             cmd = '%(movie_program)s -r %(fps)d -i %(filespec)s '\
                   '-vcodec %(codec)s movie.%(ext)s' % vars()
             os.system(cmd)
+
         os.chdir(os.pardir)  # move back to parent directory
 
     def close_file(self, hashed_input):
@@ -443,7 +450,7 @@ class PlotAndStoreSolution:
         if self.filename is not None:
             # Save all the time points where solutions are saved
             np.savez('.' + self.filename + '_t.dat',
-                     t=array(self.t, dtype=float))
+                     t=np.array(self.t, dtype=float))
 
             # Merge all savez files to one zip archive
             archive_name = '.' + hashed_input + '_archive.npz'
@@ -490,8 +497,9 @@ def demo_BC_gaussian(C=1, Nx=80, T=4):
     if cpu > 0:  # did we generate new data?
         action.close_file(hashed_input)
 
-def moving_end(C=1, Nx=50, reflecting_right_boundary=True,
-               version='vectorized'):
+def moving_end(
+    C=1, Nx=50, reflecting_right_boundary=True,
+    version='vectorized'):
     # Scaled problem: L=1, c=1, max I=1
     L = 1.
     c = 1
@@ -563,8 +571,8 @@ class PlotMediumAndSolution(PlotAndStoreSolution):
                 self.plt.xlabel('x')
                 self.plt.ylabel('u')
                 self.plt.title(title)
-                self.plt.text(0.75, 1.0, 'C=0.25')
-                self.plt.text(0.32, 1.0, 'C=1')
+                self.plt.text(0.75, 1.0, 'c lower')
+                self.plt.text(0.32, 1.0, 'c=1')
                 self.plt.legend(['t=%.3f' % t[n]])
             else:
                 # Update new solution
@@ -591,23 +599,28 @@ class PlotMediumAndSolution(PlotAndStoreSolution):
 
         self.plt.savefig('frame_%04d.png' % (n))
 
+        if n == (len(t) - 1):   # finished with this run, close plot
+            self.plt.close()
+
+
 def animate_multiple_solutions(*archives):
     a = [load(archive) for archive in archives]
     # Assume the array names are the same in all archives
     raise NotImplementedError  # more to do...
 
-def pulse(C=1,            # aximum Courant number
-          Nx=200,         # spatial resolution
-          animate=True,
-          version='vectorized',
-          T=2,            # end time
-          loc='left',     # location of initial condition
-          pulse_tp='gaussian',  # pulse/init.cond. type
-          slowness_factor=2, # wave vel. in right medium
-          medium=[0.7, 0.9], # interval for right medium
-          skip_frame=1,      # skip frames in animations
-          sigma=0.05,        # width measure of the pulse
-          ):
+def pulse(
+    C=1,            # Maximum Courant number
+    Nx=200,         # spatial resolution
+    animate=True,
+    version='vectorized',
+    T=2,            # end time
+    loc='left',     # location of initial condition
+    pulse_tp='gaussian',  # pulse/init.cond. type
+    slowness_factor=2, # inverse of wave vel. in right medium
+    medium=[0.7, 0.9], # interval for right medium
+    skip_frame=1,      # skip frames in animations
+    sigma=0.05         # width measure of the pulse
+    ):
     """
     Various peaked-shaped initial conditions on [0,1].
     Wave velocity is decreased by the slowness_factor inside
@@ -663,12 +676,79 @@ def pulse(C=1,            # aximum Courant number
     # Choose the stability limit with given Nx, worst case c
     # (lower C will then use this dt, but smaller Nx)
     dt = (L/Nx)/c_0
-    solver(I=I, V=None, f=None, c=c, U_0=None, U_L=None,
-           L=L, dt=dt, C=C, T=T,
-           user_action=action, version=version,
-           stability_safety_factor=1)
-    action.make_movie_file()
-    action.file_close()
+    cpu, hashed_input = solver(
+        I=I, V=None, f=None, c=c,
+        U_0=None, U_L=None,
+        L=L, dt=dt, C=C, T=T,
+        user_action=action,
+        version=version,
+        stability_safety_factor=1)
+
+    if cpu > 0:  # did we generate new data?
+        action.close_file(hashed_input)
+        action.make_movie_file()
+    print 'cpu (-1 means no new data generated):', cpu
+
+def convergence_rates(
+    u_exact,
+    I, V, f, c, U_0, U_L, L,
+    dt0, num_meshes,
+    C, T, version='scalar',
+    stability_safety_factor=1.0):
+    """
+    Half the time step and estimate convergence rates for
+    for num_meshes simulations.
+    """
+    class ComputeError:
+        def __init__(self, norm_type):
+            self.error = 0
+
+        def __call__(self, u, x, t, n):
+            """Store norm of the error in self.E."""
+            error = np.abs(u - u_exact(x, t[n])).max()
+            self.error = max(self.error, error)
+
+    E = []
+    h = []  # dt, solver adjusts dx such that C=dt*c/dx
+    dt = dt0
+    for i in range(num_meshes):
+        error_calculator = ComputeError('Linf')
+        solver(I, V, f, c, U_0, U_L, L, dt, C, T,
+               user_action=error_calculator,
+               version='scalar',
+               stability_safety_factor=1.0)
+        E.append(error_calculator.error)
+        h.append(dt)
+        dt /= 2  # halve the time step for next simulation
+    print 'E:', E
+    print 'h:', h
+    r = [np.log(E[i]/E[i-1])/np.log(h[i]/h[i-1])
+         for i in range(1,num_meshes)]
+    return r
+
+def test_convrate_sincos():
+    n = m = 2
+    L = 1.0
+    u_exact = lambda x, t: np.cos(m*np.pi/L*t)*np.sin(m*np.pi/L*x)
+
+    r = convergence_rates(
+        u_exact=u_exact,
+        I=lambda x: u_exact(x, 0),
+        V=lambda x: 0,
+        f=0,
+        c=1,
+        U_0=0,
+        U_L=0,
+        L=L,
+        dt0=0.1,
+        num_meshes=6,
+        C=0.9,
+        T=1,
+        version='scalar',
+        stability_safety_factor=1.0)
+    print 'rates sin(x)*cos(t) solution:', \
+          [round(r_,2) for r_ in r]
+    assert abs(r[-1] - 2) < 0.002
 
 if __name__ == '__main__':
-    pass
+    test_convrate_sincos()

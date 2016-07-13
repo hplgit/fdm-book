@@ -168,7 +168,7 @@ a time level is implemented in a separate function as
 
 @@@CODE src-wave/wave2D_u0/wave2D_u0.py fromto: def advance_scalar@def advance_ve
 The `step1` variable has been introduced to allow the formula to be
-reused for first step $u^1_{i,j}$:
+reused for the first step, computing $u^1_{i,j}$:
 
 !bc pycod
 u = advance_scalar(u, u_n, f, x, y, t,
@@ -178,12 +178,16 @@ Below, we will make many alternative implementations of the
 `advance_scalar` function to speed up the code since most of
 the CPU time in simulations is spent in this function.
 
-Finally, we remark that the `solver` function in the `wave2D_u0.py` code
+!bnotice Remark: How to use the solution
+The `solver` function in the `wave2D_u0.py` code
 updates arrays for the next time step by switching references as
-described in Section ref{wave:pde1:impl:ref:switch}. If the solution
-`u` is returned from `solver`, which it is not, it is important to
-set `u = u_n` after the time loop, otherwise `u` actually contains
-`u_nm1`.
+described in Section ref{wave:pde1:impl:ref:switch}. Any use of `u` on the
+user's side is assumed to take place in the user action function. However,
+should the code be changed such that `u` is returned and used as solution,
+have in mind that you must return `u_n` after the time lime, otherwise
+a `return u` will actually return `u_nm1` (due to the switching of array
+indices in the loop)!
+!enotice
 
 ===== Vectorized computations =====
 label{wave2D3D:impl:vectorized}

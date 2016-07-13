@@ -103,7 +103,7 @@ $x=0$ and $t=t_n$ by the difference
 
 !bt
 \begin{equation}
-[D_{2x} u]^n_0 = \frac{u_{-1}^n - u_1^n}{2\Delta x} = 0
+[D_{2x} u]^n_0 = \frac{u_{-1}^n - u_n^n}{2\Delta x} = 0
 \tp
 label{wave:pde1:Neumann:0:cd}
 \end{equation}
@@ -122,7 +122,7 @@ label{wave:pde1:Neumann:0:scheme}
 \end{equation}
 !et
 we can eliminate the fictitious value $u_{-1}^n$. We see that
-$u_{-1}^n=u_1^n$ from (ref{wave:pde1:Neumann:0:cd}), which
+$u_{-1}^n=u_n^n$ from (ref{wave:pde1:Neumann:0:cd}), which
 can be used in (ref{wave:pde1:Neumann:0:scheme}) to
 arrive at a modified scheme for the boundary point $u_0^{n+1}$:
 
@@ -190,12 +190,12 @@ is the general stencil formula):
 i = 0
 ip1 = i+1
 im1 = ip1  # i-1 -> i+1
-u[i] = u_1[i] + C2*(u_1[im1] - 2*u_1[i] + u_1[ip1])
+u[i] = u_n[i] + C2*(u_n[im1] - 2*u_n[i] + u_n[ip1])
 
 i = Nx
 im1 = i-1
 ip1 = im1  # i+1 -> i-1
-u[i] = u_1[i] + C2*(u_1[im1] - 2*u_1[i] + u_1[ip1])
+u[i] = u_n[i] + C2*(u_n[im1] - 2*u_n[i] + u_n[ip1])
 !ec
 
 We can in fact create one loop over both the internal and boundary
@@ -205,7 +205,7 @@ points and use only one updating formula:
 for i in range(0, Nx+1):
     ip1 = i+1 if i < Nx else i-1
     im1 = i-1 if i > 0  else i+1
-    u[i] = u_1[i] + C2*(u_1[im1] - 2*u_1[i] + u_1[ip1])
+    u[i] = u_n[i] + C2*(u_n[im1] - 2*u_n[i] + u_n[ip1])
 !ec
 
 The program "`wave1D_n0.py`": "${src_wave}/wave1D/wave1D_n0.py"
@@ -322,14 +322,14 @@ The corresponding implementation becomes
 !bc pycod
 # Initial condition
 for i in Ix[1:-1]:
-    u[i] = u_1[i] - 0.5*C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1])
+    u[i] = u_n[i] - 0.5*C2*(u_n[i-1] - 2*u_n[i] + u_n[i+1])
 
 # Time loop
 for n in It[1:-1]:
     # Compute internal points
     for i in Ix[1:-1]:
-        u[i] = - u_2[i] + 2*u_1[i] + \
-               C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1])
+        u[i] = - u_nm1[i] + 2*u_n[i] + \
+               C2*(u_n[i-1] - 2*u_n[i] + u_n[i+1])
     # Compute boundary conditions
     i = Ix[0];  u[i] = 0
     i = Ix[-1]; u[i] = 0
@@ -421,6 +421,14 @@ the application of the standard scheme at a boundary point $i=0$ or $i=N_x$
 will be correct and guarantee that the solution is compatible with the
 boundary condition $u_x=0$.
 
+Some readers may find it strange to just extend the domain with ghost
+cells as a general technique, because in some problems there is a
+completely different medium with different physics and equations right
+outside of a boundary. Nevertheless, one should view the ghost cell
+technique as a purely mathematical technique, which is valid in the
+limit $\Delta xrightarrow 0$ and helps us to implement derivatives.
+
+
 === Implementation ===
 
 The `u` array now needs extra elements corresponding to the ghost
@@ -429,7 +437,7 @@ points. Two new point values are needed:
 !bc pycod
 u   = zeros(Nx+3)
 !ec
-The arrays `u_1` and `u_2` must be defined accordingly.
+The arrays `u_n` and `u_nm1` must be defined accordingly.
 
 Unfortunately, a major indexing problem arises with ghost cells.
 The reason is that Python indices *must* start
@@ -461,8 +469,8 @@ points in the mesh):
 
 !bc pycod
 for i in Ix:
-    u[i] = - u_2[i] + 2*u_1[i] + \
-           C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1])
+    u[i] = - u_nm1[i] + 2*u_n[i] + \
+           C2*(u_n[i-1] - 2*u_n[i] + u_n[i+1])
 !ec
 The indexing becomes a bit more complicated when we call functions like
 `V(x)` and `f(x, t)`, as we must remember that the appropriate
@@ -470,8 +478,8 @@ $x$ coordinate is given as `x[i-Ix[0]]`:
 
 !bc pycod
 for i in Ix:
-    u[i] = u_1[i] + dt*V(x[i-Ix[0]]) + \
-           0.5*C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) + \
+    u[i] = u_n[i] + dt*V(x[i-Ix[0]]) + \
+           0.5*C2*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) + \
            0.5*dt2*f(x[i-Ix[0]], t[0])
 !ec
 
@@ -504,15 +512,15 @@ x = linspace(0, L, Nx+1)
 
 !bc pycod
 for i in Ix:
-    u_1[i] = I(x[i])
+    u_n[i] = I(x[i])
 !ec
-becomes wrong, since `u_1` and `x` have different lengths and the index `i`
+becomes wrong, since `u_n` and `x` have different lengths and the index `i`
 corresponds to two different mesh points. In fact, `x[i]` corresponds
 to `u[1+i]`. A correct implementation is
 
 !bc pycod
 for i in Ix:
-    u_1[i] = I(x[i-Ix[0]])
+    u_n[i] = I(x[i-Ix[0]])
 !ec
 Similarly, a source term usually coded as `f(x[i], t[n])` is incorrect
 if `x` is defined to be the physical points, so `x[i]` must be
@@ -534,8 +542,8 @@ u = zeros(Nx+2)
 Ix = range(1, u.shape[0])
 ...
 for i in Ix[:-1]:
-    u[i] = - u_2[i] + 2*u_1[i] + \
-           C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) + \
+    u[i] = - u_nm1[i] + 2*u_n[i] + \
+           C2*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) + \
            dt2*f(x[i-Ix[0]], t[n])
 i = Ix[-1]
 u[i] = U_0       # set Dirichlet value
@@ -666,13 +674,13 @@ With operator notation we can write the discretization as
 \left[
 \frac{\partial}{\partial x}\left( q(x)
 \frac{\partial u}{\partial x}\right)\right]^n_i
-\approx [D_xq D_x u]^n_i
+\approx [D_x (\overline{q}^{x} D_x u)]^n_i
 label{wave:pde2:var:c:formula:op}
 \tp
 \end{equation}
 !et
 
-!bwarning Do not use the chain rule on the spatial derivative term
+!bwarning Do not use the chain rule on the spatial derivative term!
 Many are tempted to use the chain rule on the
 term $\frac{\partial}{\partial x}\left( q(x)
 \frac{\partial u}{\partial x}\right)$, but this is not a good idea
@@ -723,18 +731,18 @@ dominates and very few mention the possibility of
 label{wave:pde2:var:c:means}
 
 If $q$ is a known function of $x$, we can easily evaluate
-$q_{i+\half}$ simply as $q(x_{i+\half})$ with
-$x_{i+\half} = x_i + \half\Delta x$.
-However, in many cases $c$, and hence $q$,
-is only known as a discrete function, often at the mesh points $x_i$.
-Evaluating $q$ between two mesh points $x_i$ and $x_{i+1}$ can then
-be done by averaging in three ways:
+$q_{i+\half}$ simply as $q(x_{i+\half})$ with $x_{i+\half} = x_i +
+\half\Delta x$.  However, in many cases $c$, and hence $q$, is only
+known as a discrete function, often at the mesh points $x_i$.
+Evaluating $q$ between two mesh points $x_i$ and $x_{i+1}$ must then
+be done by *interpolation* techniques, of which three are of
+particular interest in this context:
 
 idx{geometric mean} idx{arithmetic mean} idx{harmonic average}
 idx{averaging!geometric} idx{averaging!arithmetic} idx{averaging!harmonic}
 
 !bt
-\begin{align}
+\begin{alignat}{2}
 q_{i+\half} &\approx
 \half\left( q_{i} + q_{i+1}\right) =
 [\overline{q}^{x}]_i
@@ -748,7 +756,7 @@ q_{i+\half} &\approx
 \left(q_{i}q_{i+1}\right)^{1/2}
 \quad &\hbox{(geometric mean)}
 label{wave:pde2:var:c:mean:geometric}
-\end{align}
+\end{alignat}
 !et
 The arithmetic mean in (ref{wave:pde2:var:c:mean:arithmetic}) is by
 far the most commonly used averaging technique and is well suited
@@ -773,17 +781,16 @@ wave equation in a compact way:
 label{wave:pde2:var:c:scheme:op}
 \end{equation}
 !et
-From this notation we immediately see what kind of differences that
+Strictly speaking, $\lbrack D_x\overline{q}^{x}D_x u\rbrack^{n}_i
+= \lbrack D_x (\overline{q}^{x}D_x u)\rbrack^{n}_i$.
+
+From the compact difference notation we immediately see what kind of differences that
 each term is approximated with. The notation $\overline{q}^{x}$
 also specifies that the variable coefficient is approximated by
 an arithmetic mean, the definition being
 $[\overline{q}^{x}]_{i+\half}=(q_i+q_{i+1})/2$.
-With the notation $[D_xq D_x u]^n_i$,
-we specify that $q$ is evaluated directly, as a function,
-between the mesh points:
-$q(x_{i-\half})$ and $q(x_{i+\half})$.
 
-Before any implementation, it remains to solve
+Before implementing, it remains to solve
 (ref{wave:pde2:var:c:scheme:op}) with respect to $u_i^{n+1}$:
 
 !bt
@@ -821,8 +828,8 @@ have stable solutions ($\beta =0.9$ may act as an all-round value).
 
 A different strategy to handle the stability criterion with variable
 wave velocity is to use a spatially varying $\Delta t$. While the idea
-is mathematically attractive at first sight, the implementation quickly
-becomes very complicated, so we stick to using a constant $\Delta t$
+is mathematically attractive at first sight, the implementation
+quickly becomes very complicated, so we stick to a constant $\Delta t$
 and a worst case value of $c(x)$ (with a safety factor $\beta$).
 
 ===== Neumann condition and a variable coefficient =====
@@ -874,7 +881,8 @@ q_i + \left(\frac{dq}{dx}\right)_i \Delta x
 \end{align}
 !et
 
-An alternative derivation may apply the arithmetic mean of $q$ in
+An alternative derivation may apply the arithmetic mean of
+$q_{n-\half}$ and $q_{n+\half}$ in
 (ref{wave:pde2:var:c:scheme:impl:Neumann0}), leading to the term
 
 !bt
@@ -916,9 +924,9 @@ implementation of the scheme (ref{wave:pde2:var:c:scheme:impl}):
 
 !bc pycod
 for i in range(1, Nx):
-    u[i] = - u_2[i] + 2*u_1[i] + \
-           C2*(0.5*(q[i] + q[i+1])*(u_1[i+1] - u_1[i])  - \
-               0.5*(q[i] + q[i-1])*(u_1[i] - u_1[i-1])) + \
+    u[i] = - u_nm1[i] + 2*u_n[i] + \
+           C2*(0.5*(q[i] + q[i+1])*(u_n[i+1] - u_n[i])  - \
+               0.5*(q[i] + q[i-1])*(u_n[i] - u_n[i-1])) + \
            dt2*f(x[i], t[n])
 !ec
 The coefficient `C2` is now defined as `(dt/dx)**2`, i.e., *not* as the
@@ -940,9 +948,9 @@ the boundary with the following code.
 i = 0
 ip1 = i+1
 im1 = ip1
-u[i] = - u_2[i] + 2*u_1[i] + \
-       C2*(0.5*(q[i] + q[ip1])*(u_1[ip1] - u_1[i])  - \
-           0.5*(q[i] + q[im1])*(u_1[i] - u_1[im1])) + \
+u[i] = - u_nm1[i] + 2*u_n[i] + \
+       C2*(0.5*(q[i] + q[ip1])*(u_n[ip1] - u_n[i])  - \
+           0.5*(q[i] + q[im1])*(u_n[i] - u_n[im1])) + \
        dt2*f(x[i], t[n])
 !ec
 
@@ -954,9 +962,9 @@ A vectorized version of the scheme with a variable coefficient
 at internal mesh points becomes
 
 !bc pycod
-u[1:-1] = - u_2[1:-1] + 2*u_1[1:-1] + \
-          C2*(0.5*(q[1:-1] + q[2:])*(u_1[2:] - u_1[1:-1]) -
-              0.5*(q[1:-1] + q[:-2])*(u_1[1:-1] - u_1[:-2])) + \
+u[1:-1] = - u_nm1[1:-1] + 2*u_n[1:-1] + \
+          C2*(0.5*(q[1:-1] + q[2:])*(u_n[2:] - u_n[1:-1]) -
+              0.5*(q[1:-1] + q[:-2])*(u_n[1:-1] - u_n[:-2])) + \
           dt2*f(x[1:-1], t[n])
 !ec
 
@@ -1186,11 +1194,10 @@ generated. There is also a left-going pulse, but it travels from $x=0$
 in negative $x$ direction and is not visible in the domain $[0,L]$.
 
 The `pulse` function is a flexible tool for playing around with
-various wave shapes and location of a medium with a different wave
-velocity.
-
-The code is shown to demonstrate how easy it is to reach this
-flexibility with the building blocks we have already developed:
+various wave shapes and jumps in the wave velocity (i.e.,
+discontinuous media).  The code is shown to demonstrate how easy it is
+to reach this flexibility with the building blocks we have already
+developed:
 
 @@@CODE src-wave/wave1D/wave1D_dn_vc.py fromto: def pulse@if __name
 The `PlotMediumAndSolution` class used here is a subclass of

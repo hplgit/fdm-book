@@ -98,9 +98,9 @@ def solver(
         return -1, hashed_input
 
     # --- Allocate memomry for solutions ---
-    u   = np.zeros(Nx+1)   # Solution array at new time level
-    u_1 = np.zeros(Nx+1)   # Solution at 1 time level back
-    u_2 = np.zeros(Nx+1)   # Solution at 2 time levels back
+    u     = np.zeros(Nx+1)   # Solution array at new time level
+    u_n   = np.zeros(Nx+1)   # Solution at 1 time level back
+    u_nm1 = np.zeros(Nx+1)   # Solution at 2 time levels back
 
     import time;  t0 = time.clock()  # CPU time measurement
 
@@ -108,18 +108,18 @@ def solver(
     Ix = range(0, Nx+1)
     It = range(0, Nt+1)
 
-    # --- Load initial condition into u_1 ---
+    # --- Load initial condition into u_n ---
     for i in range(0,Nx+1):
-        u_1[i] = I(x[i])
+        u_n[i] = I(x[i])
 
     if user_action is not None:
-        user_action(u_1, x, t, 0)
+        user_action(u_n, x, t, 0)
 
     # --- Special formula for the first step ---
     for i in Ix[1:-1]:
-        u[i] = u_1[i] + dt*V(x[i]) + \
-        0.5*C2*(0.5*(q[i] + q[i+1])*(u_1[i+1] - u_1[i]) - \
-                0.5*(q[i] + q[i-1])*(u_1[i] - u_1[i-1])) + \
+        u[i] = u_n[i] + dt*V(x[i]) + \
+        0.5*C2*(0.5*(q[i] + q[i+1])*(u_n[i+1] - u_n[i]) - \
+                0.5*(q[i] + q[i-1])*(u_n[i] - u_n[i-1])) + \
         0.5*dt2*f(x[i], t[0])
 
     i = Ix[0]
@@ -128,9 +128,9 @@ def solver(
         # when du/dn = 0, on x=L: i+1 -> i-1 since u[i+1]=u[i-1])
         ip1 = i+1
         im1 = ip1  # i-1 -> i+1
-        u[i] = u_1[i] + dt*V(x[i]) + \
-               0.5*C2*(0.5*(q[i] + q[ip1])*(u_1[ip1] - u_1[i])  - \
-                       0.5*(q[i] + q[im1])*(u_1[i] - u_1[im1])) + \
+        u[i] = u_n[i] + dt*V(x[i]) + \
+               0.5*C2*(0.5*(q[i] + q[ip1])*(u_n[ip1] - u_n[i])  - \
+                       0.5*(q[i] + q[im1])*(u_n[i] - u_n[im1])) + \
         0.5*dt2*f(x[i], t[0])
     else:
         u[i] = U_0(dt)
@@ -139,9 +139,9 @@ def solver(
     if U_L is None:
         im1 = i-1
         ip1 = im1  # i+1 -> i-1
-        u[i] = u_1[i] + dt*V(x[i]) + \
-               0.5*C2*(0.5*(q[i] + q[ip1])*(u_1[ip1] - u_1[i])  - \
-                       0.5*(q[i] + q[im1])*(u_1[i] - u_1[im1])) + \
+        u[i] = u_n[i] + dt*V(x[i]) + \
+               0.5*C2*(0.5*(q[i] + q[ip1])*(u_n[ip1] - u_n[i])  - \
+                       0.5*(q[i] + q[im1])*(u_n[i] - u_n[im1])) + \
         0.5*dt2*f(x[i], t[0])
     else:
         u[i] = U_L(dt)
@@ -150,23 +150,23 @@ def solver(
         user_action(u, x, t, 1)
 
     # Update data structures for next step
-    #u_2[:] = u_1;  u_1[:] = u  # safe, but slower
-    u_2, u_1, u = u_1, u, u_2
+    #u_nm1[:] = u_n;  u_n[:] = u  # safe, but slower
+    u_nm1, u_n, u = u_n, u, u_nm1
 
     # --- Time loop ---
     for n in It[1:-1]:
         # Update all inner points
         if version == 'scalar':
             for i in Ix[1:-1]:
-                u[i] = - u_2[i] + 2*u_1[i] + \
-                    C2*(0.5*(q[i] + q[i+1])*(u_1[i+1] - u_1[i])  - \
-                        0.5*(q[i] + q[i-1])*(u_1[i] - u_1[i-1])) + \
+                u[i] = - u_nm1[i] + 2*u_n[i] + \
+                    C2*(0.5*(q[i] + q[i+1])*(u_n[i+1] - u_n[i])  - \
+                        0.5*(q[i] + q[i-1])*(u_n[i] - u_n[i-1])) + \
                 dt2*f(x[i], t[n])
 
         elif version == 'vectorized':
-            u[1:-1] = - u_2[1:-1] + 2*u_1[1:-1] + \
-            C2*(0.5*(q[1:-1] + q[2:])*(u_1[2:] - u_1[1:-1]) -
-                0.5*(q[1:-1] + q[:-2])*(u_1[1:-1] - u_1[:-2])) + \
+            u[1:-1] = - u_nm1[1:-1] + 2*u_n[1:-1] + \
+            C2*(0.5*(q[1:-1] + q[2:])*(u_n[2:] - u_n[1:-1]) -
+                0.5*(q[1:-1] + q[:-2])*(u_n[1:-1] - u_n[:-2])) + \
             dt2*f(x[1:-1], t[n])
         else:
             raise ValueError('version=%s' % version)
@@ -179,9 +179,9 @@ def solver(
             # x=L: i+1 -> i-1 since u[i+1]=u[i-1] when du/dn=0
             ip1 = i+1
             im1 = ip1
-            u[i] = - u_2[i] + 2*u_1[i] + \
-                   C2*(0.5*(q[i] + q[ip1])*(u_1[ip1] - u_1[i])  - \
-                       0.5*(q[i] + q[im1])*(u_1[i] - u_1[im1])) + \
+            u[i] = - u_nm1[i] + 2*u_n[i] + \
+                   C2*(0.5*(q[i] + q[ip1])*(u_n[ip1] - u_n[i])  - \
+                       0.5*(q[i] + q[im1])*(u_n[i] - u_n[im1])) + \
             dt2*f(x[i], t[n])
         else:
             u[i] = U_0(t[n+1])
@@ -190,9 +190,9 @@ def solver(
         if U_L is None:
             im1 = i-1
             ip1 = im1
-            u[i] = - u_2[i] + 2*u_1[i] + \
-                   C2*(0.5*(q[i] + q[ip1])*(u_1[ip1] - u_1[i])  - \
-                       0.5*(q[i] + q[im1])*(u_1[i] - u_1[im1])) + \
+            u[i] = - u_nm1[i] + 2*u_n[i] + \
+                   C2*(0.5*(q[i] + q[ip1])*(u_n[ip1] - u_n[i])  - \
+                       0.5*(q[i] + q[im1])*(u_n[i] - u_n[im1])) + \
             dt2*f(x[i], t[n])
         else:
             u[i] = U_L(t[n+1])
@@ -202,7 +202,7 @@ def solver(
                 break
 
         # Update data structures for next step
-        u_2, u_1, u = u_1, u, u_2
+        u_nm1, u_n, u = u_n, u, u_nm1
 
     cpu_time = time.clock() - t0
     return cpu_time, hashed_input

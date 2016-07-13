@@ -5,7 +5,7 @@ Simplest possible implementation.
 
 The key function is::
 
-  u, x, t, cpu = solver(I, V, f, c, L, dt, C, T, user_action)
+  u, x, t, cpu = (I, V, f, c, L, dt, C, T, user_action)
 
 which solves the wave equation u_tt = c**2*u_xx on (0,L) with u=0
 on x=0,L, for t in (0,T].  Initial conditions: u=I(x), u_t=V(x).
@@ -39,24 +39,24 @@ def solver(I, V, f, c, L, dt, C, T, user_action=None):
     if V is None or V == 0:
         V = lambda x: 0
 
-    u   = np.zeros(Nx+1)   # Solution array at new time level
-    u_1 = np.zeros(Nx+1)   # Solution at 1 time level back
-    u_2 = np.zeros(Nx+1)   # Solution at 2 time levels back
+    u     = np.zeros(Nx+1)   # Solution array at new time level
+    u_n   = np.zeros(Nx+1)   # Solution at 1 time level back
+    u_nm1 = np.zeros(Nx+1)   # Solution at 2 time levels back
 
-    import time;  t0 = time.clock()  # for measuring CPU time
+    import time;  t0 = time.clock()  # Measure CPU time
 
-    # Load initial condition into u_1
+    # Load initial condition into u_n
     for i in range(0,Nx+1):
-        u_1[i] = I(x[i])
+        u_n[i] = I(x[i])
 
     if user_action is not None:
-        user_action(u_1, x, t, 0)
+        user_action(u_n, x, t, 0)
 
     # Special formula for first time step
     n = 0
     for i in range(1, Nx):
-        u[i] = u_1[i] + dt*V(x[i]) + \
-               0.5*C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) + \
+        u[i] = u_n[i] + dt*V(x[i]) + \
+               0.5*C2*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) + \
                0.5*dt**2*f(x[i], t[n])
     u[0] = 0;  u[Nx] = 0
 
@@ -64,13 +64,13 @@ def solver(I, V, f, c, L, dt, C, T, user_action=None):
         user_action(u, x, t, 1)
 
     # Switch variables before next step
-    u_2[:] = u_1;  u_1[:] = u
+    u_nm1[:] = u_n;  u_n[:] = u
 
     for n in range(1, Nt):
         # Update all inner points at time t[n+1]
         for i in range(1, Nx):
-            u[i] = - u_2[i] + 2*u_1[i] + \
-                     C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) + \
+            u[i] = - u_nm1[i] + 2*u_n[i] + \
+                     C2*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) + \
                      dt**2*f(x[i], t[n])
 
         # Insert boundary conditions
@@ -80,7 +80,7 @@ def solver(I, V, f, c, L, dt, C, T, user_action=None):
                 break
 
         # Switch variables before next step
-        u_2[:] = u_1;  u_1[:] = u
+        u_nm1[:] = u_n;  u_n[:] = u
 
     cpu_time = time.clock() - t0
     return u, x, t, cpu_time
@@ -220,7 +220,67 @@ def guitar(C):
               animate=True, tool='scitools')
 
 
+def convergence_rates(
+    u_exact,                 # Python function for exact solution
+    I, V, f, c, L,           # physical parameters
+    dt0, num_meshes, C, T):  # numerical parameters
+    """
+    Half the time step and estimate convergence rates for
+    for num_meshes simulations.
+    """
+    # First define an appropriate user action function
+    global error
+    error = 0  # error computed in the user action function
+
+    def compute_error(u, x, t, n):
+        global error  # must be global to be altered here
+        # (otherwise error is a local variable, different
+        # from error defined in the parent function)
+        if n == 0:
+            error = 0
+        else:
+            error = max(error, np.abs(u - u_exact(x, t[n])).max())
+
+    # Run finer and finer resolutions and compute true errors
+    E = []
+    h = []  # dt, solver adjusts dx such that C=dt*c/dx
+    dt = dt0
+    for i in range(num_meshes):
+        solver(I, V, f, c, L, dt, C, T,
+               user_action=compute_error)
+        # error is computed in the final call to compute_error
+        E.append(error)
+        h.append(dt)
+        dt /= 2  # halve the time step for next simulation
+    print 'E:', E
+    print 'h:', h
+    # Convergence rates for two consecutive experiments
+    r = [np.log(E[i]/E[i-1])/np.log(h[i]/h[i-1])
+         for i in range(1,num_meshes)]
+    return r
+
+def test_convrate_sincos():
+    n = m = 2
+    L = 1.0
+    u_exact = lambda x, t: np.cos(m*np.pi/L*t)*np.sin(m*np.pi/L*x)
+
+    r = convergence_rates(
+        u_exact=u_exact,
+        I=lambda x: u_exact(x, 0),
+        V=lambda x: 0,
+        f=0,
+        c=1,
+        L=L,
+        dt0=0.1,
+        num_meshes=6,
+        C=0.9,
+        T=1)
+    print 'rates sin(x)*cos(t) solution:', \
+          [round(r_,2) for r_ in r]
+    assert abs(r[-1] - 2) < 0.002
+
 if __name__ == '__main__':
+    test_constant()
     test_quadratic()
     import sys
     try:
@@ -229,4 +289,5 @@ if __name__ == '__main__':
     except IndexError:
         C = 0.85
     print 'Courant number: %.2f' % C
-    guitar(C)
+    #guitar(C)
+    test_convrate_sincos()

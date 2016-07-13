@@ -50,40 +50,40 @@ def solver(I, V, f, c, L, dt, C, T, user_action=None):
     if V is None or V == 0:
         V = (lambda x: 0)
 
-    u   = np.zeros(Nx+1)   # Solution array at new time level
-    u_1 = np.zeros(Nx+1)   # Solution at 1 time level back
-    u_2 = np.zeros(Nx+1)   # Solution at 2 time levels back
+    u     = np.zeros(Nx+1)   # Solution array at new time level
+    u_n   = np.zeros(Nx+1)   # Solution at 1 time level back
+    u_nm1 = np.zeros(Nx+1)   # Solution at 2 time levels back
 
     import time;  t0 = time.clock()  # CPU time measurement
 
-    # Load initial condition into u_1
+    # Load initial condition into u_n
     for i in range(0, Nx+1):
-        u_1[i] = I(x[i])
+        u_n[i] = I(x[i])
 
     if user_action is not None:
-        user_action(u_1, x, t, 0)
+        user_action(u_n, x, t, 0)
 
     # Special formula for the first step
     for i in range(0, Nx+1):
         ip1 = i+1 if i < Nx else i-1
         im1 = i-1 if i > 0  else i+1
-        u[i] = u_1[i] + dt*V(x[i]) + \
-               0.5*C2*(u_1[im1] - 2*u_1[i] + u_1[ip1]) + \
+        u[i] = u_n[i] + dt*V(x[i]) + \
+               0.5*C2*(u_n[im1] - 2*u_n[i] + u_n[ip1]) + \
                0.5*dt2*f(x[i], t[0])
 
     if user_action is not None:
         user_action(u, x, t, 1)
 
     # Update data structures for next step
-    #u_2[:] = u_1;  u_1[:] = u  # safe, but slower
-    u_2, u_1, u = u_1, u, u_2
+    #u_nm1[:] = u_n;  u_n[:] = u  # safe, but slower
+    u_nm1, u_n, u = u_n, u, u_nm1
 
     for n in range(1, Nt):
         for i in range(0, Nx+1):
             ip1 = i+1 if i < Nx else i-1
             im1 = i-1 if i > 0  else i+1
-            u[i] = - u_2[i] + 2*u_1[i] + \
-                   C2*(u_1[im1] - 2*u_1[i] + u_1[ip1]) + \
+            u[i] = - u_nm1[i] + 2*u_n[i] + \
+                   C2*(u_n[im1] - 2*u_n[i] + u_n[ip1]) + \
                    dt2*f(x[i], t[n])
 
         if user_action is not None:
@@ -91,12 +91,12 @@ def solver(I, V, f, c, L, dt, C, T, user_action=None):
                 break
 
         # Update data structures for next step
-        #u_2[:] = u_1;  u_1[:] = u  # safe, but slower
-        u_2, u_1, u = u_1, u, u_2
+        #u_nm1[:] = u_n;  u_n[:] = u  # safe, but slower
+        u_nm1, u_n, u = u_n, u, u_nm1
 
-    # Wrong assignment u = u_2 must be corrected before return
-    u = u_1
-    cpu_time = t0 - time.clock()
+    # Wrong assignment u = u_nm1 must be corrected before return
+    u = u_n
+    cpu_time = time.clock() - t0
     return u, x, t, cpu_time
 
 from wave1D_u0 import viz

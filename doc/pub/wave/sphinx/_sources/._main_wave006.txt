@@ -144,7 +144,7 @@ The ``solver`` function for a 2D case with constant wave velocity and
 boundary condition :math:`u=0` is analogous to the 1D case with similar parameter
 values (see ``wave1D_u0.py``), apart from a few necessary
 extensions. The code is found in the program
-`wave2D_u0.py <http://tinyurl.com/nm5587k/wave/wave2D_u0/wave2D_u0.py>`__.
+`wave2D_u0.py <http://tinyurl.com/nu656p2/wave/wave2D_u0/wave2D_u0.py>`__.
 
 Domain and mesh
 ~~~~~~~~~~~~~~~
@@ -161,21 +161,21 @@ the ``solver`` function is then
 
 .. code-block:: python
 
-        def solver(I, V, f, c, Lx, Ly, Nx, Ny, dt, T,
-                   user_action=None, version='scalar'):
+    def solver(I, V, f, c, Lx, Ly, Nx, Ny, dt, T,
+               user_action=None, version='scalar'):
 
 Key parameters used in the calculations are created as
 
 .. code-block:: python
 
-        x = linspace(0, Lx, Nx+1)                  # mesh points in x dir
-        y = linspace(0, Ly, Ny+1)                  # mesh points in y dir
-        dx = x[1] - x[0]
-        dy = y[1] - y[0]
-        Nt = int(round(T/float(dt)))
-        t = linspace(0, N*dt, N+1)                 # mesh points in time
-        Cx2 = (c*dt/dx)**2;  Cy2 = (c*dt/dy)**2    # help variables
-        dt2 = dt**2
+    x = linspace(0, Lx, Nx+1)                  # mesh points in x dir
+    y = linspace(0, Ly, Ny+1)                  # mesh points in y dir
+    dx = x[1] - x[0]
+    dy = y[1] - y[0]
+    Nt = int(round(T/float(dt)))
+    t = linspace(0, N*dt, N+1)                 # mesh points in time
+    Cx2 = (c*dt/dx)**2;  Cy2 = (c*dt/dy)**2    # help variables
+    dt2 = dt**2
 
 Solution arrays
 ~~~~~~~~~~~~~~~
@@ -185,43 +185,42 @@ We store :math:`u^{n+1}_{i,j}`, :math:`u^{n}_{i,j}`, and
 
 .. code-block:: python
 
-        u   = zeros((Nx+1,Ny+1))   # solution array
-        u_1 = zeros((Nx+1,Ny+1))   # solution at t-dt
-        u_2 = zeros((Nx+1,Ny+1))   # solution at t-2*dt
+    u   = zeros((Nx+1,Ny+1))   # solution array
+    u_n = [zeros((Nx+1,Ny+1)), zeros((Nx+1,Ny+1))]  # t-dt, t-2*dt
 
 where :math:`u^{n+1}_{i,j}` corresponds to ``u[i,j]``,
-:math:`u^{n}_{i,j}` to ``u_1[i,j]``, and
-:math:`u^{n-1}_{i,j}` to ``u_2[i,j]``
+:math:`u^{n}_{i,j}` to ``u_n[i,j]``, and
+:math:`u^{n-1}_{i,j}` to ``u_nm1[i,j]``.
 
 .. index:: index set notation
 
 Index sets
 ~~~~~~~~~~
 
-It is also convenient to introduce the index sets (cf. The section :ref:`wave:indexset`)
+It is also convenient to introduce the index sets (cf. the section :ref:`wave:indexset`)
 
 .. code-block:: python
 
-        Ix = range(0, u.shape[0])
-        Iy = range(0, u.shape[1])
-        It = range(0, t.shape[0])
+    Ix = range(0, u.shape[0])
+    Iy = range(0, u.shape[1])
+    It = range(0, t.shape[0])
 
 Computing the solution
 ~~~~~~~~~~~~~~~~~~~~~~
 
 Inserting the initial
-condition ``I`` in ``u_1`` and making a callback to the user in terms of
+condition ``I`` in ``u_n`` and making a callback to the user in terms of
 the ``user_action`` function is a straightforward generalization of
 the 1D code from the section :ref:`wave:string:impl`:
 
 .. code-block:: python
 
-        for i in Ix:
-            for j in Iy:
-                u_1[i,j] = I(x[i], y[j])
-        
-        if user_action is not None:
-            user_action(u_1, x, xv, y, yv, t, 0)
+    for i in Ix:
+        for j in Iy:
+            u_n[i,j] = I(x[i], y[j])
+    
+    if user_action is not None:
+        user_action(u_n, x, xv, y, yv, t, 0)
 
 The ``user_action`` function has additional arguments compared to the
 1D case. The arguments ``xv`` and ``yv`` will be commented
@@ -233,51 +232,60 @@ a time level is implemented in a separate function as
 
 .. code-block:: python
 
-        def advance_scalar(u, u_1, u_2, f, x, y, t, n, Cx2, Cy2, dt2,
-                           V=None, step1=False):
-            Ix = range(0, u.shape[0]);  Iy = range(0, u.shape[1])
-            if step1:
-                dt = sqrt(dt2)  # save
-                Cx2 = 0.5*Cx2;  Cy2 = 0.5*Cy2; dt2 = 0.5*dt2  # redefine
-                D1 = 1;  D2 = 0
-            else:
-                D1 = 2;  D2 = 1
-            for i in Ix[1:-1]:
-                for j in Iy[1:-1]:
-                    u_xx = u_1[i-1,j] - 2*u_1[i,j] + u_1[i+1,j]
-                    u_yy = u_1[i,j-1] - 2*u_1[i,j] + u_1[i,j+1]
-                    u[i,j] = D1*u_1[i,j] - D2*u_2[i,j] + \ 
-                             Cx2*u_xx + Cy2*u_yy + dt2*f(x[i], y[j], t[n])
-                    if step1:
-                        u[i,j] += dt*V(x[i], y[j])
-            # Boundary condition u=0
-            j = Iy[0]
-            for i in Ix: u[i,j] = 0
-            j = Iy[-1]
-            for i in Ix: u[i,j] = 0
-            i = Ix[0]
-            for j in Iy: u[i,j] = 0
-            i = Ix[-1]
-            for j in Iy: u[i,j] = 0
-            return u
+    def advance_scalar(u, u_n, u_nm1, f, x, y, t, n, Cx2, Cy2, dt2,
+                       V=None, step1=False):
+        Ix = range(0, u.shape[0]);  Iy = range(0, u.shape[1])
+        if step1:
+            dt = sqrt(dt2)  # save
+            Cx2 = 0.5*Cx2;  Cy2 = 0.5*Cy2; dt2 = 0.5*dt2  # redefine
+            D1 = 1;  D2 = 0
+        else:
+            D1 = 2;  D2 = 1
+        for i in Ix[1:-1]:
+            for j in Iy[1:-1]:
+                u_xx = u_n[i-1,j] - 2*u_n[i,j] + u_n[i+1,j]
+                u_yy = u_n[i,j-1] - 2*u_n[i,j] + u_n[i,j+1]
+                u[i,j] = D1*u_n[i,j] - D2*u_nm1[i,j] + \ 
+                         Cx2*u_xx + Cy2*u_yy + dt2*f(x[i], y[j], t[n])
+                if step1:
+                    u[i,j] += dt*V(x[i], y[j])
+        # Boundary condition u=0
+        j = Iy[0]
+        for i in Ix: u[i,j] = 0
+        j = Iy[-1]
+        for i in Ix: u[i,j] = 0
+        i = Ix[0]
+        for j in Iy: u[i,j] = 0
+        i = Ix[-1]
+        for j in Iy: u[i,j] = 0
+        return u
 
 The ``step1`` variable has been introduced to allow the formula to be
-reused for first step :math:`u^1_{i,j}`:
+reused for the first step, computing :math:`u^1_{i,j}`:
 
 .. code-block:: python
 
-        u = advance_scalar(u, u_1, u_2, f, x, y, t,
-                           n, Cx2, Cy2, dt, V, step1=True)
+    u = advance_scalar(u, u_n, f, x, y, t,
+                       n, Cx2, Cy2, dt, V, step1=True)
 
 Below, we will make many alternative implementations of the
 ``advance_scalar`` function to speed up the code since most of
 the CPU time in simulations is spent in this function.
 
-Finally, we remark that the ``solver`` function in the ``wave2D_u0.py`` code
-updates arrays for the next time step by switching references as
-described in the section :ref:`wave:pde1:impl:ref:switch`. If the solution
-``u`` is returned from ``solver``, which it is not, it is important to
-set ``u = u_1`` after the time loop, otherwise ``u`` actually contains ``u_2``.
+
+.. admonition:: Remark: How to use the solution
+
+   The ``solver`` function in the ``wave2D_u0.py`` code
+   updates arrays for the next time step by switching references as
+   described in the section :ref:`wave:pde1:impl:ref:switch`. Any use of ``u`` on the
+   user's side is assumed to take place in the user action function. However,
+   should the code be changed such that ``u`` is returned and used as solution,
+   have in mind that you must return ``u_n`` after the time lime, otherwise
+   a ``return u`` will actually return ``u_nm1`` (due to the switching of array
+   indices in the loop)!
+
+
+
 
 .. _wave2D3D:impl:vectorized:
 
@@ -303,12 +311,12 @@ to their vectorized versions ``xv`` and ``yv``:
 
 .. code-block:: python
 
-        from numpy import newaxis
-        xv = x[:,newaxis]
-        yv = y[newaxis,:]
-        # or
-        xv = x.reshape((x.size, 1))
-        yv = y.reshape((1, y.size))
+    from numpy import newaxis
+    xv = x[:,newaxis]
+    yv = y[newaxis,:]
+    # or
+    xv = x.reshape((x.size, 1))
+    yv = y.reshape((1, y.size))
 
 This is a standard required technique when evaluating functions over
 a 2D mesh, say ``sin(xv)*cos(xv)``, which then gives a result with shape
@@ -320,47 +328,47 @@ setting the initial condition is just a matter of
 
 .. code-block:: python
 
-        u_1[:,:] = I(xv, yv)
+    u_n[:,:] = I(xv, yv)
 
-One could also have written ``u_1 = I(xv, yv)`` and let ``u_1`` point to a
+One could also have written ``u_n = I(xv, yv)`` and let ``u_n`` point to a
 new object, but vectorized operations often make use of direct
-insertion in the original array through ``u_1[:,:]``, because sometimes
+insertion in the original array through ``u_n[:,:]``, because sometimes
 not all of the array is to be filled by such a function
 evaluation. This is the case with the computational scheme for
 :math:`u^{n+1}_{i,j}`:
 
 .. code-block:: python
 
-        def advance_vectorized(u, u_1, u_2, f_a, Cx2, Cy2, dt2,
-                               V=None, step1=False):
-            if step1:
-                dt = sqrt(dt2)  # save
-                Cx2 = 0.5*Cx2;  Cy2 = 0.5*Cy2; dt2 = 0.5*dt2  # redefine
-                D1 = 1;  D2 = 0
-            else:
-                D1 = 2;  D2 = 1
-            u_xx = u_1[:-2,1:-1] - 2*u_1[1:-1,1:-1] + u_1[2:,1:-1]
-            u_yy = u_1[1:-1,:-2] - 2*u_1[1:-1,1:-1] + u_1[1:-1,2:]
-            u[1:-1,1:-1] = D1*u_1[1:-1,1:-1] - D2*u_2[1:-1,1:-1] + \ 
-                           Cx2*u_xx + Cy2*u_yy + dt2*f_a[1:-1,1:-1]
-            if step1:
-                u[1:-1,1:-1] += dt*V[1:-1, 1:-1]
-            # Boundary condition u=0
-            j = 0
-            u[:,j] = 0
-            j = u.shape[1]-1
-            u[:,j] = 0
-            i = 0
-            u[i,:] = 0
-            i = u.shape[0]-1
-            u[i,:] = 0
-            return u
+    def advance_vectorized(u, u_n, u_nm1, f_a, Cx2, Cy2, dt2,
+                           V=None, step1=False):
+        if step1:
+            dt = sqrt(dt2)  # save
+            Cx2 = 0.5*Cx2;  Cy2 = 0.5*Cy2; dt2 = 0.5*dt2  # redefine
+            D1 = 1;  D2 = 0
+        else:
+            D1 = 2;  D2 = 1
+        u_xx = u_n[:-2,1:-1] - 2*u_n[1:-1,1:-1] + u_n[2:,1:-1]
+        u_yy = u_n[1:-1,:-2] - 2*u_n[1:-1,1:-1] + u_n[1:-1,2:]
+        u[1:-1,1:-1] = D1*u_n[1:-1,1:-1] - D2*u_nm1[1:-1,1:-1] + \ 
+                       Cx2*u_xx + Cy2*u_yy + dt2*f_a[1:-1,1:-1]
+        if step1:
+            u[1:-1,1:-1] += dt*V[1:-1, 1:-1]
+        # Boundary condition u=0
+        j = 0
+        u[:,j] = 0
+        j = u.shape[1]-1
+        u[:,j] = 0
+        i = 0
+        u[i,:] = 0
+        i = u.shape[0]-1
+        u[i,:] = 0
+        return u
 
 Array slices in 2D are more complicated to understand than those in
 1D, but the logic from 1D applies to each dimension separately.
 For example, when doing :math:`u^{n}_{i,j} - u^{n}_{i-1,j}` for :math:`i\in{{\mathcal{I^+}_x}}`,
 we just keep ``j`` constant and make a slice in the first index:
-``u_1[1:,j] - u_1[:-1,j]``, exactly as in 1D. The ``1:`` slice
+``u_n[1:,j] - u_n[:-1,j]``, exactly as in 1D. The ``1:`` slice
 specifies all the indices :math:`i=1,2,\ldots,N_x` (up to the last
 valid index),
 while ``:-1`` specifies the relevant indices for the second term:
@@ -377,17 +385,17 @@ a slice consisting of all indices along a boundary:
 
 .. code-block:: python
 
-        u[: ,0] = 0
-        u[:,Ny] = 0
-        u[0 ,:] = 0
-        u[Nx,:] = 0
+    u[: ,0] = 0
+    u[:,Ny] = 0
+    u[0 ,:] = 0
+    u[Nx,:] = 0
 
 In the vectorized update of ``u`` (above), the function ``f`` is first computed
 as an array over all mesh points:
 
 .. code-block:: text
 
-        f_a = f(xv, yv, t[n])
+    f_a = f(xv, yv, t[n])
 
 We could, alternatively, have used the call ``f(xv, yv, t[n])[1:-1,1:-1]``
 in the last term of the update statement, but other implementations
@@ -439,17 +447,17 @@ we start with the general results :math:`[D_t D_t 1]^n=0`, :math:`[D_t D_t t]^n=
 and :math:`[D_t D_t t^2]=2`, and use these to compute
 
 .. math::
-        
+        \begin{align*}
         [D_xD_x {u_{\small\mbox{e}}}]^n_{i,j} &= [y(L_y-y)(1+{\frac{1}{2}}t) D_xD_x x(L_x-x)]^n_{i,j}\\ 
         &= y_j(L_y-y_j)(1+{\frac{1}{2}}t_n)(-2){\thinspace .}
-        
+        \end{align*}
 
 A similar calculation must be carried out for the :math:`[D_yD_y
 {u_{\small\mbox{e}}}]^n_{i,j}` and :math:`[D_tD_t {u_{\small\mbox{e}}}]^n_{i,j}` terms.  One must also show
 that the quadratic solution fits the special formula for
 :math:`u^1_{i,j}`. The details are left as :ref:`wave:exer:quadratic:2D`.
 The ``test_quadratic`` function in the
-`wave2D_u0.py <http://tinyurl.com/nm5587k/wave/wave2D_u0/wave2D_u0.py>`__
+`wave2D_u0.py <http://tinyurl.com/nu656p2/wave/wave2D_u0/wave2D_u0.py>`__
 program implements this verification as a proper test function
 for the pytest and nose frameworks.
 
@@ -460,7 +468,7 @@ Exercises          (3)
 
 .. _wave:exer:quadratic:2D:
 
-Exercise 15: Check that a solution fulfills the discrete model
+Exercise 16: Check that a solution fulfills the discrete model
 --------------------------------------------------------------
 
 Carry out all mathematical details to show that
@@ -477,7 +485,7 @@ Filename: ``check_quadratic_solution``.
 
 .. _wave:exer:mesh3D:calculus:
 
-Project 16: Calculus with 2D mesh functions
+Project 17: Calculus with 2D mesh functions
 -------------------------------------------
 
 The goal of this project is to redo
@@ -512,12 +520,12 @@ Suppose :math:`F_{i,j}` is computed. The calculation of :math:`F_{i+1,j}`
 is then
 
 .. math::
-        
+        \begin{align*}
         F_{i+1,j} &= F_{i,j} + \int_{x_i}^{x_{i+1}}\int_{y_0}^{y_j} f(x,y)dydx\\ 
         & \approx \Delta x \frac{1}{2}\left(
         \int_{y_0}^{y_j} f(x_{i},y)dy
         + \int_{y_0}^{y_j} f(x_{i+1},y)dy\right)
-        
+        \end{align*}
 
 The integrals in the :math:`y` direction can be approximated by a Trapezoidal
 rule. A similar idea can be used to compute :math:`F_{i,j+1}`. Thereafter,
@@ -535,10 +543,10 @@ Filename: ``mesh_calculus_2D``.
 
 .. _wave:app:exer:wave2D:Neumann:
 
-Exercise 17: Implement Neumann conditions in 2D
+Exercise 18: Implement Neumann conditions in 2D
 -----------------------------------------------
 
-Modify the `wave2D_u0.py <http://tinyurl.com/nm5587k/wave/wave2D_u0/wave2D_u0.py>`__
+Modify the `wave2D_u0.py <http://tinyurl.com/nu656p2/wave/wave2D_u0/wave2D_u0.py>`__
 program, which solves the 2D wave equation :math:`u_{tt}=c^2(u_{xx}+u_{yy})`
 with constant wave velocity :math:`c` and :math:`u=0` on the boundary, to have
 Neumann boundary conditions: :math:`\partial u/\partial n=0`.
@@ -550,7 +558,7 @@ To test the code, use :math:`u=1.2` as solution (:math:`I(x,y)=1.2`, :math:`V=f=
 as long as the stability criterion is satisfied.
 Another test is to use the plug-shaped pulse
 in the ``pulse`` function from the section :ref:`wave:pde2:software`
-and the `wave1D_dn_vc.py <http://tinyurl.com/nm5587k/wave/wave1D/wave1D_dn_vc.py>`__
+and the `wave1D_dn_vc.py <http://tinyurl.com/nu656p2/wave/wave1D/wave1D_dn_vc.py>`__
 program. This pulse
 is exactly propagated in 1D if :math:`c\Delta t/\Delta x=1`. Check
 that also the 2D program can propagate this pulse exactly
@@ -564,7 +572,7 @@ Filename: ``wave2D_dn``.
 
 .. _wave:exer:3D:f77:cy:efficiency:
 
-Exercise 18: Test the efficiency of compiled loops in 3D
+Exercise 19: Test the efficiency of compiled loops in 3D
 --------------------------------------------------------
 
 Extend the ``wave2D_u0.py`` code and the Cython, Fortran, and C versions to 3D.

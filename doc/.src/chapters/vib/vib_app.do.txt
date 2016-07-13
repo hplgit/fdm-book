@@ -1853,46 +1853,106 @@ one billion years by $t_c$), which corresponds to about 2000
 !esubex
 
 !bsubex
-Make solvers based on Odespy for the current problem, using the
-4th-order Runge-Kutta and the Euler-Cromer methods. Design your code 
-so that it is easy to include other solvers later (below, you will 
-be asked to extend it with the PEFRL algorithm!). With each 
-solver, simulate 10000 orbits and print the maximum
-position error and CPU time as a function of time step. Note that the
-maximum position error does not necessarily occur at the end of the
-simulation. The position error
-achieved with each solver will depend heavily on the size of the time
-step. Let the time step correspond to 200, 400, 800 and
-1600 steps per orbit, respectively.
-Are the results as expected?
-Explain briefly.
+
+Solve the equations using 4th-order Runge-Kutta and the Euler-Cromer
+methods. You may benefit from applying Odespy for this purpose. With
+each solver, simulate 10000 orbits and print the maximum position
+error and CPU time as a function of time step. Note that the maximum
+position error does not necessarily occur at the end of the
+simulation. The position error achieved with each solver will depend
+heavily on the size of the time step. Let the time step correspond to
+200, 400, 800 and 1600 steps per orbit, respectively.  Are the results
+as expected?  Explain briefly. When you develop your program, have in
+mind that it will be extended with an implementation of the other
+algorithms (as requested in d) and e) later) and experiments with this
+algorithm as well.
 
 !bsol
+The first task is to implement the right-hand side function for the
+system of ODEs such that we can call up Odespy solvers (or make use of
+other types of ODE software, e.g., from SciPy). The $2\times 2$ system of
+second-order ODEs must be expressed as a $4\times 4$ system of first-order
+ODEs. We have three different cases of right-hand sides:
+
+ o Common numbering of unknowns: $x$, $v_x$, $y$, $y_x$
+ o Numbering required by Euler-Cromer: $v_x$, $x$, $v_y$, $y$
+ o Numbering required by the PEFRL method: same as Euler-Cromer
+
+Most Odespy solvers can handle any convention for numbering of the unknowns.
+The important point is that initial conditions and new values at the end of
+the time step are filled in the right positions of a one-dimensional array
+containing the unknowns.
+Using Odespy to solve the system by the Euler-Cromer method, however, requires
+the unknowns to appear as velocity 1st degree-of-freedom, displacement
+1st degree-of-freedom, velocity 2nd degree-of-freedom, displacement
+2nd degree-of-freedom, and so forth. Two alternative right-hand side
+functions `f(u, t)` for Odespy solvers is then
+
+@@@CODE-4 exer-vib/vib_PEFRL.py fromto: def f_EC\(u, t\)@def g\(
+
+## We use CODE-4 to remove the indentation of the local function f_EC
+## in compute_orbit_error_and_CPU
+
+In addition, we shall later in d) implement the PEFRL method and just
+give the $g$ function as input to a system of the form $dv_x = g_x$,
+$dv_y = g_y$, and $g$ becomes the vector $(g_x,g_y)$:
+
+Some prefer to number the unknowns differently, and with the RK4 method we
+are free to use any numbering, including this one:
+
+@@@CODE-4 exer-vib/vib_PEFRL.py fromto: def g\(@print 'Find orbit error as fu
+
+The standard way of solving the ODE by Odespy is then
+
+!bc pycod
+def u_exact(t):
+    """Return exact solution at time t."""
+    return np.array([np.cos(t), np.sin(t)])
+
+u_e = u_exact(time_points).transpose()
+
+solver = odespy.RK4(f_RK4)
+solver.set_initial_condition(A)
+ui, ti = solver.solve(time_points)
+
+# Find error (correct final pos:  x=1, y=0)
+orbit_error = np.sqrt(
+         (ui[:,0]-u_e[:,0])**2 + (ui[:,2]-u_e[:,1])**2).max()
+!ec
+
 We develop functions for computing errors and plotting results where we
 can compare different methods. These functions are shown in the solution to
 item d).
 
 Running the code, the time step sizes become
 !bc dat
-dt_values: [0.031415926535897934, 0.015707963267948967, 
+dt_values: [0.031415926535897934, 0.015707963267948967,
             0.007853981633974483, 0.003926990816987242]
 !ec
-while corresponding maximum errors (per cent) and CPU values (hours) are, for the 4th-order Runge-Kutta:
-!bc dat
-E max with dt...: [1.9039120763533679, 0.078725095822980734, 
-                   0.0024634501803808152, 7.7174645873596024e-05]
-cpu_values with dt...: [0.028877777777777777, 0.05775555555555556, 
-                        0.11530833333333333, 0.23107499999999997]
-!ec
-and for Euler-Cromer:
-!bc dat
-E max with dt...: [2.0162027425437694, 2.0079773949278992, 
-                   1.9634330507586231, 0.67293858584467869]
-cpu_values with dt...: [0.011680555555555605, 0.02339444444444445, 
-                        0.046877777777777775, 0.0938944444444445]
-!ec
+Corresponding maximum errors (per cent) and CPU values (hours) are for the 4th-order Runge-Kutta given in the table below.
+
+|------l--------------c--------------c--------------c--------------c-------|
+| Quantity     | $\Delta t_1$ | $\Delta t_2$ | $\Delta t_3$ | $\Delta t_4$ |
+|------l--------------l--------------l--------------l--------------l-------|
+| $\Delta t$   | 0.03         | 0.02         | 0.008        | 0.004        |
+| Error        | 1.9039       | 0.0787       | 0.0025       | 7.7e-05      |
+| CPU (h)      | 0.03         | 0.06         | 0.12         | 0.23         |
+|--------------------------------------------------------------------------|
+
+For Euler-Cromer we these results:
+
+|------l--------------c--------------c--------------c--------------c-------|
+| Quantity     | $\Delta t_1$ | $\Delta t_2$ | $\Delta t_3$ | $\Delta t_4$ |
+|------l--------------l--------------l--------------l--------------l-------|
+| $\Delta t$   | 0.03         | 0.02         | 0.008        | 0.004        |
+| Error        | 2.0162       | 2.0078       | 1.9634       | 0.6730       |
+| CPU (h)      | 0.01         | 0.02         | 0.05         | 0.09         |
+|--------------------------------------------------------------------------|
+
+
 These results are as expected. The Runge-Kutta implementation is much more accurate than Euler-Cromer, but since it requires more computations, more CPU time is needed. For both methods, accuracy and CPU time both increase as
-the step size is reduced.
+the step size is reduced, but the increase is much more pronounced for
+the Euler-Cromer method.
 
 !esol
 !esubex
@@ -1903,30 +1963,43 @@ Section ref{vib:ode2:PEFRL}. Verify its 4th-order convergence
 using an equation $u'' + u = 0$.
 
 !bsol
-Here is a solver function with a proper test function for verification:
+Here is a solver function:
 
-@@@CODE exer-vib/vib_PEFRL.py fromto: import numpy@def compute_orbit_and
+@@@CODE exer-vib/vib_PEFRL.py fromto: import numpy@def test_solver_PEFRL
 
+A proper test function for verification reads
+
+@@@CODE exer-vib/vib_PEFRL.py fromto: def test_solver_PEFRL@class PEFRL
 !esol
 !esubex
 
 !bsubex
 The simulations done previously with the 4th-order Runge-Kutta and
-Euler-Cromer are now to be repeated with the PEFRL solver, so the 
+Euler-Cromer are now to be repeated with the PEFRL solver, so the
 code must be extended accordingly. Then run the simulations and comment
 on the performance of PEFRL compared to the other two.
 
 !bsol
 With the PEFRL algorithm, we get
 !bc dat
-E max with dt...: [0.0010452575786173163, 6.5310955829464402e-05, 
+E max with dt...: [0.0010452575786173163, 6.5310955829464402e-05,
                    4.0475768394248492e-06, 2.9391302503251016e-07]
-cpu_values with dt...: [0.01873611111111106, 0.037422222222222294, 
+cpu_values with dt...: [0.01873611111111106, 0.037422222222222294,
                         0.07511666666666655, 0.14985]
 !ec
+
+|------l--------------c--------------c--------------c--------------c-------|
+| Qantity      | $\Delta t_1$ | $\Delta t_2$ | $\Delta t_3$ | $\Delta t_4$ |
+|------l--------------l--------------l--------------l--------------l-------|
+| $\Delta t$   | 0.03         | 0.02         | 0.008        | 0.004        |
+| Error        | 1.04E-3      | 6.53E-05     | 4.05E-6      | 2.94E-7      |
+| CPU (h)      | 0.02         | 0.04         | 0.08         | 0.15         |
+|--------------------------------------------------------------------------|
+
+
 The accuracy is now dramatically improved compared to 4th-order Runge-Kutta (and Euler-Cromer).
 With 1600 steps per orbit, the PEFRL maximum error is just below $3.0e-07$ per cent, while
-the corresponding error with Runge-Kutta was about $7.7e-05$ per cent! This is striking, 
+the corresponding error with Runge-Kutta was about $7.7e-05$ per cent! This is striking,
 considering the fact that the 4th-order Runge-Kutta and the PEFRL schemes are both 4th-order accurate.
 
 !esol
@@ -1947,22 +2020,22 @@ simulate the planetary motion for one billion years?
 
 The complete code (which also produces the printouts given previously) reads:
 
-@@@CODE exer-vib/vib_PEFRL.py 
+@@@CODE exer-vib/vib_PEFRL.py
 
 The maximum error develops with number of orbits as seen in the following plot,
 where the red dashed curve is from the mathematical model:
 
 FIGURE: [fig-vib/PEFRL_E_with_years, width=600 frac=0.8]
 
-We note that the maximum error achieved during the first 100000 orbits is only 
+We note that the maximum error achieved during the first 100000 orbits is only
 about $1.2e-06$ per cent. Not bad!
 
 For the printed CPU and empirical formula, we get:
 !bc dat
 CPU (hours): 1.51591388889
-Empirical formula (E with years):   
-3.15992325978e-26*x**4 + -6.1772567063e-21*x**3 + 
-1.87983349496e-16*x**2 + 2.32924158693e-11*x**1 + 
+Empirical formula (E with years):
+3.15992325978e-26*x**4 + -6.1772567063e-21*x**3 +
+1.87983349496e-16*x**2 + 2.32924158693e-11*x**1 +
 5.46989368301e-08*x**0
 !ec
 Since the CPU develops linearly, the CPU time for 100000 orbits can just be multiplied by 10000 to get the

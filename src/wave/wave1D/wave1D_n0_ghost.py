@@ -52,32 +52,32 @@ def solver(I, V, f, c, L, dt, C, T, user_action=None):
     if V is None or V == 0:
         V = (lambda x: 0)
 
-    u   = np.zeros(Nx+3)   # Solution array at new time level
-    u_1 = np.zeros(Nx+3)   # Solution at 1 time level back
-    u_2 = np.zeros(Nx+3)   # Solution at 2 time levels back
+    u     = np.zeros(Nx+3)   # Solution array at new time level
+    u_n   = np.zeros(Nx+3)   # Solution at 1 time level back
+    u_nm1 = np.zeros(Nx+3)   # Solution at 2 time levels back
 
     Ix = range(1, u.shape[0]-1)
     It = range(0, t.shape[0])
 
-    import time;  t0 = time.clock()  # for measuring CPU time
+    import time;  t0 = time.clock()  # CPU time measurement
 
-    # Load initial condition into u_1
+    # Load initial condition into u_n
     for i in Ix:
-        u_1[i] = I(x[i-Ix[0]])  # Note the index transformation in x
+        u_n[i] = I(x[i-Ix[0]])  # Note the index transformation in x
     # Ghost values set according to du/dx=0
     i = Ix[0]
-    u_1[i-1] = u_1[i+1]
+    u_n[i-1] = u_n[i+1]
     i = Ix[-1]
-    u_1[i+1] = u_1[i-1]
+    u_n[i+1] = u_n[i-1]
 
     if user_action is not None:
         # Make sure to send the part of u that corresponds to x
-        user_action(u_1[Ix[0]:Ix[-1]+1], x, t, 0)
+        user_action(u_n[Ix[0]:Ix[-1]+1], x, t, 0)
 
     # Special formula for the first step
     for i in Ix:
-        u[i] = u_1[i] + dt*V(x[i-Ix[0]]) + \
-               0.5*C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) + \
+        u[i] = u_n[i] + dt*V(x[i-Ix[0]]) + \
+               0.5*C2*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) + \
                0.5*dt2*f(x[i-Ix[0]], t[0])
     # Ghost values set according to du/dx=0
     i = Ix[0]
@@ -90,13 +90,13 @@ def solver(I, V, f, c, L, dt, C, T, user_action=None):
         user_action(u[Ix[0]:Ix[-1]+1], x, t, 1)
 
     # Update data structures for next step
-    #u_2[:] = u_1;  u_1[:] = u  # safe, but slower
-    u_2, u_1, u = u_1, u, u_2
+    #u_nm1[:] = u_n;  u_n[:] = u  # safe, but slower
+    u_nm1, u_n, u = u_n, u, u_nm1
 
     for n in range(1, Nt):
         for i in Ix:
-            u[i] = - u_2[i] + 2*u_1[i] + \
-                   C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) + \
+            u[i] = - u_nm1[i] + 2*u_n[i] + \
+                   C2*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) + \
                    dt2*f(x[i-Ix[0]], t[n])
         # Ghost values set according to du/dx=0
         i = Ix[0]
@@ -110,13 +110,13 @@ def solver(I, V, f, c, L, dt, C, T, user_action=None):
                 break
 
         # Update data structures for next step
-        #u_2[:] = u_1;  u_1[:] = u  # safe, but slower
-        u_2, u_1, u = u_1, u, u_2
+        #u_nm1[:] = u_n;  u_n[:] = u  # safe, but slower
+        u_nm1, u_n, u = u_n, u, u_nm1
 
-    # Important to correct the mathematically wrong u=u_2 above
+    # Important to correct the mathematically wrong u=u_nm1 above
     # before returning u
-    u = u_1
-    cpu_time = t0 - time.clock()
+    u = u_n
+    cpu_time = time.clock() - t0
     return u[1:-1], x, t, cpu_time
 
 

@@ -287,27 +287,27 @@ the discrete Fourier transform appears in the example below.
 
 .. code-block:: python
 
-        import numpy as np
-        from numpy import sin, pi
-        
-        def I(x):
-            return sin(2*pi*x) + 0.5*sin(4*pi*x) + 0.1*sin(6*pi*x)
-        
-        # Mesh
-        L = 10; Nx = 100
-        x = np.linspace(0, L, Nx+1)
-        dx = L/float(Nx)
-        
-        # Discrete Fourier transform
-        A = np.fft.rfft(I(x))
-        A_amplitude = np.abs(A)
-        
-        # Compute the corresponding frequencies
-        freqs = np.linspace(0, pi/dx, A_amplitude.size)
-        
-        import matplotlib.pyplot as plt
-        plt.plot(freqs, A_amplitude)
-        plt.show()
+    import numpy as np
+    from numpy import sin, pi
+    
+    def I(x):
+        return sin(2*pi*x) + 0.5*sin(4*pi*x) + 0.1*sin(6*pi*x)
+    
+    # Mesh
+    L = 10; Nx = 100
+    x = np.linspace(0, L, Nx+1)
+    dx = L/float(Nx)
+    
+    # Discrete Fourier transform
+    A = np.fft.rfft(I(x))
+    A_amplitude = np.abs(A)
+    
+    # Compute the corresponding frequencies
+    freqs = np.linspace(0, pi/dx, A_amplitude.size)
+    
+    import matplotlib.pyplot as plt
+    plt.plot(freqs, A_amplitude)
+    plt.show()
 
 .. _wave:pde1:stability:
 
@@ -625,8 +625,8 @@ Defining
 
 .. code-block:: python
 
-        def r(C, p):
-            return 2/(C*p)*asin(C*sin(p))
+    def r(C, p):
+        return 2/(C*p)*asin(C*sin(p))
 
 we can plot :math:`r(C,p)` as a function of :math:`p` for various values of
 :math:`C`, see Figure :ref:`wave:pde1:fig:disprel`. Note that the shortest
@@ -638,26 +638,26 @@ discretization parameter :math:`p`:
 
 .. code-block:: python
 
-        >>> import sympy as sym
-        >>> C, p = sym.symbols('C p')
-        >>> # Compute the 7 first terms around p=0 with no O() term
-        >>> rs = r(C, p).series(p, 0, 7).removeO()
-        >>> rs
-        p**6*(5*C**6/112 - C**4/16 + 13*C**2/720 - 1/5040) +
-        p**4*(3*C**4/40 - C**2/12 + 1/120) +
-        p**2*(C**2/6 - 1/6) + 1
-        
-        >>> # Pick out the leading order term, but drop the constant 1
-        >>> rs_error_leading_order = (rs - 1).extract_leading_order(p)
-        >>> rs_error_leading_order
-        p**2*(C**2/6 - 1/6)
-        
-        >>> # Turn the series expansion into a Python function
-        >>> rs_pyfunc = lambdify([C, p], rs, modules='numpy')
-        
-        >>> # Check: rs_pyfunc is exact (=1) for C=1
-        >>> rs_pyfunc(1, 0.1)
-        1.0
+    >>> import sympy as sym
+    >>> C, p = sym.symbols('C p')
+    >>> # Compute the 7 first terms around p=0 with no O() term
+    >>> rs = r(C, p).series(p, 0, 7).removeO()
+    >>> rs
+    p**6*(5*C**6/112 - C**4/16 + 13*C**2/720 - 1/5040) +
+    p**4*(3*C**4/40 - C**2/12 + 1/120) +
+    p**2*(C**2/6 - 1/6) + 1
+    
+    >>> # Pick out the leading order term, but drop the constant 1
+    >>> rs_error_leading_order = (rs - 1).extract_leading_order(p)
+    >>> rs_error_leading_order
+    p**2*(C**2/6 - 1/6)
+    
+    >>> # Turn the series expansion into a Python function
+    >>> rs_pyfunc = lambdify([C, p], rs, modules='numpy')
+    
+    >>> # Check: rs_pyfunc is exact (=1) for C=1
+    >>> rs_pyfunc(1, 0.1)
+    1.0
 
 Note that without the ``.removeO()`` call the series gets an ``O(x**7)`` term
 that makes it impossible to convert the series to a Python function
@@ -687,21 +687,21 @@ and then sum the terms:
 
 .. code-block:: python
 
-        >>> rs = r(C, p).series(p, 0, 4).removeO().as_ordered_terms()
-        >>> rs
-        [1, C**2*p**2/6 - p**2/6,
-         3*C**4*p**4/40 - C**2*p**4/12 + p**4/120,
-         5*C**6*p**6/112 - C**4*p**6/16 + 13*C**2*p**6/720 - p**6/5040]
-        >>> rs = [factor(t) for t in rs]
-        >>> rs
-        [1, p**2*(C - 1)*(C + 1)/6,
-         p**4*(C - 1)*(C + 1)*(3*C - 1)*(3*C + 1)/120,
-         p**6*(C - 1)*(C + 1)*(225*C**4 - 90*C**2 + 1)/5040]
-        >>> rs = sum(rs)  # Python's sum function sums the list
-        >>> rs
-        p**6*(C - 1)*(C + 1)*(225*C**4 - 90*C**2 + 1)/5040 +
-        p**4*(C - 1)*(C + 1)*(3*C - 1)*(3*C + 1)/120 +
-        p**2*(C - 1)*(C + 1)/6 + 1
+    >>> rs = r(C, p).series(p, 0, 4).removeO().as_ordered_terms()
+    >>> rs
+    [1, C**2*p**2/6 - p**2/6,
+     3*C**4*p**4/40 - C**2*p**4/12 + p**4/120,
+     5*C**6*p**6/112 - C**4*p**6/16 + 13*C**2*p**6/720 - p**6/5040]
+    >>> rs = [factor(t) for t in rs]
+    >>> rs
+    [1, p**2*(C - 1)*(C + 1)/6,
+     p**4*(C - 1)*(C + 1)*(3*C - 1)*(3*C + 1)/120,
+     p**6*(C - 1)*(C + 1)*(225*C**4 - 90*C**2 + 1)/5040]
+    >>> rs = sum(rs)  # Python's sum function sums the list
+    >>> rs
+    p**6*(C - 1)*(C + 1)*(225*C**4 - 90*C**2 + 1)/5040 +
+    p**4*(C - 1)*(C + 1)*(3*C - 1)*(3*C + 1)/120 +
+    p**2*(C - 1)*(C + 1)/6 + 1
 
 We see from the last expression
 that :math:`C=1` makes all the terms in ``rs`` vanish.
@@ -952,42 +952,42 @@ an axis are the most accurate.
 
 .. code-block:: python
 
-        def dispersion_relation_2D(p, theta, C):
-            arg = C*sqrt(sin(p*cos(theta))**2 +
-                         sin(p*sin(theta))**2)
-            c_frac = 2./(C*p)*arcsin(arg)
-        
-            return c_frac
-        
-        import numpy as np
-        from numpy import \ 
-             cos, sin, arcsin, sqrt, pi  # for nicer math formulas
-        
-        r = p = np.linspace(0.001, pi/2, 101)
-        theta = np.linspace(0, 2*pi, 51)
-        r, theta = np.meshgrid(r, theta)
-        
-        # Make 2x2 filled contour plots for 4 values of C
-        import matplotlib.pyplot as plt
-        C_max = 1/sqrt(2)
-        C = [[C_max, 0.9*C_max], [0.5*C_max, 0.2*C_max]]
-        fix, axes = plt.subplots(2, 2, subplot_kw=dict(polar=True))
-        for row in range(2):
-            for column in range(2):
-                error = 1 - dispersion_relation_2D(
-                    p, theta, C[row][column])
-                print error.min(), error.max()
-                # use vmin=error.min(), vmax=error.max()
-                cax = axes[row][column].contourf(
-                    theta, r, error, 50, vmin=-1, vmax=-0.28)
-                axes[row][column].set_xticks([])
-                axes[row][column].set_yticks([])
-        
-        # Add colorbar to the last plot
-        cbar = plt.colorbar(cax)
-        cbar.ax.set_ylabel('error in wave velocity')
-        plt.savefig('disprel2D.png');  plt.savefig('disprel2D.pdf')
-        plt.show()
+    def dispersion_relation_2D(p, theta, C):
+        arg = C*sqrt(sin(p*cos(theta))**2 +
+                     sin(p*sin(theta))**2)
+        c_frac = 2./(C*p)*arcsin(arg)
+    
+        return c_frac
+    
+    import numpy as np
+    from numpy import \ 
+         cos, sin, arcsin, sqrt, pi  # for nicer math formulas
+    
+    r = p = np.linspace(0.001, pi/2, 101)
+    theta = np.linspace(0, 2*pi, 51)
+    r, theta = np.meshgrid(r, theta)
+    
+    # Make 2x2 filled contour plots for 4 values of C
+    import matplotlib.pyplot as plt
+    C_max = 1/sqrt(2)
+    C = [[C_max, 0.9*C_max], [0.5*C_max, 0.2*C_max]]
+    fix, axes = plt.subplots(2, 2, subplot_kw=dict(polar=True))
+    for row in range(2):
+        for column in range(2):
+            error = 1 - dispersion_relation_2D(
+                p, theta, C[row][column])
+            print error.min(), error.max()
+            # use vmin=error.min(), vmax=error.max()
+            cax = axes[row][column].contourf(
+                theta, r, error, 50, vmin=-1, vmax=-0.28)
+            axes[row][column].set_xticks([])
+            axes[row][column].set_yticks([])
+    
+    # Add colorbar to the last plot
+    cbar = plt.colorbar(cax)
+    cbar.ax.set_ylabel('error in wave velocity')
+    plt.savefig('disprel2D.png');  plt.savefig('disprel2D.pdf')
+    plt.show()
 
 .. _wave:pde1:fig:disprel2D:
 

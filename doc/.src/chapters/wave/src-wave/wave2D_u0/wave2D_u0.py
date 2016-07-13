@@ -67,27 +67,28 @@ def solver(I, V, f, c, Lx, Ly, Nx, Ny, dt, T,
 
 
     order = 'Fortran' if version == 'f77' else 'C'
-    u   = zeros((Nx+1,Ny+1), order=order)   # solution array
-    u_1 = zeros((Nx+1,Ny+1), order=order)   # solution at t-dt
-    u_2 = zeros((Nx+1,Ny+1), order=order)   # solution at t-2*dt
-    f_a = zeros((Nx+1,Ny+1), order=order)   # for compiled loops
+    u     = zeros((Nx+1,Ny+1), order=order)   # Solution array
+    u_n   = zeros((Nx+1,Ny+1), order=order)   # Solution at t-dt
+    u_nm1 = zeros((Nx+1,Ny+1), order=order)   # Solution at t-2*dt
+    f_a   = zeros((Nx+1,Ny+1), order=order)   # For compiled loops
 
     Ix = range(0, u.shape[0])
     Iy = range(0, u.shape[1])
     It = range(0, t.shape[0])
 
-    import time; t0 = time.clock()          # for measuring CPU time
+    import time; t0 = time.clock()  # For measuring CPU time
 
-    # Load initial condition into u_1
+    # Load initial condition into u_n
     if version == 'scalar':
         for i in Ix:
             for j in Iy:
-                u_1[i,j] = I(x[i], y[j])
-    else: # use vectorized version
-        u_1[:,:] = I(xv, yv)
+                u_n[i,j] = I(x[i], y[j])
+    else:
+        # Use vectorized version (requires I to be vectorized)
+        u_n[:,:] = I(xv, yv)
 
     if user_action is not None:
-        user_action(u_1, x, xv, y, yv, t, 0)
+        user_action(u_n, x, xv, y, yv, t, 0)
 
     # Special formula for first time step
     n = 0
@@ -96,47 +97,46 @@ def solver(I, V, f, c, Lx, Ly, Nx, Ny, dt, T,
     # in advance_vectorized is small as this is only one step)
     if version == 'scalar':
         u = advance_scalar(
-            u, u_1, u_2, f, x, y, t, n,
+            u, u_n, u_nm1, f, x, y, t, n,
             Cx2, Cy2, dt2, V, step1=True)
 
     else:
         f_a[:,:] = f(xv, yv, t[n])  # precompute, size as u
         V_a = V(xv, yv)
         u = advance_vectorized(
-            u, u_1, u_2, f_a,
+            u, u_n, u_nm1, f_a,
             Cx2, Cy2, dt2, V=V_a, step1=True)
 
     if user_action is not None:
         user_action(u, x, xv, y, yv, t, 1)
 
     # Update data structures for next step
-    #u_2[:] = u_1;  u_1[:] = u  # safe, but slower
-    u_2, u_1, u = u_1, u, u_2
+    #u_nm1[:] = u_n;  u_n[:] = u  # safe, but slow
+    u_nm1, u_n, u = u_n, u, u_nm1
 
     for n in It[1:-1]:
         if version == 'scalar':
             # use f(x,y,t) function
-            u = advance(u, u_1, u_2, f, x, y, t, n, Cx2, Cy2, dt2)
+            u = advance(u, u_n, u_nm1, f, x, y, t, n, Cx2, Cy2, dt2)
         else:
             f_a[:,:] = f(xv, yv, t[n])  # precompute, size as u
-            u = advance(u, u_1, u_2, f_a, Cx2, Cy2, dt2)
+            u = advance(u, u_n, u_nm1, f_a, Cx2, Cy2, dt2)
 
         if user_action is not None:
             if user_action(u, x, xv, y, yv, t, n+1):
                 break
 
         # Update data structures for next step
-        #u_2[:] = u_1;  u_1[:] = u  # safe, but slower
-        u_2, u_1, u = u_1, u, u_2
+        u_nm1, u_n, u = u_n, u, u_nm1
 
-    # Important to set u = u_1 if u is to be returned!
+    # Important to set u = u_n if u is to be returned!
     t1 = time.clock()
     # dt might be computed in this function so return the value
     return dt, t1 - t0
 
 
 
-def advance_scalar(u, u_1, u_2, f, x, y, t, n, Cx2, Cy2, dt2,
+def advance_scalar(u, u_n, u_nm1, f, x, y, t, n, Cx2, Cy2, dt2,
                    V=None, step1=False):
     Ix = range(0, u.shape[0]);  Iy = range(0, u.shape[1])
     if step1:
@@ -147,9 +147,9 @@ def advance_scalar(u, u_1, u_2, f, x, y, t, n, Cx2, Cy2, dt2,
         D1 = 2;  D2 = 1
     for i in Ix[1:-1]:
         for j in Iy[1:-1]:
-            u_xx = u_1[i-1,j] - 2*u_1[i,j] + u_1[i+1,j]
-            u_yy = u_1[i,j-1] - 2*u_1[i,j] + u_1[i,j+1]
-            u[i,j] = D1*u_1[i,j] - D2*u_2[i,j] + \
+            u_xx = u_n[i-1,j] - 2*u_n[i,j] + u_n[i+1,j]
+            u_yy = u_n[i,j-1] - 2*u_n[i,j] + u_n[i,j+1]
+            u[i,j] = D1*u_n[i,j] - D2*u_nm1[i,j] + \
                      Cx2*u_xx + Cy2*u_yy + dt2*f(x[i], y[j], t[n])
             if step1:
                 u[i,j] += dt*V(x[i], y[j])
@@ -164,7 +164,7 @@ def advance_scalar(u, u_1, u_2, f, x, y, t, n, Cx2, Cy2, dt2,
     for j in Iy: u[i,j] = 0
     return u
 
-def advance_vectorized(u, u_1, u_2, f_a, Cx2, Cy2, dt2,
+def advance_vectorized(u, u_n, u_nm1, f_a, Cx2, Cy2, dt2,
                        V=None, step1=False):
     if step1:
         dt = sqrt(dt2)  # save
@@ -172,9 +172,9 @@ def advance_vectorized(u, u_1, u_2, f_a, Cx2, Cy2, dt2,
         D1 = 1;  D2 = 0
     else:
         D1 = 2;  D2 = 1
-    u_xx = u_1[:-2,1:-1] - 2*u_1[1:-1,1:-1] + u_1[2:,1:-1]
-    u_yy = u_1[1:-1,:-2] - 2*u_1[1:-1,1:-1] + u_1[1:-1,2:]
-    u[1:-1,1:-1] = D1*u_1[1:-1,1:-1] - D2*u_2[1:-1,1:-1] + \
+    u_xx = u_n[:-2,1:-1] - 2*u_n[1:-1,1:-1] + u_n[2:,1:-1]
+    u_yy = u_n[1:-1,:-2] - 2*u_n[1:-1,1:-1] + u_n[1:-1,2:]
+    u[1:-1,1:-1] = D1*u_n[1:-1,1:-1] - D2*u_nm1[1:-1,1:-1] + \
                    Cx2*u_xx + Cy2*u_yy + dt2*f_a[1:-1,1:-1]
     if step1:
         u[1:-1,1:-1] += dt*V[1:-1, 1:-1]

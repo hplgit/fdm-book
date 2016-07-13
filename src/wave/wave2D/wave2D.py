@@ -6,21 +6,21 @@ Very preliminary version.
 import time
 from scitools.std import *
 
-def scheme_ij(u, u_1, u_2, k_1, k_2, k_3, k_4,
+def scheme_ij(u, u_n, u_nm1, k_1, k_2, k_3, k_4,
               f, dt2, Cx2, Cy2, x, y, t_1,
               i, j, im1, ip1, jm1, jp1):
     """
     Right-hand side of finite difference at point [i,j].
     im1, ip1 denote i-1, i+1, resp. Similar for jm1, jp1.
-    t_1 corresponds to u_1 (previous time level relative to u).
+    t_1 corresponds to u_n (previous time level relative to u).
     """
-    u_ij = - k_2*u_2[i,j] + k_1*2*u_1[i,j]
-    u_xx = k_3*Cx2*(u_1[im1,j] - 2*u_1[i,j] + u_1[ip1,j])
-    u_yy = k_3*Cx2*(u_1[i,jm1] - 2*u_1[i,j] + u_1[i,jp1])
+    u_ij = - k_2*u_nm1[i,j] + k_1*2*u_n[i,j]
+    u_xx = k_3*Cx2*(u_n[im1,j] - 2*u_n[i,j] + u_n[ip1,j])
+    u_yy = k_3*Cx2*(u_n[i,jm1] - 2*u_n[i,j] + u_n[i,jp1])
     f_term = k_4*dt2*f(x, y, t_1)
     return u_ij + u_xx + u_yy + f_term
 
-def scheme_scalar_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
+def scheme_scalar_mesh(u, u_n, u_nm1, k_1, k_2, k_3, k_4,
                        f, dt2, Cx2, Cy2, x, y, t_1, Nx, Ny,
                        bc):
     Ix = range(0, u.shape[0])
@@ -31,7 +31,7 @@ def scheme_scalar_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
         for j in Iy[1:-1]:
             im1 = i-1; ip1 = i+1; jm1 = j-1; jp1 = j+1
             u[i,j] = scheme_ij(
-                u, u_1, u_2, k_1, k_2, k_3, k_4,
+                u, u_n, u_nm1, k_1, k_2, k_3, k_4,
                 f, dt2, Cx2, Cy2, x[i], y[j], t_1,
                 i, j, im1, ip1, jm1, jp1)
     # Boundary points
@@ -42,7 +42,7 @@ def scheme_scalar_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
         for j in Iy[1:-1]:
             jm1 = j-1; jp1 = j+1
             u[i,j] = scheme_ij(
-                u, u_1, u_2, k_1, k_2, k_3, k_4,
+                u, u_n, u_nm1, k_1, k_2, k_3, k_4,
                 f, dt2, Cx2, Cy2, x[i], y[j], t_1,
                 i, j, im1, ip1, jm1, jp1)
     else:
@@ -55,7 +55,7 @@ def scheme_scalar_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
         for j in Iy[1:-1]:
             jm1 = j-1; jp1 = j+1
             u[i,j] = scheme_ij(
-                u, u_1, u_2, k_1, k_2, k_3, k_4,
+                u, u_n, u_nm1, k_1, k_2, k_3, k_4,
                 f, dt2, Cx2, Cy2, x[i], y[j], t_1,
                 i, j, im1, ip1, jm1, jp1)
     else:
@@ -68,7 +68,7 @@ def scheme_scalar_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
         for i in Ix[1:-1]:
             im1 = i-1; ip1 = i+1
             u[i,j] = scheme_ij(
-                u, u_1, u_2, k_1, k_2, k_3, k_4,
+                u, u_n, u_nm1, k_1, k_2, k_3, k_4,
                 f, dt2, Cx2, Cy2, x[i], y[j], t_1,
                 i, j, im1, ip1, jm1, jp1)
     else:
@@ -81,7 +81,7 @@ def scheme_scalar_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
         for i in Ix[1:-1]:
             im1 = i-1; ip1 = i+1
             u[i,j] = scheme_ij(
-                u, u_1, u_2, k_1, k_2, k_3, k_4,
+                u, u_n, u_nm1, k_1, k_2, k_3, k_4,
                 f, dt2, Cx2, Cy2, x[i], y[j], t_1,
                 i, j, im1, ip1, jm1, jp1)
     else:
@@ -94,7 +94,7 @@ def scheme_scalar_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
     im1 = ip1; jm1 = jp1
     if bc['S'] is None:
         u[i,j] = scheme_ij(
-            u, u_1, u_2, k_1, k_2, k_3, k_4,
+            u, u_n, u_nm1, k_1, k_2, k_3, k_4,
             f, dt2, Cx2, Cy2, x[i], y[j], t_1,
             i, j, im1, ip1, jm1, jp1)
     else:
@@ -105,7 +105,7 @@ def scheme_scalar_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
     ip1 = im1; jm1 = jp1
     if bc['S'] is None:
         u[i,j] = scheme_ij(
-            u, u_1, u_2, k_1, k_2, k_3, k_4,
+            u, u_n, u_nm1, k_1, k_2, k_3, k_4,
             f, dt2, Cx2, Cy2, x[i], y[j], t_1,
             i, j, im1, ip1, jm1, jp1)
     else:
@@ -116,7 +116,7 @@ def scheme_scalar_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
     ip1 = im1; jp1 = jm1
     if bc['N'] is None:
         u[i,j] = scheme_ij(
-            u, u_1, u_2, k_1, k_2, k_3, k_4,
+            u, u_n, u_nm1, k_1, k_2, k_3, k_4,
             f, dt2, Cx2, Cy2, x[i], y[j], t_1,
             i, j, im1, ip1, jm1, jp1)
     else:
@@ -127,7 +127,7 @@ def scheme_scalar_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
     im1 = ip1; jp1 = jm1
     if bc['N'] is None:
         u[i,j] = scheme_ij(
-            u, u_1, u_2, k_1, k_2, k_3, k_4,
+            u, u_n, u_nm1, k_1, k_2, k_3, k_4,
             f, dt2, Cx2, Cy2, x[i], y[j], t_1,
             i, j, im1, ip1, jm1, jp1)
     else:
@@ -136,7 +136,7 @@ def scheme_scalar_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
     return u
 
 
-def scheme_vectorized_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
+def scheme_vectorized_mesh(u, u_n, u_nm1, k_1, k_2, k_3, k_4,
                            f, dt2, Cx2, Cy2, x, y, t_1, Nx, Ny,
                            bc):
     # Interior points
@@ -147,7 +147,7 @@ def scheme_vectorized_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
     jm1 = slice(0, Ny-1)
     jp1 = slice(2, Ny+1)
     u[i,j] = scheme_ij(
-        u, u_1, u_2, k_1, k_2, k_3, k_4,
+        u, u_n, u_nm1, k_1, k_2, k_3, k_4,
         f, dt2, Cx2, Cy2, xv[i,:], yv[j,:], t_1,
         i, j, im1, ip1, jm1, jp1)
     # Boundary points
@@ -159,7 +159,7 @@ def scheme_vectorized_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
     jp1 = slice(2, Ny+1)
     if bc['W'] is None:
         u[i,j] = scheme_ij(
-            u, u_1, u_2, k_1, k_2, k_3, k_4,
+            u, u_n, u_nm1, k_1, k_2, k_3, k_4,
             f, dt2, Cx2, Cy2, xv[i,:], yv[:,j], t_1,
             i, j, im1, ip1, jm1, jp1)
     else:
@@ -173,7 +173,7 @@ def scheme_vectorized_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
         for j in Iy[1:-1]:
             jm1 = j-1; jp1 = j+1
             u[i,j] = scheme_ij(
-                u, u_1, u_2, k_1, k_2, k_3, k_4,
+                u, u_n, u_nm1, k_1, k_2, k_3, k_4,
                 f, dt2, Cx2, Cy2, x[i], y[j], t_1,
                 i, j, im1, ip1, jm1, jp1)
     else:
@@ -186,7 +186,7 @@ def scheme_vectorized_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
         for i in Ix[1:-1]:
             im1 = i-1; ip1 = i+1
             u[i,j] = scheme_ij(
-                u, u_1, u_2, k_1, k_2, k_3, k_4,
+                u, u_n, u_nm1, k_1, k_2, k_3, k_4,
                 f, dt2, Cx2, Cy2, x[i], y[j], t_1,
                 i, j, im1, ip1, jm1, jp1)
     else:
@@ -199,7 +199,7 @@ def scheme_vectorized_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
         for i in Ix[1:-1]:
             im1 = i-1; ip1 = i+1
             u[i,j] = scheme_ij(
-                u, u_1, u_2, k_1, k_2, k_3, k_4,
+                u, u_n, u_nm1, k_1, k_2, k_3, k_4,
                 f, dt2, Cx2, Cy2, x[i], y[j], t_1,
                 i, j, im1, ip1, jm1, jp1)
     else:
@@ -212,7 +212,7 @@ def scheme_vectorized_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
     im1 = ip1; jm1 = jp1
     if bc['S'] is None:
         u[i,j] = scheme_ij(
-            u, u_1, u_2, k_1, k_2, k_3, k_4,
+            u, u_n, u_nm1, k_1, k_2, k_3, k_4,
             f, dt2, Cx2, Cy2, x[i], y[j], t_1,
             i, j, im1, ip1, jm1, jp1)
     else:
@@ -223,7 +223,7 @@ def scheme_vectorized_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
     ip1 = im1; jm1 = jp1
     if bc['S'] is None:
         u[i,j] = scheme_ij(
-            u, u_1, u_2, k_1, k_2, k_3, k_4,
+            u, u_n, u_nm1, k_1, k_2, k_3, k_4,
             f, dt2, Cx2, Cy2, x[i], y[j], t_1,
             i, j, im1, ip1, jm1, jp1)
     else:
@@ -234,7 +234,7 @@ def scheme_vectorized_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
     ip1 = im1; jp1 = jm1
     if bc['N'] is None:
         u[i,j] = scheme_ij(
-            u, u_1, u_2, k_1, k_2, k_3, k_4,
+            u, u_n, u_nm1, k_1, k_2, k_3, k_4,
             f, dt2, Cx2, Cy2, x[i], y[j], t_1,
             i, j, im1, ip1, jm1, jp1)
     else:
@@ -245,7 +245,7 @@ def scheme_vectorized_mesh(u, u_1, u_2, k_1, k_2, k_3, k_4,
     im1 = ip1; jp1 = jm1
     if bc['N'] is None:
         u[i,j] = scheme_ij(
-            u, u_1, u_2, k_1, k_2, k_3, k_4,
+            u, u_n, u_nm1, k_1, k_2, k_3, k_4,
             f, dt2, Cx2, Cy2, x[i], y[j], t_1,
             i, j, im1, ip1, jm1, jp1)
     else:
@@ -290,36 +290,36 @@ def solver(I, f, c, bc, Lx, Ly, Nx, Ny, dt, T,
     Cx2 = (c*dt/dx)**2;  Cy2 = (c*dt/dy)**2    # help variables
     dt2 = dt**2
 
-    u   = zeros((Nx+1,Ny+1))   # solution array
-    u_1 = zeros((Nx+1,Ny+1))   # solution at t-dt
-    u_2 = zeros((Nx+1,Ny+1))   # solution at t-2*dt
+    u     = zeros((Nx+1,Ny+1))   # Solution array, new level n+1
+    u_n   = zeros((Nx+1,Ny+1))   # Solution at t-dt, level n
+    u_nm1 = zeros((Nx+1,Ny+1))   # Solution at t-2*dt, level n-1
 
     Ix = range(0, Nx+1)
     Iy = range(0, Ny+1)
     It = range(0, Nt+1)
 
-    # Load initial condition into u_1
+    # Load initial condition into u_n
     for i in Ix:
         for j in Iy:
-            u_1[i,j] = I(x[i], y[j])
+            u_n[i,j] = I(x[i], y[j])
 
     if user_action is not None:
-        user_action(u_1, x, xv, y, yv, t, 0)
+        user_action(u_n, x, xv, y, yv, t, 0)
 
     # Special formula for first time step
     if version == 'scalar':
-        u = scheme_scalar_mesh(u, u_1, u_2, 0.5, 0, 0.5, 0.5,
+        u = scheme_scalar_mesh(u, u_n, u_nm1, 0.5, 0, 0.5, 0.5,
                                f, dt2, Cx2, Cy2, x, y, t[0],
                                Nx, Ny, bc)
 
     if user_action is not None:
         user_action(u, x, xv, y, yv, t, 1)
 
-    u_2[:,:] = u_1; u_1[:,:] = u
+    u_nm1[:,:] = u_n; u_n[:,:] = u
 
     for n in It[1:-1]:
         if version == 'scalar':
-            u = scheme_scalar_mesh(u, u_1, u_2, 1, 1, 1, 1,
+            u = scheme_scalar_mesh(u, u_n, u_nm1, 1, 1, 1, 1,
                                    f, dt2, Cx2, Cy2, x, y, t[n],
                                    Nx, Ny, bc)
 
@@ -328,8 +328,8 @@ def solver(I, f, c, bc, Lx, Ly, Nx, Ny, dt, T,
                 break
 
         # Update data structures for next step
-        #u_2[:] = u_1; u_1[:] = u  # slower
-        u_2, u_1, u = u_1, u, u_2
+        #u_nm1[:] = u_n; u_n[:] = u  # slower
+        u_nm1, u_n, u = u_n, u, u_nm1
 
     return dt  # dt might be computed in this function
 

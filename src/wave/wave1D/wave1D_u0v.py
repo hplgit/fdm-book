@@ -29,24 +29,24 @@ def solver(I, V, f, c, L, dt, C, T, user_action=None,
         V = (lambda x: 0) if version == 'scalar' else \
             lambda x: np.zeros(x.shape)
 
-    u   = np.zeros(Nx+1)   # Solution array at new time level
-    u_1 = np.zeros(Nx+1)   # Solution at 1 time level back
-    u_2 = np.zeros(Nx+1)   # Solution at 2 time levels back
+    u     = np.zeros(Nx+1)   # Solution array at new time level
+    u_n   = np.zeros(Nx+1)   # Solution at 1 time level back
+    u_nm1 = np.zeros(Nx+1)   # Solution at 2 time levels back
 
-    import time;  t0 = time.clock()  # for measuring CPU time
+    import time;  t0 = time.clock()  # CPU time measurement
 
-    # Load initial condition into u_1
+    # Load initial condition into u_n
     for i in range(0,Nx+1):
-        u_1[i] = I(x[i])
+        u_n[i] = I(x[i])
 
     if user_action is not None:
-        user_action(u_1, x, t, 0)
+        user_action(u_n, x, t, 0)
 
     # Special formula for first time step
     n = 0
     for i in range(1, Nx):
-        u[i] = u_1[i] + dt*V(x[i]) + \
-               0.5*C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) + \
+        u[i] = u_n[i] + dt*V(x[i]) + \
+               0.5*C2*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) + \
                0.5*dt**2*f(x[i], t[n])
     u[0] = 0;  u[Nx] = 0
 
@@ -54,25 +54,25 @@ def solver(I, V, f, c, L, dt, C, T, user_action=None,
         user_action(u, x, t, 1)
 
     # Switch variables before next step
-    u_2[:] = u_1;  u_1[:] = u
+    u_nm1[:] = u_n;  u_n[:] = u
 
     for n in range(1, Nt):
         # Update all inner points at time t[n+1]
 
         if version == 'scalar':
             for i in range(1, Nx):
-                u[i] = - u_2[i] + 2*u_1[i] + \
-                       C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) + \
+                u[i] = - u_nm1[i] + 2*u_n[i] + \
+                       C2*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) + \
                        dt**2*f(x[i], t[n])
         elif version == 'vectorized':   # (1:-1 slice style)
             f_a = f(x, t[n])  # Precompute in array
-            u[1:-1] = - u_2[1:-1] + 2*u_1[1:-1] + \
-                C2*(u_1[0:-2] - 2*u_1[1:-1] + u_1[2:]) + \
+            u[1:-1] = - u_nm1[1:-1] + 2*u_n[1:-1] + \
+                C2*(u_n[0:-2] - 2*u_n[1:-1] + u_n[2:]) + \
                 dt**2*f_a[1:-1]
         elif version == 'vectorized2':  # (1:Nx slice style)
             f_a = f(x, t[n])  # Precompute in array
-            u[1:Nx] =  - u_2[1:Nx] + 2*u_1[1:Nx] + \
-                C2*(u_1[0:Nx-1] - 2*u_1[1:Nx] + u_1[2:Nx+1]) + \
+            u[1:Nx] =  - u_nm1[1:Nx] + 2*u_n[1:Nx] + \
+                C2*(u_n[0:Nx-1] - 2*u_n[1:Nx] + u_n[2:Nx+1]) + \
                 dt**2*f_a[1:Nx]
 
         # Insert boundary conditions
@@ -82,9 +82,9 @@ def solver(I, V, f, c, L, dt, C, T, user_action=None,
                 break
 
         # Switch variables before next step
-        u_2[:] = u_1;  u_1[:] = u
+        u_nm1[:] = u_n;  u_n[:] = u
 
-    cpu_time = t0 - time.clock()
+    cpu_time = time.clock() - t0
     return u, x, t, cpu_time
 
 def viz(

@@ -233,7 +233,7 @@ done
 
 cd ..
 cp index_files.do.txt index.do.txt
-system doconce format html index --html_style=bootstrap --html_links_in_new_window --html_bootstrap_navbar=off
+system doconce format html index --html_style=bootstrap --html_links_in_new_window --html_bootstrap_navbar=off -DCHAPTERS
 cd -
 cp ../index.html $dest
 rm -f ../index.*
