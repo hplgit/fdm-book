@@ -808,7 +808,7 @@ The algorithm is compactly and fully specified in Python:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
 x <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, L, Nx<span style="color: #666666">+1</span>)    <span style="color: #408080; font-style: italic"># mesh points in space</span>
 dx <span style="color: #666666">=</span> x[<span style="color: #666666">1</span>] <span style="color: #666666">-</span> x[<span style="color: #666666">0</span>]
 t <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, T, Nt<span style="color: #666666">+1</span>)    <span style="color: #408080; font-style: italic"># mesh points in time</span>
@@ -825,7 +825,7 @@ u_n <span style="color: #666666">=</span> np<span style="color: #666666">.</span
     <span style="color: #408080; font-style: italic"># Compute u at inner mesh points</span>
     <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>, Nx):
         u[i] <span style="color: #666666">=</span> u_n[i] <span style="color: #666666">+</span> F<span style="color: #666666">*</span>(u_n[i<span style="color: #666666">-1</span>] <span style="color: #666666">-</span> <span style="color: #666666">2*</span>u_n[i] <span style="color: #666666">+</span> u_n[i<span style="color: #666666">+1</span>]) <span style="color: #666666">+</span> \ 
-	       f(x[i], t[n])
+	       dt<span style="color: #666666">*</span>f(x[i], t[n])
 
     <span style="color: #408080; font-style: italic"># Insert boundary conditions</span>
     u[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> <span style="color: #666666">0</span>;  u[Nx] <span style="color: #666666">=</span> <span style="color: #666666">0</span>
@@ -853,7 +853,7 @@ as specified in the algorithm above:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
 
 <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solver_FE_simple</span>(I, a, f, L, dt, F, T):
     <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
@@ -903,7 +903,7 @@ The vectorized version replaces the explicit loop
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>, Nx):
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>, Nx):
     u[i] <span style="color: #666666">=</span> u_n[i] <span style="color: #666666">+</span> F<span style="color: #666666">*</span>(u_n[i<span style="color: #666666">-1</span>] <span style="color: #666666">-</span> <span style="color: #666666">2*</span>u_n[i] <span style="color: #666666">+</span> u_n[i<span style="color: #666666">+1</span>]) \ 
            <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>f(x[i], t[n])
 </pre></div>
@@ -913,7 +913,7 @@ by arithmetics on displaced slices of the <code>u</code> array:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>u[<span style="color: #666666">1</span>:Nx] <span style="color: #666666">=</span> u_n[<span style="color: #666666">1</span>:Nx] <span style="color: #666666">+</span> F<span style="color: #666666">*</span>(u_n[<span style="color: #666666">0</span>:Nx<span style="color: #666666">-1</span>] <span style="color: #666666">-</span> <span style="color: #666666">2*</span>u_n[<span style="color: #666666">1</span>:Nx] <span style="color: #666666">+</span> u_n[<span style="color: #666666">2</span>:Nx<span style="color: #666666">+1</span>]) \ 
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">u[<span style="color: #666666">1</span>:Nx] <span style="color: #666666">=</span> u_n[<span style="color: #666666">1</span>:Nx] <span style="color: #666666">+</span> F<span style="color: #666666">*</span>(u_n[<span style="color: #666666">0</span>:Nx<span style="color: #666666">-1</span>] <span style="color: #666666">-</span> <span style="color: #666666">2*</span>u_n[<span style="color: #666666">1</span>:Nx] <span style="color: #666666">+</span> u_n[<span style="color: #666666">2</span>:Nx<span style="color: #666666">+1</span>]) \ 
           <span style="color: #666666">+</span> dt<span style="color: #666666">*</span>f(x[<span style="color: #666666">1</span>:Nx], t[n])
 <span style="color: #408080; font-style: italic"># or</span>
 u[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>] <span style="color: #666666">=</span> u_n[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>] <span style="color: #666666">+</span> F<span style="color: #666666">*</span>(u_n[<span style="color: #666666">0</span>:<span style="color: #666666">-2</span>] <span style="color: #666666">-</span> <span style="color: #666666">2*</span>u_n[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>] <span style="color: #666666">+</span> u_n[<span style="color: #666666">2</span>:]) \ 
@@ -938,7 +938,7 @@ callback function, and a bit more complicated setting of the source
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solver_FE</span>(I, a, f, L, dt, F, T,
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solver_FE</span>(I, a, f, L, dt, F, T,
               user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>, version<span style="color: #666666">=</span><span style="color: #BA2121">&#39;scalar&#39;</span>):
     <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
 <span style="color: #BA2121; font-style: italic">    Vectorized implementation of solver_FE_simple.</span>
@@ -1029,7 +1029,7 @@ is easily automated with <code>sympy</code>:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">sympy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">sym</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">sympy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">sym</span>
 x, t, a, L <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>symbols(<span style="color: #BA2121">&#39;x t a L&#39;</span>)
 u <span style="color: #666666">=</span> x<span style="color: #666666">*</span>(L<span style="color: #666666">-</span>x)<span style="color: #666666">*5*</span>t
 
@@ -1060,7 +1060,7 @@ numbers in <code>u</code> and <code>f</code>. The appropriate code looks like th
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>a <span style="color: #666666">=</span> <span style="color: #666666">0.5</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">a <span style="color: #666666">=</span> <span style="color: #666666">0.5</span>
 L <span style="color: #666666">=</span> <span style="color: #666666">1.5</span>
 u_exact <span style="color: #666666">=</span> sym<span style="color: #666666">.</span>lambdify(
     [x, t], u<span style="color: #666666">.</span>subs(<span style="color: #BA2121">&#39;L&#39;</span>, L)<span style="color: #666666">.</span>subs(<span style="color: #BA2121">&#39;a&#39;</span>, a), modules<span style="color: #666666">=</span><span style="color: #BA2121">&#39;numpy&#39;</span>)
@@ -1081,7 +1081,7 @@ time interval:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_solver_FE</span>():
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_solver_FE</span>():
     <span style="color: #408080; font-style: italic"># Define u_exact, f, I as explained above</span>
 
     dx <span style="color: #666666">=</span> L<span style="color: #666666">/3</span>  <span style="color: #408080; font-style: italic"># 3 cells</span>
@@ -1187,7 +1187,7 @@ respectively:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">plug</span>(scheme<span style="color: #666666">=</span><span style="color: #BA2121">&#39;FE&#39;</span>, F<span style="color: #666666">=0.5</span>, Nx<span style="color: #666666">=50</span>):
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">plug</span>(scheme<span style="color: #666666">=</span><span style="color: #BA2121">&#39;FE&#39;</span>, F<span style="color: #666666">=0.5</span>, Nx<span style="color: #666666">=50</span>):
     L <span style="color: #666666">=</span> <span style="color: #666666">1.</span>
     a <span style="color: #666666">=</span> <span style="color: #666666">1.</span>
     T <span style="color: #666666">=</span> <span style="color: #666666">0.1</span>
@@ -1230,7 +1230,7 @@ with plotting:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">viz</span>(I, a, L, dt, F, T, umin, umax,
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">viz</span>(I, a, L, dt, F, T, umin, umax,
         scheme<span style="color: #666666">=</span><span style="color: #BA2121">&#39;FE&#39;</span>, animate<span style="color: #666666">=</span><span style="color: #008000">True</span>, framefiles<span style="color: #666666">=</span><span style="color: #008000">True</span>):
 
     <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">plot_u</span>(u, x, t, n):
@@ -1267,7 +1267,7 @@ simulate for \( t\in [0,0.1] \). First we try the highest value of
 <p>
 
 <!-- code=text (!bc sys) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>Terminal&gt; python -c &#39;from diffu1D_u0 import gaussian
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">Terminal&gt; python -c &#39;from diffu1D_u0 import gaussian
           gaussian(&quot;solver_FE&quot;, F=0.5, dt=0.0002)&#39;
 </pre></div>
 <p>
@@ -1625,7 +1625,7 @@ with Python code:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>x <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, L, Nx<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># mesh points in space</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">x <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, L, Nx<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># mesh points in space</span>
 dx <span style="color: #666666">=</span> x[<span style="color: #666666">1</span>] <span style="color: #666666">-</span> x[<span style="color: #666666">0</span>]
 t <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, T, N<span style="color: #666666">+1</span>)    <span style="color: #408080; font-style: italic"># mesh points in time</span>
 u   <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nx<span style="color: #666666">+1</span>)          <span style="color: #408080; font-style: italic"># unknown u at new time level</span>
@@ -1689,7 +1689,7 @@ main diagonal and the upper and lower diagonals.
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #408080; font-style: italic"># Representation of sparse matrix and right-hand side</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #408080; font-style: italic"># Representation of sparse matrix and right-hand side</span>
 main  <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nx<span style="color: #666666">+1</span>)
 lower <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nx)
 upper <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nx)
@@ -1876,6 +1876,14 @@ well-known and widely used schemes:
  <li> \( \theta=\half \) gives the Crank-Nicolson scheme in time</li>
 </ul>
 
+In the compact difference notation, we write the \( \theta \) rule
+as
+
+$$ [D_t u = \dfc D_xD_x u]^{n+\theta}\tp$$
+
+We have that \( t_{n+\theta} = \theta t_{n+1} + (1-\theta)t_n \).
+
+<p>
 Applied to the 1D diffusion problem, the \( \theta \)-rule gives
 
 $$
@@ -2452,7 +2460,7 @@ can easily be done with aid of <code>sympy</code>:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">A_exact</span>(F, p):
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">A_exact</span>(F, p):
     <span style="color: #008000; font-weight: bold">return</span> exp(<span style="color: #666666">-4*</span>F<span style="color: #666666">*</span>p<span style="color: #666666">**2</span>)
 
 <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">A_FE</span>(F, p):
@@ -3317,7 +3325,7 @@ Since the Fourier number has no meaning for varying
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solver_theta</span>(I, a, L, Nx, D, T, theta<span style="color: #666666">=0.5</span>, u_L<span style="color: #666666">=1</span>, u_R<span style="color: #666666">=0</span>,
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solver_theta</span>(I, a, L, Nx, D, T, theta<span style="color: #666666">=0.5</span>, u_L<span style="color: #666666">=1</span>, u_R<span style="color: #666666">=0</span>,
                  user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>):
     x <span style="color: #666666">=</span> linspace(<span style="color: #666666">0</span>, L, Nx<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># mesh points in space</span>
     dx <span style="color: #666666">=</span> x[<span style="color: #666666">1</span>] <span style="color: #666666">-</span> x[<span style="color: #666666">0</span>]
@@ -3491,7 +3499,7 @@ form
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">SerialLayers</span>:
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">SerialLayers</span>:
     <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
 <span style="color: #BA2121; font-style: italic">    b: coordinates of boundaries of layers, b[0] is left boundary</span>
 <span style="color: #BA2121; font-style: italic">    and b[-1] is right boundary of the domain [0,L].</span>
@@ -3531,7 +3539,7 @@ is of the same size as \( \max u = \max(U_0,U_L) \)).
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">SerialLayers</span>:
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">SerialLayers</span>:
     <span style="color: #666666">...</span>
 
     <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">plot</span>(<span style="color: #008000">self</span>):
@@ -3559,7 +3567,7 @@ Figure <a href="#diffu:fd2:pde:st:sol:pc:fig1">12</a> shows the case where
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>b <span style="color: #666666">=</span> [<span style="color: #666666">0</span>, <span style="color: #666666">0.25</span>, <span style="color: #666666">0.5</span>, <span style="color: #666666">1</span>]   <span style="color: #408080; font-style: italic"># material boundaries</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">b <span style="color: #666666">=</span> [<span style="color: #666666">0</span>, <span style="color: #666666">0.25</span>, <span style="color: #666666">0.5</span>, <span style="color: #666666">1</span>]   <span style="color: #408080; font-style: italic"># material boundaries</span>
 a <span style="color: #666666">=</span> [<span style="color: #666666">0.2</span>, <span style="color: #666666">0.4</span>, <span style="color: #666666">4</span>]       <span style="color: #408080; font-style: italic"># material values</span>
 U_0 <span style="color: #666666">=</span> <span style="color: #666666">0.5</span>;  U_L <span style="color: #666666">=</span> <span style="color: #666666">5</span>     <span style="color: #408080; font-style: italic"># boundary conditions</span>
 </pre></div>
@@ -4319,7 +4327,7 @@ to understand than the sparse matrix case.
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
 
 <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solver_dense</span>(
     I, a, f, Lx, Ly, Nx, Ny, dt, T, theta<span style="color: #666666">=0.5</span>, user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>):
@@ -4348,7 +4356,7 @@ by their spatial values at the mesh points:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>u   <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros((Nx<span style="color: #666666">+1</span>, Ny<span style="color: #666666">+1</span>))      <span style="color: #408080; font-style: italic"># unknown u at new time level</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">u   <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros((Nx<span style="color: #666666">+1</span>, Ny<span style="color: #666666">+1</span>))      <span style="color: #408080; font-style: italic"># unknown u at new time level</span>
 u_n <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros((Nx<span style="color: #666666">+1</span>, Ny<span style="color: #666666">+1</span>))      <span style="color: #408080; font-style: italic"># u at the previous time level</span>
 </pre></div>
 <p>
@@ -4358,7 +4366,7 @@ introduce index sets for all mesh points:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>Ix <span style="color: #666666">=</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, Nx<span style="color: #666666">+1</span>)
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">Ix <span style="color: #666666">=</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, Nx<span style="color: #666666">+1</span>)
 Iy <span style="color: #666666">=</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, Ny<span style="color: #666666">+1</span>)
 It <span style="color: #666666">=</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, Nt<span style="color: #666666">+1</span>)
 </pre></div>
@@ -4368,7 +4376,7 @@ The initial condition is easy to fill in:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #408080; font-style: italic"># Load initial condition into u_n</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #408080; font-style: italic"># Load initial condition into u_n</span>
 <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> Ix:
     <span style="color: #008000; font-weight: bold">for</span> j <span style="color: #AA22FF; font-weight: bold">in</span> Iy:
         u_n[i,j] <span style="color: #666666">=</span> I(x[i], y[j])
@@ -4380,7 +4388,7 @@ is allocated by
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>N <span style="color: #666666">=</span> (Nx<span style="color: #666666">+1</span>)<span style="color: #666666">*</span>(Ny<span style="color: #666666">+1</span>)  <span style="color: #408080; font-style: italic"># no of unknowns</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">N <span style="color: #666666">=</span> (Nx<span style="color: #666666">+1</span>)<span style="color: #666666">*</span>(Ny<span style="color: #666666">+1</span>)  <span style="color: #408080; font-style: italic"># no of unknowns</span>
 A <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros((N, N))
 b <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(N)
 </pre></div>
@@ -4390,7 +4398,7 @@ The filling of <code>A</code> goes like this:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>m <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> i, j: j<span style="color: #666666">*</span>(Nx<span style="color: #666666">+1</span>) <span style="color: #666666">+</span> i
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">m <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> i, j: j<span style="color: #666666">*</span>(Nx<span style="color: #666666">+1</span>) <span style="color: #666666">+</span> i
 
 <span style="color: #408080; font-style: italic"># Equations corresponding to j=0, i=0,1,... (u known)</span>
 j <span style="color: #666666">=</span> <span style="color: #666666">0</span>
@@ -4422,7 +4430,7 @@ time level inside the time loop:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">scipy.linalg</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">scipy.linalg</span>
 
 <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> It[<span style="color: #666666">0</span>:<span style="color: #666666">-1</span>]:
     <span style="color: #408080; font-style: italic"># Compute b</span>
@@ -4507,7 +4515,7 @@ The function has the signature
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>user_action(u, x, xv, y, yv, t, n)
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">user_action(u, x, xv, y, yv, t, n)
 </pre></div>
 <p>
 where <code>u</code> is a two-dimensional array holding the solution at time level <code>n</code>
@@ -4520,7 +4528,7 @@ defined by
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>xv <span style="color: #666666">=</span> x[:,np<span style="color: #666666">.</span>newaxis]
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">xv <span style="color: #666666">=</span> x[:,np<span style="color: #666666">.</span>newaxis]
 yv <span style="color: #666666">=</span> y[np<span style="color: #666666">.</span>newaxis,:]
 </pre></div>
 <p>
@@ -4530,7 +4538,7 @@ level <code>n</code> by first evaluating \( f \) at all points,
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>f_a <span style="color: #666666">=</span> f(xv, yv, t[n])
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">f_a <span style="color: #666666">=</span> f(xv, yv, t[n])
 </pre></div>
 <p>
 and then use slices to extract a view of the values at the internal
@@ -4565,7 +4573,7 @@ for checking the solution goes like this:
 <p>
 
 <!-- code=text typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>def quadratic(theta, Nx, Ny):
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">def quadratic(theta, Nx, Ny):
 
     def u_exact(x, y, t):
         return 5*t*x*(Lx-x)*y*(Ly-y)
@@ -4601,7 +4609,7 @@ different meshes and \( \theta \) values can take the form
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_quadratic</span>():
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_quadratic</span>():
     <span style="color: #408080; font-style: italic"># For each of the three schemes (theta = 1, 0.5, 0), a series of</span>
     <span style="color: #408080; font-style: italic"># meshes are tested (Nx &gt; Ny and Nx &lt; Ny)</span>
     <span style="color: #008000; font-weight: bold">for</span> theta <span style="color: #AA22FF; font-weight: bold">in</span> [<span style="color: #666666">1</span>, <span style="color: #666666">0.5</span>, <span style="color: #666666">0</span>]:
@@ -4739,7 +4747,7 @@ Based on this information, we declare the diagonals by
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>main   <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(N)            <span style="color: #408080; font-style: italic"># diagonal</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">main   <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(N)            <span style="color: #408080; font-style: italic"># diagonal</span>
 lower  <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(N<span style="color: #666666">-1</span>)          <span style="color: #408080; font-style: italic"># subdiagonal</span>
 upper  <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(N<span style="color: #666666">-1</span>)          <span style="color: #408080; font-style: italic"># superdiagonal</span>
 lower2 <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(N<span style="color: #666666">-</span>(Nx<span style="color: #666666">+1</span>))     <span style="color: #408080; font-style: italic"># lower diagonal</span>
@@ -4757,7 +4765,7 @@ on the boundary, and only the main diagonal gets a contribution:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>m <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> i, j: j<span style="color: #666666">*</span>(Nx<span style="color: #666666">+1</span>) <span style="color: #666666">+</span> i
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">m <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> i, j: j<span style="color: #666666">*</span>(Nx<span style="color: #666666">+1</span>) <span style="color: #666666">+</span> i
 j <span style="color: #666666">=</span> <span style="color: #666666">0</span>; main[m(<span style="color: #666666">0</span>,j):m(Nx<span style="color: #666666">+1</span>,j)] <span style="color: #666666">=</span> <span style="color: #666666">1</span>  <span style="color: #408080; font-style: italic"># j=0 boundary line</span>
 </pre></div>
 <p>
@@ -4768,7 +4776,7 @@ to boundary points:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">for</span> j <span style="color: #AA22FF; font-weight: bold">in</span> Iy[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>]:             <span style="color: #408080; font-style: italic"># Interior mesh lines j=1,...,Ny-1</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">for</span> j <span style="color: #AA22FF; font-weight: bold">in</span> Iy[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>]:             <span style="color: #408080; font-style: italic"># Interior mesh lines j=1,...,Ny-1</span>
     i <span style="color: #666666">=</span> <span style="color: #666666">0</span>;   main[m(i,j)] <span style="color: #666666">=</span> <span style="color: #666666">1</span>
     i <span style="color: #666666">=</span> Nx;  main[m(i,j)] <span style="color: #666666">=</span> <span style="color: #666666">1</span>  <span style="color: #408080; font-style: italic"># Boundary</span>
 </pre></div>
@@ -4781,7 +4789,7 @@ we can start with the main diagonal. The entries to be filled go from
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>main[m(<span style="color: #666666">1</span>,j):m(Nx,j)] <span style="color: #666666">=</span> <span style="color: #666666">1</span> <span style="color: #666666">+</span> <span style="color: #666666">2*</span>theta<span style="color: #666666">*</span>(Fx<span style="color: #666666">+</span>Fy)
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">main[m(<span style="color: #666666">1</span>,j):m(Nx,j)] <span style="color: #666666">=</span> <span style="color: #666666">1</span> <span style="color: #666666">+</span> <span style="color: #666666">2*</span>theta<span style="color: #666666">*</span>(Fx<span style="color: #666666">+</span>Fy)
 </pre></div>
 <p>
 The <code>upper</code> array for the superdiagonal has its index 0 corresponding to
@@ -4791,7 +4799,7 @@ to be set go from \( m(1,j) \) to \( m(N_x-1,j) \):
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>upper[m(<span style="color: #666666">1</span>,j):m(Nx,j)] <span style="color: #666666">=</span> <span style="color: #666666">-</span> theta<span style="color: #666666">*</span>Fx
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">upper[m(<span style="color: #666666">1</span>,j):m(Nx,j)] <span style="color: #666666">=</span> <span style="color: #666666">-</span> theta<span style="color: #666666">*</span>Fx
 </pre></div>
 <p>
 The subdiagonal (<code>lower</code> array), however, has its index 0
@@ -4803,7 +4811,7 @@ we set the following slice in <code>lower</code>:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>lower_offset <span style="color: #666666">=</span> <span style="color: #666666">1</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">lower_offset <span style="color: #666666">=</span> <span style="color: #666666">1</span>
 lower[m(<span style="color: #666666">1</span>,j)<span style="color: #666666">-</span>lower_offset:m(Nx,j)<span style="color: #666666">-</span>lower_offset] <span style="color: #666666">=</span> <span style="color: #666666">-</span> theta<span style="color: #666666">*</span>Fx
 </pre></div>
 <p>
@@ -4813,7 +4821,7 @@ is no offset and we can set the entries correspondingly to <code>upper</code>:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>upper2[m(<span style="color: #666666">1</span>,j):m(Nx,j)] <span style="color: #666666">=</span> <span style="color: #666666">-</span> theta<span style="color: #666666">*</span>Fy
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">upper2[m(<span style="color: #666666">1</span>,j):m(Nx,j)] <span style="color: #666666">=</span> <span style="color: #666666">-</span> theta<span style="color: #666666">*</span>Fy
 </pre></div>
 <p>
 The <code>lower2</code> diagonal, however, has its first index 0 corresponding to row
@@ -4822,7 +4830,7 @@ The <code>lower2</code> diagonal, however, has its first index 0 corresponding t
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>lower2_offset <span style="color: #666666">=</span> Nx<span style="color: #666666">+1</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">lower2_offset <span style="color: #666666">=</span> Nx<span style="color: #666666">+1</span>
 lower2[m(<span style="color: #666666">1</span>,j)<span style="color: #666666">-</span>lower2_offset:m(Nx,j)<span style="color: #666666">-</span>lower2_offset] <span style="color: #666666">=</span> <span style="color: #666666">-</span> theta<span style="color: #666666">*</span>Fy
 </pre></div>
 <p>
@@ -4832,7 +4840,7 @@ the sparse matrix representation of the coefficient matrix:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>lower_offset <span style="color: #666666">=</span> <span style="color: #666666">1</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">lower_offset <span style="color: #666666">=</span> <span style="color: #666666">1</span>
 lower2_offset <span style="color: #666666">=</span> Nx<span style="color: #666666">+1</span>
 m <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> i, j: j<span style="color: #666666">*</span>(Nx<span style="color: #666666">+1</span>) <span style="color: #666666">+</span> i
 
@@ -4854,7 +4862,7 @@ The next task is to create the sparse matrix from these diagonals:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">scipy.sparse</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">scipy.sparse</span>
 
 A <span style="color: #666666">=</span> scipy<span style="color: #666666">.</span>sparse<span style="color: #666666">.</span>diags(
     diagonals<span style="color: #666666">=</span>[main, lower, upper, lower2, upper2],
@@ -4876,7 +4884,7 @@ loop goes as follows.
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">scipy.sparse.linalg</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">scipy.sparse.linalg</span>
 
 <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> It[<span style="color: #666666">0</span>:<span style="color: #666666">-1</span>]:
     <span style="color: #408080; font-style: italic"># Compute b</span>
@@ -4923,7 +4931,7 @@ loops over the <code>i</code> index:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> It[<span style="color: #666666">0</span>:<span style="color: #666666">-1</span>]:
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> It[<span style="color: #666666">0</span>:<span style="color: #666666">-1</span>]:
     <span style="color: #408080; font-style: italic"># Compute b, vectorized version</span>
 
     <span style="color: #408080; font-style: italic"># Precompute f in array so we can make slices</span>
@@ -4989,7 +4997,7 @@ the section <a href="#diffu:2D:verify">Verification: exact numerical solution</a
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">quadratic</span>(theta, Nx, Ny):
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">quadratic</span>(theta, Nx, Ny):
     <span style="color: #666666">...</span>
     t, cpu <span style="color: #666666">=</span> solver_sparse(
         I, a, f, Lx, Ly, Nx, Ny,
@@ -5219,7 +5227,7 @@ With a \( \theta \) rule in time, the time loop can be coded like this:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> It[<span style="color: #666666">0</span>:<span style="color: #666666">-1</span>]:
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> It[<span style="color: #666666">0</span>:<span style="color: #666666">-1</span>]:
     <span style="color: #408080; font-style: italic"># Solve linear system by Jacobi iteration at time level n+1</span>
     u_[:,:] <span style="color: #666666">=</span> u_n  <span style="color: #408080; font-style: italic"># Start value</span>
     converged <span style="color: #666666">=</span> <span style="color: #008000">False</span>
@@ -5294,7 +5302,7 @@ for the difference between the exact and the computed solution.
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">quadratic</span>(theta, Nx, Ny):
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">quadratic</span>(theta, Nx, Ny):
     <span style="color: #666666">...</span>
     <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">assert_small_error</span>(u, x, xv, y, yv, t, n):
         <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Assert small error for iterative methods.&quot;&quot;&quot;</span>
@@ -5557,7 +5565,7 @@ are so similar, we can easily make a common code for the two:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> It[<span style="color: #666666">0</span>:<span style="color: #666666">-1</span>]:
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> It[<span style="color: #666666">0</span>:<span style="color: #666666">-1</span>]:
     <span style="color: #408080; font-style: italic"># Solve linear system by Jacobi/SOR iteration at time level n+1</span>
     u_[:,:] <span style="color: #666666">=</span> u_n  <span style="color: #408080; font-style: italic"># Start value</span>
     converged <span style="color: #666666">=</span> <span style="color: #008000">False</span>
@@ -5623,7 +5631,7 @@ Here is an example of a \( 6\times 6 \) mesh:
 <p>
 
 <!-- code=text typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>r b r b r b r
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">r b r b r b r
 b r b r b r b
 r b r b r b r
 b r b r b r b
@@ -5647,7 +5655,7 @@ scheme in time and without a source term:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #408080; font-style: italic"># Update internal points</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #408080; font-style: italic"># Update internal points</span>
 <span style="color: #008000; font-weight: bold">for</span> sweep <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #BA2121">&#39;red&#39;</span>, <span style="color: #BA2121">&#39;black&#39;</span>:
     <span style="color: #008000; font-weight: bold">for</span> j <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>, Ny, <span style="color: #666666">1</span>):
         <span style="color: #008000; font-weight: bold">if</span> sweep <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;red&#39;</span>:
@@ -5666,7 +5674,7 @@ red-black pattern, e.g.,
 <p>
 
 <!-- code=text typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>r b r b r b r
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">r b r b r b r
 b r b r b r b
 r b r b r b r
 b r b r b r b
@@ -5681,7 +5689,7 @@ we want to update the internal points (marking boundary points with
 <p>
 
 <!-- code=text typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>x x x x x x x
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">x x x x x x x
 x r b r b r x
 x b r b r b x
 x r b r b r x
@@ -5697,7 +5705,7 @@ marked with <code>R</code>:
 <p>
 
 <!-- code=text typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>x x x x x x x
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">x x x x x x x
 x R b R b R x
 x b r b r b x
 x R b R b R x
@@ -5712,7 +5720,7 @@ This slice is specified as <code>1::2</code> for <code>i</code> and <code>1::2</
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>i <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">1</span>, <span style="color: #008000">None</span>, <span style="color: #666666">2</span>);  j <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">1</span>, <span style="color: #008000">None</span>, <span style="color: #666666">2</span>)
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">i <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">1</span>, <span style="color: #008000">None</span>, <span style="color: #666666">2</span>);  j <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">1</span>, <span style="color: #008000">None</span>, <span style="color: #666666">2</span>)
 </pre></div>
 <p>
 The second slice involves the red points with <code>R</code>:
@@ -5720,7 +5728,7 @@ The second slice involves the red points with <code>R</code>:
 <p>
 
 <!-- code=text typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>x x x x x x x
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">x x x x x x x
 x r b r b r x
 x b R b R b x
 x r b r b r x
@@ -5734,7 +5742,7 @@ The slices are
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>i <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">2</span>, <span style="color: #008000">None</span>, <span style="color: #666666">2</span>);  j <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">2</span>, <span style="color: #008000">None</span>, <span style="color: #666666">2</span>)
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">i <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">2</span>, <span style="color: #008000">None</span>, <span style="color: #666666">2</span>);  j <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">2</span>, <span style="color: #008000">None</span>, <span style="color: #666666">2</span>)
 </pre></div>
 <p>
 For the black points, the first slice involves the <code>B</code> points:
@@ -5742,7 +5750,7 @@ For the black points, the first slice involves the <code>B</code> points:
 <p>
 
 <!-- code=text typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>x x x x x x x
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">x x x x x x x
 x r B r B r x
 x b r b r b x
 x r B r B r x
@@ -5756,7 +5764,7 @@ with slice objects
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>i <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">2</span>, <span style="color: #008000">None</span>, <span style="color: #666666">2</span>);  j <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">1</span>, <span style="color: #008000">None</span>, <span style="color: #666666">2</span>)
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">i <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">2</span>, <span style="color: #008000">None</span>, <span style="color: #666666">2</span>);  j <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">1</span>, <span style="color: #008000">None</span>, <span style="color: #666666">2</span>)
 </pre></div>
 <p>
 The second set of black points is shown here:
@@ -5764,7 +5772,7 @@ The second set of black points is shown here:
 <p>
 
 <!-- code=text typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>x x x x x x x
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">x x x x x x x
 x r b r b r x
 x B r B r B x
 x r b r b r x
@@ -5778,7 +5786,7 @@ with slice objects
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>i <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">1</span>, <span style="color: #008000">None</span>, <span style="color: #666666">2</span>);  j <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">2</span>, <span style="color: #008000">None</span>, <span style="color: #666666">2</span>)
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">i <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">1</span>, <span style="color: #008000">None</span>, <span style="color: #666666">2</span>);  j <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">2</span>, <span style="color: #008000">None</span>, <span style="color: #666666">2</span>)
 </pre></div>
 <p>
 That is, we need four sets of slices. The simplest way of implementing
@@ -5790,7 +5798,7 @@ and <code>jp1</code>, respectively.
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">update</span>(u_, u_n, ic, im1, ip1, jc, jm1, jp1):
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">update</span>(u_, u_n, ic, im1, ip1, jc, jm1, jp1):
     <span style="color: #008000; font-weight: bold">return</span> \ 
        <span style="color: #666666">1.0/</span>(<span style="color: #666666">1.0</span> <span style="color: #666666">+</span> <span style="color: #666666">2*</span>theta<span style="color: #666666">*</span>(Fx <span style="color: #666666">+</span> Fy))<span style="color: #666666">*</span>(theta<span style="color: #666666">*</span>(
            Fx<span style="color: #666666">*</span>(u_[ip1,jc] <span style="color: #666666">+</span> u_[im1,jc]) <span style="color: #666666">+</span>
@@ -5811,7 +5819,7 @@ The relaxed Jacobi iteration can be implemented by
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>ic  <span style="color: #666666">=</span> jc  <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">1</span>,<span style="color: #666666">-1</span>)
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">ic  <span style="color: #666666">=</span> jc  <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">1</span>,<span style="color: #666666">-1</span>)
 im1 <span style="color: #666666">=</span> jm1 <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">0</span>,<span style="color: #666666">-2</span>)
 ip1 <span style="color: #666666">=</span> jp1 <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">2</span>,<span style="color: #008000">None</span>)
 u_new[ic,jc] <span style="color: #666666">=</span> update(
@@ -5827,7 +5835,7 @@ slices. The code below contains the details.
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #408080; font-style: italic"># Red points</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #408080; font-style: italic"># Red points</span>
 ic  <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">1</span>,<span style="color: #666666">-1</span>,<span style="color: #666666">2</span>)
 im1 <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">0</span>,<span style="color: #666666">-2</span>,<span style="color: #666666">2</span>)
 ip1 <span style="color: #666666">=</span> <span style="color: #008000">slice</span>(<span style="color: #666666">2</span>,<span style="color: #008000">None</span>,<span style="color: #666666">2</span>)
@@ -6128,7 +6136,7 @@ gradient function as an alternative solver.
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solver_sparse</span>(
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">solver_sparse</span>(
     I, a, f, Lx, Ly, Nx, Ny, dt, T, theta<span style="color: #666666">=0.5</span>,
     U_0x<span style="color: #666666">=0</span>, U_0y<span style="color: #666666">=0</span>, U_Lx<span style="color: #666666">=0</span>, U_Ly<span style="color: #666666">=0</span>, user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>,
     method<span style="color: #666666">=</span><span style="color: #BA2121">&#39;direct&#39;</span>, CG_prec<span style="color: #666666">=</span><span style="color: #BA2121">&#39;ILU&#39;</span>, CG_tol<span style="color: #666666">=1E-5</span>):
@@ -6337,7 +6345,7 @@ probability \( p \) and \( r>p \) with probability \( 1-p \):
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">random</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">random</span>
 r <span style="color: #666666">=</span> random<span style="color: #666666">.</span>uniform(<span style="color: #666666">0</span>, <span style="color: #666666">1</span>)
 <span style="color: #008000; font-weight: bold">if</span> r <span style="color: #666666">&lt;=</span> p:
     <span style="color: #408080; font-style: italic"># Event happens</span>
@@ -6352,7 +6360,7 @@ with probability \( 1-p \) can now be implemented by
 <p>
 
 <!-- code=python (!bc pypro) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">random</span><span style="color: #666666">,</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">random</span><span style="color: #666666">,</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
 
 <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walk1D</span>(x0, N, p):
     <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;1D random walk with 1 particle.&quot;&quot;&quot;</span>
@@ -6391,7 +6399,7 @@ otherwise the step is \( 1 \):
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>r <span style="color: #666666">=</span> np<span style="color: #666666">.</span>random<span style="color: #666666">.</span>uniform(<span style="color: #666666">0</span>, <span style="color: #666666">1</span>, size<span style="color: #666666">=</span>N)
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">r <span style="color: #666666">=</span> np<span style="color: #666666">.</span>random<span style="color: #666666">.</span>uniform(<span style="color: #666666">0</span>, <span style="color: #666666">1</span>, size<span style="color: #666666">=</span>N)
 steps <span style="color: #666666">=</span> np<span style="color: #666666">.</span>where(r <span style="color: #666666">&lt;=</span> p, <span style="color: #666666">-1</span>, <span style="color: #666666">1</span>)
 </pre></div>
 <p>
@@ -6402,7 +6410,7 @@ available by the <code>numpy.cumsum</code> function:
 <p>
 
 <!-- code=python (!bc pyshell) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #666666">&gt;&gt;&gt;</span> <span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #666666">&gt;&gt;&gt;</span> <span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
 <span style="color: #666666">&gt;&gt;&gt;</span> np<span style="color: #666666">.</span>cumsum(np<span style="color: #666666">.</span>array([<span style="color: #666666">1</span>,<span style="color: #666666">3</span>,<span style="color: #666666">4</span>,<span style="color: #666666">6</span>]))
 array([ <span style="color: #666666">1</span>,  <span style="color: #666666">4</span>,  <span style="color: #666666">8</span>, <span style="color: #666666">14</span>])
 </pre></div>
@@ -6416,7 +6424,7 @@ We can now vectorize the <code>random_walk1D</code> function:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walk1D_vec</span>(x0, N, p):
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walk1D_vec</span>(x0, N, p):
     <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Vectorized version of random_walk1D.&quot;&quot;&quot;</span>
     <span style="color: #408080; font-style: italic"># Store position in step k in position[k]</span>
     position <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(N<span style="color: #666666">+1</span>)
@@ -6443,7 +6451,7 @@ number generator to some chosen integer, e.g.,
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>np<span style="color: #666666">.</span>random<span style="color: #666666">.</span>seed(<span style="color: #666666">10</span>)
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">np<span style="color: #666666">.</span>random<span style="color: #666666">.</span>seed(<span style="color: #666666">10</span>)
 </pre></div>
 <p>
 Calls to <code>random_walk1D_vec</code> give positions of the particle as
@@ -6474,7 +6482,7 @@ is the most flexible choice:
 <p>
 
 <!-- code=text typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>import random
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">import random
 
 def random_walk1D(x0, N, p, random=random):
     ...
@@ -6491,7 +6499,7 @@ vectorized implementations:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_random_walk1D</span>():
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_random_walk1D</span>():
     <span style="color: #408080; font-style: italic"># For fixed seed, check that scalar and vectorized versions</span>
     <span style="color: #408080; font-style: italic"># produce the same result</span>
     x0 <span style="color: #666666">=</span> <span style="color: #666666">2</span>;  N <span style="color: #666666">=</span> <span style="color: #666666">4</span>;  p <span style="color: #666666">=</span> <span style="color: #666666">0.6</span>
@@ -6648,7 +6656,7 @@ spaced through time:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>pos_hist_times <span style="color: #666666">=</span> [(N<span style="color: #666666">//</span>num_times)<span style="color: #666666">*</span>i <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(num_times)]
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">pos_hist_times <span style="color: #666666">=</span> [(N<span style="color: #666666">//</span>num_times)<span style="color: #666666">*</span>i <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(num_times)]
 </pre></div>
 <p>
 This is one of the few situations we want integer division (<code>//</code>) or
@@ -6663,7 +6671,7 @@ like this:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walks1D</span>(x0, N, p, num_walks<span style="color: #666666">=1</span>, num_times<span style="color: #666666">=1</span>,
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walks1D</span>(x0, N, p, num_walks<span style="color: #666666">=1</span>, num_times<span style="color: #666666">=1</span>,
                    random<span style="color: #666666">=</span>random):
     <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Simulate num_walks random walks from x0 with N steps.&quot;&quot;&quot;</span>
     position <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(N<span style="color: #666666">+1</span>)    <span style="color: #408080; font-style: italic"># Accumulated positions</span>
@@ -6707,7 +6715,7 @@ inserted in <code>pos_hist[n,:]</code>.
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walks1D_vec1</span>(x0, N, p, num_walks<span style="color: #666666">=1</span>, num_times<span style="color: #666666">=1</span>):
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walks1D_vec1</span>(x0, N, p, num_walks<span style="color: #666666">=1</span>, num_times<span style="color: #666666">=1</span>):
     <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Vectorized version of random_walks1D.&quot;&quot;&quot;</span>
     position  <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(N<span style="color: #666666">+1</span>)    <span style="color: #408080; font-style: italic"># Accumulated positions</span>
     position2 <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(N<span style="color: #666666">+1</span>)    <span style="color: #408080; font-style: italic"># Accumulated positions**2</span>
@@ -6745,7 +6753,7 @@ each row represents the steps in one walk.
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>walks <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros((num_walks, N<span style="color: #666666">+1</span>))  <span style="color: #408080; font-style: italic"># Positions of each walk</span>
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">walks <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros((num_walks, N<span style="color: #666666">+1</span>))  <span style="color: #408080; font-style: italic"># Positions of each walk</span>
 walks[:,<span style="color: #666666">0</span>] <span style="color: #666666">=</span> x0
 </pre></div>
 <p>
@@ -6757,7 +6765,7 @@ of each walk are stored in the rows.
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>r <span style="color: #666666">=</span> np<span style="color: #666666">.</span>random<span style="color: #666666">.</span>uniform(<span style="color: #666666">0</span>, <span style="color: #666666">1</span>, size<span style="color: #666666">=</span>N<span style="color: #666666">*</span>num_walks)
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">r <span style="color: #666666">=</span> np<span style="color: #666666">.</span>random<span style="color: #666666">.</span>uniform(<span style="color: #666666">0</span>, <span style="color: #666666">1</span>, size<span style="color: #666666">=</span>N<span style="color: #666666">*</span>num_walks)
 steps <span style="color: #666666">=</span> np<span style="color: #666666">.</span>where(r <span style="color: #666666">&lt;=</span> p, <span style="color: #666666">-1</span>, <span style="color: #666666">1</span>)<span style="color: #666666">.</span>reshape(num_walks, N)
 </pre></div>
 <p>
@@ -6768,7 +6776,7 @@ indicating a sum across the columns:
 <p>
 
 <!-- code=python (!bc pyshell) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #666666">&gt;&gt;&gt;</span> a <span style="color: #666666">=</span> np<span style="color: #666666">.</span>arange(<span style="color: #666666">6</span>)<span style="color: #666666">.</span>reshape(<span style="color: #666666">2</span>,<span style="color: #666666">3</span>)
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #666666">&gt;&gt;&gt;</span> a <span style="color: #666666">=</span> np<span style="color: #666666">.</span>arange(<span style="color: #666666">6</span>)<span style="color: #666666">.</span>reshape(<span style="color: #666666">2</span>,<span style="color: #666666">3</span>)
 <span style="color: #666666">&gt;&gt;&gt;</span> a
 array([[<span style="color: #666666">0</span>, <span style="color: #666666">1</span>, <span style="color: #666666">2</span>],
        [<span style="color: #666666">3</span>, <span style="color: #666666">4</span>, <span style="color: #666666">5</span>]])
@@ -6782,7 +6790,7 @@ Now <code>walks</code> can be computed by
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>walks[:,<span style="color: #666666">1</span>:] <span style="color: #666666">=</span> x0 <span style="color: #666666">+</span> np<span style="color: #666666">.</span>cumsum(steps, axis<span style="color: #666666">=1</span>)
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">walks[:,<span style="color: #666666">1</span>:] <span style="color: #666666">=</span> x0 <span style="color: #666666">+</span> np<span style="color: #666666">.</span>cumsum(steps, axis<span style="color: #666666">=1</span>)
 </pre></div>
 <p>
 The <code>position</code> vector is the sum of all the walks. That is, we want to
@@ -6791,7 +6799,7 @@ sum all the rows, obtained by
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>position  <span style="color: #666666">=</span> np<span style="color: #666666">.</span>sum(walks, axis<span style="color: #666666">=0</span>)
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">position  <span style="color: #666666">=</span> np<span style="color: #666666">.</span>sum(walks, axis<span style="color: #666666">=0</span>)
 </pre></div>
 <p>
 A corresponding expression computes the squares of the positions.
@@ -6801,7 +6809,7 @@ grabbing some of the walks (according to <code>pos_hist_times</code>):
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>pos_hist[:,:] <span style="color: #666666">=</span> walks[:,pos_hist_times]
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">pos_hist[:,:] <span style="color: #666666">=</span> walks[:,pos_hist_times]
 </pre></div>
 <p>
 The complete vectorized algorithm without any loop can now be
@@ -6810,7 +6818,7 @@ summarized:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walks1D_vec2</span>(x0, N, p, num_walks<span style="color: #666666">=1</span>, num_times<span style="color: #666666">=1</span>):
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walks1D_vec2</span>(x0, N, p, num_walks<span style="color: #666666">=1</span>, num_times<span style="color: #666666">=1</span>):
     <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Vectorized version of random_walks1D; no loops.&quot;&quot;&quot;</span>
     position  <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(N<span style="color: #666666">+1</span>)    <span style="color: #408080; font-style: italic"># Accumulated positions</span>
     position2 <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(N<span style="color: #666666">+1</span>)    <span style="color: #408080; font-style: italic"># Accumulated positions**2</span>
@@ -6861,7 +6869,7 @@ serial code such that the shortest loop is the outer loop:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walks1D2</span>(x0, N, p, num_walks<span style="color: #666666">=1</span>, num_times<span style="color: #666666">=1</span>, <span style="color: #666666">...</span>):
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walks1D2</span>(x0, N, p, num_walks<span style="color: #666666">=1</span>, num_times<span style="color: #666666">=1</span>, <span style="color: #666666">...</span>):
     <span style="color: #666666">...</span>
     current_pos <span style="color: #666666">=</span> x0 <span style="color: #666666">+</span> np<span style="color: #666666">.</span>zeros(num_walks)
     num_times_counter <span style="color: #666666">=</span> <span style="color: #666666">-1</span>
@@ -6893,7 +6901,7 @@ loop over <code>n</code>, becomes
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walks1D2_vec1</span>(x0, N, p, num_walks<span style="color: #666666">=1</span>, num_times<span style="color: #666666">=1</span>):
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walks1D2_vec1</span>(x0, N, p, num_walks<span style="color: #666666">=1</span>, num_times<span style="color: #666666">=1</span>):
     <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Vectorized version of random_walks1D2.&quot;&quot;&quot;</span>
     position  <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(N<span style="color: #666666">+1</span>)    <span style="color: #408080; font-style: italic"># Accumulated positions</span>
     position2 <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(N<span style="color: #666666">+1</span>)    <span style="color: #408080; font-style: italic"># Accumulated positions**2</span>
@@ -6980,7 +6988,7 @@ We arrive at the test function below.
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_random_walks1D</span>():
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_random_walks1D</span>():
     <span style="color: #408080; font-style: italic"># For fixed seed, check that scalar and vectorized versions</span>
     <span style="color: #408080; font-style: italic"># produce the same result</span>
     x0 <span style="color: #666666">=</span> <span style="color: #666666">0</span>;  N <span style="color: #666666">=</span> <span style="color: #666666">4</span>;  p <span style="color: #666666">=</span> <span style="color: #666666">0.5</span>
@@ -7101,7 +7109,7 @@ when the point \( x=-1 \) is reached. We use a spacing \( \Delta x = 0.05 \) (so
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">run_random_walk</span>():
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">run_random_walk</span>():
     <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">scitools.avplotter</span> <span style="color: #008000; font-weight: bold">import</span> Plotter
     <span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">time</span><span style="color: #666666">,</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
     p <span style="color: #666666">=</span> Plotter(<span style="color: #666666">-1</span>, <span style="color: #666666">1</span>, width<span style="color: #666666">=75</span>)   <span style="color: #408080; font-style: italic"># Horizontal axis: 75 chars wide</span>
@@ -7134,7 +7142,7 @@ The output looks typically like
 <p>
 
 <!-- code=text typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span>                            *         |
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%">                            *         |
                               *       |
                             *         |
                               *       |
@@ -7241,7 +7249,7 @@ with equal probability \( \frac{1}{4} \).
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walk2D</span>(x0, N, p, random<span style="color: #666666">=</span>random):
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walk2D</span>(x0, N, p, random<span style="color: #666666">=</span>random):
     <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;2D random walk with 1 particle and N moves: N, E, W, S.&quot;&quot;&quot;</span>
     <span style="color: #408080; font-style: italic"># Store position in step k in position[k]</span>
     d <span style="color: #666666">=</span> <span style="color: #008000">len</span>(x0)
@@ -7290,7 +7298,7 @@ trivially write code that works in any number of spatial directions:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walkdD</span>(x0, N, p, random<span style="color: #666666">=</span>random):
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walkdD</span>(x0, N, p, random<span style="color: #666666">=</span>random):
     <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Any-D (diagonal) random walk with 1 particle and N moves.&quot;&quot;&quot;</span>
     <span style="color: #408080; font-style: italic"># Store position in step k in position[k]</span>
     d <span style="color: #666666">=</span> <span style="color: #008000">len</span>(x0)
@@ -7319,7 +7327,7 @@ the vectors, as this demo shows:
 <p>
 
 <!-- code=python (!bc pyshell) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #666666">&gt;&gt;&gt;</span> a <span style="color: #666666">=</span> np<span style="color: #666666">.</span>arange(<span style="color: #666666">6</span>)<span style="color: #666666">.</span>reshape(<span style="color: #666666">3</span>,<span style="color: #666666">2</span>)
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #666666">&gt;&gt;&gt;</span> a <span style="color: #666666">=</span> np<span style="color: #666666">.</span>arange(<span style="color: #666666">6</span>)<span style="color: #666666">.</span>reshape(<span style="color: #666666">3</span>,<span style="color: #666666">2</span>)
 <span style="color: #666666">&gt;&gt;&gt;</span> a
 array([[<span style="color: #666666">0</span>, <span style="color: #666666">1</span>],
        [<span style="color: #666666">2</span>, <span style="color: #666666">3</span>],
@@ -7336,7 +7344,7 @@ filled in the <code>position</code> array:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walkdD_vec</span>(x0, N, p):
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walkdD_vec</span>(x0, N, p):
     <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Vectorized version of random_walkdD.&quot;&quot;&quot;</span>
     d <span style="color: #666666">=</span> <span style="color: #008000">len</span>(x0)
     <span style="color: #408080; font-style: italic"># Store position in step k in position[k]</span>
@@ -7368,7 +7376,7 @@ As always, we start with implementing the scalar case:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walksdD</span>(x0, N, p, num_walks<span style="color: #666666">=1</span>, num_times<span style="color: #666666">=1</span>,
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walksdD</span>(x0, N, p, num_walks<span style="color: #666666">=1</span>, num_times<span style="color: #666666">=1</span>,
                    random<span style="color: #666666">=</span>random):
     <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Simulate num_walks random walks from x0 with N steps.&quot;&quot;&quot;</span>
     d <span style="color: #666666">=</span> <span style="color: #008000">len</span>(x0)
@@ -7407,7 +7415,7 @@ code.
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
-<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walksdD_vec</span>(x0, N, p, num_walks<span style="color: #666666">=1</span>, num_times<span style="color: #666666">=1</span>):
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">random_walksdD_vec</span>(x0, N, p, num_walks<span style="color: #666666">=1</span>, num_times<span style="color: #666666">=1</span>):
     <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Vectorized version of random_walks1D; no loops.&quot;&quot;&quot;</span>
     d <span style="color: #666666">=</span> <span style="color: #008000">len</span>(x0)
     position  <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros((N<span style="color: #666666">+1</span>, d))  <span style="color: #408080; font-style: italic"># Accumulated positions</span>
@@ -7810,7 +7818,7 @@ if the vorticity \( \omega \) is known.
 
 <p>
 Under the assumption of time independence, Maxwell's equations
-for the electric field \( \boldsymbol{E} \) becomes
+for the electric field \( \boldsymbol{E} \) become
 
 $$
 \begin{align*}
@@ -7820,17 +7828,27 @@ $$
 $$
 
 where \( \rho \) is the electric charge density and \( \epsilon_0 \) is
-the permittivity of free space.
+the electric permittivity of free space (i.e., vacuum).
 Since \( \nabla\times\boldsymbol{E}=0 \), \( \boldsymbol{E} \) can be derived from a potential
-\( \varphi \), \( \boldsymbol{E} = \nabla\varphi \). The electric field potential is
+\( \varphi \), \( \boldsymbol{E} = -\nabla\varphi \). The electric field potential is
 therefore governed by the Poisson equation
 
 $$
 \begin{equation}
-\nabla^2\varphi = \frac{\rho}{\epsilon_0}\tp
+\nabla^2\varphi = -\frac{\rho}{\epsilon_0}\tp
 \tag{130}
 \end{equation}
 $$
+
+<p>
+If the medium is heterogeneous, \( \rho \) will depend on the spatial location \( \boldsymbol{r} \).
+Also, \( \epsilon_0 \) must be exchanged with an electric permittivity function
+\( \epsilon(\boldsymbol{r}) \).
+
+<p>
+Each point of the boundary must be accompanied by, either a Dirichlet condition 
+\( \varphi(\boldsymbol{r}) = \varphi_D(\boldsymbol{r}) \), or a Neumann condition 
+\( \frac{\partial\varphi(\boldsymbol{r})}{\partial n} = \varphi_N(\boldsymbol{r}) \).
 
 <h2 id="diffu:app:Couette">Development of flow between two flat plates</h2>
 

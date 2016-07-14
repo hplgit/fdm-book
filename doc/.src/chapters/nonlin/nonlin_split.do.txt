@@ -290,6 +290,40 @@ to the dynamics of the problem $u'=f(u)$. This gives great flexibility in
 splitting methods.
 
 [hpl: Can you make an example? I have started in `src/split_diffu_react.py`.]
+
+===== Example: Reaction-Diffusion with linear reaction term =====
+label{nonlin:splitting:RD_linearR}
+
+These ideas may be illustrated by the following example, where we compute the
+errors and convergence rates for three different numerical approaches when solving
+the reaction-diffusion equation with a linear reaction term, i.e. $f(u) = -bu$.
+
+In the implementation below, the equation is solved first without any splitting, 
+simply using the forward Euler method over the whole time interval. Then, 
+ordinary splitting is introduced and, finally, first order Strang splitting. With
+each of the splitting approaches, a finer time stepping is made possible for 
+the reaction part.
+
+Running the code, shows that the convergence rate is 1 for all methods, which is
+what one would expect. Also, the error gets smaller for the ordinary splitting 
+approach compared to the forward Euler, and still smaller for the Strang splitting
+compared to ordinary splitting. With either method, choosing to use an even finer
+time stepping for the reaction term, gives a further reduction in the error without
+affecting the convergence rate. 
+
+The reaction step is here solved with the second order Adams-Bashforth method, which
+in itself contributes to second order convergence. However, since our implementation
+still uses forward Euler for the diffusion step, the overall convergence rate only 
+becomes first order. Switching to, e.g., Crank-Nicolson with the theta rule will
+allow an overall convergence rate of 2.
+
+[sl: At the moment of writing, I am not sure whether we will include the CN via 
+the theta rule. The code is there, but, as I say in my results file, I only get
+first order convergence. I will finalize the text when this is resolved.]
+
+@@@CODE src-nonlin/split_diffu_react.py 
+
+
 ===== Analysis of the splitting method =====
 
 Let us address a linear PDE problem for which we can develop analytical
