@@ -3,7 +3,7 @@ import numpy as np
 def solver(dt, T, f, f_0, f_1):
     """
     Solve u'=f by the Forward Euler method and by ordinary and
-    Strang splitting: f(u) = f_1(u) + f_2(u).
+    Strang splitting: f(u) = f_0(u) + f_1(u).
     """
     Nt = int(round(T/float(dt)))
     t = np.linspace(0, Nt*dt, Nt+1)

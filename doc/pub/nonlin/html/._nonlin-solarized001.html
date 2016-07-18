@@ -61,7 +61,11 @@ div { text-align: justify; text-justify: inter-word; }
 
 <!-- tocinfo
 {'highest level': 1,
- 'sections': [('Introduction of basic concepts',
+ 'sections': [('Table of contents',
+               1,
+               'table_of_contents',
+               'table_of_contents'),
+              ('Introduction of basic concepts',
                1,
                'nonlin:timediscrete:logistic',
                'nonlin:timediscrete:logistic'),
@@ -159,7 +163,7 @@ div { text-align: justify; text-justify: inter-word; }
                2,
                'nonlin:pdelevel:Picard:CN',
                'nonlin:pdelevel:Picard:CN'),
-              ('Discretization of 1D stationary nonlinear differential equations',
+              ('1D stationary nonlinear differential equations',
                1,
                'nonlin:alglevel:1D',
                'nonlin:alglevel:1D'),
@@ -172,7 +176,10 @@ div { text-align: justify; text-justify: inter-word; }
               ('Picard iteration', 3, None, '___sec42'),
               ('Mesh with two cells', 3, None, '___sec43'),
               ("Newton's method", 3, None, '___sec44'),
-              ('Multi-dimensional PDE problems', 1, None, '___sec45'),
+              ('Multi-dimensional nonlinear PDE problems',
+               1,
+               None,
+               '___sec45'),
               ('Finite difference discretization',
                2,
                'nonlin:alglevel:dD:fd',
@@ -196,11 +203,15 @@ div { text-align: justify; text-justify: inter-word; }
                2,
                'nonlin:splitting:logistic',
                'nonlin:splitting:logistic'),
+              ('Splitting techniques', 3, None, '___sec54'),
+              ('Verbose implementation', 3, None, '___sec55'),
+              ('Compact implementation', 3, None, '___sec56'),
+              ('Results', 3, None, '___sec57'),
               ('Reaction-diffusion equation',
                2,
                'nonlin:splitting:RD',
                'nonlin:splitting:RD'),
-              ('Analysis of the splitting method', 2, None, '___sec55'),
+              ('Analysis of the splitting method', 2, None, '___sec59'),
               ('Exercises', 1, 'nonlin:exer', 'nonlin:exer'),
               ('Problem 1: Determine if equations are nonlinear or not',
                2,
@@ -262,7 +273,7 @@ div { text-align: justify; text-justify: inter-word; }
                2,
                'nonlin:exer:continuation:1DnNflow',
                'nonlin:exer:continuation:1DnNflow'),
-              ('Bibliography', 1, None, '___sec72')]}
+              ('Bibliography', 1, None, '___sec76')]}
 end of tocinfo -->
 
 <body>
@@ -590,7 +601,7 @@ expansions of the roots:
 <p>
 
 <!-- code=python (!bc pyshell) typeset with pygments style "perldoc" -->
-<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%">&gt;&gt;&gt; <span style="color: #8B008B; font-weight: bold">import</span> <span style="color: #008b45; text-decoration: underline">sympy</span> <span style="color: #8B008B; font-weight: bold">as</span> <span style="color: #008b45; text-decoration: underline">sym</span>
+<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%"><span></span>&gt;&gt;&gt; <span style="color: #8B008B; font-weight: bold">import</span> <span style="color: #008b45; text-decoration: underline">sympy</span> <span style="color: #8B008B; font-weight: bold">as</span> <span style="color: #008b45; text-decoration: underline">sym</span>
 &gt;&gt;&gt; dt, u_1, u = sym.symbols(<span style="color: #CD5555">&#39;dt u_1 u&#39;</span>)
 &gt;&gt;&gt; r1, r2 = sym.solve(dt*u**<span style="color: #B452CD">2</span> + (<span style="color: #B452CD">1</span>-dt)*u - u_1, u)  <span style="color: #228B22"># find roots</span>
 &gt;&gt;&gt; r1
@@ -621,7 +632,7 @@ and see if a limit unreasonable:
 <p>
 
 <!-- code=python (!bc pyshell) typeset with pygments style "perldoc" -->
-<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%">&gt;&gt;&gt; <span style="color: #8B008B; font-weight: bold">print</span> r1.limit(dt, <span style="color: #B452CD">0</span>)
+<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%"><span></span>&gt;&gt;&gt; <span style="color: #8B008B; font-weight: bold">print</span> r1.limit(dt, <span style="color: #B452CD">0</span>)
 -oo
 &gt;&gt;&gt; <span style="color: #8B008B; font-weight: bold">print</span> r2.limit(dt, <span style="color: #B452CD">0</span>)
 u_1
@@ -1001,7 +1012,7 @@ the logistic equation.
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
-<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%"><span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">BE_logistic</span>(u0, dt, Nt, choice=<span style="color: #CD5555">&#39;Picard&#39;</span>,
+<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%"><span></span><span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">BE_logistic</span>(u0, dt, Nt, choice=<span style="color: #CD5555">&#39;Picard&#39;</span>,
                 eps_r=<span style="color: #B452CD">1E-3</span>, omega=<span style="color: #B452CD">1</span>, max_iter=<span style="color: #B452CD">1000</span>):
     <span style="color: #8B008B; font-weight: bold">if</span> choice == <span style="color: #CD5555">&#39;Picard1&#39;</span>:
         choice = <span style="color: #CD5555">&#39;Picard&#39;</span>
@@ -1052,7 +1063,7 @@ geometric mean gives a simpler algorithm:
 <p>
 
 <!-- code=python (!bc pycod) typeset with pygments style "perldoc" -->
-<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%"><span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">CN_logistic</span>(u0, dt, Nt):
+<div class="highlight" style="background: #eeeedd"><pre style="line-height: 125%"><span></span><span style="color: #8B008B; font-weight: bold">def</span> <span style="color: #008b45">CN_logistic</span>(u0, dt, Nt):
     u = np.zeros(Nt+<span style="color: #B452CD">1</span>)
     u[<span style="color: #B452CD">0</span>] = u0
     <span style="color: #8B008B; font-weight: bold">for</span> n <span style="color: #8B008B">in</span> <span style="color: #658b00">range</span>(<span style="color: #B452CD">0</span>, Nt):
