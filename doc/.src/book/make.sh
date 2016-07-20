@@ -52,8 +52,6 @@ doconce replace 'newcommand{\I}' 'renewcommand{\I}' newcommands_keep.tex
 # Make pdfnup with two-pages per sheet
 
 opt1="CHAPTER=$CHAPTER BOOK=$BOOK APPENDIX=$APPENDIX DOCUMENT=book $encoding FEM_BOOK=False"
-opt2="--without_solutions --without_answers"
-opt2=
 devices="screen paper"
 
 function edit_solution_admons {
@@ -119,12 +117,12 @@ password="f!d!mbk"
 pdftk $name.pdf output $newname.pdf owner_pw foo user_pw $password
 cp $name.pdf ${name}-sol.pdf # good to have a copy without password
 
-compile --device=screen --without_solutions --without_answers
+compile --device=screen --without_solutions --without_answers --skip_inline_comments
 newname=${topicname}-book-4screen
 cp $name.pdf $newname.pdf
 
 #--latex_index_in_margin
-compile --device=paper --without_solutions --without_answers
+compile --device=paper --without_solutions --without_answers --skip_inline_comments
 newname=${topicname}-book-4print
 cp $name.pdf $newname.pdf
 pdfnup --frame true --outfile ${newname}-2up.pdf $newname.pdf

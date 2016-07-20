@@ -303,8 +303,6 @@ We must now number the unknowns at the interior points:
 !et
 for $i=1,\ldots,N_x-1$, $j=1,\ldots,N_y-1$.
 
-[hpl: Fill in details.]
-
 # Nx=4, Ny=3
 
 FIGURE: [fig-diffu/mesh4x3, width=700 frac=1] 4x3 2D mesh. label{diffu:2D:fig:mesh4x3}
@@ -683,8 +681,10 @@ numerical error formula like
 !bt
 \[ E = C_t\Delta t^p + C_x\Delta x^2 + C_y\Delta y^2,\]
 !et
-where $p$, $C_t$, $C_x$, and $C_y$ are constants. A Crank-Nicolson
-method has $p=2$, while the Forward and Backward Euler schemes have $p=1$.
+where $p$, $C_t$, $C_x$, and $C_y$ are constants. Often, the analysis of
+a Crank-Nicolson
+method can show that $p=2$, while the Forward and Backward Euler schemes
+have $p=1$.
 
 When checking the error formula empirically, we need to reduce it to
 a form $E=Ch^r$ with a single discretization parameter $h$ and some
@@ -1294,7 +1294,6 @@ for n in It[0:-1]:
 The vectorized version should be quite straightforward to understand
 once one has an understanding of how a standard 2D finite stencil
 is vectorized.
-[hpl: Make references to 1D and 2D wave equation vectorization.]
 
 The first natural verification is to use the test problem
 in the function `quadratic` from
@@ -1351,11 +1350,10 @@ This solution vanishes at the boundaries,
 and the initial condition is the product of two sines.
 We may choose $A=1$ for simplicity.
 
-It is difficult to know if our solver based on the
-Jacobi method works properly since we
-are faced with two sources of errors: one from the discretization,
-$E_\Delta$, and one from the iterative Jacobi method, $E_i$. The total
-error in the computed $u$ can be represented as
+It is difficult to know if our solver based on the Jacobi method works
+properly since we are faced with two sources of errors: one from the
+discretization, $E_\Delta$, and one from the iterative Jacobi method,
+$E_i$. The total error in the computed $u$ can be represented as
 
 !bt
 \[ E_u = E_\Delta + E_i\tp\]
@@ -1367,11 +1365,12 @@ compute $E_u$ as $E_u = |\max \uex - \max u|$, when we know an exact
 solution $\uex$ of the problem.
 
 What about $E_\Delta$? If we use the maximum value as a measure of the
-error, we have in fact analytical insight into the approximation error in this
-particular problem. According to Section ref{diffu:2D:analysis}, the exact
-solution (ref{diffu:2D:Jacobi:impl:hill:uex}) of the PDE problem is
-also an exact solution of the discrete equations, except that the
-damping factor in time is different. More precisely,
+error, we have in fact analytical insight into the approximation error
+in this particular problem. According to Section
+ref{diffu:2D:analysis}, the exact solution
+(ref{diffu:2D:Jacobi:impl:hill:uex}) of the PDE problem is also an
+exact solution of the discrete equations, except that the damping
+factor in time is different. More precisely,
 (ref{diffu:2D:analysis:BN:numexact}) and
 (ref{diffu:2D:analysis:CN:numexact}) are solutions of the discrete
 problem for $\theta=1$ (Backward Euler) and $\theta=\half$
@@ -1401,36 +1400,33 @@ methods in Section ref{diffu:2D:SOR}). The value of $E_i$ is in
 particular printed at each time level. By changing the tolerance in
 the convergence criterion in the Jacobi method, we can see that $E_i$
 is of the same order of magnitude as the prescribed tolerance in the
-Jacobi method.  For
-example: $E_\Delta\sim 10^{-2}$ with $N_x=N_y=10$ and $\theta=\half$,
-as long as $\max u$ has some significant size ($\max u >
-0.02$). An appropriate value of the tolerance is then $10^{-3}$,
-such that the error in the Jacobi method does not become bigger than
-the discretization error. In that case,
-$E_i$ is around $5\cdot 10^{-3}$.
-The corresponding number of Jacobi
-iterations (with $\omega=1$) varies from 31 to 12 during the
-time simulation (for $\max u >
-0.02$). Changing the tolerance to $10^{-5}$ causes many more
+Jacobi method.  For example: $E_\Delta\sim 10^{-2}$ with $N_x=N_y=10$
+and $\theta=\half$, as long as $\max u$ has some significant size
+($\max u > 0.02$). An appropriate value of the tolerance is then
+$10^{-3}$, such that the error in the Jacobi method does not become
+bigger than the discretization error. In that case, $E_i$ is around
+$5\cdot 10^{-3}$.  The corresponding number of Jacobi iterations (with
+$\omega=1$) varies from 31 to 12 during the time simulation (for $\max
+u > 0.02$). Changing the tolerance to $10^{-5}$ causes many more
 iterations (61 to 42) without giving any contribution to the overall
 accuracy, because the total error is dominated by $E_\Delta$.
 
-Also, with an $N_x=N_y=20$, the spatial accuracy increases and many more
-iterations are needed (143 to 45), but the dominating error is from
-the time discretization. However, with such a finer spatial mesh, a higher
-tolerance in the convergence criterion $10^{-4}$ is needed to keep
-$E_i\sim 10^{-3}$.  More experiments show the disadvantage of the very
-simple Jacobi iteration method: the number of iterations increases
-with the number of unknowns, keeping the tolerance fixed, but the
-tolerance should also be lowered to avoid the iteration error to
-dominate the total error. A small adjustment of the Jacobi method, as
-described in Section ref{diffu:2D:SOR}, provides a better method.
+Also, with an $N_x=N_y=20$, the spatial accuracy increases and many
+more iterations are needed (143 to 45), but the dominating error is
+from the time discretization. However, with such a finer spatial mesh,
+a higher tolerance in the convergence criterion $10^{-4}$ is needed to
+keep $E_i\sim 10^{-3}$.  More experiments show the disadvantage of the
+very simple Jacobi iteration method: the number of iterations
+increases with the number of unknowns, keeping the tolerance fixed,
+but the tolerance should also be lowered to avoid the iteration error
+to dominate the total error. A small adjustment of the Jacobi method,
+as described in Section ref{diffu:2D:SOR}, provides a better method.
 
 ===== The relaxed Jacobi method and its relation to the Forward Euler method =====
 label{diffu:2D:Jacobi_vs_FE}
 
-We shall now show that solving the Poisson equation $-\dfc\nabla^2 u = f$ by
-the Jacobi iterative method is in fact equivalent to using a
+We shall now show that solving the Poisson equation $-\dfc\nabla^2 u =
+f$ by the Jacobi iterative method is in fact equivalent to using a
 Forward Euler scheme on $u_t = \dfc\nabla^2 u + f$ and letting
 $t\rightarrow\infty$.
 
@@ -1479,32 +1475,28 @@ These observations are quite disappointing: if we already have a
 time-dependent diffusion problem and want to take larger time steps by
 an implicit time discretization method, we will with the Jacobi method
 end up with something close to a slow Forward Euler simulation of the
-original problem at each time level.  Nevertheless, the are two reasons
-for why the Jacobi method
-remains a fundamental building block for solving linear systems
-arising from PDEs: 1) a couple of iterations remove
-large parts of the error and this is effectively used in the very
-efficient class of multigrid methods; and 2) the idea of the Jacobi
-method can be developed into more efficient methods, especially the
-SOR method, which is treated next.
+original problem at each time level.  Nevertheless, the are two
+reasons for why the Jacobi method remains a fundamental building block
+for solving linear systems arising from PDEs: 1) a couple of
+iterations remove large parts of the error and this is effectively
+used in the very efficient class of multigrid methods; and 2) the idea
+of the Jacobi method can be developed into more efficient methods,
+especially the SOR method, which is treated next.
 
 ===== The Gauss-Seidel and SOR methods =====
 label{diffu:2D:SOR}
 
 idx{Gauss-Seidel method}
 
-If we update the mesh points according to the
-Jacobi method (ref{diffu:2D:Jacobi0})
-for a Backward Euler discretization with a loop over
-$i=1,\ldots,N_x-1$ and $j=1,\ldots,N_y-1$, we realize that
-when $u^{n+1,r+1}_{i,j}$ is computed, $u^{n+1,r+1}_{i-1,j}$
-and $u^{n+1,r+1}_{i,j-1}$ are already computed, so these new
-values can be used rather than
-$u^{n+1,r}_{i-1,j}$ and $u^{n+1,r}_{i,j-1}$ (respectively)
-in the formula for $u^{n+1,r+1}_{i,j}$.
-This idea gives rise to the *Gauss-Seidel* iteration method,
-which mathematically is just a small adjustment of
-(ref{diffu:2D:Jacobi0}):
+If we update the mesh points according to the Jacobi method
+(ref{diffu:2D:Jacobi0}) for a Backward Euler discretization with a
+loop over $i=1,\ldots,N_x-1$ and $j=1,\ldots,N_y-1$, we realize that
+when $u^{n+1,r+1}_{i,j}$ is computed, $u^{n+1,r+1}_{i-1,j}$ and
+$u^{n+1,r+1}_{i,j-1}$ are already computed, so these new values can be
+used rather than $u^{n+1,r}_{i-1,j}$ and $u^{n+1,r}_{i,j-1}$
+(respectively) in the formula for $u^{n+1,r+1}_{i,j}$.  This idea
+gives rise to the *Gauss-Seidel* iteration method, which
+mathematically is just a small adjustment of (ref{diffu:2D:Jacobi0}):
 
 !bt
 \begin{align}
@@ -1518,13 +1510,12 @@ label{diffu:2D:SOR:eq}
 \end{align}
 !et
 Observe that the way we access the mesh points in the formula
-(ref{diffu:2D:SOR:eq}) is important: points with $i-1$ must be computed
-before points with $i$, and points with $j-1$ must be computed
-before points with $j$. Any sequence of mesh points can be used
-in the Gauss-Seidel method, but the particular math
-formula must distinguish between
-already visited points in the current iteration and the points not
-yet visited.
+(ref{diffu:2D:SOR:eq}) is important: points with $i-1$ must be
+computed before points with $i$, and points with $j-1$ must be
+computed before points with $j$. Any sequence of mesh points can be
+used in the Gauss-Seidel method, but the particular math formula must
+distinguish between already visited points in the current iteration
+and the points not yet visited.
 
 idx{SOR method}
 
@@ -1842,12 +1833,6 @@ contains a unified implementation of the relaxed Jacobi and SOR
 methods in scalar and vectorized versions using the techniques
 explained above.
 
-[hpl: Experiments with SOR, benefits. Rerun the Jacobi experiments.
-Just mention the most important conclusions. We can have more comprehensive
-experiments with comparison of all methods in a later section, after CG with
-preconditioning.]
-
-
 ===== Direct versus iterative methods =====
 label{diffu:2D:direct_vs_iter}
 
@@ -2001,7 +1986,6 @@ Symmetric Successive Overrelaxation method, known as SSOR, where
 one runs a standard SOR sweep through the mesh points and then a
 new sweep but visiting the points in reverse order.
 
-[hpl: Line Jacobi/SOR?]
 
 ===== The Conjugate gradient method =====
 label{diffu:2D:CG}

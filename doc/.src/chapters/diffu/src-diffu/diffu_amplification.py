@@ -1,6 +1,6 @@
 from numpy import *
 #from matplotlib.pyplot import *
-from scitools.easyviz.matplotlib_ import *
+from scitools.std import *
 
 def A_exact(F, p):
     return exp(-4*F*p**2)
@@ -30,14 +30,15 @@ def compare_plot(F, p):
     else:
         axis([p[0], p[-1], -1.2, 1])
     xlabel('$p=k\Delta x$')
+    ylabel('$A(p)$')
     savefig('A_F%s.pdf' % (str(F).replace('.', '')))
     savefig('A_F%s.png' % (str(F).replace('.', '')))
 
 
 p = linspace(0, pi/2, 101)
-#for F in 20, 5, 2, 0.5, 0.25, 0.1, 0.01:
-#    compare_plot(F, p)
-
+for F in 20, 5, 2, 0.5, 0.25, 0.1, 0.01:
+    compare_plot(F, p)
+'''
 #import sys; sys.exit(0)
 from sympy import *
 F, p, dx, dt, k = symbols('F p dx dt k')
@@ -55,7 +56,7 @@ A_err_CN = A_exact(F, p) - A_CN(F, p)
 A_err_CN = A_CN(F, p)/A_exact(F, p)
 print 'Error in A, CN:', A_err_CN.series(F, 0, 6)
 print latex(A_err_CN.series(F, 0, 6))
-
+'''
 raw_input()
 
 show()

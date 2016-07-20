@@ -193,7 +193,11 @@ code { color: inherit; background-color: transparent; }
                2,
                'nonlin:splitting:RD',
                'nonlin:splitting:RD'),
-              ('Analysis of the splitting method', 2, None, '___sec59'),
+              ('Example: Reaction-Diffusion with linear reaction term',
+               2,
+               'nonlin:splitting:RD_linearR',
+               'nonlin:splitting:RD_linearR'),
+              ('Analysis of the splitting method', 2, None, '___sec60'),
               ('Exercises', 1, 'nonlin:exer', 'nonlin:exer'),
               ('Problem 1: Determine if equations are nonlinear or not',
                2,
@@ -255,7 +259,7 @@ code { color: inherit; background-color: transparent; }
                2,
                'nonlin:exer:continuation:1DnNflow',
                'nonlin:exer:continuation:1DnNflow'),
-              ('Bibliography', 1, None, '___sec76')]}
+              ('Bibliography', 1, None, '___sec77')]}
 end of tocinfo -->
 
 <body>
@@ -371,7 +375,8 @@ $$
      <!-- navigation toc: --> <li><a href="#___sec56" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Compact implementation</a></li>
      <!-- navigation toc: --> <li><a href="#___sec57" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Results</a></li>
      <!-- navigation toc: --> <li><a href="#nonlin:splitting:RD" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Reaction-diffusion equation</a></li>
-     <!-- navigation toc: --> <li><a href="#___sec59" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Analysis of the splitting method</a></li>
+     <!-- navigation toc: --> <li><a href="#nonlin:splitting:RD_linearR" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Example: Reaction-Diffusion with linear reaction term</a></li>
+     <!-- navigation toc: --> <li><a href="#___sec60" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Analysis of the splitting method</a></li>
      <!-- navigation toc: --> <li><a href="._nonlin-sol007.html#nonlin:exer" style="font-size: 80%;"><b>Exercises</b></a></li>
      <!-- navigation toc: --> <li><a href="._nonlin-sol007.html#nonlin:exer:lin:vs:nonlin" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Problem 1: Determine if equations are nonlinear or not</a></li>
      <!-- navigation toc: --> <li><a href="._nonlin-sol007.html#nonlin:exer:logistic:gen" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Problem 2: Derive and investigate a generalized logistic model</a></li>
@@ -388,7 +393,7 @@ $$
      <!-- navigation toc: --> <li><a href="._nonlin-sol007.html#nonlin:exer:2D:heat:nonlinear:fd" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Exercise 13: Crank-Nicolson for a nonlinear 3D diffusion equation</a></li>
      <!-- navigation toc: --> <li><a href="._nonlin-sol007.html#nonlin:exer:sparsity:Jacobian" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Problem 14: Find the sparsity of the Jacobian</a></li>
      <!-- navigation toc: --> <li><a href="._nonlin-sol007.html#nonlin:exer:continuation:1DnNflow" style="font-size: 80%;">&nbsp;&nbsp;&nbsp;Problem 15: Investigate a 1D problem with a continuation method</a></li>
-     <!-- navigation toc: --> <li><a href="._nonlin-sol007.html#___sec76" style="font-size: 80%;"><b>Bibliography</b></a></li>
+     <!-- navigation toc: --> <li><a href="._nonlin-sol007.html#___sec77" style="font-size: 80%;"><b>Bibliography</b></a></li>
 
         </ul>
       </li>
@@ -742,8 +747,10 @@ $$
 
 Looking at these familiar problems,
 we may apply a \( \theta \) rule (implicit) scheme for
-<a href="#mjx-eqn-79">(79)</a> and avoid dealing with nonlinearities
-by applying an explicit scheme for <a href="#mjx-eqn-80">(80)</a>.
+<a href="#mjx-eqn-79">(79)</a> over one time step
+and avoid dealing with nonlinearities
+by applying an explicit scheme for <a href="#mjx-eqn-80">(80)</a>
+over the same time step.
 
 <p>
 Suppose we have some solution \( u \) at time level \( t_n \). For flexibility,
@@ -753,7 +760,7 @@ we define a \( \theta \) method for the diffusion part
 $$ [D_t u^\stepzero =
 \dfc (D_xD_x u^\stepzero + D_y D_y u^\stepzero)]^{n+\theta}\tp$$
 
-We use \( u \) as initial condition for \( u^\stepzero \).
+We use \( u^{n} \) as initial condition for \( u^\stepzero \).
 
 <p>
 The reaction part, which is defined at each mesh point (without coupling
@@ -793,7 +800,447 @@ We may use a much smaller time step when solving the reaction part, adapted
 to the dynamics of the problem \( u'=f(u) \). This gives great flexibility in
 splitting methods.
 
-<h2 id="___sec59" class="anchor">Analysis of the splitting method </h2>
+<h2 id="nonlin:splitting:RD_linearR" class="anchor">Example: Reaction-Diffusion with linear reaction term</h2>
+
+<p>
+These ideas may be illustrated by the following example, where we compute the
+errors and convergence rates for three different numerical approaches when solving
+the reaction-diffusion equation with a linear reaction term, i.e. \( f(u) = -bu \).
+
+<p>
+In the implementation below, the equation is solved first without any splitting, 
+simply using the forward Euler method over the whole time interval. Then, 
+ordinary splitting is introduced and, finally, first order Strang splitting. With
+each of the splitting approaches, a finer time stepping is made possible for 
+the reaction part.
+
+<p>
+Running the code, shows that the convergence rate is 1 for all methods, which is
+what one would expect. Also, the error gets smaller for the ordinary splitting 
+approach compared to the forward Euler, and still smaller for the Strang splitting
+compared to ordinary splitting. With either method, choosing to use an even finer
+time stepping for the reaction term, gives a further reduction in the error without
+affecting the convergence rate.
+
+<p>
+The reaction step is here solved with the second order Adams-Bashforth method, which
+in itself contributes to second order convergence. However, since our implementation
+still uses forward Euler for the diffusion step, the overall convergence rate only 
+becomes first order. Switching to, e.g., Crank-Nicolson with the theta rule will
+allow an overall convergence rate of 2.
+
+<p>
+
+<!-- code=python (!bc pypro) typeset with pygments style "default" -->
+<div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span></span><span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">sys</span><span style="color: #666666">,</span> <span style="color: #0000FF; font-weight: bold">time</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">scitools.std</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">plt</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">scipy.sparse</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">scipy.sparse.linalg</span>
+<span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">numpy</span> <span style="color: #008000; font-weight: bold">as</span> <span style="color: #0000FF; font-weight: bold">np</span>
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">diffusion_FE</span>(I, a, f, L, dt, F, t, T, step_no, user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Diffusion solver, Forward Euler method.</span>
+<span style="color: #BA2121; font-style: italic">    Note that t always covers the whole global time interval, whether</span>
+<span style="color: #BA2121; font-style: italic">    splitting is the case or not. T, on the other hand, is </span>
+<span style="color: #BA2121; font-style: italic">    the end of the global time interval if there is no split,</span>
+<span style="color: #BA2121; font-style: italic">    but if splitting, we use T=dt. When splitting, step_no keeps</span>
+<span style="color: #BA2121; font-style: italic">    track of the time step number (required for lookup in t).</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+
+    Nt <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(T<span style="color: #666666">/</span><span style="color: #008000">float</span>(dt)))
+    dx <span style="color: #666666">=</span> np<span style="color: #666666">.</span>sqrt(a<span style="color: #666666">*</span>dt<span style="color: #666666">/</span>F)
+    Nx <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(L<span style="color: #666666">/</span>dx))
+    x <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, L, Nx<span style="color: #666666">+1</span>)       <span style="color: #408080; font-style: italic"># Mesh points in space</span>
+    <span style="color: #408080; font-style: italic"># Make sure dx and dt are compatible with x and t</span>
+    dx <span style="color: #666666">=</span> x[<span style="color: #666666">1</span>] <span style="color: #666666">-</span> x[<span style="color: #666666">0</span>]
+    dt <span style="color: #666666">=</span> t[<span style="color: #666666">1</span>] <span style="color: #666666">-</span> t[<span style="color: #666666">0</span>]
+
+    u   <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nx<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># solution array</span>
+    u_1 <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nx<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># solution at t-dt</span>
+
+    <span style="color: #408080; font-style: italic"># Allow f to be None or 0</span>
+    <span style="color: #008000; font-weight: bold">if</span> f <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #008000">None</span> <span style="color: #AA22FF; font-weight: bold">or</span> f <span style="color: #666666">==</span> <span style="color: #666666">0</span>:
+        f <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> x, t: np<span style="color: #666666">.</span>zeros((x<span style="color: #666666">.</span>size)) \
+            <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">isinstance</span>(x, np<span style="color: #666666">.</span>ndarray) <span style="color: #008000; font-weight: bold">else</span> <span style="color: #666666">0</span>
+
+    <span style="color: #408080; font-style: italic"># Set initial condition  </span>
+    <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">isinstance</span>(I, np<span style="color: #666666">.</span>ndarray):   <span style="color: #408080; font-style: italic"># I is an array</span>
+        u_1 <span style="color: #666666">=</span> np<span style="color: #666666">.</span>copy(I)
+    <span style="color: #008000; font-weight: bold">else</span>:                           <span style="color: #408080; font-style: italic"># I is a function</span>
+        <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, Nx<span style="color: #666666">+1</span>):
+            u_1[i] <span style="color: #666666">=</span> I(x[i])
+
+    <span style="color: #008000; font-weight: bold">if</span> user_action <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000">None</span>:
+        user_action(u_1, x, t, step_no<span style="color: #666666">+0</span>)
+
+    <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, Nt):
+        <span style="color: #408080; font-style: italic"># Update all inner points</span>
+        u[<span style="color: #666666">1</span>:Nx] <span style="color: #666666">=</span> u_1[<span style="color: #666666">1</span>:Nx] <span style="color: #666666">+</span>  \
+                  F<span style="color: #666666">*</span>(u_1[<span style="color: #666666">0</span>:Nx<span style="color: #666666">-1</span>] <span style="color: #666666">-</span> <span style="color: #666666">2*</span>u_1[<span style="color: #666666">1</span>:Nx] <span style="color: #666666">+</span> u_1[<span style="color: #666666">2</span>:Nx<span style="color: #666666">+1</span>]) <span style="color: #666666">+</span>\
+                  dt<span style="color: #666666">*</span>f(u_1[<span style="color: #666666">1</span>:Nx], t[step_no<span style="color: #666666">+</span>n])
+        
+        <span style="color: #408080; font-style: italic"># Insert boundary conditions</span>
+        u[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> <span style="color: #666666">0</span>;  u[Nx] <span style="color: #666666">=</span> <span style="color: #666666">0</span>
+
+        <span style="color: #408080; font-style: italic">#sl: ...testing -------------------------</span>
+        <span style="color: #408080; font-style: italic">#print &#39;time:&#39;, t[step_no+n]</span>
+        <span style="color: #408080; font-style: italic">#print &#39;diff part from diffusion_FE:&#39;</span>
+        <span style="color: #408080; font-style: italic">#print u_1[1:Nx] + F*(u_1[0:Nx-1] - 2*u_1[1:Nx] + u_1[2:Nx+1])</span>
+        <span style="color: #408080; font-style: italic">#print &#39;react part from diffusion_FE:&#39;</span>
+        <span style="color: #408080; font-style: italic">#print dt*f(u_1[1:Nx], t[step_no+n])</span>
+        <span style="color: #408080; font-style: italic">#print &#39; &#39;</span>
+        <span style="color: #408080; font-style: italic">#if step_no == 1: sys.exit(0)            </span>
+        <span style="color: #408080; font-style: italic"># ----------------------------------</span>
+
+        <span style="color: #008000; font-weight: bold">if</span> user_action <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000">None</span>:
+            user_action(u, x, t, step_no<span style="color: #666666">+</span>(n<span style="color: #666666">+1</span>))
+
+        <span style="color: #408080; font-style: italic"># Switch variables before next step</span>
+        u_1, u <span style="color: #666666">=</span> u, u_1
+
+    <span style="color: #008000; font-weight: bold">return</span> u_1
+
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">diffusion_theta</span>(I, a, f, L, dt, F, t, T, step_no, theta<span style="color: #666666">=0.5</span>, 
+                    u_L<span style="color: #666666">=0</span>, u_R<span style="color: #666666">=0</span>, user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Full solver for the model problem using the theta-rule</span>
+<span style="color: #BA2121; font-style: italic">    difference approximation in time (no restriction on F,</span>
+<span style="color: #BA2121; font-style: italic">    i.e., the time step when theta &gt;= 0.5).</span>
+<span style="color: #BA2121; font-style: italic">    Vectorized implementation and sparse (tridiagonal)</span>
+<span style="color: #BA2121; font-style: italic">    coefficient matrix.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+
+    Nt <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(T<span style="color: #666666">/</span><span style="color: #008000">float</span>(dt)))
+    <span style="color: #408080; font-style: italic">#t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time</span>
+    dx <span style="color: #666666">=</span> np<span style="color: #666666">.</span>sqrt(a<span style="color: #666666">*</span>dt<span style="color: #666666">/</span>F)
+    Nx <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(L<span style="color: #666666">/</span>dx))
+    x <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, L, Nx<span style="color: #666666">+1</span>)       <span style="color: #408080; font-style: italic"># Mesh points in space</span>
+    <span style="color: #408080; font-style: italic"># Make sure dx and dt are compatible with x and t</span>
+    dx <span style="color: #666666">=</span> x[<span style="color: #666666">1</span>] <span style="color: #666666">-</span> x[<span style="color: #666666">0</span>]
+    dt <span style="color: #666666">=</span> t[<span style="color: #666666">1</span>] <span style="color: #666666">-</span> t[<span style="color: #666666">0</span>]
+
+    u   <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nx<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># solution array at t[n+1]</span>
+    u_1 <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nx<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># solution at t[n]</span>
+
+    <span style="color: #408080; font-style: italic"># Representation of sparse matrix and right-hand side</span>
+    diagonal <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nx<span style="color: #666666">+1</span>)
+    lower    <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nx)
+    upper    <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nx)
+    b        <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nx<span style="color: #666666">+1</span>)
+
+    <span style="color: #408080; font-style: italic"># Precompute sparse matrix (scipy format)</span>
+    Fl <span style="color: #666666">=</span> F<span style="color: #666666">*</span>theta
+    Fr <span style="color: #666666">=</span> F<span style="color: #666666">*</span>(<span style="color: #666666">1-</span>theta)
+    diagonal[:] <span style="color: #666666">=</span> <span style="color: #666666">1</span> <span style="color: #666666">+</span> <span style="color: #666666">2*</span>Fl
+    lower[:] <span style="color: #666666">=</span> <span style="color: #666666">-</span>Fl  <span style="color: #408080; font-style: italic">#1</span>
+    upper[:] <span style="color: #666666">=</span> <span style="color: #666666">-</span>Fl  <span style="color: #408080; font-style: italic">#1</span>
+    <span style="color: #408080; font-style: italic"># Insert boundary conditions</span>
+    diagonal[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> <span style="color: #666666">1</span>
+    upper[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> <span style="color: #666666">0</span>
+    diagonal[Nx] <span style="color: #666666">=</span> <span style="color: #666666">1</span>
+    lower[<span style="color: #666666">-1</span>] <span style="color: #666666">=</span> <span style="color: #666666">0</span>
+
+    diags <span style="color: #666666">=</span> [<span style="color: #666666">0</span>, <span style="color: #666666">-1</span>, <span style="color: #666666">1</span>]
+    A <span style="color: #666666">=</span> scipy<span style="color: #666666">.</span>sparse<span style="color: #666666">.</span>diags(
+        diagonals<span style="color: #666666">=</span>[diagonal, lower, upper],
+        offsets<span style="color: #666666">=</span>[<span style="color: #666666">0</span>, <span style="color: #666666">-1</span>, <span style="color: #666666">1</span>], shape<span style="color: #666666">=</span>(Nx<span style="color: #666666">+1</span>, Nx<span style="color: #666666">+1</span>),
+        format<span style="color: #666666">=</span><span style="color: #BA2121">&#39;csr&#39;</span>)
+    <span style="color: #408080; font-style: italic">#print A.todense()</span>
+
+    <span style="color: #408080; font-style: italic"># Allow f to be None or 0</span>
+    <span style="color: #008000; font-weight: bold">if</span> f <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #008000">None</span> <span style="color: #AA22FF; font-weight: bold">or</span> f <span style="color: #666666">==</span> <span style="color: #666666">0</span>:
+        f <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> x, t: np<span style="color: #666666">.</span>zeros((x<span style="color: #666666">.</span>size)) \
+            <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">isinstance</span>(x, np<span style="color: #666666">.</span>ndarray) <span style="color: #008000; font-weight: bold">else</span> <span style="color: #666666">0</span>
+
+    <span style="color: #408080; font-style: italic"># Set initial condition  </span>
+    <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">isinstance</span>(I, np<span style="color: #666666">.</span>ndarray):   <span style="color: #408080; font-style: italic"># I is an array</span>
+        u_1 <span style="color: #666666">=</span> np<span style="color: #666666">.</span>copy(I)
+    <span style="color: #008000; font-weight: bold">else</span>:                           <span style="color: #408080; font-style: italic"># I is a function</span>
+        <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, Nx<span style="color: #666666">+1</span>):
+            u_1[i] <span style="color: #666666">=</span> I(x[i])
+
+    <span style="color: #008000; font-weight: bold">if</span> user_action <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000">None</span>:
+        user_action(u_1, x, t, step_no<span style="color: #666666">+0</span>)        
+
+    <span style="color: #408080; font-style: italic"># Time loop</span>
+    <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, Nt):
+        b[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>] <span style="color: #666666">=</span> u_1[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>] <span style="color: #666666">+</span> \
+                  Fr<span style="color: #666666">*</span>(u_1[:<span style="color: #666666">-2</span>] <span style="color: #666666">-</span> <span style="color: #666666">2*</span>u_1[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>] <span style="color: #666666">+</span> u_1[<span style="color: #666666">2</span>:]) <span style="color: #666666">+</span> \
+                  dt<span style="color: #666666">*</span>theta<span style="color: #666666">*</span>f(u_1[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>], t[step_no<span style="color: #666666">+</span>n<span style="color: #666666">+1</span>]) <span style="color: #666666">+</span> \
+                  dt<span style="color: #666666">*</span>(<span style="color: #666666">1-</span>theta)<span style="color: #666666">*</span>f(u_1[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>], t[step_no<span style="color: #666666">+</span>n])
+        b[<span style="color: #666666">0</span>] <span style="color: #666666">=</span> u_L; b[<span style="color: #666666">-1</span>] <span style="color: #666666">=</span> u_R  <span style="color: #408080; font-style: italic"># boundary conditions</span>
+        u[:] <span style="color: #666666">=</span> scipy<span style="color: #666666">.</span>sparse<span style="color: #666666">.</span>linalg<span style="color: #666666">.</span>spsolve(A, b)
+
+        <span style="color: #008000; font-weight: bold">if</span> user_action <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000">None</span>:
+            user_action(u, x, t, step_no<span style="color: #666666">+</span>(n<span style="color: #666666">+1</span>))
+
+        <span style="color: #408080; font-style: italic"># Update u_1 before next step</span>
+        u_1, u <span style="color: #666666">=</span> u, u_1
+
+    <span style="color: #408080; font-style: italic"># u is now contained in u_1 (swapping)</span>
+    <span style="color: #008000; font-weight: bold">return</span> u_1
+
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">reaction_FE</span>(I, f, L, Nx, dt, dt_Rfactor, t, step_no, 
+                user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>):
+    <span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Reaction solver, Forward Euler method.</span>
+<span style="color: #BA2121; font-style: italic">    Note that t covers the whole global time interval. </span>
+<span style="color: #BA2121; font-style: italic">    dt is the step of the diffustion part, i.e. there</span>
+<span style="color: #BA2121; font-style: italic">    is a local time interval [0, dt] the reaction_FE</span>
+<span style="color: #BA2121; font-style: italic">    deals with each time it is called. step_no keeps</span>
+<span style="color: #BA2121; font-style: italic">    track of the (global) time step number (required </span>
+<span style="color: #BA2121; font-style: italic">    for lookup in t).    </span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+
+    <span style="color: #408080; font-style: italic">#bypass = True</span>
+    <span style="color: #408080; font-style: italic">#if not bypass:  # original code from sl</span>
+
+    u <span style="color: #666666">=</span> np<span style="color: #666666">.</span>copy(I)      
+    dt_local <span style="color: #666666">=</span> dt<span style="color: #666666">/</span><span style="color: #008000">float</span>(dt_Rfactor)    
+    Nt_local <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(dt<span style="color: #666666">/</span><span style="color: #008000">float</span>(dt_local)))    
+    x <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, L, Nx<span style="color: #666666">+1</span>)  
+          
+    <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(Nt_local):
+        time <span style="color: #666666">=</span> t[step_no] <span style="color: #666666">+</span> n<span style="color: #666666">*</span>dt_local
+        u[<span style="color: #666666">1</span>:Nx] <span style="color: #666666">=</span> u[<span style="color: #666666">1</span>:Nx] <span style="color: #666666">+</span> dt_local<span style="color: #666666">*</span>f(u[<span style="color: #666666">1</span>:Nx], time)  
+        
+    <span style="color: #408080; font-style: italic"># BC already inserted in diffusion step, i.e. no action here            </span>
+                        
+    <span style="color: #008000; font-weight: bold">return</span> u
+        
+    <span style="color: #408080; font-style: italic">#else:</span>
+    <span style="color: #408080; font-style: italic">#    return I        </span>
+        
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">ordinary_splitting</span>(I, a, b, f, L, dt, 
+                       dt_Rfactor, F, t, T, 
+                       user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>):
+    <span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;1st order scheme, i.e. Forward Euler is enough for both</span>
+<span style="color: #BA2121; font-style: italic">    the diffusion and the reaction part. The time step dt is </span>
+<span style="color: #BA2121; font-style: italic">    given for the diffusion step, while the time step for the </span>
+<span style="color: #BA2121; font-style: italic">    reaction part is found as dt/dt_Rfactor, where dt_Rfactor &gt;= 1.</span>
+<span style="color: #BA2121; font-style: italic">    &#39;&#39;&#39;</span>
+    Nt <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(T<span style="color: #666666">/</span><span style="color: #008000">float</span>(dt)))
+    <span style="color: #408080; font-style: italic">#t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points, global time</span>
+    dx <span style="color: #666666">=</span> np<span style="color: #666666">.</span>sqrt(a<span style="color: #666666">*</span>dt<span style="color: #666666">/</span>F)
+    Nx <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(L<span style="color: #666666">/</span>dx))
+    x <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, L, Nx<span style="color: #666666">+1</span>)       <span style="color: #408080; font-style: italic"># Mesh points in space</span>
+    u <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nx<span style="color: #666666">+1</span>)
+        
+    <span style="color: #408080; font-style: italic"># Set initial condition u(x,0) = I(x)</span>
+    <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, Nx<span style="color: #666666">+1</span>):
+        u[i] <span style="color: #666666">=</span> I(x[i])
+
+    <span style="color: #408080; font-style: italic"># In the following loop, each time step is &quot;covered twice&quot;, </span>
+    <span style="color: #408080; font-style: italic"># first for diffusion, then for reaction</span>
+    <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, Nt):    
+        <span style="color: #408080; font-style: italic"># Note: could avoid the call to diffusion_FE here...</span>
+        
+        <span style="color: #408080; font-style: italic"># Diffusion step (one time step dt)</span>
+        u_s <span style="color: #666666">=</span> diffusion_FE(I<span style="color: #666666">=</span>u, a<span style="color: #666666">=</span>a, f<span style="color: #666666">=0</span>, L<span style="color: #666666">=</span>L, dt<span style="color: #666666">=</span>dt, F<span style="color: #666666">=</span>F, 
+                           t<span style="color: #666666">=</span>t, T<span style="color: #666666">=</span>dt, step_no<span style="color: #666666">=</span>n,
+                           user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>)
+        <span style="color: #408080; font-style: italic"># Reaction step (potentially many smaller steps within dt)</span>
+        u <span style="color: #666666">=</span> reaction_FE(I<span style="color: #666666">=</span>u_s, f<span style="color: #666666">=</span>f, L<span style="color: #666666">=</span>L, Nx<span style="color: #666666">=</span>Nx, 
+                        dt<span style="color: #666666">=</span>dt, dt_Rfactor<span style="color: #666666">=</span>dt_Rfactor, 
+                        t<span style="color: #666666">=</span>t, step_no<span style="color: #666666">=</span>n, 
+                        user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>)
+
+        <span style="color: #008000; font-weight: bold">if</span> user_action <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000">None</span>:
+            user_action(u, x, t, n<span style="color: #666666">+1</span>)
+
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">Strang_splitting_1stOrder</span>(I, a, b, f, L, dt, dt_Rfactor, 
+                              F, t, T, user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>):
+    <span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;Strang splitting while still using FE for the diffusion</span>
+<span style="color: #BA2121; font-style: italic">    step and for the reaction step. Gives 1st order scheme.</span>
+<span style="color: #BA2121; font-style: italic">    Introduce an extra time mesh t2 for the diffusion part, </span>
+<span style="color: #BA2121; font-style: italic">    since it steps dt/2.</span>
+<span style="color: #BA2121; font-style: italic">    &#39;&#39;&#39;</span>
+    Nt <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(T<span style="color: #666666">/</span><span style="color: #008000">float</span>(dt)))
+    t2 <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, Nt<span style="color: #666666">*</span>dt, (Nt<span style="color: #666666">+1</span>)<span style="color: #666666">+</span>Nt)   <span style="color: #408080; font-style: italic"># Mesh points in diff    </span>
+    dx <span style="color: #666666">=</span> np<span style="color: #666666">.</span>sqrt(a<span style="color: #666666">*</span>dt<span style="color: #666666">/</span>F)
+    Nx <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(L<span style="color: #666666">/</span>dx))
+    x <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, L, Nx<span style="color: #666666">+1</span>)     
+    u <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nx<span style="color: #666666">+1</span>)
+        
+    <span style="color: #408080; font-style: italic"># Set initial condition u(x,0) = I(x)</span>
+    <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, Nx<span style="color: #666666">+1</span>):
+        u[i] <span style="color: #666666">=</span> I(x[i])
+
+    <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, Nt):    
+        
+        <span style="color: #408080; font-style: italic"># Diffusion step (1/2 dt: from t_n to t_n+1/2)</span>
+        u_s <span style="color: #666666">=</span> diffusion_FE(I<span style="color: #666666">=</span>u, a<span style="color: #666666">=</span>a, f<span style="color: #666666">=0</span>, L<span style="color: #666666">=</span>L, dt<span style="color: #666666">=</span>dt<span style="color: #666666">/2.0</span>, F<span style="color: #666666">=</span>F<span style="color: #666666">/2.0</span>, 
+                           t<span style="color: #666666">=</span>t2, T<span style="color: #666666">=</span>dt<span style="color: #666666">/2.0</span>, step_no<span style="color: #666666">=2*</span>n,
+                           user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>)
+                                                                             
+        <span style="color: #408080; font-style: italic"># Reaction step (1 dt: from t_n to t_n+1)</span>
+        <span style="color: #408080; font-style: italic"># (potentially many smaller steps within dt)</span>
+        u_sss <span style="color: #666666">=</span> reaction_FE(I<span style="color: #666666">=</span>u_s, f<span style="color: #666666">=</span>f, L<span style="color: #666666">=</span>L, Nx<span style="color: #666666">=</span>Nx, 
+                        dt<span style="color: #666666">=</span>dt, dt_Rfactor<span style="color: #666666">=</span>dt_Rfactor, 
+                        t<span style="color: #666666">=</span>t, step_no<span style="color: #666666">=</span>n, 
+                        user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>)
+
+        <span style="color: #408080; font-style: italic"># Diffusion step (1/2 dt: from t_n+1/2 to t_n)</span>
+        u <span style="color: #666666">=</span> diffusion_FE(I<span style="color: #666666">=</span>u_sss, a<span style="color: #666666">=</span>a, f<span style="color: #666666">=0</span>, L<span style="color: #666666">=</span>L, dt<span style="color: #666666">=</span>dt<span style="color: #666666">/2.0</span>, F<span style="color: #666666">=</span>F<span style="color: #666666">/2.0</span>, 
+                           t<span style="color: #666666">=</span>t2, T<span style="color: #666666">=</span>dt<span style="color: #666666">/2.0</span>, step_no<span style="color: #666666">=2*</span>n<span style="color: #666666">+1</span>,
+                           user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>)
+
+        <span style="color: #008000; font-weight: bold">if</span> user_action <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000">None</span>:
+            user_action(u, x, t, n<span style="color: #666666">+1</span>)
+
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">Strang_splitting_2ndOrder</span>(I, a, b, f, L, dt, dt_Rfactor, 
+                              F, t, T, user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>):
+    <span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;Strang splitting using Crank-Nicolson for the diffusion</span>
+<span style="color: #BA2121; font-style: italic">    step (theta-rule) and Adams-Bashforth 2 for the reaction step. </span>
+<span style="color: #BA2121; font-style: italic">    Gives 2nd order scheme. Introduce an extra time mesh t2 for </span>
+<span style="color: #BA2121; font-style: italic">    the diffusion part, since it steps dt/2.</span>
+<span style="color: #BA2121; font-style: italic">    &#39;&#39;&#39;</span>
+    <span style="color: #008000; font-weight: bold">import</span> <span style="color: #0000FF; font-weight: bold">odespy</span>
+    Nt <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(T<span style="color: #666666">/</span><span style="color: #008000">float</span>(dt)))
+    t2 <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, Nt<span style="color: #666666">*</span>dt, (Nt<span style="color: #666666">+1</span>)<span style="color: #666666">+</span>Nt)   <span style="color: #408080; font-style: italic"># Mesh points in diff    </span>
+    dx <span style="color: #666666">=</span> np<span style="color: #666666">.</span>sqrt(a<span style="color: #666666">*</span>dt<span style="color: #666666">/</span>F)
+    Nx <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(L<span style="color: #666666">/</span>dx))
+    x <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, L, Nx<span style="color: #666666">+1</span>)     
+    u <span style="color: #666666">=</span> np<span style="color: #666666">.</span>zeros(Nx<span style="color: #666666">+1</span>)
+        
+    <span style="color: #408080; font-style: italic"># Set initial condition u(x,0) = I(x)</span>
+    <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, Nx<span style="color: #666666">+1</span>):
+        u[i] <span style="color: #666666">=</span> I(x[i])
+
+    reaction_solver <span style="color: #666666">=</span> odespy<span style="color: #666666">.</span>AdamsBashforth2(f)    
+
+    <span style="color: #008000; font-weight: bold">for</span> n <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, Nt):    
+        
+        <span style="color: #408080; font-style: italic"># Diffusion step (1/2 dt: from t_n to t_n+1/2)</span>
+        <span style="color: #408080; font-style: italic"># Crank-Nicolson (theta = 0.5, gives 2nd order) </span>
+        u_s <span style="color: #666666">=</span> diffusion_theta(I<span style="color: #666666">=</span>u, a<span style="color: #666666">=</span>a, f<span style="color: #666666">=0</span>, L<span style="color: #666666">=</span>L, dt<span style="color: #666666">=</span>dt<span style="color: #666666">/2.0</span>, F<span style="color: #666666">=</span>F<span style="color: #666666">/2.0</span>, 
+                              t<span style="color: #666666">=</span>t2, T<span style="color: #666666">=</span>dt<span style="color: #666666">/2.0</span>, step_no<span style="color: #666666">=2*</span>n, theta<span style="color: #666666">=0.5</span>,
+                              u_L<span style="color: #666666">=0</span>, u_R<span style="color: #666666">=0</span>, user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>)
+                                                                 
+        <span style="color: #408080; font-style: italic">#u_s = diffusion_FE(I=u, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0, </span>
+        <span style="color: #408080; font-style: italic">#                   t=t2, T=dt/2.0, step_no=2*n,</span>
+        <span style="color: #408080; font-style: italic">#                   user_action=None)</span>
+                                                                 
+        <span style="color: #408080; font-style: italic"># Reaction step (1 dt: from t_n to t_n+1)</span>
+        <span style="color: #408080; font-style: italic"># (potentially many smaller steps within dt)</span>
+        <span style="color: #408080; font-style: italic">#sl: testing -----------------------------------</span>
+        reaction_solver<span style="color: #666666">.</span>set_initial_condition(u_s)
+        t_points <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, dt, dt_Rfactor<span style="color: #666666">+1</span>)
+        u_AB2, t_ <span style="color: #666666">=</span> reaction_solver<span style="color: #666666">.</span>solve(t_points) <span style="color: #408080; font-style: italic"># t_ not needed</span>
+        u_sss <span style="color: #666666">=</span> u_AB2[<span style="color: #666666">-1</span>,:]  <span style="color: #408080; font-style: italic"># pick sol at last point in time</span>
+        <span style="color: #408080; font-style: italic">#-----------------------------------------------</span>
+        
+        <span style="color: #408080; font-style: italic">#u_sss = reaction_FE(I=u_s, f=f, L=L, Nx=Nx, </span>
+        <span style="color: #408080; font-style: italic">#                dt=dt, dt_Rfactor=dt_Rfactor, </span>
+        <span style="color: #408080; font-style: italic">#                t=t, step_no=n, </span>
+        <span style="color: #408080; font-style: italic">#                user_action=None)</span>
+
+        <span style="color: #408080; font-style: italic"># Diffusion step (1/2 dt: from t_n+1/2 to t_n)</span>
+        <span style="color: #408080; font-style: italic"># Crank-Nicolson (theta = 0.5, gives 2nd order) </span>
+        u <span style="color: #666666">=</span> diffusion_theta(I<span style="color: #666666">=</span>u_sss, a<span style="color: #666666">=</span>a, f<span style="color: #666666">=0</span>, L<span style="color: #666666">=</span>L, dt<span style="color: #666666">=</span>dt<span style="color: #666666">/2.0</span>, F<span style="color: #666666">=</span>F<span style="color: #666666">/2.0</span>, 
+                            t<span style="color: #666666">=</span>t2, T<span style="color: #666666">=</span>dt<span style="color: #666666">/2.0</span>, step_no<span style="color: #666666">=2*</span>n<span style="color: #666666">+1</span>, theta<span style="color: #666666">=0.5</span>,
+                            u_L<span style="color: #666666">=0</span>, u_R<span style="color: #666666">=0</span>, user_action<span style="color: #666666">=</span><span style="color: #008000">None</span>)
+
+        <span style="color: #408080; font-style: italic">#u = diffusion_FE(I=u_sss, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0, </span>
+        <span style="color: #408080; font-style: italic">#                   t=t2, T=dt/2.0, step_no=2*n+1,</span>
+        <span style="color: #408080; font-style: italic">#                   user_action=None)</span>
+
+        <span style="color: #008000; font-weight: bold">if</span> user_action <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000">None</span>:
+            user_action(u, x, t, n<span style="color: #666666">+1</span>)
+
+
+
+<span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">convergence_rates</span>(scheme<span style="color: #666666">=</span><span style="color: #BA2121">&#39;diffusion&#39;</span>):
+    <span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;Computes empirical conv. rates for the different</span>
+<span style="color: #BA2121; font-style: italic">    splitting schemes&#39;&#39;&#39;</span>
+    
+    F <span style="color: #666666">=</span> <span style="color: #666666">0.5</span>
+    T <span style="color: #666666">=</span> <span style="color: #666666">1.2</span>
+    a <span style="color: #666666">=</span> <span style="color: #666666">3.5</span>
+    b <span style="color: #666666">=</span> <span style="color: #666666">1</span>
+    L <span style="color: #666666">=</span> <span style="color: #666666">1.5</span>
+    k <span style="color: #666666">=</span> np<span style="color: #666666">.</span>pi<span style="color: #666666">/</span>L
+    
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">exact</span>(x, t):
+        <span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;exact sol. to: du/dt = a*d^2u/dx^2 - b*u&#39;&#39;&#39;</span>
+        <span style="color: #008000; font-weight: bold">return</span> np<span style="color: #666666">.</span>exp(<span style="color: #666666">-</span>(a<span style="color: #666666">*</span>k<span style="color: #666666">**2</span> <span style="color: #666666">+</span> b)<span style="color: #666666">*</span>t) <span style="color: #666666">*</span> np<span style="color: #666666">.</span>sin(k<span style="color: #666666">*</span>x)
+        
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">f</span>(u, t):
+        <span style="color: #008000; font-weight: bold">return</span> <span style="color: #666666">-</span>b<span style="color: #666666">*</span>u  
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">I</span>(x):
+        <span style="color: #008000; font-weight: bold">return</span> exact(x, <span style="color: #666666">0</span>)
+        
+    <span style="color: #008000; font-weight: bold">global</span> error    <span style="color: #408080; font-style: italic"># error computed in the user action function</span>
+    error <span style="color: #666666">=</span> <span style="color: #666666">0</span>  
+
+    <span style="color: #408080; font-style: italic"># Convergence study</span>
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">action</span>(u, x, t, n):
+        <span style="color: #008000; font-weight: bold">global</span> error            
+        <span style="color: #008000; font-weight: bold">if</span> n <span style="color: #666666">==</span> <span style="color: #666666">1</span>:      <span style="color: #408080; font-style: italic"># New simulation, - reset error</span>
+            error <span style="color: #666666">=</span> <span style="color: #666666">0</span>
+        <span style="color: #008000; font-weight: bold">else</span>:
+            error <span style="color: #666666">=</span> <span style="color: #008000">max</span>(error, np<span style="color: #666666">.</span>abs(u <span style="color: #666666">-</span> exact(x, t[n]))<span style="color: #666666">.</span>max())        
+
+    E <span style="color: #666666">=</span> []
+    h <span style="color: #666666">=</span> []
+    Nx_values <span style="color: #666666">=</span> [<span style="color: #666666">10</span>, <span style="color: #666666">20</span>, <span style="color: #666666">40</span>, <span style="color: #666666">80</span>, <span style="color: #666666">160</span>]   
+    <span style="color: #008000; font-weight: bold">for</span> Nx <span style="color: #AA22FF; font-weight: bold">in</span> Nx_values:        
+        dx <span style="color: #666666">=</span> L<span style="color: #666666">/</span>Nx;  dt <span style="color: #666666">=</span> F<span style="color: #666666">/</span>a<span style="color: #666666">*</span>dx<span style="color: #666666">**2</span>
+        Nt <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(T<span style="color: #666666">/</span><span style="color: #008000">float</span>(dt)))
+        t <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, Nt<span style="color: #666666">*</span>dt, Nt<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># Mesh points, global time</span>
+        
+        <span style="color: #008000; font-weight: bold">if</span> scheme <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;diffusion&#39;</span>:
+            <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Running FE on whole eqn...&#39;</span>
+            diffusion_FE(I, a, f, L, dt, F, t, T, 
+                         step_no<span style="color: #666666">=0</span>, user_action<span style="color: #666666">=</span>action)
+        <span style="color: #008000; font-weight: bold">elif</span> scheme <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;ordinary_splitting&#39;</span>:
+            <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Running ordinary splitting...&#39;</span>
+            ordinary_splitting(I<span style="color: #666666">=</span>I, a<span style="color: #666666">=</span>a, b<span style="color: #666666">=</span>b, f<span style="color: #666666">=</span>f, L<span style="color: #666666">=</span>L, dt<span style="color: #666666">=</span>dt, 
+                               dt_Rfactor<span style="color: #666666">=1</span>, F<span style="color: #666666">=</span>F, t<span style="color: #666666">=</span>t, T<span style="color: #666666">=</span>T,
+                               user_action<span style="color: #666666">=</span>action)        
+        <span style="color: #008000; font-weight: bold">elif</span> scheme <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;Strang_splitting_1stOrder&#39;</span>:
+            <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Running Strang splitting with 1st order schemes...&#39;</span>
+            Strang_splitting_1stOrder(I<span style="color: #666666">=</span>I, a<span style="color: #666666">=</span>a, b<span style="color: #666666">=</span>b, f<span style="color: #666666">=</span>f, L<span style="color: #666666">=</span>L, dt<span style="color: #666666">=</span>dt, 
+                                      dt_Rfactor<span style="color: #666666">=1</span>, F<span style="color: #666666">=</span>F, t<span style="color: #666666">=</span>t, T<span style="color: #666666">=</span>T,
+                                      user_action<span style="color: #666666">=</span>action)       
+        <span style="color: #008000; font-weight: bold">elif</span> scheme <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;Strang_splitting_2ndOrder&#39;</span>:
+            <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Running Strang splitting with 2nd order schemes...&#39;</span>
+            Strang_splitting_2ndOrder(I<span style="color: #666666">=</span>I, a<span style="color: #666666">=</span>a, b<span style="color: #666666">=</span>b, f<span style="color: #666666">=</span>f, L<span style="color: #666666">=</span>L, dt<span style="color: #666666">=</span>dt, 
+                                      dt_Rfactor<span style="color: #666666">=1</span>, F<span style="color: #666666">=</span>F, t<span style="color: #666666">=</span>t, T<span style="color: #666666">=</span>T,
+                                      user_action<span style="color: #666666">=</span>action)       
+        <span style="color: #008000; font-weight: bold">else</span>:
+            <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Unknown scheme requested!&#39;</span>
+            sys<span style="color: #666666">.</span>exit(<span style="color: #666666">0</span>)
+                           
+        h<span style="color: #666666">.</span>append(dt)
+        E<span style="color: #666666">.</span>append(error)
+
+    <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;E:&#39;</span>, E
+    <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;h:&#39;</span>, h
+        
+    <span style="color: #408080; font-style: italic"># Convergence rates </span>
+    r <span style="color: #666666">=</span> [np<span style="color: #666666">.</span>log(E[i]<span style="color: #666666">/</span>E[i<span style="color: #666666">-1</span>])<span style="color: #666666">/</span>np<span style="color: #666666">.</span>log(h[i]<span style="color: #666666">/</span>h[i<span style="color: #666666">-1</span>])
+         <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">1</span>,<span style="color: #008000">len</span>(Nx_values))]
+    <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Computed rates:&#39;</span>, r
+
+
+<span style="color: #008000; font-weight: bold">if</span> __name__ <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;__main__&#39;</span>:
+    
+    schemes <span style="color: #666666">=</span> [<span style="color: #BA2121">&#39;diffusion&#39;</span>, 
+               <span style="color: #BA2121">&#39;ordinary_splitting&#39;</span>, 
+               <span style="color: #BA2121">&#39;Strang_splitting_1stOrder&#39;</span>,
+               <span style="color: #BA2121">&#39;Strang_splitting_2ndOrder&#39;</span>]
+               
+    <span style="color: #008000; font-weight: bold">for</span> scheme <span style="color: #AA22FF; font-weight: bold">in</span> schemes:
+        convergence_rates(scheme<span style="color: #666666">=</span>scheme)
+</pre></div>
+
+<h2 id="___sec60" class="anchor">Analysis of the splitting method </h2>
 
 <p>
 Let us address a linear PDE problem for which we can develop analytical
