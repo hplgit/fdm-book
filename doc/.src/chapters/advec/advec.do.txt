@@ -554,6 +554,130 @@ damping, while keeping $C$ fixed?]
 ======= One-dimensional stationary advection-diffusion equation =======
 label{advec:1D:stationary}
 
+Now we pay attention to a physical process where advection (or convection)
+is in balance with diffusion:
+
+!bt
+\begin{equation}
+v\frac{du}{dx} = \dfc\frac{d^2 u}{dx^2}\tp
+label{advec:1D:stat:pde1}
+\end{equation}
+!et
+For simplicity, we assume $v$ and \dfc$ to be constant, but the extension to
+the variable-coefficient case is trivial.
+This is equation can be viewed as the stationary limit of the corresponding
+time-dependent problem
+
+!bt
+\begin{equation}
+\frac{\partial u}{\partial t} + v\frac{\partial u}{\partial x} =
+\dfc\frac{\partial^2 u}{\partial x^2}\tp
+label{advec:1D:stat:pde2}
+\end{equation}
+!et
+
+Equations of the form (ref{advec:1D:stat:pde1}) or
+(ref{advec:1D:stat:pde2}) arise from transport phenomena, either mass or
+heat transport. One can also view the equations as simple model problems
+for the Navier-Stokes equations. A fundamental difficulty with solving
+these equations is numerical instability if the first-derivative spatial
+term dominates over the second-derivative term.
+
+===== A simple model problem =====
+
+We consider (ref{advec:1D:stat:pde1}) on $[0,L]$
+equipped with the boundary conditions $u(0)=U_0$, $u(L)=U_L$.
+By scaling we can get rid of lots of physical parameter and instead reduce
+the discussion to combinations of physical parameters. We scale $x$ by
+$\bar x = x/L$, and $u$ by
+
+!bt
+\[ \bar u = \frac{u - u_0}{u_L-u_0}\tp\]
+!et
+Inserted in the governing equation we get
+
+!bt
+\[ \frac{v(u_L-u_0)}{L}\frac{d\bar u}{d\bar x} =
+\frac{\dfc(u_L-u_0)}{L^2}\frac{d^2\bar u}{d\bar x^2},\quad
+\bar u(0)=0,\ \bar u(1)=1\tp\]
+!et
+Dropping the bars is common. We can then simplify to
+
+!bt
+\begin{equation}
+\frac{du}{dx} = \epsilon\frac{d^2 u}{d x^2},\quad u(0)=0,\ u(1)=1\tp
+label{advec:1D:stat:pde1s}
+\end{equation}
+!et
+
+There are two competing effects in this equation: the advection term
+transports signals to the right (with velocity $v$, later with unit velocity),
+while the diffusion term transports signals to the left and right )with
+strength $\dfc$, later with strength $\epsilon$). The value $u(0)=0$
+is transported through the domain if $\epsilon$ is small, and $u\approx 0$
+except in the vicinity of $x=0$, where $u(1)=1$ and the diffusion transports
+some information about $u(1)=1$ to the left. For large $\epsilon$, diffusion
+domaintes and the $u$ takes on the ``average'' value, i.e., $u$ gets a
+linear variation from 0 to 1 throughout the domain.
+
+It turns out that we can find an exact solution to the differential equation
+problem and also to many of its discretization. This is one reason why
+this model problem has been so successful in designing and investigating
+numerical methods for mixed convection/advetion and diffusion.
+The exact solution reads
+
+!bt
+\[ \uex (x) = \frac{e^{x/\epsilon} - 1}{e^{1/\epsilon} - 1}\tp\]
+!et
+
+
+===== A centered finite difference scheme =====
+
+The most obvious idea to solve (ref{advec:1D:stat:pde1s}) is to apply
+centered differenes:
+
+!bt
+\[ [D_{2x} u = \epsilon D_xD_x u]_i \]
+!et
+for $i=1,\ldots,N_x-1$, with $u_0=0$ and $u_{N_x}=1$.
+Note that this is a coupled system of algebraic equations
+involving $u_0,\ldots,u_{N_x}$.
+
+Written out, the scheme becomes a tridiagonal system
+
+!bt
+\[ A_{i-1,i}u_{i-1} + A_{i,i}u_i + A_{i+1.i}u_{i+1} = 0,\]
+!et
+for $i=1,\ldots,N_x-1$
+
+!bt
+\begin{align*}
+A_{0,0) &= 1,\\
+A_{i-1,i} &= -\frac{1}{\Delta x} -\epsilon\frac{1}{\Delta x^2},\\
+A_{i,i} &= 2\epsilon\frac{1}{\Delta x^2},\\
+A_{i,i+1} &= \frac{1}{\Delta x} -\epsilon\frac{1}{\Delta x^2},\\
+A_{N_x,N_x} &= 1\tp
+\end{align*}
+!et
+The right-hand side of the linear system is zero except $b_{N_x}=1$.
+
+FIGURE: [fig-advec/twopt_BVP_cen_01, width=800 frac=1] Comparison of exact and numerical solution for $\epsilon =0.1$ and $N_x=20,40$ with centered differences.
+
+FIGURE: [fig-advec/twopt_BVP_cen_001, width=800 frac=1] Comparison of exact and numerical solution for $\epsilon =0.01$ and $N_x=20,40$ with centered differences..
+
+===== Remedy: upwind finite difference scheme =====
+
+!bt
+\[ [D^-_x u = \epsilon D_xD_x u]_i \]
+!et
+
+FIGURE: [fig-advec/twopt_BVP_upw_01, width=800 frac=1] Comparison of exact and numerical solution for $\epsilon =0.1$ and $N_x=20,40$ with upwind difference.
+
+FIGURE: [fig-advec/twopt_BVP_upw_001, width=800 frac=1] Comparison of exact and numerical solution for $\epsilon =0.01$ and $N_x=20,40$ with upwind difference.
+
+
+======= Convection-diffusion equations =======
+
 ======= Two-dimensional advection-diffusion equations =======
 label{advec:2D}
 
