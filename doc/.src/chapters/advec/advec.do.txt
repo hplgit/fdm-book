@@ -577,20 +577,21 @@ label{advec:1D:stat:pde2}
 !et
 
 Equations of the form (ref{advec:1D:stat:pde1}) or
-(ref{advec:1D:stat:pde2}) arise from transport phenomena, either mass or
-heat transport. One can also view the equations as simple model problems
-for the Navier-Stokes equations. A fundamental difficulty with solving
-these equations is numerical instability if the first-derivative spatial
-term dominates over the second-derivative term.
+(ref{advec:1D:stat:pde2}) arise from transport phenomena, either mass
+or heat transport. One can also view the equations as simple model
+problems for the Navier-Stokes equations. A fundamental difficulty
+with solving these equations is numerical instability if the
+first-derivative spatial term dominates over the second-derivative
+term.
 
 ===== A simple model problem =====
 label{advec:1D:stationary:model}
 
-We consider (ref{advec:1D:stat:pde1}) on $[0,L]$
-equipped with the boundary conditions $u(0)=U_0$, $u(L)=U_L$.
-By scaling we can get rid of lots of physical parameter and instead reduce
-the discussion to combinations of physical parameters. We scale $x$ by
-$\bar x = x/L$, and $u$ by
+We consider (ref{advec:1D:stat:pde1}) on $[0,L]$ equipped with the
+boundary conditions $u(0)=U_0$, $u(L)=U_L$.  By scaling we can get rid
+of lots of physical parameter and instead reduce the discussion to
+combinations of physical parameters. We scale $x$ by $\bar x = x/L$,
+and $u$ by
 
 !bt
 \[ \bar u = \frac{u - u_0}{u_L-u_0}\tp\]
@@ -612,20 +613,21 @@ label{advec:1D:stat:pde1s}
 !et
 
 There are two competing effects in this equation: the advection term
-transports signals to the right (with velocity $v$, later with unit velocity),
-while the diffusion term transports signals to the left and right )with
-strength $\dfc$, later with strength $\epsilon$). The value $u(0)=0$
-is transported through the domain if $\epsilon$ is small, and $u\approx 0$
-except in the vicinity of $x=0$, where $u(1)=1$ and the diffusion transports
-some information about $u(1)=1$ to the left. For large $\epsilon$, diffusion
-domaintes and the $u$ takes on the ``average'' value, i.e., $u$ gets a
-linear variation from 0 to 1 throughout the domain.
+transports signals to the right (with velocity $v$, later with unit
+velocity), while the diffusion term transports signals to the left and
+right )with strength $\dfc$, later with strength $\epsilon$). The
+value $u(0)=0$ is transported through the domain if $\epsilon$ is
+small, and $u\approx 0$ except in the vicinity of $x=0$, where
+$u(1)=1$ and the diffusion transports some information about $u(1)=1$
+to the left. For large $\epsilon$, diffusion domaintes and the $u$
+takes on the ``average'' value, i.e., $u$ gets a linear variation from
+0 to 1 throughout the domain.
 
-It turns out that we can find an exact solution to the differential equation
-problem and also to many of its discretization. This is one reason why
-this model problem has been so successful in designing and investigating
-numerical methods for mixed convection/advetion and diffusion.
-The exact solution reads
+It turns out that we can find an exact solution to the differential
+equation problem and also to many of its discretization. This is one
+reason why this model problem has been so successful in designing and
+investigating numerical methods for mixed convection/advetion and
+diffusion.  The exact solution reads
 
 !bt
 \[ \uex (x) = \frac{e^{x/\epsilon} - 1}{e^{1/\epsilon} - 1}\tp\]
@@ -663,26 +665,82 @@ A_{N_x,N_x} &= 1\tp
 !et
 The right-hand side of the linear system is zero except $b_{N_x}=1$.
 
-FIGURE: [fig-advec/twopt_BVP_cen_01, width=800 frac=1] Comparison of exact and numerical solution for $\epsilon =0.1$ and $N_x=20,40$ with centered differences.
+Figure ref{advec:1D:stationary:fdm:fig1} shows reasonbly accurate
+results with $N_x=20 $ and $N_x=40$ cells in $x$ direction and a value of
+$\epsilon = 0.1$. Decreasing $\epsilon$ to $0.01$ leads to oscillatory
+solutions as depicted in Figure reflabel{advec:1D:stationary:fdm:fig2}.
+This is, unfortunately, a typical phenomenon in this type of problem:
+non-physical oscillations arise for small $\epsilon$ unless the resolution
+$N_x$ is not big enough. Exercise {advec:1D:stationary:exer:analysis1}
+develops a precise criterion: $u$ is oscillation-free if
 
-FIGURE: [fig-advec/twopt_BVP_cen_001, width=800 frac=1] Comparison of exact and numerical solution for $\epsilon =0.01$ and $N_x=20,40$ with centered differences..
+!bt
+\[ \Delta x \leq \frac{2}{\epsilon}\tp\]
+!et
+If we take the present model as a simplified model for a *viscous
+boundary layer* in real, industrial fluid flow applications,
+$\epsilon\sim 10^{-6}$
+and million of cells are required to resolve the boundary layer.
+Fortunately, this is not strictly necessary as we have methods in
+the next section to overcome the problem!
+
+FIGURE: [fig-advec/twopt_BVP_cen_01, width=800 frac=1] Comparison of exact and numerical solution for $\epsilon =0.1$ and $N_x=20,40$ with centered differences.
+ label{advec:1D:stationary:fdm:fig1}
+
+FIGURE: [fig-advec/twopt_BVP_cen_001, width=800 frac=1] Comparison of exact and numerical solution for $\epsilon =0.01$ and $N_x=20,40$ with centered differences. label{advec:1D:stationary:fdm:fig2}
+
+!bnotice Solver
+A suitable solver for doing the experiments is presented below.
+
+@@@CODE src-advec/twopt_BVP.py fromto: import numpy@def u_exact
+!enotice
 
 ===== Remedy: upwind finite difference scheme =====
 label{advec:1D:stationary:upwind}
 
+The scheme can be stabilized by letting the advective transport term, which
+is the dominating term, collect its information in the flow direction, i.e.,
+upstream or upwind of the point in question. So, instead of using a
+center difference
+
+!bt
+\[ \frac{du}{dx}_i\approx \frac{u_{i+1}-u_{i-1}}{2\Delta x},\]
+!et
+we use the one-sided *upwind* difference
+
+!bt
+\[ \frac{du}{dx}_i\approx \frac{u_{i}-u_{i-1}}{2\Delta x},\]
+!et
+in case $v>0$. For $v<0$ we set
+
+!bt
+\[ \frac{du}{dx}_i\approx \frac{u_{i+1}-u_{i}}{2\Delta x},\]
+!et
+On compact operator notation form, our upwind scheme can be expressed
+as
+
 !bt
 \[ [D^-_x u = \epsilon D_xD_x u]_i \]
 !et
+provided $v>0$ (and $\epsilon > 0$).
 
-FIGURE: [fig-advec/twopt_BVP_upw_01, width=800 frac=1] Comparison of exact and numerical solution for $\epsilon =0.1$ and $N_x=20,40$ with upwind difference.
+We write out the equations and implement them as shown in the program
+in Section ref{advec:1D:stationary:fdm}. The results appear in Figures
+ref{advec:1D:stationary:upwind:fig1} and
+ref{advec:1D:stationary:upwind:fig2}: no more oscillations!
 
-FIGURE: [fig-advec/twopt_BVP_upw_001, width=800 frac=1] Comparison of exact and numerical solution for $\epsilon =0.01$ and $N_x=20,40$ with upwind difference.
+FIGURE: [fig-advec/twopt_BVP_upw_01, width=800 frac=1] Comparison of exact and numerical solution for $\epsilon =0.1$ and $N_x=20,40$ with upwind difference. label{advec:1D:stationary:upwind:fig1}
+
+FIGURE: [fig-advec/twopt_BVP_upw_001, width=800 frac=1] Comparison of exact and numerical solution for $\epsilon =0.01$ and $N_x=20,40$ with upwind difference. label{advec:1D:stationary:upwind:fg2}
 
 We see that the upwind scheme is always stable, but it gives a thicker
 boundary layer when the centered scheme is also stable.
 Why the upwind scheme is always stable is easy to understand as
 soon as we undertake the mathematical analysis in
-Exercise {advec:1D:stationary:exer:analysis}.
+Exercise {advec:1D:stationary:exer:analysis1}.
+Moreover, the thicker layer (seemingly larger diffusion) can be
+understood by doing
+Exercise {advec:1D:stationary:exer:analysis2}.
 
 !bnotice Exact solution for this model problem
 It turns out that one can introduce a linear combination of the centered
@@ -693,7 +751,23 @@ the differential equation problem at any mesh point.
 #This approach cannot be generalized to more complicated problems.
 !enotice
 
-======= Convection-diffusion equations =======
+======= Time-dependent convection-diffusion equations =======
+
+Now it is time to combine time-dependency, convection (advection) and
+diffusion into one equation:
+
+!bt
+\begin{equation}
+\frac{\partial u}{\partial t} + v\frac{\partial u}{\partial x} =
+\dfc\frac{\partial^2 u}{\partial x^2}\tp
+label{advec:1D:stat:pde3}
+\end{equation}
+
+seen that upwind has been critical, so that will work, but will centered
+also work in this case?
+
+!et
+
 
 ======= Two-dimensional advection-diffusion equations =======
 label{advec:2D}
@@ -704,8 +778,8 @@ label{advec:app}
 ======= Exercises =======
 
 ===== Exercise: Analyze 1D stationary convetion-diffusion problem =====
-label{advec:1D:stationary:exer:analysis}
-file=twopt_BVP_analysis
+label{advec:1D:stationary:exer:analysis1}
+file=twopt_BVP_analysis1
 
 Explain the observations in the numerical experiments from Sections
 ref{advec:1D:stationary:fdm} and ref{advec:1D:stationary:upwind} by
@@ -719,3 +793,14 @@ There are two solutions for $A$, so the general solution is a linear
 combination of the two, where the constants in the linear commbination
 are determined from the boundary conditions.
 !ehint
+
+===== Exercise: Interpret upwind difference as artificial diffusion =====
+label{advec:1D:stationary:exer:analysis2}
+file=twopt_BVP_analysis2
+
+Consider an upwind, one-sided difference approximation to
+a term $du/dx$ in a differential equation. Show that this this
+formula can be expressed as a centered difference plus an artificial
+diffusion term of strengh proportional to $\Delta x$.
+This means that introducing an upwind difference also means introducing
+extra diffusion of order $\Oof{\Delta x}$.
