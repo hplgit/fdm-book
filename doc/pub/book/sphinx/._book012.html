@@ -240,7 +240,6 @@ From now on we drop the bars.</p>
             <span class="n">plt</span><span class="o">.</span><span class="n">hold</span><span class="p">(</span><span class="s1">&#39;on&#39;</span><span class="p">)</span>
 
     <span class="n">plt</span><span class="o">.</span><span class="n">ion</span><span class="p">()</span>
-    <span class="k">print</span> <span class="s1">&#39;Hei!&#39;</span>
     <span class="n">U0</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">dt</span> <span class="o">=</span> <span class="mf">0.001</span>
     <span class="n">C</span> <span class="o">=</span> <span class="mi">1</span>
@@ -283,7 +282,7 @@ simplifies if we introduce the complex Fourier component</p>
 <div class="math">
 \[{A_{\small\mbox{e}}}=Be^{-ikv\Delta t} = Be^{iCkx}{\thinspace .}\]</div>
 <p>Note that <span class="math">\(|{A_{\small\mbox{e}}}| \leq 1\)</span>.</p>
-<p>It turns out that many schemes also allows a Fourier wave component as
+<p>It turns out that many schemes also allow a Fourier wave component as
 solution, and we can use the numerical value of <span class="math">\(A\)</span> to learn about the
 quality of the scheme. Hence, to analyze the difference scheme we just
 have implemented, we look at how treats the Fourier component</p>
@@ -292,7 +291,7 @@ have implemented, we look at how treats the Fourier component</p>
 <p>Inserting the numerical component in the scheme,</p>
 <div class="math">
 \[[D_t^+ A^n e^{ikq\Delta x} + v D_{2x}A^n e^{ikq\Delta x}]^n_i,\]</div>
-<p>and making use of <a class="reference internal" href="._book020.html#eq-form-exp-fd1c-center"><span class="std std-ref">(623)</span></a>
+<p>and making use of <a class="reference internal" href="._book020.html#eq-form-exp-fd1c-center"><span class="std std-ref">(627)</span></a>
 results in</p>
 <div class="math">
 \[[e^{ikq\Delta x} (\frac{A-1}{\Delta t} + v\frac{1}{\Delta x}i\sin (k\Delta x))]^n_i,\]</div>
@@ -315,7 +314,7 @@ numerical solutions.</p>
 <p>Another explicit scheme is to do a &#8220;leapfrog&#8221; jump over <span class="math">\(2\Delta t\)</span> in
 time and combine it with central differences in space:</p>
 <div class="math">
-\[[D_{2t} u + vD_{2x} u = 0,\]</div>
+\[[D_{2t} u + vD_{2x} u = 0]_i^n,\]</div>
 <p>which results in the updating formula</p>
 <div class="math">
 \[u^{n+1} = u^{n-1} - C(u_{i+1}-u_{i-1}){\thinspace .}\]</div>
@@ -324,7 +323,7 @@ now.</p>
 </div>
 <div class="section" id="implementation-10">
 <h4>Implementation<a class="headerlink" href="#implementation-10" title="Permalink to this headline">¶</a></h4>
-<p>We now need to have three time levels and must modify our solver a bit:</p>
+<p>We now need to work with three time levels and must modify our solver a bit:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">Nt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dt</span><span class="p">)))</span>
 <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> <span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>   <span class="c1"># Mesh points in time</span>
 <span class="o">...</span>
@@ -408,11 +407,20 @@ With an upwind difference,</p>
 <p>written out as</p>
 <div class="math">
 \[u^{n+1} = u^n_i - C(u^{n}_{i}-u^{n}_{i-1}),\]</div>
-<p>gives a robust scheme that is stable if <span class="math">\(C\leq 1\)</span>.
-As with the Leapfrog scheme, it becomes exact if <span class="math">\(C=1\)</span>, see
-Figure <a class="reference internal" href="#advec-1d-case-gaussian-fig-lfcs"><span class="std std-ref">Leapfrog scheme with  and </span></a>.</p>
+<p>gives a generally popular and robust scheme that is stable if <span class="math">\(C\leq 1\)</span>.
+As with the Leapfrog scheme, it becomes exact if <span class="math">\(C=1\)</span>, exactly as shown in
+Figure <a class="reference internal" href="#advec-1d-case-gaussian-fig-lfcs"><span class="std std-ref">Leapfrog scheme with  and </span></a>.
+However, any <span class="math">\(C&lt;1\)</span> gives a significant reduction in the amplitude of the
+solution, which is a purely numerical effect, see Figure
+<a class="reference internal" href="#advec-1d-ftus-fig-c08"><span class="std std-ref">Forward in time, upwind in space,  \( C=0.8 \) ,  \( Delta t = 0.01 \)  (left) and  \( Delta t=0.001 \)  (right)</span></a>. Experiments show, however, that
+reducing <span class="math">\(\Delta t\)</span> or <span class="math">\(\Delta x\)</span>, while keeping <span class="math">\(C\)</span> fixed reduces the
+error.</p>
+<div class="figure" id="id2">
+<span id="advec-1d-ftus-fig-c08"></span><a class="reference internal image-reference" href="_images/gaussian_FTUS_C08.png"><img alt="_images/gaussian_FTUS_C08.png" src="_images/gaussian_FTUS_C08.png" style="width: 800px;" /></a>
+<p class="caption"><span class="caption-text"><em>Forward in time, upwind in space,  \( C=0.8 \) ,  \( Delta t = 0.01 \)  (left) and  \( Delta t=0.001 \)  (right)</em></span></p>
+</div>
 <p>The amplification factor can be computed using the
-formula <a class="reference internal" href="._book020.html#eq-form-exp-fd1-bw"><span class="std std-ref">(621)</span></a>,</p>
+formula <a class="reference internal" href="._book020.html#eq-form-exp-fd1-bw"><span class="std std-ref">(625)</span></a>,</p>
 <div class="math">
 \[\frac{A - 1}{\Delta t} + \frac{v}{\Delta x}(1 - e^{-ik\Delta x}) = 0,\]</div>
 <p>which means</p>
@@ -448,7 +456,7 @@ leaves the right boundary to immediately enter the left boundary and propagate
 through the domain again.</p>
 <p>The periodic boundary condition is</p>
 <div class="math">
-\[u(0,t) = u(L,t),\quad u_0^n = u_{N_x}^ntp\]</div>
+\[u(0,t) = u(L,t),\quad u_0^n = u_{N_x}^n{\thinspace .}\]</div>
 <p>It means that we in the first equation, involving <span class="math">\(u_0^n\)</span>, insert <span class="math">\(u_{N_x}^n\)</span>,
 and that we in the last equation, involving <span class="math">\(u^{n+1}_{N_x}\)</span> insert <span class="math">\(u^{n+1}_0\)</span>.
 Normally, we can do this in the simple way that <code class="docutils literal"><span class="pre">u_1[0]</span></code> is updated as
@@ -507,10 +515,10 @@ b_i &amp;= u^n_i - \frac{1-\theta}{2} C (u^{n}_{i+1} - u^{n}_{i-1}),\quad i=1,\l
 b_{N_x} &amp;= u^n_0
 \end{align*}\end{split}\]</div>
 <p>The dispersion relation follows from inserting <span class="math">\(u^n_i = A^ne^{ikx}\)</span>
-and using the formula <a class="reference internal" href="._book020.html#eq-form-exp-fd1c-center"><span class="std std-ref">(623)</span></a> for the spatial
+and using the formula <a class="reference internal" href="._book020.html#eq-form-exp-fd1c-center"><span class="std std-ref">(627)</span></a> for the spatial
 differences:</p>
 <div class="math">
-\[A = \frac{1 - (1-\theta) i C\sin p}{1 + theta i C\sin p}{\thinspace .}\]</div>
+\[A = \frac{1 - (1-\theta) i C\sin p}{1 + \theta i C\sin p}{\thinspace .}\]</div>
 </div>
 <div class="section" id="the-lax-wendroff-method">
 <span id="advec-1d-laxw"></span><h3>The Lax-Wendroff method<a class="headerlink" href="#the-lax-wendroff-method" title="Permalink to this headline">¶</a></h3>
@@ -524,11 +532,31 @@ using the PDE.</li>
 </ol>
 <p>Let us do this:</p>
 <div class="math">
-\[u^{n+1} = u^n_i + \Delta t\left(\frac{\partial u}{\partial t}\right)^n_i
+\[u^{n+1}_i = u^n_i + \Delta t\left(\frac{\partial u}{\partial t}\right)^n_i
 + \frac{1}{2}\Delta t^2\left(\frac{\partial^2 u}{\partial t^2}\right)^n_i{\thinspace .}\]</div>
 <p>From the PDE we have that</p>
 <div class="math">
+\[\frac{\partial u}{\partial t} = -v\frac{\partial u}{\partial x},\]</div>
+<p>which we may use to replace the time-derivatives by spatial derivatives
+(<span class="math">\(\frac{\partial ^2}{\partial t^2} = v^2\frac{partial^2 u}{\partial x^2}\)</span>):</p>
+<div class="math">
+\[u^{n+1}_i = u^n_i -v \Delta t\left(\frac{\partial u}{\partial x}\right)^n_i
++ \frac{1}{2}\Delta t^2 v^2
+\left(\frac{\partial^2 u}{\partial x^2}\right)^n_i{\thinspace .}\]</div>
+<p>A natural spatial discretization is, for instance, central differences:</p>
+<div class="math">
+\[u^{n+1}_i = u^n_i -v \Delta t [D_{2x} u]^n_i
++ \frac{1}{2}\Delta t^2 v^2 [D_xD_x u]^n_i,\]</div>
+<p>or</p>
+<div class="math">
+\[u^{n+1}_i = u^n_i - C (u^{n}_{i+1} - u^{n}_{i-1})
++ \frac{1}{2} C^2 (u^{n}_{i+1}-2u^n_i+u^n_{i-1}){\thinspace .}\]</div>
+<p>This is the explicit Lax-Wendroff scheme.</p>
+<p>From an analysis similar to the ones carried out above, we get an
+amplification factor</p>
+<div class="math">
 \[A = 1 - iC\sin p - 2C^2\sin^2 (p/2){\thinspace .}\]</div>
+<p>This means that <span class="math">\(|A|=1\)</span> and also that we have an exact solution of <span class="math">\(C=1\)</span>!</p>
 </div>
 <div class="section" id="analysis-of-dispersion-relations">
 <span id="advec-1d-disprel"></span><h3>Analysis of dispersion relations<a class="headerlink" href="#analysis-of-dispersion-relations" title="Permalink to this headline">¶</a></h3>
@@ -566,23 +594,23 @@ A_r^ne^{i(k(x - ct))},\]</div>
 <p>An appropriate dimensionless quantity to plot is <span class="math">\(c/v\)</span>:</p>
 <div class="math">
 \[\frac{c}{v} = \frac{\phi}{Cp}{\thinspace .}\]</div>
-<div class="figure" id="id2">
+<div class="figure" id="id3">
 <span id="advec-1d-disprel-c099"></span><a class="reference internal image-reference" href="_images/disprel_C0_99.png"><img alt="_images/disprel_C0_99.png" src="_images/disprel_C0_99.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text">Dispersion relations for <span class="math">\(C=0.99\)</span></span></p>
 </div>
-<div class="figure" id="id3">
+<div class="figure" id="id4">
 <span id="advec-1d-disprel-c09"></span><a class="reference internal image-reference" href="_images/disprel_C0_9.png"><img alt="_images/disprel_C0_9.png" src="_images/disprel_C0_9.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text">Dispersion relations for <span class="math">\(C=0.9\)</span></span></p>
 </div>
-<div class="figure" id="id4">
+<div class="figure" id="id5">
 <span id="advec-1d-disprel-c08"></span><a class="reference internal image-reference" href="_images/disprel_C0_8.png"><img alt="_images/disprel_C0_8.png" src="_images/disprel_C0_8.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text">Dispersion relations for <span class="math">\(C=0.8\)</span></span></p>
 </div>
-<div class="figure" id="id5">
+<div class="figure" id="id6">
 <span id="advec-1d-disprel-c05"></span><a class="reference internal image-reference" href="_images/disprel_C0_5.png"><img alt="_images/disprel_C0_5.png" src="_images/disprel_C0_5.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text">Dispersion relations for <span class="math">\(C=0.5\)</span></span></p>
 </div>
-<div class="figure" id="id6">
+<div class="figure" id="id7">
 <span id="advec-1d-disprel-c99"></span><a class="reference internal image-reference" href="_images/disprel_C0_99.png"><img alt="_images/disprel_C0_99.png" src="_images/disprel_C0_99.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text">Dispersion relations for <span class="math">\(C=0.99\)</span></span></p>
 </div>
@@ -593,12 +621,203 @@ A_r^ne^{i(k(x - ct))},\]</div>
 </div>
 <div class="section" id="one-dimensional-stationary-advection-diffusion-equation">
 <span id="advec-1d-stationary"></span><h2>One-dimensional stationary advection-diffusion equation<a class="headerlink" href="#one-dimensional-stationary-advection-diffusion-equation" title="Permalink to this headline">¶</a></h2>
+<p>Now we pay attention to a physical process where advection (or convection)
+is in balance with diffusion:</p>
+<div class="math" id="eq-advec-1d-stat-pde1">
+\[\tag{510}
+v\frac{du}{dx} = {\alpha}\frac{d^2 u}{dx^2}{\thinspace .}\]</div>
+<p>For simplicity, we assume <span class="math">\(v\)</span> and <span class="math">\({\alpha}\)</span> to be constant, but the extension to
+the variable-coefficient case is trivial.
+This is equation can be viewed as the stationary limit of the corresponding
+time-dependent problem</p>
+<div class="math" id="eq-advec-1d-stat-pde2">
+\[\tag{511}
+\frac{\partial u}{\partial t} + v\frac{\partial u}{\partial x} =
+    {\alpha}\frac{\partial^2 u}{\partial x^2}{\thinspace .}\]</div>
+<p>Equations of the form <a class="reference internal" href="#eq-advec-1d-stat-pde1"><span class="std std-ref">(510)</span></a> or
+<a class="reference internal" href="#eq-advec-1d-stat-pde2"><span class="std std-ref">(511)</span></a> arise from transport phenomena, either mass
+or heat transport. One can also view the equations as simple model
+problems for the Navier-Stokes equations. A fundamental difficulty
+with solving these equations is numerical instability if the
+first-derivative spatial term dominates over the second-derivative
+term.</p>
+<div class="section" id="a-simple-model-problem-1">
+<span id="advec-1d-stationary-model"></span><h3>A simple model problem<a class="headerlink" href="#a-simple-model-problem-1" title="Permalink to this headline">¶</a></h3>
+<p>We consider <a class="reference internal" href="#eq-advec-1d-stat-pde1"><span class="std std-ref">(510)</span></a> on <span class="math">\([0,L]\)</span> equipped with the
+boundary conditions <span class="math">\(u(0)=U_0\)</span>, <span class="math">\(u(L)=U_L\)</span>.  By scaling we can get rid
+of lots of physical parameter and instead reduce the discussion to
+combinations of physical parameters. We scale <span class="math">\(x\)</span> by <span class="math">\(\bar x = x/L\)</span>,
+and <span class="math">\(u\)</span> by</p>
+<div class="math">
+\[\bar u = \frac{u - u_0}{u_L-u_0}{\thinspace .}\]</div>
+<p>Inserted in the governing equation we get</p>
+<div class="math">
+\[\frac{v(u_L-u_0)}{L}\frac{d\bar u}{d\bar x} =
+\frac{{\alpha}(u_L-u_0)}{L^2}\frac{d^2\bar u}{d\bar x^2},\quad
+\bar u(0)=0,\ \bar u(1)=1{\thinspace .}\]</div>
+<p>Dropping the bars is common. We can then simplify to</p>
+<div class="math" id="eq-advec-1d-stat-pde1s">
+\[\tag{512}
+\frac{du}{dx} = \epsilon\frac{d^2 u}{d x^2},\quad u(0)=0,\ u(1)=1{\thinspace .}\]</div>
+<p>There are two competing effects in this equation: the advection term
+transports signals to the right (with velocity <span class="math">\(v\)</span>, later with unit
+velocity), while the diffusion term transports signals to the left and
+right )with strength <span class="math">\({\alpha}\)</span>, later with strength <span class="math">\(\epsilon\)</span>). The
+value <span class="math">\(u(0)=0\)</span> is transported through the domain if <span class="math">\(\epsilon\)</span> is
+small, and <span class="math">\(u\approx 0\)</span> except in the vicinity of <span class="math">\(x=0\)</span>, where
+<span class="math">\(u(1)=1\)</span> and the diffusion transports some information about <span class="math">\(u(1)=1\)</span>
+to the left. For large <span class="math">\(\epsilon\)</span>, diffusion dominates and the <span class="math">\(u\)</span>
+takes on the &#8220;average&#8221; value, i.e., <span class="math">\(u\)</span> gets a linear variation from
+0 to 1 throughout the domain.</p>
+<p>It turns out that we can find an exact solution to the differential
+equation problem and also to many of its discretization. This is one
+reason why this model problem has been so successful in designing and
+investigating numerical methods for mixed convection/advection and
+diffusion.  The exact solution reads</p>
+<div class="math">
+\[{u_{\small\mbox{e}}} (x) = \frac{e^{x/\epsilon} - 1}{e^{1/\epsilon} - 1}{\thinspace .}\]</div>
+</div>
+<div class="section" id="a-centered-finite-difference-scheme-2">
+<span id="advec-1d-stationary-fdm"></span><h3>A centered finite difference scheme<a class="headerlink" href="#a-centered-finite-difference-scheme-2" title="Permalink to this headline">¶</a></h3>
+<p>The most obvious idea to solve <a class="reference internal" href="#eq-advec-1d-stat-pde1s"><span class="std std-ref">(512)</span></a> is to apply
+centered differences:</p>
+<div class="math">
+\[[D_{2x} u = \epsilon D_xD_x u]_i\]</div>
+<p>for <span class="math">\(i=1,\ldots,N_x-1\)</span>, with <span class="math">\(u_0=0\)</span> and <span class="math">\(u_{N_x}=1\)</span>.
+Note that this is a coupled system of algebraic equations
+involving <span class="math">\(u_0,\ldots,u_{N_x}\)</span>.</p>
+<p>Written out, the scheme becomes a tridiagonal system</p>
+<div class="math">
+\[A_{i-1,i}u_{i-1} + A_{i,i}u_i + A_{i+1.i}u_{i+1} = 0,\]</div>
+<p>for <span class="math">\(i=1,\ldots,N_x-1\)</span></p>
+<div class="math">
+\[\begin{split}\begin{align*}
+A_{0,0} &amp;= 1,\\
+A_{i-1,i} &amp;= -\frac{1}{\Delta x} -\epsilon\frac{1}{\Delta x^2},\\
+A_{i,i} &amp;= 2\epsilon\frac{1}{\Delta x^2},\\
+A_{i,i+1} &amp;=  \frac{1}{\Delta x} -\epsilon\frac{1}{\Delta x^2},\\
+A_{N_x,N_x} &amp;= 1{\thinspace .}
+\end{align*}\end{split}\]</div>
+<p>The right-hand side of the linear system is zero except <span class="math">\(b_{N_x}=1\)</span>.</p>
+<p>Figure <a class="reference internal" href="#advec-1d-stationary-fdm-fig1"><span class="std std-ref">Comparison of exact and numerical solution for  and  with centered differences</span></a> shows reasonably accurate
+results with <span class="math">\(N_x=20\)</span> and <span class="math">\(N_x=40\)</span> cells in <span class="math">\(x\)</span> direction and a value of
+<span class="math">\(\epsilon = 0.1\)</span>. Decreasing <span class="math">\(\epsilon\)</span> to <span class="math">\(0.01\)</span> leads to oscillatory
+solutions as depicted in Figure <a class="reference internal" href="#advec-1d-stationary-fdm-fig2"><span class="std std-ref">Comparison of exact and numerical solution for  and  with centered differences</span></a>.
+This is, unfortunately, a typical phenomenon in this type of problem:
+non-physical oscillations arise for small <span class="math">\(\epsilon\)</span> unless the resolution
+<span class="math">\(N_x\)</span> is not big enough. <a class="reference internal" href="#advec-1d-stationary-exer-analysis1"><span class="std std-ref">Exercise 4.1: Analyze 1D stationary convection-diffusion problem</span></a>
+develops a precise criterion: <span class="math">\(u\)</span> is oscillation-free if</p>
+<div class="math">
+\[\Delta x \leq \frac{2}{\epsilon}{\thinspace .}\]</div>
+<p>If we take the present model as a simplified model for a <em>viscous
+boundary layer</em> in real, industrial fluid flow applications,
+<span class="math">\(\epsilon\sim 10^{-6}\)</span>
+and million of cells are required to resolve the boundary layer.
+Fortunately, this is not strictly necessary as we have methods in
+the next section to overcome the problem!</p>
+<div class="figure" id="id8">
+<span id="advec-1d-stationary-fdm-fig1"></span><a class="reference internal image-reference" href="_images/twopt_BVP_cen_01.png"><img alt="_images/twopt_BVP_cen_01.png" src="_images/twopt_BVP_cen_01.png" style="width: 800px;" /></a>
+<p class="caption"><span class="caption-text">Comparison of exact and numerical solution for <span class="math">\(\epsilon =0.1\)</span> and <span class="math">\(N_x=20,40\)</span> with centered differences</span></p>
+</div>
+<div class="figure" id="id9">
+<span id="advec-1d-stationary-fdm-fig2"></span><a class="reference internal image-reference" href="_images/twopt_BVP_cen_001.png"><img alt="_images/twopt_BVP_cen_001.png" src="_images/twopt_BVP_cen_001.png" style="width: 800px;" /></a>
+<p class="caption"><span class="caption-text">Comparison of exact and numerical solution for <span class="math">\(\epsilon =0.01\)</span> and <span class="math">\(N_x=20,40\)</span> with centered differences</span></p>
+</div>
+<div class="admonition-solver admonition">
+<p class="first admonition-title">Solver</p>
+<p class="last">A suitable solver for doing the experiments is presented below.</p>
+</div>
+</div>
+<div class="section" id="remedy-upwind-finite-difference-scheme">
+<span id="advec-1d-stationary-upwind"></span><h3>Remedy: upwind finite difference scheme<a class="headerlink" href="#remedy-upwind-finite-difference-scheme" title="Permalink to this headline">¶</a></h3>
+<p>The scheme can be stabilized by letting the advective transport term, which
+is the dominating term, collect its information in the flow direction, i.e.,
+upstream or upwind of the point in question. So, instead of using a
+center difference</p>
+<div class="math">
+\[\frac{du}{dx}_i\approx \frac{u_{i+1}-u_{i-1}}{2\Delta x},\]</div>
+<p>we use the one-sided <em>upwind</em> difference</p>
+<div class="math">
+\[\frac{du}{dx}_i\approx \frac{u_{i}-u_{i-1}}{2\Delta x},\]</div>
+<p>in case <span class="math">\(v&gt;0\)</span>. For <span class="math">\(v&lt;0\)</span> we set</p>
+<div class="math">
+\[\frac{du}{dx}_i\approx \frac{u_{i+1}-u_{i}}{2\Delta x},\]</div>
+<p>On compact operator notation form, our upwind scheme can be expressed
+as</p>
+<div class="math">
+\[[D^-_x u = \epsilon D_xD_x u]_i\]</div>
+<p>provided <span class="math">\(v&gt;0\)</span> (and <span class="math">\(\epsilon &gt; 0\)</span>).</p>
+<p>We write out the equations and implement them as shown in the program
+in the section <a class="reference internal" href="#advec-1d-stationary-fdm"><span class="std std-ref">A centered finite difference scheme</span></a>. The results appear in Figures
+<a class="reference internal" href="#advec-1d-stationary-upwind-fig1"><span class="std std-ref">Comparison of exact and numerical solution for  and  with upwind difference</span></a> and
+<a class="reference internal" href="#advec-1d-stationary-upwind-fig2"><span class="std std-ref">Comparison of exact and numerical solution for  and  with upwind difference</span></a>: no more oscillations!</p>
+<div class="figure" id="id10">
+<span id="advec-1d-stationary-upwind-fig1"></span><a class="reference internal image-reference" href="_images/twopt_BVP_upw_01.png"><img alt="_images/twopt_BVP_upw_01.png" src="_images/twopt_BVP_upw_01.png" style="width: 800px;" /></a>
+<p class="caption"><span class="caption-text">Comparison of exact and numerical solution for <span class="math">\(\epsilon =0.1\)</span> and <span class="math">\(N_x=20,40\)</span> with upwind difference</span></p>
+</div>
+<div class="figure" id="id11">
+<span id="advec-1d-stationary-upwind-fig2"></span><a class="reference internal image-reference" href="_images/twopt_BVP_upw_001.png"><img alt="_images/twopt_BVP_upw_001.png" src="_images/twopt_BVP_upw_001.png" style="width: 800px;" /></a>
+<p class="caption"><span class="caption-text">Comparison of exact and numerical solution for <span class="math">\(\epsilon =0.01\)</span> and <span class="math">\(N_x=20,40\)</span> with upwind difference</span></p>
+</div>
+<p>We see that the upwind scheme is always stable, but it gives a thicker
+boundary layer when the centered scheme is also stable.
+Why the upwind scheme is always stable is easy to understand as
+soon as we undertake the mathematical analysis in
+<a class="reference internal" href="#advec-1d-stationary-exer-analysis1"><span class="std std-ref">Exercise 4.1: Analyze 1D stationary convection-diffusion problem</span></a>.
+Moreover, the thicker layer (seemingly larger diffusion) can be
+understood by doing
+<a class="reference internal" href="#advec-1d-stationary-exer-analysis2"><span class="std std-ref">Exercise 4.2: Interpret upwind difference as artificial diffusion</span></a>.</p>
+<div class="admonition-exact-solution-for-this-model-problem admonition">
+<p class="first admonition-title">Exact solution for this model problem</p>
+<p class="last">It turns out that one can introduce a linear combination of the centered
+and upwind differences for the first-derivative term in this model
+problem. One can then adjust the weight in the linear combination so that
+the numerical solution becomes identical to the analytical solution of
+the differential equation problem at any mesh point.</p>
+</div>
+</div>
+</div>
+<div class="section" id="time-dependent-convection-diffusion-equations">
+<h2>Time-dependent convection-diffusion equations<a class="headerlink" href="#time-dependent-convection-diffusion-equations" title="Permalink to this headline">¶</a></h2>
+<p>Now it is time to combine time-dependency, convection (advection) and
+diffusion into one equation:</p>
+<div class="math" id="eq-advec-1d-stat-pde3">
+\[ \begin{align}\begin{aligned}\tag{513}
+\frac{\partial u}{\partial t} + v\frac{\partial u}{\partial x} =
+    {\alpha}\frac{\partial^2 u}{\partial x^2}{\thinspace .}\\
+    seen that upwind has been critical, so that will work, but will centered
+    also work in this case?\end{aligned}\end{align} \]</div>
 </div>
 <div class="section" id="two-dimensional-advection-diffusion-equations">
 <span id="advec-2d"></span><h2>Two-dimensional advection-diffusion equations<a class="headerlink" href="#two-dimensional-advection-diffusion-equations" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="applications-of-advection-equations">
 <span id="advec-app"></span><h2>Applications of advection equations<a class="headerlink" href="#applications-of-advection-equations" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="exercises-8">
+<h2>Exercises<a class="headerlink" href="#exercises-8" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="exercise-4-1-analyze-1d-stationary-convection-diffusion-problem">
+<span id="advec-1d-stationary-exer-analysis1"></span><h3>Exercise 4.1: Analyze 1D stationary convection-diffusion problem<a class="headerlink" href="#exercise-4-1-analyze-1d-stationary-convection-diffusion-problem" title="Permalink to this headline">¶</a></h3>
+<p>Explain the observations in the numerical experiments from the sections <a class="reference internal" href="#advec-1d-stationary-fdm"><span class="std std-ref">A centered finite difference scheme</span></a> and <a class="reference internal" href="#advec-1d-stationary-upwind"><span class="std std-ref">Remedy: upwind finite difference scheme</span></a> by
+finding exact numerical solutions.</p>
+<p><strong>Hint.</strong>
+The difference equations allow solutions on the form <span class="math">\(A^i\)</span>, where
+<span class="math">\(A\)</span> is an unknown constant and <span class="math">\(i\)</span> is a mesh point counter.
+There are two solutions for <span class="math">\(A\)</span>, so the general solution is a linear
+combination of the two, where the constants in the linear combination
+are determined from the boundary conditions.</p>
+<p>Filename: <code class="docutils literal"><span class="pre">twopt_BVP_analysis1</span></code>.</p>
+</div>
+<div class="section" id="exercise-4-2-interpret-upwind-difference-as-artificial-diffusion">
+<span id="advec-1d-stationary-exer-analysis2"></span><h3>Exercise 4.2: Interpret upwind difference as artificial diffusion<a class="headerlink" href="#exercise-4-2-interpret-upwind-difference-as-artificial-diffusion" title="Permalink to this headline">¶</a></h3>
+<p>Consider an upwind, one-sided difference approximation to
+a term <span class="math">\(du/dx\)</span> in a differential equation. Show that this this
+formula can be expressed as a centered difference plus an artificial
+diffusion term of strength proportional to <span class="math">\(\Delta x\)</span>.
+This means that introducing an upwind difference also means introducing
+extra diffusion of order <span class="math">\({\mathcal{O}(\Delta x)}\)</span>.
+Filename: <code class="docutils literal"><span class="pre">twopt_BVP_analysis2</span></code>.</p>
+</div>
 </div>
 </div>
 
@@ -639,9 +858,20 @@ A_r^ne^{i(k(x - ct))},\]</div>
 <li><a class="reference internal" href="#analysis-of-dispersion-relations">Analysis of dispersion relations</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#one-dimensional-stationary-advection-diffusion-equation">One-dimensional stationary advection-diffusion equation</a></li>
+<li><a class="reference internal" href="#one-dimensional-stationary-advection-diffusion-equation">One-dimensional stationary advection-diffusion equation</a><ul>
+<li><a class="reference internal" href="#a-simple-model-problem-1">A simple model problem</a></li>
+<li><a class="reference internal" href="#a-centered-finite-difference-scheme-2">A centered finite difference scheme</a></li>
+<li><a class="reference internal" href="#remedy-upwind-finite-difference-scheme">Remedy: upwind finite difference scheme</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#time-dependent-convection-diffusion-equations">Time-dependent convection-diffusion equations</a></li>
 <li><a class="reference internal" href="#two-dimensional-advection-diffusion-equations">Two-dimensional advection-diffusion equations</a></li>
 <li><a class="reference internal" href="#applications-of-advection-equations">Applications of advection equations</a></li>
+<li><a class="reference internal" href="#exercises-8">Exercises</a><ul>
+<li><a class="reference internal" href="#exercise-4-1-analyze-1d-stationary-convection-diffusion-problem">Exercise 4.1: Analyze 1D stationary convection-diffusion problem</a></li>
+<li><a class="reference internal" href="#exercise-4-2-interpret-upwind-difference-as-artificial-diffusion">Exercise 4.2: Interpret upwind difference as artificial diffusion</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
