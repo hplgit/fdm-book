@@ -7,7 +7,7 @@ import numpy as np
 def diffusion_FE(I, a, f, L, dt, F, t, T, step_no, user_action=None):
     """Diffusion solver, Forward Euler method.
     Note that t always covers the whole global time interval, whether
-    splitting is the case or not. T, on the other hand, is 
+    splitting is the case or not. T, on the other hand, is
     the end of the global time interval if there is no split,
     but if splitting, we use T=dt. When splitting, step_no keeps
     track of the time step number (required for lookup in t).
@@ -22,52 +22,52 @@ def diffusion_FE(I, a, f, L, dt, F, t, T, step_no, user_action=None):
     dt = t[1] - t[0]
 
     u   = np.zeros(Nx+1)   # solution array
-    u_1 = np.zeros(Nx+1)   # solution at t-dt
+    u_n = np.zeros(Nx+1)   # solution at t-dt
 
     # Allow f to be None or 0
     if f is None or f == 0:
         f = lambda x, t: np.zeros((x.size)) \
             if isinstance(x, np.ndarray) else 0
 
-    # Set initial condition  
+    # Set initial condition
     if isinstance(I, np.ndarray):   # I is an array
-        u_1 = np.copy(I)
+        u_n = np.copy(I)
     else:                           # I is a function
         for i in range(0, Nx+1):
-            u_1[i] = I(x[i])
+            u_n[i] = I(x[i])
 
     if user_action is not None:
-        user_action(u_1, x, t, step_no+0)
+        user_action(u_n, x, t, step_no+0)
 
     for n in range(0, Nt):
         # Update all inner points
-        u[1:Nx] = u_1[1:Nx] +  \
-                  F*(u_1[0:Nx-1] - 2*u_1[1:Nx] + u_1[2:Nx+1]) +\
-                  dt*f(u_1[1:Nx], t[step_no+n])
-        
+        u[1:Nx] = u_n[1:Nx] +  \
+                  F*(u_n[0:Nx-1] - 2*u_n[1:Nx] + u_n[2:Nx+1]) +\
+                  dt*f(u_n[1:Nx], t[step_no+n])
+
         # Insert boundary conditions
         u[0] = 0;  u[Nx] = 0
 
         #sl: ...testing -------------------------
         #print 'time:', t[step_no+n]
         #print 'diff part from diffusion_FE:'
-        #print u_1[1:Nx] + F*(u_1[0:Nx-1] - 2*u_1[1:Nx] + u_1[2:Nx+1])
+        #print u_n[1:Nx] + F*(u_n[0:Nx-1] - 2*u_n[1:Nx] + u_n[2:Nx+1])
         #print 'react part from diffusion_FE:'
-        #print dt*f(u_1[1:Nx], t[step_no+n])
+        #print dt*f(u_n[1:Nx], t[step_no+n])
         #print ' '
-        #if step_no == 1: sys.exit(0)            
+        #if step_no == 1: sys.exit(0)
         # ----------------------------------
 
         if user_action is not None:
             user_action(u, x, t, step_no+(n+1))
 
         # Switch variables before next step
-        u_1, u = u, u_1
+        u_n, u = u, u_n
 
-    return u_1
+    return u_n
 
 
-def diffusion_theta(I, a, f, L, dt, F, t, T, step_no, theta=0.5, 
+def diffusion_theta(I, a, f, L, dt, F, t, T, step_no, theta=0.5,
                     u_L=0, u_R=0, user_action=None):
     """
     Full solver for the model problem using the theta-rule
@@ -87,7 +87,7 @@ def diffusion_theta(I, a, f, L, dt, F, t, T, step_no, theta=0.5,
     dt = t[1] - t[0]
 
     u   = np.zeros(Nx+1)   # solution array at t[n+1]
-    u_1 = np.zeros(Nx+1)   # solution at t[n]
+    u_n = np.zeros(Nx+1)   # solution at t[n]
 
     # Representation of sparse matrix and right-hand side
     diagonal = np.zeros(Nx+1)
@@ -119,72 +119,70 @@ def diffusion_theta(I, a, f, L, dt, F, t, T, step_no, theta=0.5,
         f = lambda x, t: np.zeros((x.size)) \
             if isinstance(x, np.ndarray) else 0
 
-    # Set initial condition  
+    # Set initial condition
     if isinstance(I, np.ndarray):   # I is an array
-        u_1 = np.copy(I)
+        u_n = np.copy(I)
     else:                           # I is a function
         for i in range(0, Nx+1):
-            u_1[i] = I(x[i])
+            u_n[i] = I(x[i])
 
     if user_action is not None:
-        user_action(u_1, x, t, step_no+0)        
+        user_action(u_n, x, t, step_no+0)
 
     # Time loop
     for n in range(0, Nt):
-        b[1:-1] = u_1[1:-1] + \
-                  Fr*(u_1[:-2] - 2*u_1[1:-1] + u_1[2:]) + \
-                  dt*theta*f(u_1[1:-1], t[step_no+n+1]) + \
-                  dt*(1-theta)*f(u_1[1:-1], t[step_no+n])
+        b[1:-1] = u_n[1:-1] + \
+                  Fr*(u_n[:-2] - 2*u_n[1:-1] + u_n[2:]) + \
+                  dt*theta*f(u_n[1:-1], t[step_no+n+1]) + \
+                  dt*(1-theta)*f(u_n[1:-1], t[step_no+n])
         b[0] = u_L; b[-1] = u_R  # boundary conditions
         u[:] = scipy.sparse.linalg.spsolve(A, b)
 
         if user_action is not None:
             user_action(u, x, t, step_no+(n+1))
 
-        # Update u_1 before next step
-        u_1, u = u, u_1
+        # Update u_n before next step
+        u_n, u = u, u_n
 
-    # u is now contained in u_1 (swapping)
-    return u_1
+    # u is now contained in u_n (swapping)
+    return u_n
 
 
-def reaction_FE(I, f, L, Nx, dt, dt_Rfactor, t, step_no, 
+def reaction_FE(I, f, L, Nx, dt, dt_Rfactor, t, step_no,
                 user_action=None):
-    """Reaction solver, Forward Euler method.
-    Note that t covers the whole global time interval. 
-    dt is the step of the diffustion part, i.e. there
-    is a local time interval [0, dt] the reaction_FE
-    deals with each time it is called. step_no keeps
-    track of the (global) time step number (required 
-    for lookup in t).    
+    """
+    Reaction solver: u'=f, Forward Euler method.
+
+    t is a global time mesh, while this function solves
+    the reaction problem on [t[step_no], t[step_no+1]]
+    using a local, fine t mesh with step dt/dt_Rfactor, where
+    dt is the time step in the global mesh.
+    Return u at t[step_no+1] at all spatial mesh points in [0,L]
+    with resolution Nx.
     """
 
     #bypass = True
     #if not bypass:  # original code from sl
 
-    u = np.copy(I)      
-    dt_local = dt/float(dt_Rfactor)    
-    Nt_local = int(round(dt/float(dt_local)))    
-    x = np.linspace(0, L, Nx+1)  
-          
+    u = np.copy(I)
+    dt_local = dt/float(dt_Rfactor)
+    Nt_local = int(round(dt/float(dt_local)))
+    x = np.linspace(0, L, Nx+1)
+
     for n in range(Nt_local):
         time = t[step_no] + n*dt_local
-        u[1:Nx] = u[1:Nx] + dt_local*f(u[1:Nx], time)  
-        
-    # BC already inserted in diffusion step, i.e. no action here            
-                        
-    return u
-        
-    #else:
-    #    return I        
-        
+        u[1:Nx] = u[1:Nx] + dt_local*f(u[1:Nx], time)
 
-def ordinary_splitting(I, a, b, f, L, dt, 
-                       dt_Rfactor, F, t, T, 
+    # BC already inserted in diffusion step, i.e. no action here
+
+    return u
+
+def ordinary_splitting(I, a, b, f, L, dt,
+                       dt_Rfactor, F, t, T,
                        user_action=None):
     '''1st order scheme, i.e. Forward Euler is enough for both
-    the diffusion and the reaction part. The time step dt is 
-    given for the diffusion step, while the time step for the 
+    the diffusion and the reaction part. The time step dt is
+    given for the diffusion step, while the time step for the
     reaction part is found as dt/dt_Rfactor, where dt_Rfactor >= 1.
     '''
     Nt = int(round(T/float(dt)))
@@ -193,64 +191,64 @@ def ordinary_splitting(I, a, b, f, L, dt,
     Nx = int(round(L/dx))
     x = np.linspace(0, L, Nx+1)       # Mesh points in space
     u = np.zeros(Nx+1)
-        
+
     # Set initial condition u(x,0) = I(x)
     for i in range(0, Nx+1):
         u[i] = I(x[i])
 
-    # In the following loop, each time step is "covered twice", 
+    # In the following loop, each time step is "covered twice",
     # first for diffusion, then for reaction
-    for n in range(0, Nt):    
+    for n in range(0, Nt):
         # Note: could avoid the call to diffusion_FE here...
-        
+
         # Diffusion step (one time step dt)
-        u_s = diffusion_FE(I=u, a=a, f=0, L=L, dt=dt, F=F, 
+        u_s = diffusion_FE(I=u, a=a, f=0, L=L, dt=dt, F=F,
                            t=t, T=dt, step_no=n,
                            user_action=None)
         # Reaction step (potentially many smaller steps within dt)
-        u = reaction_FE(I=u_s, f=f, L=L, Nx=Nx, 
-                        dt=dt, dt_Rfactor=dt_Rfactor, 
-                        t=t, step_no=n, 
+        u = reaction_FE(I=u_s, f=f, L=L, Nx=Nx,
+                        dt=dt, dt_Rfactor=dt_Rfactor,
+                        t=t, step_no=n,
                         user_action=None)
 
         if user_action is not None:
             user_action(u, x, t, n+1)
 
 
-def Strang_splitting_1stOrder(I, a, b, f, L, dt, dt_Rfactor, 
+def Strang_splitting_1stOrder(I, a, b, f, L, dt, dt_Rfactor,
                               F, t, T, user_action=None):
     '''Strang splitting while still using FE for the diffusion
     step and for the reaction step. Gives 1st order scheme.
-    Introduce an extra time mesh t2 for the diffusion part, 
+    Introduce an extra time mesh t2 for the diffusion part,
     since it steps dt/2.
     '''
     Nt = int(round(T/float(dt)))
-    t2 = np.linspace(0, Nt*dt, (Nt+1)+Nt)   # Mesh points in diff    
+    t2 = np.linspace(0, Nt*dt, (Nt+1)+Nt)   # Mesh points in diff
     dx = np.sqrt(a*dt/F)
     Nx = int(round(L/dx))
-    x = np.linspace(0, L, Nx+1)     
+    x = np.linspace(0, L, Nx+1)
     u = np.zeros(Nx+1)
-        
+
     # Set initial condition u(x,0) = I(x)
     for i in range(0, Nx+1):
         u[i] = I(x[i])
 
-    for n in range(0, Nt):    
-        
+    for n in range(0, Nt):
+
         # Diffusion step (1/2 dt: from t_n to t_n+1/2)
-        u_s = diffusion_FE(I=u, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0, 
+        u_s = diffusion_FE(I=u, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0,
                            t=t2, T=dt/2.0, step_no=2*n,
                            user_action=None)
-                                                                             
+
         # Reaction step (1 dt: from t_n to t_n+1)
         # (potentially many smaller steps within dt)
-        u_sss = reaction_FE(I=u_s, f=f, L=L, Nx=Nx, 
-                        dt=dt, dt_Rfactor=dt_Rfactor, 
-                        t=t, step_no=n, 
+        u_sss = reaction_FE(I=u_s, f=f, L=L, Nx=Nx,
+                        dt=dt, dt_Rfactor=dt_Rfactor,
+                        t=t, step_no=n,
                         user_action=None)
 
         # Diffusion step (1/2 dt: from t_n+1/2 to t_n)
-        u = diffusion_FE(I=u_sss, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0, 
+        u = diffusion_FE(I=u_sss, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0,
                            t=t2, T=dt/2.0, step_no=2*n+1,
                            user_action=None)
 
@@ -258,39 +256,39 @@ def Strang_splitting_1stOrder(I, a, b, f, L, dt, dt_Rfactor,
             user_action(u, x, t, n+1)
 
 
-def Strang_splitting_2ndOrder(I, a, b, f, L, dt, dt_Rfactor, 
+def Strang_splitting_2ndOrder(I, a, b, f, L, dt, dt_Rfactor,
                               F, t, T, user_action=None):
     '''Strang splitting using Crank-Nicolson for the diffusion
-    step (theta-rule) and Adams-Bashforth 2 for the reaction step. 
-    Gives 2nd order scheme. Introduce an extra time mesh t2 for 
+    step (theta-rule) and Adams-Bashforth 2 for the reaction step.
+    Gives 2nd order scheme. Introduce an extra time mesh t2 for
     the diffusion part, since it steps dt/2.
     '''
     import odespy
     Nt = int(round(T/float(dt)))
-    t2 = np.linspace(0, Nt*dt, (Nt+1)+Nt)   # Mesh points in diff    
+    t2 = np.linspace(0, Nt*dt, (Nt+1)+Nt)   # Mesh points in diff
     dx = np.sqrt(a*dt/F)
     Nx = int(round(L/dx))
-    x = np.linspace(0, L, Nx+1)     
+    x = np.linspace(0, L, Nx+1)
     u = np.zeros(Nx+1)
-        
+
     # Set initial condition u(x,0) = I(x)
     for i in range(0, Nx+1):
         u[i] = I(x[i])
 
-    reaction_solver = odespy.AdamsBashforth2(f)    
+    reaction_solver = odespy.AdamsBashforth2(f)
 
-    for n in range(0, Nt):    
-        
+    for n in range(0, Nt):
+
         # Diffusion step (1/2 dt: from t_n to t_n+1/2)
-        # Crank-Nicolson (theta = 0.5, gives 2nd order) 
-        u_s = diffusion_theta(I=u, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0, 
+        # Crank-Nicolson (theta = 0.5, gives 2nd order)
+        u_s = diffusion_theta(I=u, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0,
                               t=t2, T=dt/2.0, step_no=2*n, theta=0.5,
                               u_L=0, u_R=0, user_action=None)
-                                                                 
-        #u_s = diffusion_FE(I=u, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0, 
+
+        #u_s = diffusion_FE(I=u, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0,
         #                   t=t2, T=dt/2.0, step_no=2*n,
         #                   user_action=None)
-                                                                 
+
         # Reaction step (1 dt: from t_n to t_n+1)
         # (potentially many smaller steps within dt)
         #sl: testing -----------------------------------
@@ -299,19 +297,19 @@ def Strang_splitting_2ndOrder(I, a, b, f, L, dt, dt_Rfactor,
         u_AB2, t_ = reaction_solver.solve(t_points) # t_ not needed
         u_sss = u_AB2[-1,:]  # pick sol at last point in time
         #-----------------------------------------------
-        
-        #u_sss = reaction_FE(I=u_s, f=f, L=L, Nx=Nx, 
-        #                dt=dt, dt_Rfactor=dt_Rfactor, 
-        #                t=t, step_no=n, 
+
+        #u_sss = reaction_FE(I=u_s, f=f, L=L, Nx=Nx,
+        #                dt=dt, dt_Rfactor=dt_Rfactor,
+        #                t=t, step_no=n,
         #                user_action=None)
 
         # Diffusion step (1/2 dt: from t_n+1/2 to t_n)
-        # Crank-Nicolson (theta = 0.5, gives 2nd order) 
-        u = diffusion_theta(I=u_sss, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0, 
+        # Crank-Nicolson (theta = 0.5, gives 2nd order)
+        u = diffusion_theta(I=u_sss, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0,
                             t=t2, T=dt/2.0, step_no=2*n+1, theta=0.5,
                             u_L=0, u_R=0, user_action=None)
 
-        #u = diffusion_FE(I=u_sss, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0, 
+        #u = diffusion_FE(I=u_sss, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0,
         #                   t=t2, T=dt/2.0, step_no=2*n+1,
         #                   user_action=None)
 
@@ -323,85 +321,84 @@ def Strang_splitting_2ndOrder(I, a, b, f, L, dt, dt_Rfactor,
 def convergence_rates(scheme='diffusion'):
     '''Computes empirical conv. rates for the different
     splitting schemes'''
-    
+
     F = 0.5
     T = 1.2
     a = 3.5
     b = 1
     L = 1.5
     k = np.pi/L
-    
+
     def exact(x, t):
         '''exact sol. to: du/dt = a*d^2u/dx^2 - b*u'''
         return np.exp(-(a*k**2 + b)*t) * np.sin(k*x)
-        
+
     def f(u, t):
-        return -b*u  
+        return -b*u
 
     def I(x):
         return exact(x, 0)
-        
+
     global error    # error computed in the user action function
-    error = 0  
+    error = 0
 
     # Convergence study
     def action(u, x, t, n):
-        global error            
+        global error
         if n == 1:      # New simulation, - reset error
             error = 0
         else:
-            error = max(error, np.abs(u - exact(x, t[n])).max())        
+            error = max(error, np.abs(u - exact(x, t[n])).max())
 
     E = []
     h = []
-    Nx_values = [10, 20, 40, 80, 160]   
-    for Nx in Nx_values:        
+    Nx_values = [10, 20, 40, 80, 160]
+    for Nx in Nx_values:
         dx = L/Nx;  dt = F/a*dx**2
         Nt = int(round(T/float(dt)))
         t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points, global time
-        
+
         if scheme == 'diffusion':
             print 'Running FE on whole eqn...'
-            diffusion_FE(I, a, f, L, dt, F, t, T, 
+            diffusion_FE(I, a, f, L, dt, F, t, T,
                          step_no=0, user_action=action)
         elif scheme == 'ordinary_splitting':
             print 'Running ordinary splitting...'
-            ordinary_splitting(I=I, a=a, b=b, f=f, L=L, dt=dt, 
+            ordinary_splitting(I=I, a=a, b=b, f=f, L=L, dt=dt,
                                dt_Rfactor=1, F=F, t=t, T=T,
-                               user_action=action)        
+                               user_action=action)
         elif scheme == 'Strang_splitting_1stOrder':
             print 'Running Strang splitting with 1st order schemes...'
-            Strang_splitting_1stOrder(I=I, a=a, b=b, f=f, L=L, dt=dt, 
+            Strang_splitting_1stOrder(I=I, a=a, b=b, f=f, L=L, dt=dt,
                                       dt_Rfactor=1, F=F, t=t, T=T,
-                                      user_action=action)       
+                                      user_action=action)
         elif scheme == 'Strang_splitting_2ndOrder':
             print 'Running Strang splitting with 2nd order schemes...'
-            Strang_splitting_2ndOrder(I=I, a=a, b=b, f=f, L=L, dt=dt, 
+            Strang_splitting_2ndOrder(I=I, a=a, b=b, f=f, L=L, dt=dt,
                                       dt_Rfactor=1, F=F, t=t, T=T,
-                                      user_action=action)       
+                                      user_action=action)
         else:
             print 'Unknown scheme requested!'
             sys.exit(0)
-                           
+
         h.append(dt)
         E.append(error)
 
     print 'E:', E
     print 'h:', h
-        
-    # Convergence rates 
+
+    # Convergence rates
     r = [np.log(E[i]/E[i-1])/np.log(h[i]/h[i-1])
          for i in range(1,len(Nx_values))]
     print 'Computed rates:', r
 
 
 if __name__ == '__main__':
-    
-    schemes = ['diffusion', 
-               'ordinary_splitting', 
+
+    schemes = ['diffusion',
+               'ordinary_splitting',
                'Strang_splitting_1stOrder',
                'Strang_splitting_2ndOrder']
-               
+
     for scheme in schemes:
         convergence_rates(scheme=scheme)
-    

@@ -5,16 +5,15 @@
 Advection-dominated equations
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Wave (the chapter :ref:`ch:wave`) and diffusion (the chapter :ref:`ch:diffu`) equations
-are solve reliably by finite difference methods. As soon as we add a
-first-order derivative in space, representing *advective transport* (also
-known as convective transport), the numerics gets more complicated, and
-intuitively attractive methods no longer work well. We shall show
-how and why methods fail and provide remedies. The present chapter
-builds on basic knowledge about finite difference methods for
-the diffusion equations, including the analysis by Fourier components,
-truncation error analysis ( :ref:`ch:trunc`), and
-compact difference notation.
+Wave (the chapter :ref:`ch:wave`) and diffusion (the chapter :ref:`ch:diffu`)
+equations are solved reliably by finite difference methods. As soon as
+we add a first-order derivative in space, representing *advective
+transport* (also known as convective transport), the numerics gets
+more complicated, and intuitively attractive methods no longer work
+well. We shall show how and why such methods fail and provide
+remedies. The present chapter builds on basic knowledge about finite
+difference methods for diffusion and wave equations, including the
+analysis by Fourier components, truncation error analysis ( :ref:`ch:trunc`), and compact difference notation.
 
 .. _advec:1D:
 
@@ -27,8 +26,8 @@ We consider the pure advection model
 
 .. math::
 
-    \tag{454}
-    \frac{\partial u}{\partial t} + v\frac{partial u}{\partial x} = 0,\quad
+    \tag{502}
+    \frac{\partial u}{\partial t} + v\frac{\partial u}{\partial x} = 0,\quad
          x\in (0,L),\ t\in (0,T],
         
         
@@ -37,7 +36,7 @@ We consider the pure advection model
 
 .. math::
 
-    \tag{455}
+    \tag{503}
     u(x,0) = I(x), x\in (0,L),
         
         
@@ -46,34 +45,36 @@ We consider the pure advection model
 
 .. math::
 
-    \tag{456}
+    \tag{504}
     u(0,t) = U_0, t\in (0,T].
         
         
 
-In :ref:`(454) <Eq:advec:1D:pde1:u>`, :math:`v` is a given parameter, typically reflecting
+In :ref:`(502) <Eq:advec:1D:pde1:u>`, :math:`v` is a given parameter, typically reflecting
 the velocity of transport of a quantity :math:`u` with a flow.
-There is only one boundary condition :ref:`(455) <Eq:advec:1D:pde1:U0>` since
-there is only a first-derivative term in the PDE :ref:`(454) <Eq:advec:1D:pde1:u>`.
+There is only one boundary condition :ref:`(503) <Eq:advec:1D:pde1:U0>` since
+the spatial derivative is only first order in the PDE :ref:`(502) <Eq:advec:1D:pde1:u>`.
 The information at :math:`x=0` and the initial condition get
-transported in positive :math:`x` direction
+transported in the positive :math:`x` direction
 if :math:`v>0` through the domain.
 
-The solution of :ref:`(454) <Eq:advec:1D:pde1:u>` in an infinite domain (no condition
-:ref:`(455) <Eq:advec:1D:pde1:U0>` at :math:`x=0`) is
+It is easiest to find the solution of :ref:`(502) <Eq:advec:1D:pde1:u>` if we remove the
+boundary condition and consider a process on the
+infinite domain :math:`(-\infty, \infty)`. The solution is simply
 
 .. _Eq:advec:1D:pde1:sol:
 
 .. math::
 
-    \tag{457}
+    \tag{505}
     u(x,t) = I(x-vt){\thinspace .}
         
         
 
-This is also the solution we expect if we let :math:`I(x)` be located in
-the interior of the domain such that :math:`\lim_{x\rightarrow 0,L}I(x)=0`
-and :math:`U_0=0`.
+This is also the solution we expect locally in a finite domain before boundary
+conditions have reflected or modified the wave.
+
+.. _advec:1D:FTCS:
 
 Simplest scheme: forward in time, centered in space
 ---------------------------------------------------
@@ -81,23 +82,23 @@ Simplest scheme: forward in time, centered in space
 Method          (1)
 ~~~~~~~~~~~~~~~~~~~
 
-A first attempt to solve a PDE like :ref:`(454) <Eq:advec:1D:pde1:u>` will normally
-look for a time-discretization scheme that is explicit so we avoid
+A first attempt to solve a PDE like :ref:`(502) <Eq:advec:1D:pde1:u>` will normally
+be to look for a time-discretization scheme that is explicit so we avoid
 solving systems of linear equations. In space, we anticipate that
 centered differences are most accurate and therefore best. These
 two arguments lead us to a Forward Euler scheme in time and
 centered differences in space:
 
-.. _Eq:_auto181:
+.. _Eq:_auto210:
 
 .. math::
 
-    \tag{458}
+    \tag{506}
     [D_t^+ u + vD_{2x} u = 0]^n_i
         
         
 
-Written out,
+Written out, we see that this expression reads
 
 .. math::
          u^{n+1} = u^n - \frac{1}{2} C (u^n_{i+1}-u_{i-1}),
@@ -114,56 +115,57 @@ A solver function for our scheme goes as follows.
 
 .. code-block:: python
 
-        import numpy as np
-        import matplotlib.pyplot as plt
-        
-        def solver_FECS(I, U0, v, L, dt, C, T, user_action=None):
-            Nt = int(round(T/float(dt)))
-            t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
-            dx = v*dt/C
-            Nx = int(round(L/dx))
-            x = np.linspace(0, L, Nx+1)       # Mesh points in space
-            # Make sure dx and dt are compatible with x and t
-            dx = x[1] - x[0]
-            dt = t[1] - t[0]
-            C = v*dt/dx
-        
-            u   = np.zeros(Nx+1)
-            u_1 = np.zeros(Nx+1)
-        
-            # Set initial condition u(x,0) = I(x)
-            for i in range(0, Nx+1):
-                u_1[i] = I(x[i])
-        
+    import numpy as np
+    import matplotlib.pyplot as plt
+    
+    def solver_FECS(I, U0, v, L, dt, C, T, user_action=None):
+        Nt = int(round(T/float(dt)))
+        t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
+        dx = v*dt/C
+        Nx = int(round(L/dx))
+        x = np.linspace(0, L, Nx+1)       # Mesh points in space
+        # Make sure dx and dt are compatible with x and t
+        dx = x[1] - x[0]
+        dt = t[1] - t[0]
+        C = v*dt/dx
+    
+        u   = np.zeros(Nx+1)
+        u_1 = np.zeros(Nx+1)
+    
+        # Set initial condition u(x,0) = I(x)
+        for i in range(0, Nx+1):
+            u_1[i] = I(x[i])
+    
+        if user_action is not None:
+            user_action(u_1, x, t, 0)
+    
+        for n in range(0, Nt):
+            # Compute u at inner mesh points
+            for i in range(1, Nx):
+                u[i] = u_1[i] - 0.5*C*(u_1[i+1] - u_1[i-1])
+    
+            # Insert boundary condition
+            u[0] = U0
+    
             if user_action is not None:
-                user_action(u_1, x, t, 0)
-        
-            for n in range(0, Nt):
-                # Compute u at inner mesh points
-                for i in range(1, Nx):
-                    u[i] = u_1[i] - 0.5*C*(u_1[i+1] - u_1[i-1])
-        
-                # Insert boundary condition
-                u[0] = U0
-        
-                if user_action is not None:
-                    user_action(u, x, t, n+1)
-        
-                # Switch variables before next step
-                u_1, u = u, u_1
+                user_action(u, x, t, n+1)
+    
+            # Switch variables before next step
+            u_1, u = u, u_1
 
 Test cases
 ~~~~~~~~~~
 
-The typical solution is :math:`u` has the shape of :math:`I` and is transported at
-velocity :math:`v` to the right (if :math:`v>0`). Let us choose a smooth and non-smooth
-initial condition:
+The typical solution :math:`u` has the shape of :math:`I` and is transported at
+velocity :math:`v` to the right (if :math:`v>0`). Let us consider two different
+initial conditions, one smooth (Gaussian pulse) and one non-smooth
+(half-truncated cosine pulse):
 
 .. _Eq:advec:1D:case_gaussian:
 
 .. math::
 
-    \tag{459}
+    \tag{507}
     u(x,0) = Ae^{-\frac{1}{2}\left(\frac{x-L/10}{\sigma}\right)^2},
         
         
@@ -172,7 +174,7 @@ initial condition:
 
 .. math::
 
-    \tag{460}
+    \tag{508}
     u(x,0) = A\cos\left(\frac{5\pi}{L}\left( x - \frac{L}{10}\right)\right),\quad
         x < \frac{L}{5} \hbox{ else } 0{\thinspace .}
         
@@ -180,7 +182,8 @@ initial condition:
 
 The parameter :math:`A` is the maximum value of the initial condition.
 
-We scale the problem and introduce :math:`\bar x = x/L` and :math:`\bar t= vt/L`,
+Before doing numerical simulations, we scale the PDE
+problem and introduce :math:`\bar x = x/L` and :math:`\bar t= vt/L`,
 which gives
 
 .. math::
@@ -192,46 +195,56 @@ The unknown :math:`u` is scaled by the maximum value of the initial condition:
 The scaled problem is solved by setting :math:`v=1`, :math:`L=1`, and :math:`A=1`.
 From now on we drop the bars.
 
-To run a case and plot the solution, we make the function
+To run our test cases and plot the solution, we make the function
 
 .. code-block:: python
 
-        def run_FECS(case):
-            if case == 'gaussian':
-                def I(x):
-                    return np.exp(-0.5*((x-L/10)/sigma)**2)
-            elif case == 'cosinehat':
-                def I(x):
-                    return np.cos(np.pi*5/L*(x - L/10)) if x < L/5 else 0
-        
-            L = 1.0
-            sigma = 0.02
-            legends = []
-        
-            def plot(u, x, t, n):
-                """Plot every m steps in the same figure."""
-                m = 40
-                if n % m != 0:
-                    return
-                print 't=%g, n=%d, u in [%g, %g] w/%d points' % \ 
-                      (t[n], n, u.min(), u.max(), x.size)
-                if np.abs(u).max() > 3:  # Instability?
-                    return
-                plt.plot(x, u)
-                legends.append('t=%g' % t[n])
-                if n > 0:
-                    plt.hold('on')
-        
-            U0 = 0
-            dt = 0.001
-            C = 1
-            T = 1
-            solver(I=I, U0=U0, v=1.0, L=L, dt=dt, C=C, T=T,
-                   user_action=plot)
-            plt.legend(legends, loc='lower left')
-            plt.savefig('tmp.png'); plt.savefig('tmp.pdf')
-            plt.axis([0, L, -0.75, 1.1])
-            plt.show()
+    def run_FECS(case):
+        if case == 'gaussian':
+            def I(x):
+                return np.exp(-0.5*((x-L/10)/sigma)**2)
+        elif case == 'cosinehat':
+            def I(x):
+                return np.cos(np.pi*5/L*(x - L/10)) if x < L/5 else 0
+    
+        L = 1.0
+        sigma = 0.02
+        legends = []
+    
+        def plot(u, x, t, n):
+            """Animate and plot every m steps in the same figure."""
+            plt.figure(1)
+            if n == 0:
+                lines = plot(x, u)
+            else:
+                lines[0].set_ydata(u)
+                plt.draw()
+                #plt.savefig()
+            plt.figure(2)
+            m = 40
+            if n % m != 0:
+                return
+            print 't=%g, n=%d, u in [%g, %g] w/%d points' % \ 
+                  (t[n], n, u.min(), u.max(), x.size)
+            if np.abs(u).max() > 3:  # Instability?
+                return
+            plt.plot(x, u)
+            legends.append('t=%g' % t[n])
+            if n > 0:
+                plt.hold('on')
+    
+        plt.ion()
+        print 'Hei!'
+        U0 = 0
+        dt = 0.001
+        C = 1
+        T = 1
+        solver(I=I, U0=U0, v=1.0, L=L, dt=dt, C=C, T=T,
+               user_action=plot)
+        plt.legend(legends, loc='lower left')
+        plt.savefig('tmp.png'); plt.savefig('tmp.pdf')
+        plt.axis([0, L, -0.75, 1.1])
+        plt.show()
 
 Bug?
 ~~~~
@@ -246,28 +259,46 @@ hand calculations produce the same numbers as in the code, so
 it seems that the implementation is correct.
 The hypothesis is therefore that the solution is unstable.
 
+.. _advec:1D:FTCS:anal:
+
 Analysis of the scheme
 ----------------------
 
-We can analyze the finite difference scheme by look at how it treats
-a Fourier component
+It is easy to show that a typical Fourier component
+
+.. math::
+         u(x,t)= B\sin (k(x-ct))
+
+is a solution of our PDE for any spatial wave length :math:`\lambda = 2\pi /k`
+and any amplitude :math:`B`.
+A general solution can be thought to be build of a collection of long and
+short waves such waves with different amplitudes. Algebraically, the work
+simplifies if we introduce the complex Fourier component
+
+.. math::
+         u(x,t)={A_{\small\mbox{e}}}^n e^{ikx},
+
+with
+
+.. math::
+         {A_{\small\mbox{e}}}=Be^{-ikv\Delta t} = Be^{iCkx}{\thinspace .}
+
+Note that :math:`|{A_{\small\mbox{e}}}| \leq 1`.
+
+It turns out that many schemes also allows a Fourier wave component as
+solution, and we can use the numerical value of :math:`A` to learn about the
+quality of the scheme. Hence, to analyze the difference scheme we just
+have implemented, we look at how treats the Fourier component
 
 .. math::
          u_q^n = A^n e^{ikq\Delta x}{\thinspace .}
-
-The corresponding analytical Fourier component is
-
-.. math::
-         u = {A_{\small\mbox{e}}}^n e^{ikx},\quad {A_{\small\mbox{e}}} = e^{-ivk\Delta t}=e^{-iCkx}{\thinspace .}
-
-In particular, :math:`|{A_{\small\mbox{e}}}| \leq 1`.
 
 Inserting the numerical component in the scheme,
 
 .. math::
          [D_t^+ A^n e^{ikq\Delta x} + v D_{2x}A^n e^{ikq\Delta x}]^n_i,
 
-and making use of :ref:`(595) <Eq:form:exp:fd1c:center>`
+and making use of :ref:`(623) <Eq:form:exp:fd1c:center>`
 results in
 
 .. math::
@@ -287,6 +318,8 @@ since we then have :math:`A^n = A_r^ne^{i\phi n}`. The magnitude of :math:`A^n` 
 exact solution will not. Regardless of :math:`\Delta t`, we get unstable
 numerical solutions.
 
+.. _advec:1D:leapfrog:
+
 Leapfrog in time, centered differences in space
 -----------------------------------------------
 
@@ -304,7 +337,7 @@ which results in the updating formula
 .. math::
          u^{n+1} = u^{n-1} - C(u_{i+1}-u_{i-1}){\thinspace .}
 
-A special scheme is needed to compute :math:`u^1`, but we leave that problem or
+A special scheme is needed to compute :math:`u^1`, but we leave that problem for
 now.
 
 Implementation          (10)
@@ -314,31 +347,31 @@ We now need to have three time levels and must modify our solver a bit:
 
 .. code-block:: python
 
-        Nt = int(round(T/float(dt)))
-        t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
-        ...
-        u   = np.zeros(Nx+1)
-        u_1 = np.zeros(Nx+1)
-        u_2 = np.zeros(Nx+1)
-        ...
-        for n in range(0, Nt):
-            if scheme == 'FECS':
+    Nt = int(round(T/float(dt)))
+    t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
+    ...
+    u   = np.zeros(Nx+1)
+    u_1 = np.zeros(Nx+1)
+    u_2 = np.zeros(Nx+1)
+    ...
+    for n in range(0, Nt):
+        if scheme == 'FECS':
+            for i in range(1, Nx):
+                u[i] = u_1[i] - 0.5*C*(u_1[i+1] - u_1[i-1])
+        elif scheme == 'LFCS':
+            if n == 0:
+                # Use some scheme for the first step
                 for i in range(1, Nx):
-                    u[i] = u_1[i] - 0.5*C*(u_1[i+1] - u_1[i-1])
-            elif scheme == 'LFCS':
-                if n == 0:
-                    # Use some scheme for the first step
-                    for i in range(1, Nx):
-                        ...
-                else:
-                    for i in range(1, Nx+1):
-                        u[i] = u_2[i] - C*(u_1[i] - u_1[i-1])
-        
-            # Switch variables before next step
-            u_2, u_1, u = u_1, u, u_2
+                    ...
+            else:
+                for i in range(1, Nx+1):
+                    u[i] = u_2[i] - C*(u_1[i] - u_1[i-1])
+    
+        # Switch variables before next step
+        u_2, u_1, u = u_1, u, u_2
 
-Running the test case
-~~~~~~~~~~~~~~~~~~~~~
+Running a test case
+~~~~~~~~~~~~~~~~~~~
 
 Let us try a coarse mesh such that the smooth Gaussian initial condition
 is represented by 1 at mesh node 1 and 0 at all other nodes. This
@@ -373,8 +406,6 @@ numerical component is not increasing or decreasing in time, which is
 exactly what we want. However, for :math:`C>1`, the square root can become
 complex valued, so stability is obtained only as long as :math:`C\leq 1`.
 
-[**hpl 24**: The complete numerical solution? How are the two roots combined?]
-
 We introduce :math:`p=k\Delta x`. The amplification factor now reads
 
 .. math::
@@ -388,20 +419,28 @@ and is to be compared to the exact amplification factor
 the section :ref:`advec:1D:disprel` compares many numerical amplification factors
 with the exact expression.
 
+.. _advec:1D:FTUP:
+
 Upwind differences in space
 ---------------------------
 
 .. index:: upwind difference
 
 Since the PDE reflects transport of information along with a flow in
-positive :math:`x` direction :math:`v>0`, it could be natural to go upstream and not
-downstream in a spatial derivative. That is, we approximate
+positive :math:`x` direction, when :math:`v>0`, it could be natural to go (what is called)
+upstream and not
+downstream in a spatial derivative to collect information about the
+change of the function. That is, we approximate
 
 .. math::
         
         \frac{\partial u}{\partial x}(x_i,t_n)\approx [D^-_x u]^n_i = \frac{u^n_{i} - u^n_{i-1}}{\Delta x}{\thinspace .}
 
-This is called an *upwind difference*. This spatial approximation does magic to
+This is called an *upwind difference* (the corresponding difference in the
+time direction would be called a backward difference, and we could use that
+name in space too, but *upwind* is the common name for a difference against
+the flow in advection problems). This spatial approximation does magic
+compared to
 the scheme we had with Forward Euler in time and centered difference in space.
 With an upwind difference,
 
@@ -409,7 +448,7 @@ With an upwind difference,
 
 .. math::
 
-    \tag{461}
+    \tag{509}
     [D^+_t u + vD^-_x u = 0]^n_i,
         
         
@@ -420,12 +459,11 @@ written out as
          u^{n+1} = u^n_i - C(u^{n}_{i}-u^{n}_{i-1}),
 
 gives a robust scheme that is stable if :math:`C\leq 1`.
-As with the Leapfrog scheme, it becomes exact if :math:`C=1`.
-A plot of the solution in case :math:`C=1` is therefore given in
+As with the Leapfrog scheme, it becomes exact if :math:`C=1`, see
 Figure :ref:`advec:1D:case_gaussian:fig:LFCS`.
 
 The amplification factor can be computed using the
-formula :ref:`(593) <Eq:form:exp:fd1:bw>`,
+formula :ref:`(621) <Eq:form:exp:fd1:bw>`,
 
 .. math::
          \frac{A - 1}{\Delta t} + \frac{v}{\Delta x}(1 - e^{-ik\Delta x}) = 0,
@@ -439,32 +477,155 @@ For :math:`C<1` there is, unfortunately,
 non-physical damping of discrete Fourier components. This damping can
 be quite severe.
 
-One can interpret the upwind difference as extra, artificial diffusion
-in the equation. Solving
+
+.. admonition:: Interpretation of upwind difference as artificial diffusion
+
+   One can interpret the upwind difference as extra, artificial diffusion
+   in the equation. Solving
+   
+   .. math::
+            \frac{\partial u}{\partial t} + v\frac{\partial u}{\partial x}
+           = \nu\frac{\partial^2 u}{\partial x^2},
+   
+   by a forward difference time and centered differences in space,
+   
+   .. math::
+            D^+_t u + vD_{2x} u = \nu D_xD_x u]^n_i,
+   
+   gives actually the upwind scheme :ref:`(509) <Eq:advec:1D:upwind>` if
+   :math:`\nu = v\Delta x/2`. That is, solving the PDE :math:`u_t + vu_x=0`
+   by centered differences in space and forward difference in time is
+   unsuccessful, but by adding some artificial diffusion :math:`\nu u_{xx}`,
+   the method becomes stable.
+
+
+
+
+.. _advec:1D:periodic_BC:
+
+Periodic boundary conditions
+----------------------------
+
+So far, we have given then value of on the left boundary, :math:`u_0^n`, and used
+the scheme to propagate the solution signal through the domain.
+Often, we want to follow such signals for long time series, and periodic
+boundary conditions are then relevant since then enable a signal that
+leaves the right boundary to immediately enter the left boundary and propagate
+through the domain again.
+
+The periodic boundary condition is
 
 .. math::
-         \frac{\partial u}{\partial t} + v\frac{\partial u}{\partial x}
-        = \nu\frac{\partial^2 u}{\partial x^2},
+         u(0,t) = u(L,t),\quad u_0^n = u_{N_x}^ntp
 
-by a forward difference time and centered differences in space,
+It means that we in the first equation, involving :math:`u_0^n`, insert :math:`u_{N_x}^n`,
+and that we in the last equation, involving :math:`u^{n+1}_{N_x}` insert :math:`u^{n+1}_0`.
+Normally, we can do this in the simple way that ``u_1[0]`` is updated as
+``u_1[Nx]`` at the beginning of a new time level.
 
-.. math::
-         D^+_t u + vD_{2x} u = \nu D_xD_x u]^n_i,
+In some schemes we may need :math:`u^{n}_{N_x+1}` and :math:`u^{n}_{-1}`. Periodicity
+then means that these values are equal to :math:`u^n_1` and :math:`u^n_{N_x-1}`,
+respectively. For the upwind scheme it is sufficient to set
+``u_1[0]=u_1[Nx]`` at a new time level before computing ``u[1]``, which ensures
+that ``u[1]`` becomes right and at the next time level ``u[0]`` at the current
+time level is correctly updated.
+For the Leapfrog scheme we must update ``u[0]`` and ``u[Nx]`` using the scheme:
 
-gives actually the upwind scheme :ref:`(461) <Eq:advec:1D:upwind>` if
-:math:`\nu = v\Delta x/2`. That is, solving the PDE :math:`u_t + vu_x=0`
-by centered differences in space and forward difference in time is
-unsuccessful, but by adding some artificial diffusion :math:`\nu u_{xx}`,
-the method becomes stable.
+.. code-block:: python
+
+    if periodic_bc:
+        i = 0
+        u[i] = u_2[i] - C*(u_1[i+1] - u_1[Nx-1])
+    for i in range(1, Nx):
+        u[i] = u_2[i] - C*(u_1[i+1] - u_1[i-1])
+    if periodic_bc:
+        u[Nx] = u[0]
+
+.. _advec:1D:CN:
 
 A Crank-Nicolson discretization in time and centered differences in space
 -------------------------------------------------------------------------
 
+Another obvious candidate for time discretization is the Crank-Nicolson
+method combined with centered differences in space:
+
 .. math::
-         A = \frac{1 - \frac{1}{2} i C\sin p}{1 + \frac{1}{2} i C\sin p}{\thinspace .}
+         [D_t u]^n_i + v\frac{1}{2}([D_{2x} u]^{n+1}_i + [D_{2x} u]^{n}_i) = 0{\thinspace .}
+
+It can be nice to include the Backward Euler scheme too, via the
+:math:`\theta`-rule,
+
+.. math::
+         [D_t u]^n_i + v\theta [D_{2x} u]^{n+1}_i + v(1-\theta)[D_{2x} u]^{n}_i = 0{\thinspace .}
+
+This gives rise to an *implicit* scheme,
+
+.. math::
+         u^{n+1}_i + \frac{\theta}{2} C (u^{n+1}_{i+1} - u^{n+1}_{i-1})
+        = u^n_i - \frac{1-\theta}{2} C (u^{n}_{i+1} - u^{n}_{i-1})
+
+for :math:`i=1,\ldots,N_x-1`. At the boundaries we use periodic conditions:
+
+.. math::
+         u^{n+1}_0 = u^{n+1}_{N_x},
+
+however, this destroys the tridiagonal structure of the coefficient matrix.
+We therefore try the rough approximation
+
+.. math::
+         u^{n+1}_0 = u^{n}_{N_x},\quad u^{n+1}_{N_x}=u^n_0{\thinspace .}
+
+Otherwise, we need to prescribe :math:`u_0^{n+1}` and :math:`u_{N_x}^{n+1}`.
+
+The elements on the diagonal in the matrix become:
+
+.. math::
+         A_{i,i} = 1,\quad i=0,\ldots,N_x{\thinspace .}
+
+On the subdiagonal and superdiagonal we have
+
+.. math::
+         A_{i-1,i} = -\frac{\theta}{2} C,\quad A_{i+1,i} = \frac{\theta}{2} C,\quad i=1,\ldots,N_x-1,
+
+with :math:`A_{0,1}=0` and :math:`A_{N_x-1,N_x}=0` due to the known boundary conditions.
+And finally, the right-hand side becomes
+
+.. math::
+        \begin{align*}
+        b_0 &= u^n_{N_x}\\ 
+        b_i &= u^n_i - \frac{1-\theta}{2} C (u^{n}_{i+1} - u^{n}_{i-1}),\quad i=1,\ldots,N_x-1\\ 
+        b_{N_x} &= u^n_0
+        \end{align*}
+
+The dispersion relation follows from inserting :math:`u^n_i = A^ne^{ikx}`
+and using the formula :ref:`(623) <Eq:form:exp:fd1c:center>` for the spatial
+differences:
+
+.. math::
+         A = \frac{1 - (1-\theta) i C\sin p}{1 + theta i C\sin p}{\thinspace .}
+
+.. _advec:1D:LaxW:
 
 The Lax-Wendroff method
 -----------------------
+
+The Lax-Wendroff method is based on three ideas:
+
+1. Express :math:`u^{n+1}_i` in terms of quantities at :math:`t=t_n` by
+   means of a Taylor polynomial of second degree.
+
+2. Replace time-derivatives at :math:`t=t_n` by spatial derivatives,
+   using the PDE.
+
+3. Discretize the spatial derivatives by second-order differences.
+
+Let us do this:
+
+.. math::
+         u^{n+1} = u^n_i + \Delta t\left(\frac{\partial u}{\partial t}\right)^n_i
+        + \frac{1}{2}\Delta t^2\left(\frac{\partial^2 u}{\partial t^2}\right)^n_i{\thinspace .}
+
+From the PDE we have that
 
 .. math::
          A = 1 - iC\sin p - 2C^2\sin^2 (p/2){\thinspace .}
@@ -483,7 +644,7 @@ are two basic errors in the numerical Fourier component: there may be
 damping and the wave velocity may depend on :math:`C` and :math:`p=k\Delta x`.
 
 The shortest wavelength that can be represented is :math:`\lambda = 2\Delta x`.
-The corresponding :math:`k` is :math:`k=2\pi/\lambda = \pi/Delta x`, so :math:`p=k\Delta x\in
+The corresponding :math:`k` is :math:`k=2\pi/\lambda = \pi/\Delta x`, so :math:`p=k\Delta x\in
 (0,\pi]`.
 
 Given a complex :math:`A` as a function of :math:`C` and :math:`p`, how can we visualize
@@ -563,13 +724,18 @@ An appropriate dimensionless quantity to plot is :math:`c/v`:
 The total damping after some time :math:`T=n\Delta t` is reflected by
 :math:`A_r(C,p)^n`. Since normally :math:`A_r<1`, the damping goes like
 :math:`A_r^{1/\Delta t}` and approaches zero as :math:`\Delta t\rightarrow 0`.
-[**hpl 25**: No, how do we explain that reducing :math:`\Delta t` reduces the damping, while keeping :math:`C` fixed?]
+
+.. _advec:1D:stationary:
 
 One-dimensional stationary advection-diffusion equation
 =======================================================
 
+.. _advec:2D:
+
 Two-dimensional advection-diffusion equations
 =============================================
+
+.. _advec:app:
 
 Applications of advection equations
 ===================================

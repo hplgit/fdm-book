@@ -1,586 +1,196 @@
 .. !split
 
-.. _nonlin:alglevel:1D:
+Multi-dimensional nonlinear PDE problems
+========================================
 
-Discretization of 1D stationary nonlinear differential equations
-================================================================
+The fundamental ideas in the
+derivation of :math:`F_i` and :math:`J_{i,j}` in the 1D model problem
+are easily generalized to multi-dimensional problems.
+Nevertheless, the expressions involved are slightly different, with
+derivatives in :math:`x` replaced by :math:`\nabla`, so we present some
+examples below in detail.
 
-The section :ref:`nonlin:pdelevel` presented methods for linearizing
-time-discrete PDEs directly prior to discretization in space.  We can
-alternatively carry out the discretization in space of the
-time-discrete nonlinear PDE problem and get a system of nonlinear
-algebraic equations, which can be solved by Picard iteration or
-Newton's method as presented in the section :ref:`nonlin:systems:alg`.
-This latter approach will now be described in detail.
+.. _nonlin:alglevel:dD:fd:
 
-We shall work with the 1D problem
-
-.. _Eq:nonlin:alglevel:1D:pde:
-
-.. math::
-
-    \tag{542}
-    -({\alpha}(u)u^{\prime})^{\prime} + au = f(u),\quad x\in (0,L),
-        \quad {\alpha}(u(0))u^{\prime}(0) = C,\ u(L)=D
-        {\thinspace .}
-        
-        
-
-The problem :ref:`(542) <Eq:nonlin:alglevel:1D:pde>` arises from the stationary
-limit of a diffusion equation,
-
-.. _Eq:nonlin:alglevel:1D:pde:tver:
-
-.. math::
-
-    \tag{543}
-    \frac{\partial u}{\partial t} = \frac{\partial}{\partial x}\left(
-        \alpha(u)\frac{\partial u}{\partial x}\right) - au + f(u),
-        
-        
-
-as :math:`t\rightarrow\infty` and :math:`\partial u/\partial t\rightarrow 0`.
-Alternatively, the problem :ref:`(542) <Eq:nonlin:alglevel:1D:pde>` arises
-at each time level from implicit time discretization of
-:ref:`(543) <Eq:nonlin:alglevel:1D:pde:tver>`. For example, a Backward Euler
-scheme for :ref:`(543) <Eq:nonlin:alglevel:1D:pde:tver>` leads to
-
-.. _Eq:nonlin:alglevel:1D:pde:tver:BE:
-
-.. math::
-
-    \tag{544}
-    \frac{u^{n}-u^{n-1}}{\Delta t} =
-        \frac{d}{dx}\left(
-        \alpha(u^n)\frac{du^n}{dx}\right) - au^n + f(u^n){\thinspace .}
-        
-        
-
-Introducing :math:`u(x)` for :math:`u^n(x)`, :math:`u^{(1)}` for :math:`u^{n-1}`, and defining :math:`f(u)`
-in :ref:`(542) <Eq:nonlin:alglevel:1D:pde>` to be :math:`f(u)` in
-:ref:`(544) <Eq:nonlin:alglevel:1D:pde:tver:BE>` plus :math:`u^{n-1}/\Delta t`, gives
-:ref:`(542) <Eq:nonlin:alglevel:1D:pde>` with :math:`a=1/\Delta t`.
-
-.. _nonlin:alglevel:1D:fd:
-
-Finite difference discretization          (2)
+Finite difference discretization          (3)
 ---------------------------------------------
 
-The nonlinearity in the differential equation
-:ref:`(542) <Eq:nonlin:alglevel:1D:pde>` poses no more difficulty than a variable
-coefficient, as in the term :math:`({\alpha}(x)u^{\prime})^{\prime}`.  We can
-therefore use a standard finite difference approach to discretizing
-the Laplace term with a variable coefficient:
+A typical diffusion equation
 
 .. math::
-         [-D_x{\alpha} D_x u +au = f]_i{\thinspace .}
+         u_t = \nabla\cdot({\alpha}(u)\nabla u) + f(u),
 
-Writing this out for a uniform mesh with points :math:`x_i=i\Delta x`,
-:math:`i=0,\ldots,N_x`, leads to
-
-.. _Eq:nonlin:alglevel:1D:fd:deq0:
+can be discretized by (e.g.) a Backward Euler scheme,
+which in 2D can be written
 
 .. math::
-
-    \tag{545}
-    -\frac{1}{\Delta x^2}
-        \left({\alpha}_{i+\frac{1}{2}}(u_{i+1}-u_i) -
-        {\alpha}_{i-\frac{1}{2}}(u_{i}-u_{i-1})\right)
-        + au_i = f(u_i){\thinspace .}
-        
+         [D_t^- u = D_x\overline{{\alpha}(u)}^xD_x u
+        + D_y\overline{{\alpha}(u)}^yD_y u + f(u)]_{i,j}^n{\thinspace .}
         
 
-This equation is valid at all the mesh points :math:`i=0,1,\ldots,N_x-1`.
-At :math:`i=N_x` we have the Dirichlet condition :math:`u_i=0`.
-The only difference from the case with :math:`({\alpha}(x)u^{\prime})^{\prime}` and :math:`f(x)` is that
-now :math:`{\alpha}` and :math:`f` are functions of :math:`u` and not only on :math:`x`:
-:math:`({\alpha}(u(x))u^{\prime})^{\prime}` and :math:`f(u(x))`.
+We do not dive into the details of handling boundary conditions now.
+Dirichlet and Neumann conditions are handled as in a
+corresponding linear, variable-coefficient diffusion problems.
 
-The quantity :math:`{\alpha}_{i+\frac{1}{2}}`, evaluated between two mesh points,
-needs a comment. Since :math:`{\alpha}` depends on :math:`u` and :math:`u` is only known
-at the mesh points, we need to express :math:`{\alpha}_{i+\frac{1}{2}}` in
-terms of :math:`u_i` and :math:`u_{i+1}`. For this purpose we use an arithmetic
-mean, although a harmonic mean is also common in this context if
-:math:`{\alpha}` features large jumps.
-There are two choices of arithmetic means:
-
-.. _Eq:nonlin:alglevel:1D:fd:dfc:mean:u:
+Writing the scheme out, putting the unknown values on the
+left-hand side and known values on the right-hand side, and
+introducing :math:`\Delta x=\Delta y=h` to save some writing, one gets
 
 .. math::
+        \begin{align*}
+        u^n_{i,j} &- \frac{\Delta t}{h^2}(
+         \frac{1}{2}({\alpha}(u_{i,j}^n)   + {\alpha}(u_{i+1,j}^n))(u_{i+1,j}^n-u_{i,j}^n)\\ 
+        &\quad -
+        \frac{1}{2}({\alpha}(u_{i-1,j}^n) + {\alpha}(u_{i,j}^n))(u_{i,j}^n-u_{i-1,j}^n) \\ 
+        &\quad +
+         \frac{1}{2}({\alpha}(u_{i,j}^n)   + {\alpha}(u_{i,j+1}^n))(u_{i,j+1}^n-u_{i,j}^n)\\ 
+        &\quad -
+         \frac{1}{2}({\alpha}(u_{i,j-1}^n) + {\alpha}(u_{i,j}^n))(u_{i,j}^n-u_{i-1,j-1}^n))
+        - \Delta tf(u_{i,j}^n) = u^{n-1}_{i,j}
+        \end{align*}
 
-    \tag{546}
-    {\alpha}_{i+\frac{1}{2}} \approx
-        {\alpha}(\frac{1}{2}(u_i + u_{i+1}) =
-        [{\alpha}(\overline{u}^x)]^{i+\frac{1}{2}},
-        
-        
+This defines a nonlinear algebraic system on the form :math:`A(u)u=b(u)`.
 
-.. _Eq:nonlin:alglevel:1D:fd:dfc:mean:dfc:
-
-.. math::
-
-    \tag{547}
-    {\alpha}_{i+\frac{1}{2}} \approx
-        \frac{1}{2}({\alpha}(u_i) + {\alpha}(u_{i+1})) = [\overline{{\alpha}(u)}^x]^{i+\frac{1}{2}}
-        
-        
-
-Equation :ref:`(545) <Eq:nonlin:alglevel:1D:fd:deq0>` with
-the latter approximation then looks like
-
-.. math::
-        
-        -\frac{1}{2\Delta x^2}
-        \left(({\alpha}(u_i)+{\alpha}(u_{i+1}))(u_{i+1}-u_i) -
-        ({\alpha}(u_{i-1})+{\alpha}(u_{i}))(u_{i}-u_{i-1})\right)\nonumber
-        
-
-.. _Eq:nonlin:alglevel:1D:fd:deq:
-
-.. math::
-
-    \tag{548}
-    \qquad\qquad + au_i = f(u_i),
-        
-        
-
-or written more compactly,
-
-.. math::
-         [-D_x\overline{{\alpha}}^x D_x u +au = f]_i{\thinspace .}
-
-At mesh point :math:`i=0` we have the boundary condition :math:`{\alpha}(u)u^{\prime}=C`,
-which is discretized by
-
-.. math::
-         [{\alpha}(u)D_{2x}u = C]_0,
-
-meaning
-
-.. _Eq:nonlin:alglevel:1D:fd:Neumann:x0:
-
-.. math::
-
-    \tag{549}
-    {\alpha}(u_0)\frac{u_{1} - u_{-1}}{2\Delta x} = C{\thinspace .}
-        
-        
-
-The fictitious value :math:`u_{-1}` can be eliminated with the aid
-of :ref:`(548) <Eq:nonlin:alglevel:1D:fd:deq>` for :math:`i=0`.
-Formally, :ref:`(548) <Eq:nonlin:alglevel:1D:fd:deq>` should be solved with
-respect to :math:`u_{i-1}` and that value (for :math:`i=0`) should be inserted in
-:ref:`(549) <Eq:nonlin:alglevel:1D:fd:Neumann:x0>`, but it is algebraically
-much easier to do it the other way around. Alternatively, one can
-use a ghost cell :math:`[-\Delta x,0]` and update the :math:`u_{-1}` value
-in the ghost cell according to :ref:`(549) <Eq:nonlin:alglevel:1D:fd:Neumann:x0>`
-after every Picard or Newton iteration. Such an approach means that
-we use a known :math:`u_{-1}` value in :ref:`(548) <Eq:nonlin:alglevel:1D:fd:deq>`
-from the previous iteration.
-
-Solution of algebraic equations
--------------------------------
-
-The structure of the equation system
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The nonlinear algebraic equations :ref:`(548) <Eq:nonlin:alglevel:1D:fd:deq>` are
-of the form :math:`A(u)u = b(u)` with
-
-.. math::
-        
-        A_{i,i} &= \frac{1}{2\Delta x^2}({\alpha}(u_{i-1}) + 2{\alpha}(u_{i})
-        {\alpha}(u_{i+1})) + a,\\ 
-        A_{i,i-1} &= -\frac{1}{2\Delta x^2}({\alpha}(u_{i-1}) + {\alpha}(u_{i})),\\ 
-        A_{i,i+1} &= -\frac{1}{2\Delta x^2}({\alpha}(u_{i}) + {\alpha}(u_{i+1})),\\ 
-        b_i &= f(u_i){\thinspace .}
-        
-
-The matrix :math:`A(u)` is tridiagonal: :math:`A_{i,j}=0` for :math:`j > i+1` and :math:`j < i-1`.
-
-The above expressions are valid for internal mesh points :math:`1\leq i\leq N_x-1`.
-For :math:`i=0` we need to express :math:`u_{i-1}=u_{-1}` in terms of :math:`u_1` using
-:ref:`(549) <Eq:nonlin:alglevel:1D:fd:Neumann:x0>`:
-
-.. _Eq:nonlin:alglevel:1D:fd:Neumann:x0:um1:
-
-.. math::
-
-    \tag{550}
-    u_{-1} = u_1 -\frac{2\Delta x}{{\alpha}(u_0)}C{\thinspace .}
-        
-        
-
-This value must be inserted in :math:`A_{0,0}`. The expression for :math:`A_{i,i+1}`
-applies for :math:`i=0`, and :math:`A_{i,i-1}` does not enter the system when :math:`i=0`.
-
-Regarding the last equation, its form depends on whether we include
-the Dirichlet condition :math:`u(L)=D`, meaning :math:`u_{N_x}=D`, in the
-nonlinear algebraic equation system or not. Suppose we choose
-:math:`(u_0,u_1,\ldots,u_{N_x-1})` as unknowns, later referred to as
-*systems without Dirichlet conditions*. The last equation
-corresponds to :math:`i=N_x-1`. It involves the boundary value :math:`u_{N_x}`,
-which is substituted by :math:`D`. If the unknown vector includes the
-boundary value, :math:`(u_0,u_1,\ldots,u_{N_x})`, later referred to as
-*system including Dirichlet conditions*, the equation for :math:`i=N_x-1`
-just involves the unknown :math:`u_{N_x}`, and the final equation becomes
-:math:`u_{N_x}=D`, corresponding to :math:`A_{i,i}=1` and :math:`b_i=D` for :math:`i=N_x`.
-
-Picard iteration          (3)
+Picard iteration          (4)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The obvious Picard iteration scheme is to use previously computed
-values of :math:`u_i` in :math:`A(u)` and :math:`b(u)`, as described more in detail in
-the section :ref:`nonlin:systems:alg`. With the notation :math:`u^{-}` for the
-most recently computed value of :math:`u`, we have the system :math:`F(u)\approx
-\hat F(u) = A(u^{-})u - b(u^{-})`, with :math:`F=(F_0,F_1,\ldots,F_m)`,
-:math:`u=(u_0,u_1,\ldots,u_m)`.  The index :math:`m` is :math:`N_x` if the system
-includes the Dirichlet condition as a separate equation and :math:`N_x-1`
-otherwise.  The matrix :math:`A(u^{-})` is tridiagonal, so the solution
-procedure is to fill a tridiagonal matrix data structure and the
-right-hand side vector with the right numbers and call a Gaussian
-elimination routine for tridiagonal linear systems.
+The most recently computed values :math:`u^{-}` of :math:`u^n` can be
+used in :math:`{\alpha}` and :math:`f` for a Picard iteration,
+or equivalently, we solve :math:`A(u^{-})u=b(u^{-})`.
+The result is a linear system of the same type as arising
+from :math:`u_t = \nabla\cdot ({\alpha}(\boldsymbol{x})\nabla u) + f(\boldsymbol{x},t)`.
 
-Mesh with two cells
-~~~~~~~~~~~~~~~~~~~
-
-It helps on the understanding of the details to write out all the
-mathematics in a specific
-case with a small mesh, say just two cells (:math:`N_x=2`). We use :math:`u^{-}_i`
-for the :math:`i`-th component in :math:`u^{-}`.
-
-The starting point is the basic expressions for the
-nonlinear equations at mesh point :math:`i=0` and :math:`i=1` are
-
-.. _Eq:nonlin:alglevel:1D:fd:2x2:x0:
+The Picard iteration scheme can also be expressed in operator notation:
 
 .. math::
-
-    \tag{551}
-    A_{0,-1}u_{-1} + A_{0,0}u_0 + A_{0,1}u_1 = b_0,
-        
+         [D_t^- u = D_x\overline{{\alpha}(u^{-})}^xD_x u
+        + D_y\overline{{\alpha}(u^{-})}^yD_y u + f(u^{-})]_{i,j}^n{\thinspace .}
         
 
-.. _Eq:nonlin:alglevel:1D:fd:2x2:x1:
-
-.. math::
-
-    \tag{552}
-    A_{1,0}u_{0} + A_{1,1}u_1 + A_{1,2}u_2 = b_1{\thinspace .}
-        
-        
-
-Equation :ref:`(551) <Eq:nonlin:alglevel:1D:fd:2x2:x0>` written out reads
-
-.. math::
-        
-        \frac{1}{2\Delta x^2}(& -({\alpha}(u_{-1}) + {\alpha}(u_{0}))u_{-1}\, +\\ 
-        & ({\alpha}(u_{-1}) + 2{\alpha}(u_{0}) + {\alpha}(u_{1}))u_0\, -\\ 
-        & ({\alpha}(u_{0}) + {\alpha}(u_{1})))u_1 + au_0
-        =f(u_0){\thinspace .}
-        
-
-We must then replace :math:`u_{-1}` by
-:ref:`(550) <Eq:nonlin:alglevel:1D:fd:Neumann:x0:um1>`.
-With Picard iteration we get
-
-.. u_{-1} = u_1 -\frac{2\Delta x}{{\alpha}(u_0)}C
-
-.. math::
-        
-        \frac{1}{2\Delta x^2}(& -({\alpha}(u^-_{-1}) + 2{\alpha}(u^-_{0}
-        + {\alpha}(u^-_{1}))u_1\, +\\ 
-        &({\alpha}(u^-_{-1}) + 2{\alpha}(u^-_{0}) + {\alpha}(u^-_{1}))u_0
-         + au_0\\ 
-        &=f(u^-_0) -
-        \frac{1}{{\alpha}(u^-_0)\Delta x}({\alpha}(u^-_{-1}) + {\alpha}(u^-_{0}))C,
-        
-
-where
-
-.. math::
-         u^-_{-1} = u_1^- -\frac{2\Delta x}{{\alpha}(u^-_0)}C{\thinspace .}
-
-Equation :ref:`(552) <Eq:nonlin:alglevel:1D:fd:2x2:x1>` contains the unknown :math:`u_2`
-for which we have a Dirichlet condition. In case we omit the
-condition as a separate equation, :ref:`(552) <Eq:nonlin:alglevel:1D:fd:2x2:x1>`
-with Picard iteration becomes
-
-.. math::
-        
-        \frac{1}{2\Delta x^2}(&-({\alpha}(u^-_{0}) + {\alpha}(u^-_{1}))u_{0}\, + \\ 
-        &({\alpha}(u^-_{0}) + 2{\alpha}(u^-_{1}) + {\alpha}(u^-_{2}))u_1\, -\\ 
-        &({\alpha}(u^-_{1}) + {\alpha}(u^-_{2})))u_2 + au_1
-        =f(u^-_1){\thinspace .}
-        
-
-We must now move the :math:`u_2` term to the right-hand side and replace all
-occurrences of :math:`u_2` by :math:`D`:
-
-.. math::
-        
-        \frac{1}{2\Delta x^2}(&-({\alpha}(u^-_{0}) + {\alpha}(u^-_{1}))u_{0}\, +\\ 
-        & ({\alpha}(u^-_{0}) + 2{\alpha}(u^-_{1}) + {\alpha}(D))u_1 + au_1\\ 
-        &=f(u^-_1) + \frac{1}{2\Delta x^2}({\alpha}(u^-_{1}) + {\alpha}(D))D{\thinspace .}
-        
-
-The two equations can be written as a :math:`2\times 2` system:
-
-.. math::
-        
-        \left(\begin{array}{cc}
-        B_{0,0}& B_{0,1}\\ 
-        B_{1,0} & B_{1,1}
-        \end{array}\right)
-        \left(\begin{array}{c}
-        u_0\\ 
-        u_1
-        \end{array}\right)
-        =
-        \left(\begin{array}{c}
-        d_0\\ 
-        d_1
-        \end{array}\right),
-        
-
-where
-
-.. _Eq:_auto209:
-
-.. math::
-
-    \tag{553}
-    B_{0,0} =\frac{1}{2\Delta x^2}({\alpha}(u^-_{-1}) + 2{\alpha}(u^-_{0}) + {\alpha}(u^-_{1}))
-        + a
-        
-        
-
-.. _Eq:_auto210:
-
-.. math::
-
-    \tag{554}
-    B_{0,1} =
-        -\frac{1}{2\Delta x^2}({\alpha}(u^-_{-1}) + 2{\alpha}(u^-_{0})
-        + {\alpha}(u^-_{1})),
-        
-        
-
-.. _Eq:_auto211:
-
-.. math::
-
-    \tag{555}
-    B_{1,0} =
-        -\frac{1}{2\Delta x^2}({\alpha}(u^-_{0}) + {\alpha}(u^-_{1})),
-        
-        
-
-.. _Eq:_auto212:
-
-.. math::
-
-    \tag{556}
-    B_{1,1} =
-        \frac{1}{2\Delta x^2}({\alpha}(u^-_{0}) + 2{\alpha}(u^-_{1}) + {\alpha}(D)) + a,
-        
-        
-
-.. _Eq:_auto213:
-
-.. math::
-
-    \tag{557}
-    d_0 =
-        f(u^-_0) -
-        \frac{1}{{\alpha}(u^-_0)\Delta x}({\alpha}(u^-_{-1}) + {\alpha}(u^-_{0}))C,
-        
-        
-
-.. _Eq:_auto214:
-
-.. math::
-
-    \tag{558}
-    d_1 = f(u^-_1) + \frac{1}{2\Delta x^2}({\alpha}(u^-_{1}) + {\alpha}(D))D{\thinspace .}
-        
-        
-
-The system with the Dirichlet condition becomes
-
-.. math::
-        
-        \left(\begin{array}{ccc}
-        B_{0,0}& B_{0,1} & 0\\ 
-        B_{1,0} & B_{1,1} & B_{1,2}\\ 
-        0  & 0 & 1
-        \end{array}\right)
-        \left(\begin{array}{c}
-        u_0\\ 
-        u_1\\ 
-        u_2
-        \end{array}\right)
-        =
-        \left(\begin{array}{c}
-        d_0\\ 
-        d_1\\ 
-        D
-        \end{array}\right),
-        
-
-with
-
-.. _Eq:_auto215:
-
-.. math::
-
-    \tag{559}
-    B_{1,1} =
-        \frac{1}{2\Delta x^2}({\alpha}(u^-_{0}) + 2{\alpha}(u^-_{1}) + {\alpha}(u_2)) + a,
-        
-        
-
-.. _Eq:_auto216:
-
-.. math::
-
-    \tag{560}
-    B_{1,2} = -
-        \frac{1}{2\Delta x^2}({\alpha}(u^-_{1}) + {\alpha}(u_2))),
-        
-        
-
-.. _Eq:_auto217:
-
-.. math::
-
-    \tag{561}
-    d_1 = f(u^-_1){\thinspace .}
-        
-        
-
-Other entries are as in the :math:`2\times 2` system.
-
-Newton's method          (4)
+Newton's method          (5)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Jacobian must be derived in order to use Newton's method. Here it means
-that we need to differentiate :math:`F(u)=A(u)u - b(u)` with respect to
-the unknown parameters
-:math:`u_0,u_1,\ldots,u_m` (:math:`m=N_x` or :math:`m=N_x-1`, depending on whether the
-Dirichlet condition is included in the nonlinear system :math:`F(u)=0` or not).
-Nonlinear equation number :math:`i` has the structure
+As always, Newton's method is technically more involved than
+Picard iteration. We first define
+the nonlinear algebraic equations to be solved, drop the
+superscript :math:`n` (use :math:`u` for :math:`u^n`), and introduce :math:`u^{(1)}` for :math:`u^{n-1}`:
 
 .. math::
-         F_i = A_{i,i-1}(u_{i-1},u_i)u_{i-1} +
-        A_{i,i}(u_{i-1},u_i,u_{i+1})u_i +
-        A_{i,i+1}(u_i, u_{i+1})u_{i+1} - b_i(u_i){\thinspace .}
+        \begin{align*}
+        F_{i,j} &= u_{i,j} - \frac{\Delta t}{h^2}(\\ 
+        &\qquad \frac{1}{2}({\alpha}(u_{i,j})   + {\alpha}(u_{i+1,j}))(u_{i+1,j}-u_{i,j}) -\\ 
+        &\qquad \frac{1}{2}({\alpha}(u_{i-1,j}) + {\alpha}(u_{i,j}))(u_{i,j}-u_{i-1,j}) + \\ 
+        &\qquad \frac{1}{2}({\alpha}(u_{i,j})   + {\alpha}(u_{i,j+1}))(u_{i,j+1}-u_{i,j}) -\\ 
+        &\qquad \frac{1}{2}({\alpha}(u_{i,j-1}) + {\alpha}(u_{i,j}))(u_{i,j}-u_{i-1,j-1})) -
+        \Delta t\, f(u_{i,j}) - u^{(1)}_{i,j} = 0{\thinspace .}
+        \end{align*}
 
-Computing the Jacobian requires careful differentiation. For example,
+It is convenient to work with two indices :math:`i` and :math:`j` in 2D
+finite difference discretizations, but it complicates
+the derivation of the Jacobian, which then gets four indices.
+(Make sure you really understand the 1D version of this problem
+as treated in the section :ref:`nonlin:alglevel:1D:fd`.)
+The left-hand expression of an equation :math:`F_{i,j}=0` is to be
+differentiated with respect to each of the unknowns :math:`u_{r,s}`
+(recall that this is short notation for :math:`u_{r,s}^n`), :math:`r\in{\mathcal{I}_x}`, :math:`s\in{\mathcal{I}_y}`:
+
+.. math::
+         J_{i,j,r,s} = \frac{\partial F_{i,j}}{\partial u_{r,s}}{\thinspace .} 
+
+The Newton system to be solved in each iteration can be written as
+
+.. math::
+         \sum_{r\in{\mathcal{I}_x}}\sum_{s\in{\mathcal{I}_y}}J_{i,j,r,s}\delta u_{r,s} = -F_{i,j},
+        \quad i\in{\mathcal{I}_x},\ j\in{\mathcal{I}_y}{\thinspace .}
+
+Given :math:`i` and :math:`j`, only a few :math:`r` and :math:`s` indices give nonzero
+contribution to the Jacobian since :math:`F_{i,j}` contains :math:`u_{i\pm 1,j}`,
+:math:`u_{i,j\pm 1}`, and :math:`u_{i,j}`. This means that :math:`J_{i,j,r,s}` has
+nonzero contributions only if :math:`r=i\pm 1`, :math:`s=j\pm 1`, as well as :math:`r=i`
+and :math:`s=j`.  The corresponding terms in :math:`J_{i,j,r,s}` are
+:math:`J_{i,j,i-1,j}`, :math:`J_{i,j,i+1,j}`, :math:`J_{i,j,i,j-1}`, :math:`J_{i,j,i,j+1}`,
+and :math:`J_{i,j,i,j}`.  Therefore, the left-hand side of the Newton
+system, :math:`\sum_r\sum_s J_{i,j,r,s}\delta u_{r,s}` collapses to
+
+.. math::
+        \begin{align*}
+         J_{i,j,r,s}\delta u_{r,s} =
+        J_{i,j,i,j}\delta u_{i,j} & +
+        J_{i,j,i-1,j}\delta u_{i-1,j} +
+        J_{i,j,i+1,j}\delta u_{i+1,j} +
+        J_{i,j,i,j-1}\delta u_{i,j-1}\\ 
+        & +
+        J_{i,j,i,j+1}\delta u_{i,j+1}
+        \end{align*}
+
+The specific derivatives become
+
+.. math::
+        \begin{align*}
+        J_{i,j,i-1,j} &= \frac{\partial F_{i,j}}{\partial u_{i-1,j}}\\ 
+        &= \frac{\Delta t}{h^2}({\alpha}^{\prime}(u_{i-1,j})(u_{i,j}-u_{i-1,j})
+        + {\alpha}(u_{i-1,j})(-1)),\\ 
+        J_{i,j,i+1,j} &= \frac{\partial F_{i,j}}{\partial u_{i+1,j}}\\ 
+        &= \frac{\Delta t}{h^2}(-{\alpha}^{\prime}(u_{i+1,j})(u_{i+1,j}-u_{i,j})
+        - {\alpha}(u_{i-1,j})),\\ 
+        J_{i,j,i,j-1} &= \frac{\partial F_{i,j}}{\partial u_{i,j-1}}\\ 
+        &= \frac{\Delta t}{h^2}({\alpha}^{\prime}(u_{i,j-1})(u_{i,j}-u_{i,j-1})
+        + {\alpha}(u_{i,j-1})(-1)),\\ 
+        J_{i,j,i,j+1} &= \frac{\partial F_{i,j}}{\partial u_{i,j+1}}\\ 
+        &= \frac{\Delta t}{h^2}(-{\alpha}^{\prime}(u_{i,j+1})(u_{i,j+1}-u_{i,j})
+        - {\alpha}(u_{i,j-1})){\thinspace .}
+        \end{align*}
+
+The :math:`J_{i,j,i,j}` entry has a few more terms and is left as an
+exercise.
+Inserting the most recent approximation
+:math:`u^{-}` for :math:`u` in the :math:`J` and :math:`F` formulas and then
+forming :math:`J\delta u=-F` gives the linear system to be solved
+in each Newton iteration. Boundary conditions will affect the
+formulas when any of the indices coincide with a boundary value
+of an index.
+
+Continuation methods
+--------------------
+
+.. index:: continuation method
+
+Picard iteration or Newton's method may diverge when solving PDEs with
+severe nonlinearities. Relaxation with :math:`\omega <1`
+may help, but in highly nonlinear problems it can be
+necessary to introduce a *continuation parameter* :math:`\Lambda` in
+the problem: :math:`\Lambda =0` gives a version of the
+problem that is easy to solve, while
+:math:`\Lambda =1` is the target problem. The idea is then
+to increase :math:`\Lambda` in steps, :math:`\Lambda_0=0 ,\Lambda_1 <\cdots <\Lambda_n=1`,
+and use the solution from the problem with :math:`\Lambda_{i-1}` as
+initial guess for the iterations in the problem corresponding
+to :math:`\Lambda_i`.
+
+The continuation method is easiest to understand through an example.
+Suppose we intend to solve
+
+.. math::
+         -\nabla\cdot\left( ||\nabla u||^q\nabla u\right) = f, 
+
+which is an equation modeling the flow of a non-Newtonian fluid through
+a channel or pipe. For :math:`q=0` we have the Poisson equation (corresponding
+to a Newtonian fluid) and the problem is linear. A typical
+value for pseudo-plastic fluids may be :math:`q_n=-0.8`. We can introduce
+the continuation parameter :math:`\Lambda\in [0,1]` such that
+:math:`q=q_n\Lambda`. Let :math:`\{\Lambda_\ell\}_{\ell=0}^n` be the sequence of
+:math:`\Lambda` values in :math:`[0,1]`, with corresponding :math:`q` values
+:math:`\{q_\ell\}_{\ell=0}^n`. We can then solve a sequence of problems
 
 .. math::
         
-        \frac{\partial}{\partial u_i}(A_{i,i}(u_{i-1},u_i,u_{i+1})u_i) &=
-        \frac{\partial A_{i,i}}{\partial u_i}u_i + A_{i,i}
-        \frac{\partial u_i}{\partial u_i}\\ 
-        &=
-        \frac{\partial}{\partial u_i}(
-        \frac{1}{2\Delta x^2}({\alpha}(u_{i-1}) + 2{\alpha}(u_{i})
-        +{\alpha}(u_{i+1})) + a)u_i +\\ 
-        &\quad\frac{1}{2\Delta x^2}({\alpha}(u_{i-1}) + 2{\alpha}(u_{i})
-        +{\alpha}(u_{i+1})) + a\\ 
-        &= \frac{1}{2\Delta x^2}(2{\alpha}^\prime (u_i)u_i
-        +{\alpha}(u_{i-1}) + 2{\alpha}(u_{i})
-        +{\alpha}(u_{i+1})) + a{\thinspace .}
-        
+        -\nabla\cdot\left( ||\nabla u^\ell||^q_\ell\nabla u^\ell\right) = f,\quad
+        \ell = 0,\ldots,n,
 
-The complete Jacobian becomes
-
-.. math::
-        
-        J_{i,i} &= \frac{\partial F_i}{\partial u_i}
-        = \frac{\partial A_{i,i-1}}{\partial u_i}u_{i-1}
-        + \frac{\partial A_{i,i}}{\partial u_i}u_i
-        + A_{i,i}
-        + \frac{\partial A_{i,i+1}}{\partial u_i}u_{i+1}
-        - \frac{\partial b_i}{\partial u_{i}}\\ 
-        &=
-        \frac{1}{2\Delta x^2}(
-        -{\alpha}^{\prime}(u_i)u_{i-1}
-        +2{\alpha}^{\prime}(u_i)u_{i}
-        +{\alpha}(u_{i-1}) + 2{\alpha}(u_i) + {\alpha}(u_{i+1})) +\\ 
-        &\quad a
-        -\frac{1}{2\Delta x^2}{\alpha}^{\prime}(u_{i})u_{i+1}
-        - b^{\prime}(u_i),\\ 
-        J_{i,i-1} &= \frac{\partial F_i}{\partial u_{i-1}}
-        = \frac{\partial A_{i,i-1}}{\partial u_{i-1}}u_{i-1}
-        + A_{i-1,i}
-        + \frac{\partial A_{i,i}}{\partial u_{i-1}}u_i
-        - \frac{\partial b_i}{\partial u_{i-1}}\\ 
-        &=
-        \frac{1}{2\Delta x^2}(
-        -{\alpha}^{\prime}(u_{i-1})u_{i-1} - ({\alpha}(u_{i-1}) + {\alpha}(u_i))
-        + {\alpha}^{\prime}(u_{i-1})u_i),\\ 
-        J_{i,i+1} &= \frac{\partial A_{i,i+1}}{\partial u_{i-1}}u_{i+1}
-        + A_{i+1,i} +
-        \frac{\partial A_{i,i}}{\partial u_{i+1}}u_i
-        - \frac{\partial b_i}{\partial u_{i+1}}\\ 
-        &=\frac{1}{2\Delta x^2}(
-        -{\alpha}^{\prime}(u_{i+1})u_{i+1} - ({\alpha}(u_{i}) + {\alpha}(u_{i+1}))
-        + {\alpha}^{\prime}(u_{i+1})u_i)
-        {\thinspace .}
-        
-
-The explicit expression for nonlinear equation number :math:`i`,
-:math:`F_i(u_0,u_1,\ldots)`, arises from moving the :math:`f(u_i)` term in
-:ref:`(548) <Eq:nonlin:alglevel:1D:fd:deq>` to the left-hand side:
-
-.. math::
-        
-        F_i = -\frac{1}{2\Delta x^2}
-        \left(({\alpha}(u_i)+{\alpha}(u_{i+1}))(u_{i+1}-u_i) -
-        ({\alpha}(u_{i-1})+{\alpha}(u_{i}))(u_{i}-u_{i-1})\right)\nonumber
-        
-
-.. _Eq:nonlin:alglevel:1D:fd:deq2:
-
-.. math::
-
-    \tag{562}
-    \qquad\qquad + au_i - f(u_i) = 0{\thinspace .}
-        
-        
-
-At the boundary point :math:`i=0`, :math:`u_{-1}` must be replaced using
-the formula :ref:`(550) <Eq:nonlin:alglevel:1D:fd:Neumann:x0:um1>`.
-When the Dirichlet condition at :math:`i=N_x` is not a part of the
-equation system, the last equation :math:`F_m=0` for :math:`m=N_x-1`
-involves the quantity :math:`u_{N_x-1}` which must be replaced by :math:`D`.
-If :math:`u_{N_x}` is treated as an unknown in the system, the
-last equation :math:`F_m=0` has :math:`m=N_x` and reads
-
-.. math::
-         F_{N_x}(u_0,\ldots,u_{N_x}) = u_{N_x} - D = 0{\thinspace .}
-
-Similar replacement of :math:`u_{-1}` and :math:`u_{N_x}` must be done in
-the Jacobian for the first and last row. When :math:`u_{N_x}`
-is included as an unknown, the last row in the Jacobian
-must help implement the condition :math:`\delta u_{N_x}=0`, since
-we assume that :math:`u` contains the right Dirichlet value
-at the beginning of the iteration (:math:`u_{N_x}=D`), and then
-the Newton update should be zero for :math:`i=0`, i.e., :math:`\delta u_{N_x}=0`.
-This also forces the right-hand side to be :math:`b_i=0`, :math:`i=N_x`.
-
-We have seen, and can see from the present example, that the
-linear system in Newton's method contains all the terms present
-in the system that arises in the Picard iteration method.
-The extra terms in Newton's method can be multiplied by a factor
-such that it is easy to program one linear system and set this
-factor to 0 or 1 to generate the Picard or Newton system.
-
-.. Remark: Neumann cond at x=L and Dirichlet at x=0 leads to different
-
-.. numbering of unknowns and u at mesh points. Must address this
-
-.. in a remark and treat it properly in diffu.
+where the initial guess for iterating on :math:`u^{\ell}` is the
+previously computed solution :math:`u^{\ell-1}`. If a particular :math:`\Lambda_\ell`
+leads to convergence problems, one may try a smaller
+increase in :math:`\Lambda`:
+:math:`\Lambda_* = \frac{1}{2} (\Lambda_{\ell-1}+\Lambda_\ell)`,
+and repeat halving the step in :math:`\Lambda` until convergence is reestablished.
 

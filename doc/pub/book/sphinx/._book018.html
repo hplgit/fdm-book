@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Multi-dimensional PDE problems</title>
+    <title>Operator splitting methods</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -45,7 +45,7 @@
     
     <link rel="top" title="Finite Difference Computing with Partial Differential Equations" href="index.html" />
     <link rel="next" title="Exercises" href="._book019.html" />
-    <link rel="prev" title="Discretization of 1D stationary nonlinear differential equations" href="._book017.html" />
+    <link rel="prev" title="Multi-dimensional nonlinear PDE problems" href="._book017.html" />
  
   
        <style type="text/css">
@@ -67,7 +67,7 @@
           <a href="._book019.html" title="Exercises"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="._book017.html" title="Discretization of 1D stationary nonlinear differential equations"
+          <a href="._book017.html" title="Multi-dimensional nonlinear PDE problems"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Finite Difference Computing with Partial Differential Equations</a> &raquo;</li> 
       </ul>
@@ -78,154 +78,797 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="multi-dimensional-pde-problems">
-<h1>Multi-dimensional PDE problems<a class="headerlink" href="#multi-dimensional-pde-problems" title="Permalink to this headline">¶</a></h1>
-<p>The fundamental ideas in the
-derivation of <span class="math">\(F_i\)</span> and <span class="math">\(J_{i,j}\)</span> in the 1D model problem
-are easily generalized to multi-dimensional problems.
-Nevertheless, the expressions involved are slightly different, with
-derivatives in <span class="math">\(x\)</span> replaced by <span class="math">\(\nabla\)</span>, so we present some
-examples below in detail.</p>
-<div class="section" id="finite-difference-discretization-3">
-<span id="nonlin-alglevel-dd-fd"></span><h2>Finite difference discretization<a class="headerlink" href="#finite-difference-discretization-3" title="Permalink to this headline">¶</a></h2>
-<p>A typical diffusion equation</p>
+  <div class="section" id="operator-splitting-methods">
+<span id="nonlin-splitting"></span><h1>Operator splitting methods<a class="headerlink" href="#operator-splitting-methods" title="Permalink to this headline">¶</a></h1>
+<p>Operator splitting is a natural and old idea. When a PDE or system of PDEs
+contains different terms expressing different physics, it is natural to
+use different numerical methods for different physical processes. This can
+optimize and simplify the overall solution process. The idea was
+especially popularized in the context of the Navier-Stokes equations
+and reaction-diffusion PDEs. Common names for the technique are <em>operator
+splitting</em>, <em>fractional step</em> methods, and <em>split-step</em> methods. We shall
+stick to the former name.
+In the context of nonlinear differential equations, operator splitting
+can be used to isolate nonlinear terms and simplify the solution methods.</p>
+<p>A related technique, often known as dimensional splitting or
+alternating direction implicit (ADI) methods, is to split the spatial
+dimensions and solve a 2D or 3D problem as two or three
+consecutive 1D problems, but this type of splitting
+is not to be further considered here.</p>
+<div class="section" id="ordinary-operator-splitting-for-odes">
+<span id="nonlin-splitting-ode"></span><h2>Ordinary operator splitting for ODEs<a class="headerlink" href="#ordinary-operator-splitting-for-odes" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="index-0"></span><span class="target" id="index-1"></span><p id="index-2">Consider first an ODE where the right-hand side is split into two
+terms:</p>
+<div class="math" id="eq-auto242">
+\[\tag{580}
+u' = f_0(u) + f_1(u){\thinspace .}\]</div>
+<p>In case <span class="math">\(f_0\)</span> and <span class="math">\(f_1\)</span> are linear functions of <span class="math">\(u\)</span>, <span class="math">\(f_0=au\)</span> and <span class="math">\(f_1=bu\)</span>,
+we have <span class="math">\(u(t)=Ie^{(a+b)t}\)</span>, if <span class="math">\(u(0)=I\)</span>.
+When going one time step of length <span class="math">\(\Delta t\)</span> from <span class="math">\(t_n\)</span> to <span class="math">\(t_{n+1}\)</span>, we have</p>
 <div class="math">
-\[u_t = \nabla\cdot({\alpha}(u)\nabla u) + f(u),\]</div>
-<p>can be discretized by (e.g.) a Backward Euler scheme,
-which in 2D can be written</p>
+\[u(t_{n+1}) = u(t_n)e^{(a+b)\Delta t}{\thinspace .}\]</div>
+<p>This expression can be also be written as</p>
 <div class="math">
-\[[D_t^- u = D_x\overline{{\alpha}(u)}^xD_x u
-+ D_y\overline{{\alpha}(u)}^yD_y u + f(u)]_{i,j}^n{\thinspace .}\]</div>
-<p>We do not dive into the details of handling boundary conditions now.
-Dirichlet and Neumann conditions are handled as in a
-corresponding linear, variable-coefficient diffusion problems.</p>
-<p>Writing the scheme out, putting the unknown values on the
-left-hand side and known values on the right-hand side, and
-introducing <span class="math">\(\Delta x=\Delta y=h\)</span> to save some writing, one gets</p>
-<div class="math">
-\[\begin{split}u^n_{i,j} &amp;- \frac{\Delta t}{h^2}(
- \frac{1}{2}({\alpha}(u_{i,j}^n)   + {\alpha}(u_{i+1,j}^n))(u_{i+1,j}^n-u_{i,j}^n)\\
-&amp;\quad -
-\frac{1}{2}({\alpha}(u_{i-1,j}^n) + {\alpha}(u_{i,j}^n))(u_{i,j}^n-u_{i-1,j}^n) \\
-&amp;\quad +
- \frac{1}{2}({\alpha}(u_{i,j}^n)   + {\alpha}(u_{i,j+1}^n))(u_{i,j+1}^n-u_{i,j}^n)\\
-&amp;\quad -
- \frac{1}{2}({\alpha}(u_{i,j-1}^n) + {\alpha}(u_{i,j}^n))(u_{i,j}^n-u_{i-1,j-1}^n))
-- \Delta tf(u_{i,j}^n) = u^{n-1}_{i,j}\end{split}\]</div>
-<p>This defines a nonlinear algebraic system on the form <span class="math">\(A(u)u=b(u)\)</span>.</p>
-<div class="section" id="picard-iteration-4">
-<h3>Picard iteration<a class="headerlink" href="#picard-iteration-4" title="Permalink to this headline">¶</a></h3>
-<p>The most recently computed values <span class="math">\(u^{-}\)</span> of <span class="math">\(u^n\)</span> can be
-used in <span class="math">\({\alpha}\)</span> and <span class="math">\(f\)</span> for a Picard iteration,
-or equivalently, we solve <span class="math">\(A(u^{-})u=b(u^{-})\)</span>.
-The result is a linear system of the same type as arising
-from <span class="math">\(u_t = \nabla\cdot ({\alpha}(\boldsymbol{x})\nabla u) + f(\boldsymbol{x},t)\)</span>.</p>
-<p>The Picard iteration scheme can also be expressed in operator notation:</p>
-<div class="math">
-\[[D_t^- u = D_x\overline{{\alpha}(u^{-})}^xD_x u
-+ D_y\overline{{\alpha}(u^{-})}^yD_y u + f(u^{-})]_{i,j}^n{\thinspace .}\]</div>
+\[u(t_{n+1}) = u(t_n)e^{a\Delta t}e^{b\Delta t},\]</div>
+<p>or</p>
+<div class="math" id="eq-nonlin-splitting-ode-step1">
+\[\tag{581}
+u^{*} = u(t_n)e^{a\Delta t},\]</div>
+<div class="math" id="eq-nonlin-splitting-ode-step2">
+\[\tag{582}
+u(t_{n+1}) = u^{*} e^{b\Delta t}\]</div>
+<p>The first step <a class="reference internal" href="#eq-nonlin-splitting-ode-step1"><span class="std std-ref">(581)</span></a> means solving
+<span class="math">\(u'=f_0\)</span> over a time interval <span class="math">\(\Delta t\)</span> with <span class="math">\(u(t_n)\)</span> as start value.
+The second step <a class="reference internal" href="#eq-nonlin-splitting-ode-step2"><span class="std std-ref">(582)</span></a> means solving
+<span class="math">\(u'=f_1\)</span> over a time interval <span class="math">\(\Delta t\)</span> with the value at the end
+of the first step as start value.
+That is, we progress the solution in two steps and solve
+two ODEs <span class="math">\(u'=f_0\)</span> and <span class="math">\(u'=f_1\)</span>. The order of the equations is not
+important. From the derivation above we see that solving <span class="math">\(u'=f_1\)</span>
+prior to <span class="math">\(u'=f_0\)</span> can equally well be done.</p>
+<p>The technique is exact if the ODEs are linear. For nonlinear ODEs it is
+only an approximate method with error <span class="math">\(\Delta t\)</span>. The technique can
+be extended to an arbitrary number of steps; i.e., we may split the PDE
+system into any number of subsystems. Examples will illuminate this principle.</p>
 </div>
-<div class="section" id="newton-s-method-5">
-<h3>Newton&#8217;s method<a class="headerlink" href="#newton-s-method-5" title="Permalink to this headline">¶</a></h3>
-<p>As always, Newton&#8217;s method is technically more involved than
-Picard iteration. We first define
-the nonlinear algebraic equations to be solved, drop the
-superscript <span class="math">\(n\)</span> (use <span class="math">\(u\)</span> for <span class="math">\(u^n\)</span>), and introduce <span class="math">\(u^{(1)}\)</span> for <span class="math">\(u^{n-1}\)</span>:</p>
+<div class="section" id="strang-splitting-for-odes">
+<span id="nonlin-splitting-ode-strang"></span><h2>Strang splitting for ODEs<a class="headerlink" href="#strang-splitting-for-odes" title="Permalink to this headline">¶</a></h2>
+<p id="index-3">The accuracy of the splitting method in the section <a class="reference internal" href="#nonlin-splitting-ode"><span class="std std-ref">Ordinary operator splitting for ODEs</span></a>
+can be improved from <span class="math">\({\mathcal{O}(\Delta t)}\)</span> to <span class="math">\({\mathcal{O}(\Delta t^2)}\)</span> using so-called
+<em>Strang splitting</em>, where we take half a step with the <span class="math">\(f_0\)</span> operator,
+a full step with the <span class="math">\(f_1\)</span> operator, and finally half another step with
+the <span class="math">\(f_0\)</span> operator. During a time interval <span class="math">\(\Delta t\)</span> the algorithm can
+be written as follows.</p>
 <div class="math">
-\[\begin{split}F_{i,j} &amp;= u_{i,j} - \frac{\Delta t}{h^2}(\\
-&amp;\qquad \frac{1}{2}({\alpha}(u_{i,j})   + {\alpha}(u_{i+1,j}))(u_{i+1,j}-u_{i,j}) -\\
-&amp;\qquad \frac{1}{2}({\alpha}(u_{i-1,j}) + {\alpha}(u_{i,j}))(u_{i,j}-u_{i-1,j}) + \\
-&amp;\qquad \frac{1}{2}({\alpha}(u_{i,j})   + {\alpha}(u_{i,j+1}))(u_{i,j+1}-u_{i,j}) -\\
-&amp;\qquad \frac{1}{2}({\alpha}(u_{i,j-1}) + {\alpha}(u_{i,j}))(u_{i,j}-u_{i-1,j-1})) -
-\Delta t\, f(u_{i,j}) - u^{(1)}_{i,j} = 0{\thinspace .}\end{split}\]</div>
-<p>It is convenient to work with two indices <span class="math">\(i\)</span> and <span class="math">\(j\)</span> in 2D
-finite difference discretizations, but it complicates
-the derivation of the Jacobian, which then gets four indices.
-(Make sure you really understand the 1D version of this problem
-as treated in the section <a class="reference internal" href="._book017.html#nonlin-alglevel-1d-fd"><span class="std std-ref">Finite difference discretization</span></a>.)
-The left-hand expression of an equation <span class="math">\(F_{i,j}=0\)</span> is to be
-differentiated with respect to each of the unknowns <span class="math">\(u_{r,s}\)</span>
-(recall that this is short notation for <span class="math">\(u_{r,s}^n\)</span>), <span class="math">\(r\in{\mathcal{I}_x}\)</span>, <span class="math">\(s\in{\mathcal{I}_y}\)</span>:</p>
+\[\begin{split}\begin{align*}
+\frac{du^{{*}}}{dt} &amp;= f_0(u^{{*}}),
+\quad u^{{*}}(t_n)=u(t_n),
+\quad t\in [t_n,t_n+\frac{1}{2}\Delta t],\\
+\frac{du^{{***}}}{dt} &amp;= f_1(u^{{***}}),
+\quad u^{{***}}(t_n)=u^{{*}}(t_{n+\frac{1}{2}}),
+\quad t\in [t_n,t_n+\Delta t],\\
+\frac{du^{{**}}}{dt}  &amp;= f_0(u^{{**}}),
+\quad u^{{**}}(t_n+\frac{1}{2})=u^{{***}}(t_{n+\frac{1}{2}}),
+\quad t\in [t_n+\frac{1}{2}\Delta t, t_n+\Delta t]{\thinspace .}
+\end{align*}\end{split}\]</div>
+<p>The global solution is set as <span class="math">\(u(t_{n+1}) = u^{{**}}(t_{n+1})\)</span>.</p>
+<p>There is no use in combining higher-order methods with
+ordinary splitting since the error due to splitting is <span class="math">\(\Oof{\Delta
+t}\)</span>, but for Strang splitting it makes sense to use schemes of order
+<span class="math">\({\mathcal{O}(\Delta t^2)}\)</span>.</p>
+<p>With the notation introduced for Strang splitting, we may express
+ordinary first-order splitting as</p>
 <div class="math">
-\[J_{i,j,r,s} = \frac{\partial F_{i,j}}{\partial u_{r,s}}{\thinspace .}\]</div>
-<p>The Newton system to be solved in each iteration can be written as</p>
+\[\begin{split}\begin{align*}
+\frac{du^{{*}}}{dt} &amp;= f_0(u^{{*}}),\quad u^{{*}}(t_n)=u(t_n),
+\quad t\in [t_n,t_n+\Delta t],\\
+\frac{du^{{**}}}{dt} &amp;= f_1(u^{{**}}),\quad u^{{**}}(t_n)=u^{{*}}(t_{n+1}),
+\quad t\in [t_n,t_n+\Delta t],
+\end{align*}\end{split}\]</div>
+<p>with global solution set as <span class="math">\(u(t_{n+1}) = u^{{**}}(t_{n+1})\)</span>.</p>
+</div>
+<div class="section" id="example-logistic-growth">
+<span id="nonlin-splitting-logistic"></span><h2>Example: Logistic growth<a class="headerlink" href="#example-logistic-growth" title="Permalink to this headline">¶</a></h2>
+<p>Let us split the (scaled) logistic equation</p>
 <div class="math">
-\[\sum_{r\in{\mathcal{I}_x}}\sum_{s\in{\mathcal{I}_y}}J_{i,j,r,s}\delta u_{r,s} = -F_{i,j},
-\quad i\in{\mathcal{I}_x},\ j\in{\mathcal{I}_y}{\thinspace .}\]</div>
-<p>Given <span class="math">\(i\)</span> and <span class="math">\(j\)</span>, only a few <span class="math">\(r\)</span> and <span class="math">\(s\)</span> indices give nonzero
-contribution to the Jacobian since <span class="math">\(F_{i,j}\)</span> contains <span class="math">\(u_{i\pm 1,j}\)</span>,
-<span class="math">\(u_{i,j\pm 1}\)</span>, and <span class="math">\(u_{i,j}\)</span>. This means that <span class="math">\(J_{i,j,r,s}\)</span> has
-nonzero contributions only if <span class="math">\(r=i\pm 1\)</span>, <span class="math">\(s=j\pm 1\)</span>, as well as <span class="math">\(r=i\)</span>
-and <span class="math">\(s=j\)</span>.  The corresponding terms in <span class="math">\(J_{i,j,r,s}\)</span> are
-<span class="math">\(J_{i,j,i-1,j}\)</span>, <span class="math">\(J_{i,j,i+1,j}\)</span>, <span class="math">\(J_{i,j,i,j-1}\)</span>, <span class="math">\(J_{i,j,i,j+1}\)</span>,
-and <span class="math">\(J_{i,j,i,j}\)</span>.  Therefore, the left-hand side of the Newton
-system, <span class="math">\(\sum_r\sum_s J_{i,j,r,s}\delta u_{r,s}\)</span> collapses to</p>
+\[u'=u(1-u),\quad u(0)=0.1,\]</div>
+<p>with solution <span class="math">\(u=(9e^{-t}+1)^{-1}\)</span>, into</p>
 <div class="math">
-\[\begin{split} J_{i,j,r,s}\delta u_{r,s} =
-J_{i,j,i,j}\delta u_{i,j} &amp; +
-J_{i,j,i-1,j}\delta u_{i-1,j} +
-J_{i,j,i+1,j}\delta u_{i+1,j} +
-J_{i,j,i,j-1}\delta u_{i,j-1}\\
-&amp; +
-J_{i,j,i,j+1}\delta u_{i,j+1}\end{split}\]</div>
-<p>The specific derivatives become</p>
-<div class="math">
-\[\begin{split}J_{i,j,i-1,j} &amp;= \frac{\partial F_{i,j}}{\partial u_{i-1,j}}\\
-&amp;= \frac{\Delta t}{h^2}({\alpha}^{\prime}(u_{i-1,j})(u_{i,j}-u_{i-1,j})
-+ {\alpha}(u_{i-1,j})(-1)),\\
-J_{i,j,i+1,j} &amp;= \frac{\partial F_{i,j}}{\partial u_{i+1,j}}\\
-&amp;= \frac{\Delta t}{h^2}(-{\alpha}^{\prime}(u_{i+1,j})(u_{i+1,j}-u_{i,j})
-- {\alpha}(u_{i-1,j})),\\
-J_{i,j,i,j-1} &amp;= \frac{\partial F_{i,j}}{\partial u_{i,j-1}}\\
-&amp;= \frac{\Delta t}{h^2}({\alpha}^{\prime}(u_{i,j-1})(u_{i,j}-u_{i,j-1})
-+ {\alpha}(u_{i,j-1})(-1)),\\
-J_{i,j,i,j+1} &amp;= \frac{\partial F_{i,j}}{\partial u_{i,j+1}}\\
-&amp;= \frac{\Delta t}{h^2}(-{\alpha}^{\prime}(u_{i,j+1})(u_{i,j+1}-u_{i,j})
-- {\alpha}(u_{i,j-1})){\thinspace .}\end{split}\]</div>
-<p>The <span class="math">\(J_{i,j,i,j}\)</span> entry has a few more terms and is left as an
-exercise.
-Inserting the most recent approximation
-<span class="math">\(u^{-}\)</span> for <span class="math">\(u\)</span> in the <span class="math">\(J\)</span> and <span class="math">\(F\)</span> formulas and then
-forming <span class="math">\(J\delta u=-F\)</span> gives the linear system to be solved
-in each Newton iteration. Boundary conditions will affect the
-formulas when any of the indices coincide with a boundary value
-of an index.</p>
+\[u'=u - u^2 = f_0(u) + f_1(u), \quad f_0(u)=u,\quad f_1(u)=-u^2{\thinspace .}\]</div>
+<p>We solve <span class="math">\(u'=f_0(u)\)</span> and <span class="math">\(u'=f_1(u)\)</span> by a Forward Euler step.
+In addition, we add a method where we solve <span class="math">\(u'=f_0(u)\)</span> analytically,
+since the equation is actually <span class="math">\(u'=u\)</span> with solution <span class="math">\(e^t\)</span>.
+The software that accompanies the following methods is the file
+<a class="reference external" href="http://tinyurl.com/nu656p2/nonlin/split_logistic.py">split_logistic.py</a>.</p>
+<div class="section" id="splitting-techniques">
+<h3>Splitting techniques<a class="headerlink" href="#splitting-techniques" title="Permalink to this headline">¶</a></h3>
+<p>Ordinary splitting takes a Forward Euler step for each of the ODEs
+according to</p>
+<div class="math" id="eq-auto243">
+\[\tag{583}
+\frac{u^{{*},n+1} - u^{{*},n}}{\Delta t} =
+    f_0(u^{{*},n}),\quad
+    u^{{*},n} = u(t_n),\quad t\in [t_n,t_n+\Delta t],\]</div>
+<div class="math" id="eq-auto244">
+\[\tag{584}
+\frac{u^{{**},n+1} - u^{{**}, n}}{\Delta t} = f_1(u^{{**},n}),\quad
+    u^{{**},n} = u^{{*},n+1},\quad t\in [t_n,t_n+\Delta t],\]</div>
+<p>with <span class="math">\(u(t_{n+1}) = u^{{**},n+1}\)</span>.</p>
+<p>Strang splitting takes the form</p>
+<div class="math" id="eq-auto245">
+\[\tag{585}
+\frac{u^{{*},n+\frac{1}{2}} - u^{{*},n}}{\frac{1}{2}\Delta t} =
+    f_0(u^{{*},n}),\quad
+    u^{{*},n} = u(t_n),\quad t\in [t_n,t_n+\frac{1}{2}\Delta t],\]</div>
+<div class="math" id="eq-auto246">
+\[\tag{586}
+\frac{u^{{***},n+1}-u^{{***},n}}{\Delta t} =
+    f_1(u^{{***},n}),\quad
+    u^{{***},n} = u^{{*}, n+\frac{1}{2}},\quad t\in [t_n,t_n+\Delta t],\]</div>
+<div class="math" id="eq-auto247">
+\[\tag{587}
+\frac{u^{{**}, n+1} - u^{{**}, n+\frac{1}{2}}}{\frac{1}{2}\Delta t} =
+    f_0(u^{{**},n+\frac{1}{2}}),\quad
+    u^{{**},n+\frac{1}{2}} = u^{{***},n+1},\quad
+    t\in [t_n+\frac{1}{2}\Delta t, t_n+\Delta t]{\thinspace .}\]</div>
+</div>
+<div class="section" id="verbose-implementation">
+<h3>Verbose implementation<a class="headerlink" href="#verbose-implementation" title="Permalink to this headline">¶</a></h3>
+<p>The following function computes four solutions arising from the Forward
+Euler method, ordinary splitting, Strang splitting, as well as Strang splitting
+with exact treatment of <span class="math">\(u'=f_0(u)\)</span>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">solver</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">f_0</span><span class="p">,</span> <span class="n">f_1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Solve u&#39;=f by the Forward Euler method and by ordinary and</span>
+<span class="sd">    Strang splitting: f(u) = f_0(u) + f_1(u).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Nt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dt</span><span class="p">)))</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> <span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">u_FE</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+    <span class="n">u_split1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>  <span class="c1"># 1st-order splitting</span>
+    <span class="n">u_split2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>  <span class="c1"># 2nd-order splitting</span>
+    <span class="n">u_split3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>  <span class="c1"># 2nd-order splitting w/exact f_0</span>
+
+    <span class="c1"># Set initial values</span>
+    <span class="n">u_FE</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.1</span>
+    <span class="n">u_split1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.1</span>
+    <span class="n">u_split2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.1</span>
+    <span class="n">u_split3</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.1</span>
+
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="c1"># Forward Euler method</span>
+        <span class="n">u_FE</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_FE</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f</span><span class="p">(</span><span class="n">u_FE</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
+
+        <span class="c1"># --- Ordinary splitting ---</span>
+        <span class="c1"># First step</span>
+        <span class="n">u_s_n</span> <span class="o">=</span> <span class="n">u_split1</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">u_s</span> <span class="o">=</span> <span class="n">u_s_n</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f_0</span><span class="p">(</span><span class="n">u_s_n</span><span class="p">)</span>
+        <span class="c1"># Second step</span>
+        <span class="n">u_ss_n</span> <span class="o">=</span> <span class="n">u_s</span>
+        <span class="n">u_ss</span> <span class="o">=</span> <span class="n">u_ss_n</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f_1</span><span class="p">(</span><span class="n">u_ss_n</span><span class="p">)</span>
+        <span class="n">u_split1</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_ss</span>
+
+        <span class="c1"># --- Strang splitting ---</span>
+        <span class="c1"># First step</span>
+        <span class="n">u_s_n</span> <span class="o">=</span> <span class="n">u_split2</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">u_s</span> <span class="o">=</span> <span class="n">u_s_n</span> <span class="o">+</span> <span class="n">dt</span><span class="o">/</span><span class="mf">2.</span><span class="o">*</span><span class="n">f_0</span><span class="p">(</span><span class="n">u_s_n</span><span class="p">)</span>
+        <span class="c1"># Second step</span>
+        <span class="n">u_sss_n</span> <span class="o">=</span> <span class="n">u_s</span>
+        <span class="n">u_sss</span> <span class="o">=</span> <span class="n">u_sss_n</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f_1</span><span class="p">(</span><span class="n">u_sss_n</span><span class="p">)</span>
+        <span class="c1"># Third step</span>
+        <span class="n">u_ss_n</span> <span class="o">=</span> <span class="n">u_sss</span>
+        <span class="n">u_ss</span> <span class="o">=</span> <span class="n">u_ss_n</span> <span class="o">+</span> <span class="n">dt</span><span class="o">/</span><span class="mf">2.</span><span class="o">*</span><span class="n">f_0</span><span class="p">(</span><span class="n">u_ss_n</span><span class="p">)</span>
+        <span class="n">u_split2</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_ss</span>
+
+        <span class="c1"># --- Strang splitting using exact integrator for u&#39;=f_0 ---</span>
+        <span class="c1"># First step</span>
+        <span class="n">u_s_n</span> <span class="o">=</span> <span class="n">u_split3</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">u_s</span> <span class="o">=</span> <span class="n">u_s_n</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">dt</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>  <span class="c1"># exact</span>
+        <span class="c1"># Second step</span>
+        <span class="n">u_sss_n</span> <span class="o">=</span> <span class="n">u_s</span>
+        <span class="n">u_sss</span> <span class="o">=</span> <span class="n">u_sss_n</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f_1</span><span class="p">(</span><span class="n">u_sss_n</span><span class="p">)</span>
+        <span class="c1"># Third step</span>
+        <span class="n">u_ss_n</span> <span class="o">=</span> <span class="n">u_sss</span>
+        <span class="n">u_ss</span> <span class="o">=</span> <span class="n">u_ss_n</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">dt</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>  <span class="c1"># exact</span>
+        <span class="n">u_split3</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_ss</span>
+
+    <span class="k">return</span> <span class="n">u_FE</span><span class="p">,</span> <span class="n">u_split1</span><span class="p">,</span> <span class="n">u_split2</span><span class="p">,</span> <span class="n">u_split3</span><span class="p">,</span> <span class="n">t</span>
+</pre></div>
 </div>
 </div>
-<div class="section" id="continuation-methods">
-<h2>Continuation methods<a class="headerlink" href="#continuation-methods" title="Permalink to this headline">¶</a></h2>
-<p id="index-0">Picard iteration or Newton&#8217;s method may diverge when solving PDEs with
-severe nonlinearities. Relaxation with <span class="math">\(\omega &lt;1\)</span>
-may help, but in highly nonlinear problems it can be
-necessary to introduce a <em>continuation parameter</em> <span class="math">\(\Lambda\)</span> in
-the problem: <span class="math">\(\Lambda =0\)</span> gives a version of the
-problem that is easy to solve, while
-<span class="math">\(\Lambda =1\)</span> is the target problem. The idea is then
-to increase <span class="math">\(\Lambda\)</span> in steps, <span class="math">\(\Lambda_0=0 ,\Lambda_1 &lt;\cdots &lt;\Lambda_n=1\)</span>,
-and use the solution from the problem with <span class="math">\(\Lambda_{i-1}\)</span> as
-initial guess for the iterations in the problem corresponding
-to <span class="math">\(\Lambda_i\)</span>.</p>
-<p>The continuation method is easiest to understand through an example.
-Suppose we intend to solve</p>
+<div class="section" id="compact-implementation">
+<h3>Compact implementation<a class="headerlink" href="#compact-implementation" title="Permalink to this headline">¶</a></h3>
+<p>We have used quite many lines for the steps in the splitting methods.
+Many will prefer to condense the code a bit, as done here:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Ordinary splitting</span>
+<span class="n">u_s</span> <span class="o">=</span> <span class="n">u_split1</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f_0</span><span class="p">(</span><span class="n">u_split1</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
+<span class="n">u_split1</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_s</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f_1</span><span class="p">(</span><span class="n">u_s</span><span class="p">)</span>
+<span class="c1"># Strang splitting</span>
+<span class="n">u_s</span> <span class="o">=</span> <span class="n">u_split2</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">+</span> <span class="n">dt</span><span class="o">/</span><span class="mf">2.</span><span class="o">*</span><span class="n">f_0</span><span class="p">(</span><span class="n">u_split2</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
+<span class="n">u_sss</span> <span class="o">=</span> <span class="n">u_s</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f_1</span><span class="p">(</span><span class="n">u_s</span><span class="p">)</span>
+<span class="n">u_split2</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_sss</span> <span class="o">+</span> <span class="n">dt</span><span class="o">/</span><span class="mf">2.</span><span class="o">*</span><span class="n">f_0</span><span class="p">(</span><span class="n">u_sss</span><span class="p">)</span>
+<span class="c1"># Strang splitting using exact integrator for u&#39;=f_0</span>
+<span class="n">u_s</span> <span class="o">=</span> <span class="n">u_split3</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">dt</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>  <span class="c1"># exact</span>
+<span class="n">u_ss</span> <span class="o">=</span> <span class="n">u_s</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">f_1</span><span class="p">(</span><span class="n">u_s</span><span class="p">)</span>
+<span class="n">u_split3</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_ss</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">dt</span><span class="o">/</span><span class="mf">2.</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="results">
+<h3>Results<a class="headerlink" href="#results" title="Permalink to this headline">¶</a></h3>
+<p>Figure <a class="reference internal" href="#nonlin-splitting-ode-logistic-fig"><span class="std std-ref">Effect of ordinary and Strang splitting for the logistic equation</span></a> shows that the impact of
+splitting is significant. Interestingly, however,
+the Forward Euler method applied to the entire problem directly is much more
+accurate than any of the splitting schemes. We also see that Strang
+splitting is definitely more accurate than ordinary splitting and that
+it helps a bit to use an exact solution of <span class="math">\(u'=f_0(u)\)</span>.  With a large
+time step (<span class="math">\(\Delta t = 0.2\)</span>, left plot in Figure
+<a class="reference internal" href="#nonlin-splitting-ode-logistic-fig"><span class="std std-ref">Effect of ordinary and Strang splitting for the logistic equation</span></a>), the asymptotic values are off
+by 20-30%.  A more reasonable time step (<span class="math">\(\Delta t = 0.05\)</span>, right plot
+in Figure <a class="reference internal" href="#nonlin-splitting-ode-logistic-fig"><span class="std std-ref">Effect of ordinary and Strang splitting for the logistic equation</span></a>) gives better
+results, but still the asymptotic values are up to 10% wrong.</p>
+<p>As technique for solving nonlinear ODEs, we realize that the present
+case study is not particularly promising, as the Forward Euler method
+both linearizes the original problem and provides a solution that is
+much more accurate than any of the splitting techniques.
+In complicated multi-physics settings, on the other hand, splitting
+may be the only feasible way to go, and sometimes you really need to apply
+different numerics to different parts of a PDE problem.
+But in very simple problems, like the logistic ODE, splitting is just an
+inferior technique. Still, the logistic ODE is ideal for introducing all
+the mathematical details and for investigating the behavior.</p>
+<div class="figure" id="id2">
+<span id="nonlin-splitting-ode-logistic-fig"></span><a class="reference internal image-reference" href="_images/split_logistic.png"><img alt="_images/split_logistic.png" src="_images/split_logistic.png" style="width: 800px;" /></a>
+<p class="caption"><span class="caption-text"><em>Effect of ordinary and Strang splitting for the logistic equation</em></span></p>
+</div>
+</div>
+</div>
+<div class="section" id="reaction-diffusion-equation">
+<span id="nonlin-splitting-rd"></span><h2>Reaction-diffusion equation<a class="headerlink" href="#reaction-diffusion-equation" title="Permalink to this headline">¶</a></h2>
+<p>Consider a diffusion equation coupled to chemical reactions modeled by
+a nonlinear term <span class="math">\(f(u)\)</span>:</p>
 <div class="math">
-\[-\nabla\cdot\left( ||\nabla u||^q\nabla u\right) = f,\]</div>
-<p>which is an equation modeling the flow of a non-Newtonian fluid through
-a channel or pipe. For <span class="math">\(q=0\)</span> we have the Poisson equation (corresponding
-to a Newtonian fluid) and the problem is linear. A typical
-value for pseudo-plastic fluids may be <span class="math">\(q_n=-0.8\)</span>. We can introduce
-the continuation parameter <span class="math">\(\Lambda\in [0,1]\)</span> such that
-<span class="math">\(q=q_n\Lambda\)</span>. Let <span class="math">\(\{\Lambda_\ell\}_{\ell=0}^n\)</span> be the sequence of
-<span class="math">\(\Lambda\)</span> values in <span class="math">\([0,1]\)</span>, with corresponding <span class="math">\(q\)</span> values
-<span class="math">\(\{q_\ell\}_{\ell=0}^n\)</span>. We can then solve a sequence of problems</p>
+\[\frac{\partial u}{\partial t} = {\alpha}\nabla^2u + f(u){\thinspace .}\]</div>
+<p>This is a physical process composed of two individual processes:
+<span class="math">\(u\)</span> is the concentration of a substance that is locally generated by
+a chemical reaction <span class="math">\(f(u)\)</span>, while <span class="math">\(u\)</span> is spreading in space because
+of diffusion. There are obviously two time scales: one for the chemical
+reaction and one for diffusion. Typically, fast chemical reactions require
+much finer time stepping than slower diffusion processes.
+It could therefore be advantageous to split
+the two physical effects in separate models and use different numerical methods
+for the two.</p>
+<p>A natural spitting in the present case is</p>
+<div class="math" id="eq-nonlin-splitting-rd-eq-diffu">
+\[\tag{588}
+\frac{\partial u^{{*}}}{\partial t} = {\alpha}\nabla^2 u^{{*}},\]</div>
+<div class="math" id="eq-nonlin-splitting-rd-eq-decay">
+\[\tag{589}
+\frac{\partial u^{{**}}}{\partial t} = f(u^{{**}})
+    {\thinspace .}\]</div>
+<p>Looking at these familiar problems,
+we may apply a <span class="math">\(\theta\)</span> rule (implicit) scheme for
+<a class="reference internal" href="#eq-nonlin-splitting-rd-eq-diffu"><span class="std std-ref">(588)</span></a> over one time step
+and avoid dealing with nonlinearities
+by applying an explicit scheme for <a class="reference internal" href="#eq-nonlin-splitting-rd-eq-decay"><span class="std std-ref">(589)</span></a>
+over the same time step.</p>
+<p>Suppose we have some solution <span class="math">\(u\)</span> at time level <span class="math">\(t_n\)</span>. For flexibility,
+we define a <span class="math">\(\theta\)</span> method for the diffusion part
+<a class="reference internal" href="#eq-nonlin-splitting-rd-eq-diffu"><span class="std std-ref">(588)</span></a> by</p>
 <div class="math">
-\[-\nabla\cdot\left( ||\nabla u^\ell||^q_\ell\nabla u^\ell\right) = f,\quad
-\ell = 0,\ldots,n,\]</div>
-<p>where the initial guess for iterating on <span class="math">\(u^{\ell}\)</span> is the
-previously computed solution <span class="math">\(u^{\ell-1}\)</span>. If a particular <span class="math">\(\Lambda_\ell\)</span>
-leads to convergence problems, one may try a smaller
-increase in <span class="math">\(\Lambda\)</span>:
-<span class="math">\(\Lambda_* = \frac{1}{2} (\Lambda_{\ell-1}+\Lambda_\ell)\)</span>,
-and repeat halving the step in <span class="math">\(\Lambda\)</span> until convergence is reestablished.</p>
+\[[D_t u^{*} =
+{\alpha} (D_xD_x u^{*} + D_y D_y u^{*})]^{n+\theta}{\thinspace .}\]</div>
+<p>We use <span class="math">\(u^{n}\)</span> as initial condition for <span class="math">\(u^{*}\)</span>.</p>
+<p>The reaction part, which is defined at each mesh point (without coupling
+values in different mesh points), can employ any scheme for an ODE.
+Here we use an Adams-Bashforth method of order 2. Recall that the overall
+accuracy of the splitting method
+is maximum <span class="math">\({\mathcal{O}(\Delta t^2)}\)</span> for Strang splitting,
+otherwise it is just <span class="math">\({\mathcal{O}(\Delta t)}\)</span>. Higher-order methods for ODEs will
+therefore be a waste of work. The 2nd-order Adams-Bashforth method reads</p>
+<div class="math" id="eq-auto248">
+\[\tag{590}
+u^{{**},n+1}_{i,j} = u^{{**},n}_{i,j} +
+    \frac{1}{2}\Delta t\left( 3f(u^{{**}, n}_{i,j}, t_n) -
+    f(u^{{**}, n-1}_{i,j}, t_{n-1})
+    \right)
+    {\thinspace .}\]</div>
+<p>We can use a Forward Euler step to start the method, i.e, compute
+<span class="math">\(u^{{**},1}_{i,j}\)</span>.</p>
+<p>The algorithm goes like this:</p>
+<ol class="arabic simple">
+<li>Solve the diffusion problem for one time step as usual.</li>
+<li>Solve the reaction ODEs at each mesh point in <span class="math">\([t_n,t_n+\Delta t]\)</span>,
+using the diffusion solution in 1. as initial condition.
+The solution of the ODEs constitute the solution of the original problem
+at the end of each time step.</li>
+</ol>
+<p>We may use a much smaller time step when solving the reaction part, adapted
+to the dynamics of the problem <span class="math">\(u'=f(u)\)</span>. This gives great flexibility in
+splitting methods.</p>
+</div>
+<div class="section" id="example-reaction-diffusion-with-linear-reaction-term">
+<span id="nonlin-splitting-rd-linearr"></span><h2>Example: Reaction-Diffusion with linear reaction term<a class="headerlink" href="#example-reaction-diffusion-with-linear-reaction-term" title="Permalink to this headline">¶</a></h2>
+<p><strong>Unfinished section!</strong></p>
+<p>The method above may be explored in detailed through a specific
+computational example, where we compute the errors and convergence
+rates for three different numerical approaches to the
+reaction-diffusion equation with a linear reaction term, i.e. <span class="math">\(f(u)=-bu\)</span>.</p>
+<p>In the implementation below, the equation is solved first without any
+splitting, simply using the forward Euler method over the whole time
+interval. This is the simplest numerical method we can think for the
+equation at hand. Then, ordinary splitting is introduced and, finally,
+Strang splitting. A finer time stepping is made possible for the
+reaction part when the original PDE is split. This is advantageous if
+we prefer an implicit method and long time steps for the diffusion
+process. For Forward Euler time stepping also in the PDE, the time step
+governed by stability is most likely small enough for sufficient accuracy
+of the reaction process.</p>
+<p>Running the code shows that the convergence rate is 1 for all methods,
+which is what one would expect.  Also, the error gets smaller for the ordinary splitting
+approach compared to the overall Forward Euler method, and still
+smaller for the Strang splitting compared to ordinary splitting. With
+either method, choosing to use an even finer time stepping for the
+reaction term, gives a further reduction in the error.</p>
+<p>The reaction step is here solved with the second order Adams-Bashforth method, which
+in itself contributes to second order convergence. However, since our implementation
+still uses Forward Euler for the diffusion step, the overall convergence rate only
+becomes first order. Switching to, e.g., the Crank-Nicolson scheme will
+allow an overall convergence rate of 2, in theory, in case of Strang splitting.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">scitools.std</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">scipy.sparse</span>
+<span class="kn">import</span> <span class="nn">scipy.sparse.linalg</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="k">def</span> <span class="nf">diffusion_FE</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">step_no</span><span class="p">,</span> <span class="n">user_action</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Diffusion solver, Forward Euler method.</span>
+<span class="sd">    Note that t always covers the whole global time interval, whether</span>
+<span class="sd">    splitting is the case or not. T, on the other hand, is</span>
+<span class="sd">    the end of the global time interval if there is no split,</span>
+<span class="sd">    but if splitting, we use T=dt. When splitting, step_no keeps</span>
+<span class="sd">    track of the time step number (required for lookup in t).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">Nt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dt</span><span class="p">)))</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">dt</span><span class="o">/</span><span class="n">F</span><span class="p">)</span>
+    <span class="n">Nx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">L</span><span class="o">/</span><span class="n">dx</span><span class="p">))</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>       <span class="c1"># Mesh points in space</span>
+    <span class="c1"># Make sure dx and dt are compatible with x and t</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">u</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>   <span class="c1"># solution array</span>
+    <span class="n">u_n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>   <span class="c1"># solution at t-dt</span>
+
+    <span class="c1"># Allow f to be None or 0</span>
+    <span class="k">if</span> <span class="n">f</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">f</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">))</span> \
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span>
+
+    <span class="c1"># Set initial condition</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>   <span class="c1"># I is an array</span>
+        <span class="n">u_n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">I</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>                           <span class="c1"># I is a function</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">I</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">user_action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">user_action</span><span class="p">(</span><span class="n">u_n</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">step_no</span><span class="o">+</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="p">):</span>
+        <span class="c1"># Update all inner points</span>
+        <span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">Nx</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_n</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">Nx</span><span class="p">]</span> <span class="o">+</span>  \
+                  <span class="n">F</span><span class="o">*</span><span class="p">(</span><span class="n">u_n</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">Nx</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">u_n</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">Nx</span><span class="p">]</span> <span class="o">+</span> <span class="n">u_n</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span>\
+                  <span class="n">dt</span><span class="o">*</span><span class="n">f</span><span class="p">(</span><span class="n">u_n</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">Nx</span><span class="p">],</span> <span class="n">t</span><span class="p">[</span><span class="n">step_no</span><span class="o">+</span><span class="n">n</span><span class="p">])</span>
+
+        <span class="c1"># Insert boundary conditions</span>
+        <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>  <span class="n">u</span><span class="p">[</span><span class="n">Nx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1">#sl: ...testing -------------------------</span>
+        <span class="c1">#print &#39;time:&#39;, t[step_no+n]</span>
+        <span class="c1">#print &#39;diff part from diffusion_FE:&#39;</span>
+        <span class="c1">#print u_n[1:Nx] + F*(u_n[0:Nx-1] - 2*u_n[1:Nx] + u_n[2:Nx+1])</span>
+        <span class="c1">#print &#39;react part from diffusion_FE:&#39;</span>
+        <span class="c1">#print dt*f(u_n[1:Nx], t[step_no+n])</span>
+        <span class="c1">#print &#39; &#39;</span>
+        <span class="c1">#if step_no == 1: sys.exit(0)</span>
+        <span class="c1"># ----------------------------------</span>
+
+        <span class="k">if</span> <span class="n">user_action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">user_action</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">step_no</span><span class="o">+</span><span class="p">(</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># Switch variables before next step</span>
+        <span class="n">u_n</span><span class="p">,</span> <span class="n">u</span> <span class="o">=</span> <span class="n">u</span><span class="p">,</span> <span class="n">u_n</span>
+
+    <span class="k">return</span> <span class="n">u_n</span>
+
+
+<span class="k">def</span> <span class="nf">diffusion_theta</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">step_no</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                    <span class="n">u_L</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">u_R</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">user_action</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Full solver for the model problem using the theta-rule</span>
+<span class="sd">    difference approximation in time (no restriction on F,</span>
+<span class="sd">    i.e., the time step when theta &gt;= 0.5).</span>
+<span class="sd">    Vectorized implementation and sparse (tridiagonal)</span>
+<span class="sd">    coefficient matrix.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">Nt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dt</span><span class="p">)))</span>
+    <span class="c1">#t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">dt</span><span class="o">/</span><span class="n">F</span><span class="p">)</span>
+    <span class="n">Nx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">L</span><span class="o">/</span><span class="n">dx</span><span class="p">))</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>       <span class="c1"># Mesh points in space</span>
+    <span class="c1"># Make sure dx and dt are compatible with x and t</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">u</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>   <span class="c1"># solution array at t[n+1]</span>
+    <span class="n">u_n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>   <span class="c1"># solution at t[n]</span>
+
+    <span class="c1"># Representation of sparse matrix and right-hand side</span>
+    <span class="n">diagonal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">lower</span>    <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="p">)</span>
+    <span class="n">upper</span>    <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="p">)</span>
+    <span class="n">b</span>        <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Precompute sparse matrix (scipy format)</span>
+    <span class="n">Fl</span> <span class="o">=</span> <span class="n">F</span><span class="o">*</span><span class="n">theta</span>
+    <span class="n">Fr</span> <span class="o">=</span> <span class="n">F</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">theta</span><span class="p">)</span>
+    <span class="n">diagonal</span><span class="p">[:]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">Fl</span>
+    <span class="n">lower</span><span class="p">[:]</span> <span class="o">=</span> <span class="o">-</span><span class="n">Fl</span>  <span class="c1">#1</span>
+    <span class="n">upper</span><span class="p">[:]</span> <span class="o">=</span> <span class="o">-</span><span class="n">Fl</span>  <span class="c1">#1</span>
+    <span class="c1"># Insert boundary conditions</span>
+    <span class="n">diagonal</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">upper</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">diagonal</span><span class="p">[</span><span class="n">Nx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">lower</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">diags</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">diags</span><span class="p">(</span>
+        <span class="n">diagonals</span><span class="o">=</span><span class="p">[</span><span class="n">diagonal</span><span class="p">,</span> <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span><span class="p">],</span>
+        <span class="n">offsets</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">format</span><span class="o">=</span><span class="s1">&#39;csr&#39;</span><span class="p">)</span>
+    <span class="c1">#print A.todense()</span>
+
+    <span class="c1"># Allow f to be None or 0</span>
+    <span class="k">if</span> <span class="n">f</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">f</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">))</span> \
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span>
+
+    <span class="c1"># Set initial condition</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>   <span class="c1"># I is an array</span>
+        <span class="n">u_n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">I</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>                           <span class="c1"># I is a function</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">I</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">user_action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">user_action</span><span class="p">(</span><span class="n">u_n</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">step_no</span><span class="o">+</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Time loop</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="p">):</span>
+        <span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_n</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> \
+                  <span class="n">Fr</span><span class="o">*</span><span class="p">(</span><span class="n">u_n</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">u_n</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">u_n</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span> <span class="o">+</span> \
+                  <span class="n">dt</span><span class="o">*</span><span class="n">theta</span><span class="o">*</span><span class="n">f</span><span class="p">(</span><span class="n">u_n</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">t</span><span class="p">[</span><span class="n">step_no</span><span class="o">+</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> \
+                  <span class="n">dt</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">theta</span><span class="p">)</span><span class="o">*</span><span class="n">f</span><span class="p">(</span><span class="n">u_n</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">t</span><span class="p">[</span><span class="n">step_no</span><span class="o">+</span><span class="n">n</span><span class="p">])</span>
+        <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_L</span><span class="p">;</span> <span class="n">b</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_R</span>  <span class="c1"># boundary conditions</span>
+        <span class="n">u</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">sparse</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">spsolve</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">user_action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">user_action</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">step_no</span><span class="o">+</span><span class="p">(</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># Update u_n before next step</span>
+        <span class="n">u_n</span><span class="p">,</span> <span class="n">u</span> <span class="o">=</span> <span class="n">u</span><span class="p">,</span> <span class="n">u_n</span>
+
+    <span class="c1"># u is now contained in u_n (swapping)</span>
+    <span class="k">return</span> <span class="n">u_n</span>
+
+
+<span class="k">def</span> <span class="nf">reaction_FE</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">Nx</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">dt_Rfactor</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">step_no</span><span class="p">,</span>
+                <span class="n">user_action</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reaction solver: u&#39;=f, Forward Euler method.</span>
+
+<span class="sd">    t is a global time mesh, while this function solves</span>
+<span class="sd">    the reaction problem on [t[step_no], t[step_no+1]]</span>
+<span class="sd">    using a local, fine t mesh with step dt/dt_Rfactor, where</span>
+<span class="sd">    dt is the time step in the global mesh.</span>
+<span class="sd">    Return u at t[step_no+1] at all spatial mesh points in [0,L]</span>
+<span class="sd">    with resolution Nx.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1">#bypass = True</span>
+    <span class="c1">#if not bypass:  # original code from sl</span>
+
+    <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">I</span><span class="p">)</span>
+    <span class="n">dt_local</span> <span class="o">=</span> <span class="n">dt</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dt_Rfactor</span><span class="p">)</span>
+    <span class="n">Nt_local</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">dt</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dt_local</span><span class="p">)))</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">Nt_local</span><span class="p">):</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">step_no</span><span class="p">]</span> <span class="o">+</span> <span class="n">n</span><span class="o">*</span><span class="n">dt_local</span>
+        <span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">Nx</span><span class="p">]</span> <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">Nx</span><span class="p">]</span> <span class="o">+</span> <span class="n">dt_local</span><span class="o">*</span><span class="n">f</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">Nx</span><span class="p">],</span> <span class="n">time</span><span class="p">)</span>
+
+    <span class="c1"># BC already inserted in diffusion step, i.e. no action here</span>
+
+    <span class="k">return</span> <span class="n">u</span>
+
+<span class="k">def</span> <span class="nf">ordinary_splitting</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span>
+                       <span class="n">dt_Rfactor</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span>
+                       <span class="n">user_action</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;1st order scheme, i.e. Forward Euler is enough for both</span>
+<span class="sd">    the diffusion and the reaction part. The time step dt is</span>
+<span class="sd">    given for the diffusion step, while the time step for the</span>
+<span class="sd">    reaction part is found as dt/dt_Rfactor, where dt_Rfactor &gt;= 1.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">Nt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dt</span><span class="p">)))</span>
+    <span class="c1">#t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points, global time</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">dt</span><span class="o">/</span><span class="n">F</span><span class="p">)</span>
+    <span class="n">Nx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">L</span><span class="o">/</span><span class="n">dx</span><span class="p">))</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>       <span class="c1"># Mesh points in space</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Set initial condition u(x,0) = I(x)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">I</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="c1"># In the following loop, each time step is &quot;covered twice&quot;,</span>
+    <span class="c1"># first for diffusion, then for reaction</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="p">):</span>
+        <span class="c1"># Note: could avoid the call to diffusion_FE here...</span>
+
+        <span class="c1"># Diffusion step (one time step dt)</span>
+        <span class="n">u_s</span> <span class="o">=</span> <span class="n">diffusion_FE</span><span class="p">(</span><span class="n">I</span><span class="o">=</span><span class="n">u</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span> <span class="n">F</span><span class="o">=</span><span class="n">F</span><span class="p">,</span>
+                           <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span> <span class="n">step_no</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
+                           <span class="n">user_action</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+        <span class="c1"># Reaction step (potentially many smaller steps within dt)</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">reaction_FE</span><span class="p">(</span><span class="n">I</span><span class="o">=</span><span class="n">u_s</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">Nx</span><span class="o">=</span><span class="n">Nx</span><span class="p">,</span>
+                        <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span> <span class="n">dt_Rfactor</span><span class="o">=</span><span class="n">dt_Rfactor</span><span class="p">,</span>
+                        <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">step_no</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
+                        <span class="n">user_action</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">user_action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">user_action</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">Strang_splitting_1stOrder</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">dt_Rfactor</span><span class="p">,</span>
+                              <span class="n">F</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">user_action</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Strang splitting while still using FE for the diffusion</span>
+<span class="sd">    step and for the reaction step. Gives 1st order scheme.</span>
+<span class="sd">    Introduce an extra time mesh t2 for the diffusion part,</span>
+<span class="sd">    since it steps dt/2.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">Nt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dt</span><span class="p">)))</span>
+    <span class="n">t2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> <span class="p">(</span><span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="n">Nt</span><span class="p">)</span>   <span class="c1"># Mesh points in diff</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">dt</span><span class="o">/</span><span class="n">F</span><span class="p">)</span>
+    <span class="n">Nx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">L</span><span class="o">/</span><span class="n">dx</span><span class="p">))</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Set initial condition u(x,0) = I(x)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">I</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="p">):</span>
+
+        <span class="c1"># Diffusion step (1/2 dt: from t_n to t_n+1/2)</span>
+        <span class="n">u_s</span> <span class="o">=</span> <span class="n">diffusion_FE</span><span class="p">(</span><span class="n">I</span><span class="o">=</span><span class="n">u</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">F</span><span class="o">=</span><span class="n">F</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span>
+                           <span class="n">t</span><span class="o">=</span><span class="n">t2</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">dt</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">step_no</span><span class="o">=</span><span class="mi">2</span><span class="o">*</span><span class="n">n</span><span class="p">,</span>
+                           <span class="n">user_action</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+
+        <span class="c1"># Reaction step (1 dt: from t_n to t_n+1)</span>
+        <span class="c1"># (potentially many smaller steps within dt)</span>
+        <span class="n">u_sss</span> <span class="o">=</span> <span class="n">reaction_FE</span><span class="p">(</span><span class="n">I</span><span class="o">=</span><span class="n">u_s</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">Nx</span><span class="o">=</span><span class="n">Nx</span><span class="p">,</span>
+                        <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span> <span class="n">dt_Rfactor</span><span class="o">=</span><span class="n">dt_Rfactor</span><span class="p">,</span>
+                        <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">step_no</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
+                        <span class="n">user_action</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+
+        <span class="c1"># Diffusion step (1/2 dt: from t_n+1/2 to t_n)</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">diffusion_FE</span><span class="p">(</span><span class="n">I</span><span class="o">=</span><span class="n">u_sss</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">F</span><span class="o">=</span><span class="n">F</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span>
+                           <span class="n">t</span><span class="o">=</span><span class="n">t2</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">dt</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">step_no</span><span class="o">=</span><span class="mi">2</span><span class="o">*</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span>
+                           <span class="n">user_action</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">user_action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">user_action</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">Strang_splitting_2ndOrder</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">dt_Rfactor</span><span class="p">,</span>
+                              <span class="n">F</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">user_action</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Strang splitting using Crank-Nicolson for the diffusion</span>
+<span class="sd">    step (theta-rule) and Adams-Bashforth 2 for the reaction step.</span>
+<span class="sd">    Gives 2nd order scheme. Introduce an extra time mesh t2 for</span>
+<span class="sd">    the diffusion part, since it steps dt/2.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="kn">import</span> <span class="nn">odespy</span>
+    <span class="n">Nt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dt</span><span class="p">)))</span>
+    <span class="n">t2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> <span class="p">(</span><span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="n">Nt</span><span class="p">)</span>   <span class="c1"># Mesh points in diff</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">dt</span><span class="o">/</span><span class="n">F</span><span class="p">)</span>
+    <span class="n">Nx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">L</span><span class="o">/</span><span class="n">dx</span><span class="p">))</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Set initial condition u(x,0) = I(x)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">I</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="n">reaction_solver</span> <span class="o">=</span> <span class="n">odespy</span><span class="o">.</span><span class="n">AdamsBashforth2</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="p">):</span>
+
+        <span class="c1"># Diffusion step (1/2 dt: from t_n to t_n+1/2)</span>
+        <span class="c1"># Crank-Nicolson (theta = 0.5, gives 2nd order)</span>
+        <span class="n">u_s</span> <span class="o">=</span> <span class="n">diffusion_theta</span><span class="p">(</span><span class="n">I</span><span class="o">=</span><span class="n">u</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">F</span><span class="o">=</span><span class="n">F</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span>
+                              <span class="n">t</span><span class="o">=</span><span class="n">t2</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">dt</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">step_no</span><span class="o">=</span><span class="mi">2</span><span class="o">*</span><span class="n">n</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                              <span class="n">u_L</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">u_R</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">user_action</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+
+        <span class="c1">#u_s = diffusion_FE(I=u, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0,</span>
+        <span class="c1">#                   t=t2, T=dt/2.0, step_no=2*n,</span>
+        <span class="c1">#                   user_action=None)</span>
+
+        <span class="c1"># Reaction step (1 dt: from t_n to t_n+1)</span>
+        <span class="c1"># (potentially many smaller steps within dt)</span>
+        <span class="c1">#sl: testing -----------------------------------</span>
+        <span class="n">reaction_solver</span><span class="o">.</span><span class="n">set_initial_condition</span><span class="p">(</span><span class="n">u_s</span><span class="p">)</span>
+        <span class="n">t_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">dt_Rfactor</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">u_AB2</span><span class="p">,</span> <span class="n">t_</span> <span class="o">=</span> <span class="n">reaction_solver</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">t_points</span><span class="p">)</span> <span class="c1"># t_ not needed</span>
+        <span class="n">u_sss</span> <span class="o">=</span> <span class="n">u_AB2</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,:]</span>  <span class="c1"># pick sol at last point in time</span>
+        <span class="c1">#-----------------------------------------------</span>
+
+        <span class="c1">#u_sss = reaction_FE(I=u_s, f=f, L=L, Nx=Nx,</span>
+        <span class="c1">#                dt=dt, dt_Rfactor=dt_Rfactor,</span>
+        <span class="c1">#                t=t, step_no=n,</span>
+        <span class="c1">#                user_action=None)</span>
+
+        <span class="c1"># Diffusion step (1/2 dt: from t_n+1/2 to t_n)</span>
+        <span class="c1"># Crank-Nicolson (theta = 0.5, gives 2nd order)</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">diffusion_theta</span><span class="p">(</span><span class="n">I</span><span class="o">=</span><span class="n">u_sss</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">F</span><span class="o">=</span><span class="n">F</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span>
+                            <span class="n">t</span><span class="o">=</span><span class="n">t2</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">dt</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">step_no</span><span class="o">=</span><span class="mi">2</span><span class="o">*</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                            <span class="n">u_L</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">u_R</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">user_action</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+
+        <span class="c1">#u = diffusion_FE(I=u_sss, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0,</span>
+        <span class="c1">#                   t=t2, T=dt/2.0, step_no=2*n+1,</span>
+        <span class="c1">#                   user_action=None)</span>
+
+        <span class="k">if</span> <span class="n">user_action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">user_action</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+
+
+<span class="k">def</span> <span class="nf">convergence_rates</span><span class="p">(</span><span class="n">scheme</span><span class="o">=</span><span class="s1">&#39;diffusion&#39;</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Computes empirical conv. rates for the different</span>
+<span class="sd">    splitting schemes&#39;&#39;&#39;</span>
+
+    <span class="n">F</span> <span class="o">=</span> <span class="mf">0.5</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="mf">1.2</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="mf">3.5</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">L</span> <span class="o">=</span> <span class="mf">1.5</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="n">L</span>
+
+    <span class="k">def</span> <span class="nf">exact</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;exact sol. to: du/dt = a*d^2u/dx^2 - b*u&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">a</span><span class="o">*</span><span class="n">k</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span><span class="o">*</span><span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">k</span><span class="o">*</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">b</span><span class="o">*</span><span class="n">u</span>
+
+    <span class="k">def</span> <span class="nf">I</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">exact</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">global</span> <span class="n">error</span>    <span class="c1"># error computed in the user action function</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># Convergence study</span>
+    <span class="k">def</span> <span class="nf">action</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">global</span> <span class="n">error</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>      <span class="c1"># New simulation, - reset error</span>
+            <span class="n">error</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">error</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">u</span> <span class="o">-</span> <span class="n">exact</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">]))</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+
+    <span class="n">E</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">Nx_values</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">160</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">Nx</span> <span class="ow">in</span> <span class="n">Nx_values</span><span class="p">:</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">L</span><span class="o">/</span><span class="n">Nx</span><span class="p">;</span>  <span class="n">dt</span> <span class="o">=</span> <span class="n">F</span><span class="o">/</span><span class="n">a</span><span class="o">*</span><span class="n">dx</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">Nt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dt</span><span class="p">)))</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> <span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>   <span class="c1"># Mesh points, global time</span>
+
+        <span class="k">if</span> <span class="n">scheme</span> <span class="o">==</span> <span class="s1">&#39;diffusion&#39;</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s1">&#39;Running FE on whole eqn...&#39;</span>
+            <span class="n">diffusion_FE</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span>
+                         <span class="n">step_no</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">user_action</span><span class="o">=</span><span class="n">action</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">scheme</span> <span class="o">==</span> <span class="s1">&#39;ordinary_splitting&#39;</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s1">&#39;Running ordinary splitting...&#39;</span>
+            <span class="n">ordinary_splitting</span><span class="p">(</span><span class="n">I</span><span class="o">=</span><span class="n">I</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">b</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span>
+                               <span class="n">dt_Rfactor</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">F</span><span class="o">=</span><span class="n">F</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
+                               <span class="n">user_action</span><span class="o">=</span><span class="n">action</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">scheme</span> <span class="o">==</span> <span class="s1">&#39;Strang_splitting_1stOrder&#39;</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s1">&#39;Running Strang splitting with 1st order schemes...&#39;</span>
+            <span class="n">Strang_splitting_1stOrder</span><span class="p">(</span><span class="n">I</span><span class="o">=</span><span class="n">I</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">b</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span>
+                                      <span class="n">dt_Rfactor</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">F</span><span class="o">=</span><span class="n">F</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
+                                      <span class="n">user_action</span><span class="o">=</span><span class="n">action</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">scheme</span> <span class="o">==</span> <span class="s1">&#39;Strang_splitting_2ndOrder&#39;</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s1">&#39;Running Strang splitting with 2nd order schemes...&#39;</span>
+            <span class="n">Strang_splitting_2ndOrder</span><span class="p">(</span><span class="n">I</span><span class="o">=</span><span class="n">I</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">b</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span>
+                                      <span class="n">dt_Rfactor</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">F</span><span class="o">=</span><span class="n">F</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
+                                      <span class="n">user_action</span><span class="o">=</span><span class="n">action</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s1">&#39;Unknown scheme requested!&#39;</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="n">h</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        <span class="n">E</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+
+    <span class="k">print</span> <span class="s1">&#39;E:&#39;</span><span class="p">,</span> <span class="n">E</span>
+    <span class="k">print</span> <span class="s1">&#39;h:&#39;</span><span class="p">,</span> <span class="n">h</span>
+
+    <span class="c1"># Convergence rates</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">E</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="n">E</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">Nx_values</span><span class="p">))]</span>
+    <span class="k">print</span> <span class="s1">&#39;Computed rates:&#39;</span><span class="p">,</span> <span class="n">r</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+
+    <span class="n">schemes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;diffusion&#39;</span><span class="p">,</span>
+               <span class="s1">&#39;ordinary_splitting&#39;</span><span class="p">,</span>
+               <span class="s1">&#39;Strang_splitting_1stOrder&#39;</span><span class="p">,</span>
+               <span class="s1">&#39;Strang_splitting_2ndOrder&#39;</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">scheme</span> <span class="ow">in</span> <span class="n">schemes</span><span class="p">:</span>
+        <span class="n">convergence_rates</span><span class="p">(</span><span class="n">scheme</span><span class="o">=</span><span class="n">scheme</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="analysis-of-the-splitting-method">
+<h2>Analysis of the splitting method<a class="headerlink" href="#analysis-of-the-splitting-method" title="Permalink to this headline">¶</a></h2>
+<p>Let us address a linear PDE problem for which we can develop analytical
+solutions of the discrete equations, with and without splitting, and discuss
+these. Choosing <span class="math">\(f(u)=-\beta u\)</span> for a constant <span class="math">\(\beta\)</span> gives a linear
+problem. We use the Forward Euler method for both the PDE and ODE problems.</p>
+<p>We seek a 1D Fourier wave component solution of the problem, assuming
+homogeneous Dirichlet conditions at <span class="math">\(x=0\)</span> and <span class="math">\(x=L\)</span>:</p>
+<div class="math">
+\[u = e^{-{\alpha} k^2 t - \beta t}\sin kx,\quad k = \frac{\pi}{L}{\thinspace .}\]</div>
+<p>This component fits the 1D PDE problem (<span class="math">\(f=0\)</span>). On complex form we can
+write</p>
+<div class="math">
+\[u = e^{-{\alpha} k^2 t - \beta t + ikx},\]</div>
+<p>where <span class="math">\(i=\sqrt{-1}\)</span> and the imaginary part is taken as the physical solution.</p>
+<p>We refer to the section <a class="reference internal" href="._book011.html#diffu-pde1-analysis"><span class="std std-ref">Analysis of schemes for the diffusion equation</span></a> and to
+the book <a class="reference internal" href="._book027.html#ref02" id="id1">[Ref02]</a> for a discussion of exact numerical
+solutions to diffusion and decay problems, respectively.  The key idea
+is to search for solutions <span class="math">\(A^ne^{ikx}\)</span> and determine <span class="math">\(A\)</span>.  For the
+diffusion problem solved by a Forward Euler method one has</p>
+<div class="math">
+\[A = 1 - 4F\sin^p,\]</div>
+<p>where <span class="math">\(F={\alpha}\Delta t/\Delta x^2\)</span> is the mesh Fourier number and <span class="math">\(p=k\Delta x/2\)</span>
+is a dimensionless number reflecting the spatial resolution (number of points
+per wave length in space). For the decay problem <span class="math">\(u'=-\beta u\)</span>, we have
+<span class="math">\(A=1 - q\)</span>, where <span class="math">\(q\)</span> is a dimensionless parameter reflecting the resolution
+in the decay problem: <span class="math">\(q = \beta\Delta t\)</span>.</p>
+<p>The original model problem can also be discretized by a Forward Euler scheme,</p>
+<div class="math">
+\[[D^+_t u = {\alpha} D_xD_x u - \beta u]^n_i{\thinspace .}\]</div>
+<p>Assuming <span class="math">\(A^ne^{ikx}\)</span> we find that</p>
+<div class="math">
+\[u^n_i = (1 - 4F\sin^p -q)^n\sin kx{\thinspace .}\]</div>
+<p>We are particularly interested in what happens at one time step. That is,</p>
+<div class="math">
+\[u^{n}_{i} = (1-4F\sin^2 p)u^{n-1}_i{\thinspace .}\]</div>
+<p>In the two stage algorithm, we first compute the diffusion step</p>
+<div class="math">
+\[u^{{*},n+1}_i = (1 - 4F\sin^2 p)u^{n-1}_i{\thinspace .}\]</div>
+<p>Then we use this as input to the decay algorithm and arrive at</p>
+<div class="math">
+\[u^{{**},n+1} = (1-q)u^{{*},n+1} = (1-q)(1-4F\sin^2 p) u^{n-1}_i{\thinspace .}\]</div>
+<p>The splitting approximation over one step is therefore</p>
+<div class="math">
+\[E = 1 - 4F\sin^p -q - (1-q)(1-4F\sin^2 p) = -q(2 - F\sin^2 p))\]</div>
 </div>
 </div>
 
@@ -242,20 +885,26 @@ and repeat halving the step in <span class="math">\(\Lambda\)</span> until conve
             </center>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Multi-dimensional PDE problems</a><ul>
-<li><a class="reference internal" href="#finite-difference-discretization-3">Finite difference discretization</a><ul>
-<li><a class="reference internal" href="#picard-iteration-4">Picard iteration</a></li>
-<li><a class="reference internal" href="#newton-s-method-5">Newton&#8217;s method</a></li>
+<li><a class="reference internal" href="#">Operator splitting methods</a><ul>
+<li><a class="reference internal" href="#ordinary-operator-splitting-for-odes">Ordinary operator splitting for ODEs</a></li>
+<li><a class="reference internal" href="#strang-splitting-for-odes">Strang splitting for ODEs</a></li>
+<li><a class="reference internal" href="#example-logistic-growth">Example: Logistic growth</a><ul>
+<li><a class="reference internal" href="#splitting-techniques">Splitting techniques</a></li>
+<li><a class="reference internal" href="#verbose-implementation">Verbose implementation</a></li>
+<li><a class="reference internal" href="#compact-implementation">Compact implementation</a></li>
+<li><a class="reference internal" href="#results">Results</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#continuation-methods">Continuation methods</a></li>
+<li><a class="reference internal" href="#reaction-diffusion-equation">Reaction-diffusion equation</a></li>
+<li><a class="reference internal" href="#example-reaction-diffusion-with-linear-reaction-term">Example: Reaction-Diffusion with linear reaction term</a></li>
+<li><a class="reference internal" href="#analysis-of-the-splitting-method">Analysis of the splitting method</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="._book017.html"
-                        title="previous chapter">Discretization of 1D stationary nonlinear differential equations</a></p>
+                        title="previous chapter">Multi-dimensional nonlinear PDE problems</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="._book019.html"
                         title="next chapter">Exercises</a></p>
@@ -269,14 +918,11 @@ and repeat halving the step in <span class="math">\(\Lambda\)</span> until conve
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -293,7 +939,7 @@ and repeat halving the step in <span class="math">\(\Lambda\)</span> until conve
           <a href="._book019.html" title="Exercises"
              >next</a> |</li>
         <li class="right" >
-          <a href="._book017.html" title="Discretization of 1D stationary nonlinear differential equations"
+          <a href="._book017.html" title="Multi-dimensional nonlinear PDE problems"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Finite Difference Computing with Partial Differential Equations</a> &raquo;</li> 
       </ul>

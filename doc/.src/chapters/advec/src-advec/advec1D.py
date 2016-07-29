@@ -48,7 +48,6 @@ def solver(I, U0, v, L, dt, C, T, user_action=None,
     dx = x[1] - x[0]
     dt = t[1] - t[0]
     C = v*dt/dx
-    print 'HEI'
     print 'dt=%g, dx=%g, Nx=%d, C=%g' % (dt, dx, Nx, C)
 
     u   = np.zeros(Nx+1)
@@ -156,7 +155,6 @@ def run_FECS(case):
             plt.hold('on')
 
     plt.ion()
-    print 'Hei!'
     U0 = 0
     dt = 0.001
     C = 1

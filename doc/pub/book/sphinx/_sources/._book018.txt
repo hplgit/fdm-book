@@ -1,196 +1,957 @@
 .. !split
 
-Multi-dimensional PDE problems
-==============================
+.. _nonlin:splitting:
 
-The fundamental ideas in the
-derivation of :math:`F_i` and :math:`J_{i,j}` in the 1D model problem
-are easily generalized to multi-dimensional problems.
-Nevertheless, the expressions involved are slightly different, with
-derivatives in :math:`x` replaced by :math:`\nabla`, so we present some
-examples below in detail.
+Operator splitting methods
+==========================
 
-.. _nonlin:alglevel:dD:fd:
+Operator splitting is a natural and old idea. When a PDE or system of PDEs
+contains different terms expressing different physics, it is natural to
+use different numerical methods for different physical processes. This can
+optimize and simplify the overall solution process. The idea was
+especially popularized in the context of the Navier-Stokes equations
+and reaction-diffusion PDEs. Common names for the technique are *operator
+splitting*, *fractional step* methods, and *split-step* methods. We shall
+stick to the former name.
+In the context of nonlinear differential equations, operator splitting
+can be used to isolate nonlinear terms and simplify the solution methods.
 
-Finite difference discretization          (3)
----------------------------------------------
+A related technique, often known as dimensional splitting or
+alternating direction implicit (ADI) methods, is to split the spatial
+dimensions and solve a 2D or 3D problem as two or three
+consecutive 1D problems, but this type of splitting
+is not to be further considered here.
 
-A typical diffusion equation
+.. _nonlin:splitting:ODE:
 
-.. math::
-         u_t = \nabla\cdot({\alpha}(u)\nabla u) + f(u),
+Ordinary operator splitting for ODEs
+------------------------------------
 
-can be discretized by (e.g.) a Backward Euler scheme,
-which in 2D can be written
+.. index:: operator splitting
 
-.. math::
-         [D_t^- u = D_x\overline{{\alpha}(u)}^xD_x u
-        + D_y\overline{{\alpha}(u)}^yD_y u + f(u)]_{i,j}^n{\thinspace .}
-        
+.. index:: splitting ODEs
 
-We do not dive into the details of handling boundary conditions now.
-Dirichlet and Neumann conditions are handled as in a
-corresponding linear, variable-coefficient diffusion problems.
+.. index:: fractional step methods
 
-Writing the scheme out, putting the unknown values on the
-left-hand side and known values on the right-hand side, and
-introducing :math:`\Delta x=\Delta y=h` to save some writing, one gets
+Consider first an ODE where the right-hand side is split into two
+terms:
 
-.. math::
-        
-        u^n_{i,j} &- \frac{\Delta t}{h^2}(
-         \frac{1}{2}({\alpha}(u_{i,j}^n)   + {\alpha}(u_{i+1,j}^n))(u_{i+1,j}^n-u_{i,j}^n)\\ 
-        &\quad -
-        \frac{1}{2}({\alpha}(u_{i-1,j}^n) + {\alpha}(u_{i,j}^n))(u_{i,j}^n-u_{i-1,j}^n) \\ 
-        &\quad +
-         \frac{1}{2}({\alpha}(u_{i,j}^n)   + {\alpha}(u_{i,j+1}^n))(u_{i,j+1}^n-u_{i,j}^n)\\ 
-        &\quad -
-         \frac{1}{2}({\alpha}(u_{i,j-1}^n) + {\alpha}(u_{i,j}^n))(u_{i,j}^n-u_{i-1,j-1}^n))
-        - \Delta tf(u_{i,j}^n) = u^{n-1}_{i,j}
-        
-
-This defines a nonlinear algebraic system on the form :math:`A(u)u=b(u)`.
-
-Picard iteration          (4)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The most recently computed values :math:`u^{-}` of :math:`u^n` can be
-used in :math:`{\alpha}` and :math:`f` for a Picard iteration,
-or equivalently, we solve :math:`A(u^{-})u=b(u^{-})`.
-The result is a linear system of the same type as arising
-from :math:`u_t = \nabla\cdot ({\alpha}(\boldsymbol{x})\nabla u) + f(\boldsymbol{x},t)`.
-
-The Picard iteration scheme can also be expressed in operator notation:
+.. _Eq:_auto242:
 
 .. math::
-         [D_t^- u = D_x\overline{{\alpha}(u^{-})}^xD_x u
-        + D_y\overline{{\alpha}(u^{-})}^yD_y u + f(u^{-})]_{i,j}^n{\thinspace .}
+
+    \tag{580}
+    u' = f_0(u) + f_1(u){\thinspace .}
+        
         
 
-Newton's method          (5)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-As always, Newton's method is technically more involved than
-Picard iteration. We first define
-the nonlinear algebraic equations to be solved, drop the
-superscript :math:`n` (use :math:`u` for :math:`u^n`), and introduce :math:`u^{(1)}` for :math:`u^{n-1}`:
+In case :math:`f_0` and :math:`f_1` are linear functions of :math:`u`, :math:`f_0=au` and :math:`f_1=bu`,
+we have :math:`u(t)=Ie^{(a+b)t}`, if :math:`u(0)=I`.
+When going one time step of length :math:`\Delta t` from :math:`t_n` to :math:`t_{n+1}`, we have
 
 .. math::
-        
-        F_{i,j} &= u_{i,j} - \frac{\Delta t}{h^2}(\\ 
-        &\qquad \frac{1}{2}({\alpha}(u_{i,j})   + {\alpha}(u_{i+1,j}))(u_{i+1,j}-u_{i,j}) -\\ 
-        &\qquad \frac{1}{2}({\alpha}(u_{i-1,j}) + {\alpha}(u_{i,j}))(u_{i,j}-u_{i-1,j}) + \\ 
-        &\qquad \frac{1}{2}({\alpha}(u_{i,j})   + {\alpha}(u_{i,j+1}))(u_{i,j+1}-u_{i,j}) -\\ 
-        &\qquad \frac{1}{2}({\alpha}(u_{i,j-1}) + {\alpha}(u_{i,j}))(u_{i,j}-u_{i-1,j-1})) -
-        \Delta t\, f(u_{i,j}) - u^{(1)}_{i,j} = 0{\thinspace .}
-        
+         u(t_{n+1}) = u(t_n)e^{(a+b)\Delta t}{\thinspace .}
 
-It is convenient to work with two indices :math:`i` and :math:`j` in 2D
-finite difference discretizations, but it complicates
-the derivation of the Jacobian, which then gets four indices.
-(Make sure you really understand the 1D version of this problem
-as treated in the section :ref:`nonlin:alglevel:1D:fd`.)
-The left-hand expression of an equation :math:`F_{i,j}=0` is to be
-differentiated with respect to each of the unknowns :math:`u_{r,s}`
-(recall that this is short notation for :math:`u_{r,s}^n`), :math:`r\in{\mathcal{I}_x}`, :math:`s\in{\mathcal{I}_y}`:
+This expression can be also be written as
 
 .. math::
-         J_{i,j,r,s} = \frac{\partial F_{i,j}}{\partial u_{r,s}}{\thinspace .} 
+         u(t_{n+1}) = u(t_n)e^{a\Delta t}e^{b\Delta t},
 
-The Newton system to be solved in each iteration can be written as
+or
 
-.. math::
-         \sum_{r\in{\mathcal{I}_x}}\sum_{s\in{\mathcal{I}_y}}J_{i,j,r,s}\delta u_{r,s} = -F_{i,j},
-        \quad i\in{\mathcal{I}_x},\ j\in{\mathcal{I}_y}{\thinspace .}
-
-Given :math:`i` and :math:`j`, only a few :math:`r` and :math:`s` indices give nonzero
-contribution to the Jacobian since :math:`F_{i,j}` contains :math:`u_{i\pm 1,j}`,
-:math:`u_{i,j\pm 1}`, and :math:`u_{i,j}`. This means that :math:`J_{i,j,r,s}` has
-nonzero contributions only if :math:`r=i\pm 1`, :math:`s=j\pm 1`, as well as :math:`r=i`
-and :math:`s=j`.  The corresponding terms in :math:`J_{i,j,r,s}` are
-:math:`J_{i,j,i-1,j}`, :math:`J_{i,j,i+1,j}`, :math:`J_{i,j,i,j-1}`, :math:`J_{i,j,i,j+1}`,
-and :math:`J_{i,j,i,j}`.  Therefore, the left-hand side of the Newton
-system, :math:`\sum_r\sum_s J_{i,j,r,s}\delta u_{r,s}` collapses to
+.. _Eq:nonlin:splitting:ODE:step1:
 
 .. math::
+
+    \tag{581}
+    u^{*} = u(t_n)e^{a\Delta t},
         
-         J_{i,j,r,s}\delta u_{r,s} =
-        J_{i,j,i,j}\delta u_{i,j} & +
-        J_{i,j,i-1,j}\delta u_{i-1,j} +
-        J_{i,j,i+1,j}\delta u_{i+1,j} +
-        J_{i,j,i,j-1}\delta u_{i,j-1}\\ 
-        & +
-        J_{i,j,i,j+1}\delta u_{i,j+1}
         
 
-The specific derivatives become
+.. _Eq:nonlin:splitting:ODE:step2:
 
 .. math::
+
+    \tag{582}
+    u(t_{n+1}) = u^{*} e^{b\Delta t}
         
-        J_{i,j,i-1,j} &= \frac{\partial F_{i,j}}{\partial u_{i-1,j}}\\ 
-        &= \frac{\Delta t}{h^2}({\alpha}^{\prime}(u_{i-1,j})(u_{i,j}-u_{i-1,j})
-        + {\alpha}(u_{i-1,j})(-1)),\\ 
-        J_{i,j,i+1,j} &= \frac{\partial F_{i,j}}{\partial u_{i+1,j}}\\ 
-        &= \frac{\Delta t}{h^2}(-{\alpha}^{\prime}(u_{i+1,j})(u_{i+1,j}-u_{i,j})
-        - {\alpha}(u_{i-1,j})),\\ 
-        J_{i,j,i,j-1} &= \frac{\partial F_{i,j}}{\partial u_{i,j-1}}\\ 
-        &= \frac{\Delta t}{h^2}({\alpha}^{\prime}(u_{i,j-1})(u_{i,j}-u_{i,j-1})
-        + {\alpha}(u_{i,j-1})(-1)),\\ 
-        J_{i,j,i,j+1} &= \frac{\partial F_{i,j}}{\partial u_{i,j+1}}\\ 
-        &= \frac{\Delta t}{h^2}(-{\alpha}^{\prime}(u_{i,j+1})(u_{i,j+1}-u_{i,j})
-        - {\alpha}(u_{i,j-1})){\thinspace .}
         
 
-The :math:`J_{i,j,i,j}` entry has a few more terms and is left as an
-exercise.
-Inserting the most recent approximation
-:math:`u^{-}` for :math:`u` in the :math:`J` and :math:`F` formulas and then
-forming :math:`J\delta u=-F` gives the linear system to be solved
-in each Newton iteration. Boundary conditions will affect the
-formulas when any of the indices coincide with a boundary value
-of an index.
+The first step :ref:`(581) <Eq:nonlin:splitting:ODE:step1>` means solving
+:math:`u'=f_0` over a time interval :math:`\Delta t` with :math:`u(t_n)` as start value.
+The second step :ref:`(582) <Eq:nonlin:splitting:ODE:step2>` means solving
+:math:`u'=f_1` over a time interval :math:`\Delta t` with the value at the end
+of the first step as start value.
+That is, we progress the solution in two steps and solve
+two ODEs :math:`u'=f_0` and :math:`u'=f_1`. The order of the equations is not
+important. From the derivation above we see that solving :math:`u'=f_1`
+prior to :math:`u'=f_0` can equally well be done.
 
-Continuation methods
---------------------
+The technique is exact if the ODEs are linear. For nonlinear ODEs it is
+only an approximate method with error :math:`\Delta t`. The technique can
+be extended to an arbitrary number of steps; i.e., we may split the PDE
+system into any number of subsystems. Examples will illuminate this principle.
 
-.. index:: continuation method
+.. _nonlin:splitting:ODE_Strang:
 
-Picard iteration or Newton's method may diverge when solving PDEs with
-severe nonlinearities. Relaxation with :math:`\omega <1`
-may help, but in highly nonlinear problems it can be
-necessary to introduce a *continuation parameter* :math:`\Lambda` in
-the problem: :math:`\Lambda =0` gives a version of the
-problem that is easy to solve, while
-:math:`\Lambda =1` is the target problem. The idea is then
-to increase :math:`\Lambda` in steps, :math:`\Lambda_0=0 ,\Lambda_1 <\cdots <\Lambda_n=1`,
-and use the solution from the problem with :math:`\Lambda_{i-1}` as
-initial guess for the iterations in the problem corresponding
-to :math:`\Lambda_i`.
+Strang splitting for ODEs
+-------------------------
 
-The continuation method is easiest to understand through an example.
-Suppose we intend to solve
+.. index:: Strang splitting
+
+The accuracy of the splitting method in the section :ref:`nonlin:splitting:ODE`
+can be improved from :math:`{\mathcal{O}(\Delta t)}` to :math:`{\mathcal{O}(\Delta t^2)}` using so-called
+*Strang splitting*, where we take half a step with the :math:`f_0` operator,
+a full step with the :math:`f_1` operator, and finally half another step with
+the :math:`f_0` operator. During a time interval :math:`\Delta t` the algorithm can
+be written as follows.
 
 .. math::
-         -\nabla\cdot\left( ||\nabla u||^q\nabla u\right) = f, 
+        \begin{align*}
+        \frac{du^{{*}}}{dt} &= f_0(u^{{*}}),
+        \quad u^{{*}}(t_n)=u(t_n),
+        \quad t\in [t_n,t_n+\frac{1}{2}\Delta t],\\ 
+        \frac{du^{{***}}}{dt} &= f_1(u^{{***}}),
+        \quad u^{{***}}(t_n)=u^{{*}}(t_{n+\frac{1}{2}}),
+        \quad t\in [t_n,t_n+\Delta t],\\ 
+        \frac{du^{{**}}}{dt}  &= f_0(u^{{**}}),
+        \quad u^{{**}}(t_n+\frac{1}{2})=u^{{***}}(t_{n+\frac{1}{2}}),
+        \quad t\in [t_n+\frac{1}{2}\Delta t, t_n+\Delta t]{\thinspace .}
+        \end{align*}
 
-which is an equation modeling the flow of a non-Newtonian fluid through
-a channel or pipe. For :math:`q=0` we have the Poisson equation (corresponding
-to a Newtonian fluid) and the problem is linear. A typical
-value for pseudo-plastic fluids may be :math:`q_n=-0.8`. We can introduce
-the continuation parameter :math:`\Lambda\in [0,1]` such that
-:math:`q=q_n\Lambda`. Let :math:`\{\Lambda_\ell\}_{\ell=0}^n` be the sequence of
-:math:`\Lambda` values in :math:`[0,1]`, with corresponding :math:`q` values
-:math:`\{q_\ell\}_{\ell=0}^n`. We can then solve a sequence of problems
+The global solution is set as :math:`u(t_{n+1}) = u^{{**}}(t_{n+1})`.
+
+There is no use in combining higher-order methods with
+ordinary splitting since the error due to splitting is :math:`\Oof{\Delta
+t}`, but for Strang splitting it makes sense to use schemes of order
+:math:`{\mathcal{O}(\Delta t^2)}`.
+
+With the notation introduced for Strang splitting, we may express
+ordinary first-order splitting as
 
 .. math::
-        
-        -\nabla\cdot\left( ||\nabla u^\ell||^q_\ell\nabla u^\ell\right) = f,\quad
-        \ell = 0,\ldots,n,
+        \begin{align*}
+        \frac{du^{{*}}}{dt} &= f_0(u^{{*}}),\quad u^{{*}}(t_n)=u(t_n),
+        \quad t\in [t_n,t_n+\Delta t],\\ 
+        \frac{du^{{**}}}{dt} &= f_1(u^{{**}}),\quad u^{{**}}(t_n)=u^{{*}}(t_{n+1}),
+        \quad t\in [t_n,t_n+\Delta t],
+        \end{align*}
 
-where the initial guess for iterating on :math:`u^{\ell}` is the
-previously computed solution :math:`u^{\ell-1}`. If a particular :math:`\Lambda_\ell`
-leads to convergence problems, one may try a smaller
-increase in :math:`\Lambda`:
-:math:`\Lambda_* = \frac{1}{2} (\Lambda_{\ell-1}+\Lambda_\ell)`,
-and repeat halving the step in :math:`\Lambda` until convergence is reestablished.
+with global solution set as :math:`u(t_{n+1}) = u^{{**}}(t_{n+1})`.
+
+.. _nonlin:splitting:logistic:
+
+Example: Logistic growth
+------------------------
+
+Let us split the (scaled) logistic equation
+
+.. math::
+         u'=u(1-u),\quad u(0)=0.1,
+
+with solution :math:`u=(9e^{-t}+1)^{-1}`, into
+
+.. math::
+         u'=u - u^2 = f_0(u) + f_1(u), \quad f_0(u)=u,\quad f_1(u)=-u^2{\thinspace .}
+
+We solve :math:`u'=f_0(u)` and :math:`u'=f_1(u)` by a Forward Euler step.
+In addition, we add a method where we solve :math:`u'=f_0(u)` analytically,
+since the equation is actually :math:`u'=u` with solution :math:`e^t`.
+The software that accompanies the following methods is the file
+`split_logistic.py <http://tinyurl.com/nu656p2/nonlin/split_logistic.py>`__.
+
+Splitting techniques
+~~~~~~~~~~~~~~~~~~~~
+
+Ordinary splitting takes a Forward Euler step for each of the ODEs
+according to
+
+.. _Eq:_auto243:
+
+.. math::
+
+    \tag{583}
+    \frac{u^{{*},n+1} - u^{{*},n}}{\Delta t} =
+        f_0(u^{{*},n}),\quad
+        u^{{*},n} = u(t_n),\quad t\in [t_n,t_n+\Delta t],
+        
+        
+
+.. _Eq:_auto244:
+
+.. math::
+
+    \tag{584}
+    \frac{u^{{**},n+1} - u^{{**}, n}}{\Delta t} = f_1(u^{{**},n}),\quad
+        u^{{**},n} = u^{{*},n+1},\quad t\in [t_n,t_n+\Delta t],
+        
+        
+
+with :math:`u(t_{n+1}) = u^{{**},n+1}`.
+
+Strang splitting takes the form
+
+.. _Eq:_auto245:
+
+.. math::
+
+    \tag{585}
+    \frac{u^{{*},n+\frac{1}{2}} - u^{{*},n}}{\frac{1}{2}\Delta t} =
+        f_0(u^{{*},n}),\quad
+        u^{{*},n} = u(t_n),\quad t\in [t_n,t_n+\frac{1}{2}\Delta t],
+        
+        
+
+.. _Eq:_auto246:
+
+.. math::
+
+    \tag{586}
+    \frac{u^{{***},n+1}-u^{{***},n}}{\Delta t} =
+        f_1(u^{{***},n}),\quad
+        u^{{***},n} = u^{{*}, n+\frac{1}{2}},\quad t\in [t_n,t_n+\Delta t],
+        
+        
+
+.. _Eq:_auto247:
+
+.. math::
+
+    \tag{587}
+    \frac{u^{{**}, n+1} - u^{{**}, n+\frac{1}{2}}}{\frac{1}{2}\Delta t} =
+        f_0(u^{{**},n+\frac{1}{2}}),\quad
+        u^{{**},n+\frac{1}{2}} = u^{{***},n+1},\quad
+        t\in [t_n+\frac{1}{2}\Delta t, t_n+\Delta t]{\thinspace .}
+        
+        
+
+Verbose implementation
+~~~~~~~~~~~~~~~~~~~~~~
+
+The following function computes four solutions arising from the Forward
+Euler method, ordinary splitting, Strang splitting, as well as Strang splitting
+with exact treatment of :math:`u'=f_0(u)`:
+
+.. code-block:: python
+
+    import numpy as np
+    
+    def solver(dt, T, f, f_0, f_1):
+        """
+        Solve u'=f by the Forward Euler method and by ordinary and
+        Strang splitting: f(u) = f_0(u) + f_1(u).
+        """
+        Nt = int(round(T/float(dt)))
+        t = np.linspace(0, Nt*dt, Nt+1)
+        u_FE = np.zeros(len(t))
+        u_split1 = np.zeros(len(t))  # 1st-order splitting
+        u_split2 = np.zeros(len(t))  # 2nd-order splitting
+        u_split3 = np.zeros(len(t))  # 2nd-order splitting w/exact f_0
+    
+        # Set initial values
+        u_FE[0] = 0.1
+        u_split1[0] = 0.1
+        u_split2[0] = 0.1
+        u_split3[0] = 0.1
+    
+        for n in range(len(t)-1):
+            # Forward Euler method
+            u_FE[n+1] = u_FE[n] + dt*f(u_FE[n])
+    
+            # --- Ordinary splitting ---
+            # First step
+            u_s_n = u_split1[n]
+            u_s = u_s_n + dt*f_0(u_s_n)
+            # Second step
+            u_ss_n = u_s
+            u_ss = u_ss_n + dt*f_1(u_ss_n)
+            u_split1[n+1] = u_ss
+    
+            # --- Strang splitting ---
+            # First step
+            u_s_n = u_split2[n]
+            u_s = u_s_n + dt/2.*f_0(u_s_n)
+            # Second step
+            u_sss_n = u_s
+            u_sss = u_sss_n + dt*f_1(u_sss_n)
+            # Third step
+            u_ss_n = u_sss
+            u_ss = u_ss_n + dt/2.*f_0(u_ss_n)
+            u_split2[n+1] = u_ss
+    
+            # --- Strang splitting using exact integrator for u'=f_0 ---
+            # First step
+            u_s_n = u_split3[n]
+            u_s = u_s_n*np.exp(dt/2.)  # exact
+            # Second step
+            u_sss_n = u_s
+            u_sss = u_sss_n + dt*f_1(u_sss_n)
+            # Third step
+            u_ss_n = u_sss
+            u_ss = u_ss_n*np.exp(dt/2.)  # exact
+            u_split3[n+1] = u_ss
+    
+        return u_FE, u_split1, u_split2, u_split3, t
+
+Compact implementation
+~~~~~~~~~~~~~~~~~~~~~~
+
+We have used quite many lines for the steps in the splitting methods.
+Many will prefer to condense the code a bit, as done here:
+
+.. code-block:: python
+
+    # Ordinary splitting
+    u_s = u_split1[n] + dt*f_0(u_split1[n])
+    u_split1[n+1] = u_s + dt*f_1(u_s)
+    # Strang splitting
+    u_s = u_split2[n] + dt/2.*f_0(u_split2[n])
+    u_sss = u_s + dt*f_1(u_s)
+    u_split2[n+1] = u_sss + dt/2.*f_0(u_sss)
+    # Strang splitting using exact integrator for u'=f_0
+    u_s = u_split3[n]*np.exp(dt/2.)  # exact
+    u_ss = u_s + dt*f_1(u_s)
+    u_split3[n+1] = u_ss*np.exp(dt/2.)
+
+Results
+~~~~~~~
+
+Figure :ref:`nonlin:splitting:ODE:logistic:fig` shows that the impact of
+splitting is significant. Interestingly, however,
+the Forward Euler method applied to the entire problem directly is much more
+accurate than any of the splitting schemes. We also see that Strang
+splitting is definitely more accurate than ordinary splitting and that
+it helps a bit to use an exact solution of :math:`u'=f_0(u)`.  With a large
+time step (:math:`\Delta t = 0.2`, left plot in Figure
+:ref:`nonlin:splitting:ODE:logistic:fig`), the asymptotic values are off
+by 20-30%.  A more reasonable time step (:math:`\Delta t = 0.05`, right plot
+in Figure :ref:`nonlin:splitting:ODE:logistic:fig`) gives better
+results, but still the asymptotic values are up to 10% wrong.
+
+As technique for solving nonlinear ODEs, we realize that the present
+case study is not particularly promising, as the Forward Euler method
+both linearizes the original problem and provides a solution that is
+much more accurate than any of the splitting techniques.
+In complicated multi-physics settings, on the other hand, splitting
+may be the only feasible way to go, and sometimes you really need to apply
+different numerics to different parts of a PDE problem.
+But in very simple problems, like the logistic ODE, splitting is just an
+inferior technique. Still, the logistic ODE is ideal for introducing all
+the mathematical details and for investigating the behavior.
+
+.. _nonlin:splitting:ODE:logistic:fig:
+
+.. figure:: split_logistic.png
+   :width: 800
+
+   *Effect of ordinary and Strang splitting for the logistic equation*
+
+.. Cannot analyze logistic method because we have no exact solution
+
+.. of the discrete equations. But in the next linear problem we can analyze.
+
+.. _nonlin:splitting:RD:
+
+Reaction-diffusion equation
+---------------------------
+
+Consider a diffusion equation coupled to chemical reactions modeled by
+a nonlinear term :math:`f(u)`:
+
+.. math::
+         \frac{\partial u}{\partial t} = {\alpha}\nabla^2u + f(u){\thinspace .}
+
+This is a physical process composed of two individual processes:
+:math:`u` is the concentration of a substance that is locally generated by
+a chemical reaction :math:`f(u)`, while :math:`u` is spreading in space because
+of diffusion. There are obviously two time scales: one for the chemical
+reaction and one for diffusion. Typically, fast chemical reactions require
+much finer time stepping than slower diffusion processes.
+It could therefore be advantageous to split
+the two physical effects in separate models and use different numerical methods
+for the two.
+
+A natural spitting in the present case is
+
+.. _Eq:nonlin:splitting:RD:eq:diffu:
+
+.. math::
+
+    \tag{588}
+    \frac{\partial u^{{*}}}{\partial t} = {\alpha}\nabla^2 u^{{*}},
+        
+        
+
+.. _Eq:nonlin:splitting:RD:eq:decay:
+
+.. math::
+
+    \tag{589}
+    \frac{\partial u^{{**}}}{\partial t} = f(u^{{**}})
+        {\thinspace .}
+        
+
+Looking at these familiar problems,
+we may apply a :math:`\theta` rule (implicit) scheme for
+:ref:`(588) <Eq:nonlin:splitting:RD:eq:diffu>` over one time step
+and avoid dealing with nonlinearities
+by applying an explicit scheme for :ref:`(589) <Eq:nonlin:splitting:RD:eq:decay>`
+over the same time step.
+
+Suppose we have some solution :math:`u` at time level :math:`t_n`. For flexibility,
+we define a :math:`\theta` method for the diffusion part
+:ref:`(588) <Eq:nonlin:splitting:RD:eq:diffu>` by
+
+.. math::
+         [D_t u^{*} =
+        {\alpha} (D_xD_x u^{*} + D_y D_y u^{*})]^{n+\theta}{\thinspace .}
+
+We use :math:`u^{n}` as initial condition for :math:`u^{*}`.
+
+The reaction part, which is defined at each mesh point (without coupling
+values in different mesh points), can employ any scheme for an ODE.
+Here we use an Adams-Bashforth method of order 2. Recall that the overall
+accuracy of the splitting method
+is maximum :math:`{\mathcal{O}(\Delta t^2)}` for Strang splitting,
+otherwise it is just :math:`{\mathcal{O}(\Delta t)}`. Higher-order methods for ODEs will
+therefore be a waste of work. The 2nd-order Adams-Bashforth method reads
+
+.. _Eq:_auto248:
+
+.. math::
+
+    \tag{590}
+    u^{{**},n+1}_{i,j} = u^{{**},n}_{i,j} +
+        \frac{1}{2}\Delta t\left( 3f(u^{{**}, n}_{i,j}, t_n) -
+        f(u^{{**}, n-1}_{i,j}, t_{n-1})
+        \right)
+        {\thinspace .}
+        
+        
+
+We can use a Forward Euler step to start the method, i.e, compute
+:math:`u^{{**},1}_{i,j}`.
+
+The algorithm goes like this:
+
+1. Solve the diffusion problem for one time step as usual.
+
+2. Solve the reaction ODEs at each mesh point in :math:`[t_n,t_n+\Delta t]`,
+   using the diffusion solution in 1. as initial condition.
+   The solution of the ODEs constitute the solution of the original problem
+   at the end of each time step.
+
+We may use a much smaller time step when solving the reaction part, adapted
+to the dynamics of the problem :math:`u'=f(u)`. This gives great flexibility in
+splitting methods.
+
+.. _nonlin:splitting:RD_linearR:
+
+Example: Reaction-Diffusion with linear reaction term
+-----------------------------------------------------
+
+**Unfinished section!**
+
+The method above may be explored in detailed through a specific
+computational example, where we compute the errors and convergence
+rates for three different numerical approaches to the
+reaction-diffusion equation with a linear reaction term, i.e. :math:`f(u)=-bu`.
+
+In the implementation below, the equation is solved first without any
+splitting, simply using the forward Euler method over the whole time
+interval. This is the simplest numerical method we can think for the
+equation at hand. Then, ordinary splitting is introduced and, finally,
+Strang splitting. A finer time stepping is made possible for the
+reaction part when the original PDE is split. This is advantageous if
+we prefer an implicit method and long time steps for the diffusion
+process. For Forward Euler time stepping also in the PDE, the time step
+governed by stability is most likely small enough for sufficient accuracy
+of the reaction process.
+
+Running the code shows that the convergence rate is 1 for all methods,
+which is what one would expect.  Also, the error gets smaller for the ordinary splitting
+approach compared to the overall Forward Euler method, and still
+smaller for the Strang splitting compared to ordinary splitting. With
+either method, choosing to use an even finer time stepping for the
+reaction term, gives a further reduction in the error.
+
+The reaction step is here solved with the second order Adams-Bashforth method, which
+in itself contributes to second order convergence. However, since our implementation
+still uses Forward Euler for the diffusion step, the overall convergence rate only
+becomes first order. Switching to, e.g., the Crank-Nicolson scheme will
+allow an overall convergence rate of 2, in theory, in case of Strang splitting.
+
+.. code-block:: python
+
+    import sys, time
+    import scitools.std as plt
+    import scipy.sparse
+    import scipy.sparse.linalg
+    import numpy as np
+    
+    def diffusion_FE(I, a, f, L, dt, F, t, T, step_no, user_action=None):
+        """Diffusion solver, Forward Euler method.
+        Note that t always covers the whole global time interval, whether
+        splitting is the case or not. T, on the other hand, is
+        the end of the global time interval if there is no split,
+        but if splitting, we use T=dt. When splitting, step_no keeps
+        track of the time step number (required for lookup in t).
+        """
+    
+        Nt = int(round(T/float(dt)))
+        dx = np.sqrt(a*dt/F)
+        Nx = int(round(L/dx))
+        x = np.linspace(0, L, Nx+1)       # Mesh points in space
+        # Make sure dx and dt are compatible with x and t
+        dx = x[1] - x[0]
+        dt = t[1] - t[0]
+    
+        u   = np.zeros(Nx+1)   # solution array
+        u_n = np.zeros(Nx+1)   # solution at t-dt
+    
+        # Allow f to be None or 0
+        if f is None or f == 0:
+            f = lambda x, t: np.zeros((x.size)) \
+                if isinstance(x, np.ndarray) else 0
+    
+        # Set initial condition
+        if isinstance(I, np.ndarray):   # I is an array
+            u_n = np.copy(I)
+        else:                           # I is a function
+            for i in range(0, Nx+1):
+                u_n[i] = I(x[i])
+    
+        if user_action is not None:
+            user_action(u_n, x, t, step_no+0)
+    
+        for n in range(0, Nt):
+            # Update all inner points
+            u[1:Nx] = u_n[1:Nx] +  \
+                      F*(u_n[0:Nx-1] - 2*u_n[1:Nx] + u_n[2:Nx+1]) +\
+                      dt*f(u_n[1:Nx], t[step_no+n])
+    
+            # Insert boundary conditions
+            u[0] = 0;  u[Nx] = 0
+    
+            #sl: ...testing -------------------------
+            #print 'time:', t[step_no+n]
+            #print 'diff part from diffusion_FE:'
+            #print u_n[1:Nx] + F*(u_n[0:Nx-1] - 2*u_n[1:Nx] + u_n[2:Nx+1])
+            #print 'react part from diffusion_FE:'
+            #print dt*f(u_n[1:Nx], t[step_no+n])
+            #print ' '
+            #if step_no == 1: sys.exit(0)
+            # ----------------------------------
+    
+            if user_action is not None:
+                user_action(u, x, t, step_no+(n+1))
+    
+            # Switch variables before next step
+            u_n, u = u, u_n
+    
+        return u_n
+    
+    
+    def diffusion_theta(I, a, f, L, dt, F, t, T, step_no, theta=0.5,
+                        u_L=0, u_R=0, user_action=None):
+        """
+        Full solver for the model problem using the theta-rule
+        difference approximation in time (no restriction on F,
+        i.e., the time step when theta >= 0.5).
+        Vectorized implementation and sparse (tridiagonal)
+        coefficient matrix.
+        """
+    
+        Nt = int(round(T/float(dt)))
+        #t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
+        dx = np.sqrt(a*dt/F)
+        Nx = int(round(L/dx))
+        x = np.linspace(0, L, Nx+1)       # Mesh points in space
+        # Make sure dx and dt are compatible with x and t
+        dx = x[1] - x[0]
+        dt = t[1] - t[0]
+    
+        u   = np.zeros(Nx+1)   # solution array at t[n+1]
+        u_n = np.zeros(Nx+1)   # solution at t[n]
+    
+        # Representation of sparse matrix and right-hand side
+        diagonal = np.zeros(Nx+1)
+        lower    = np.zeros(Nx)
+        upper    = np.zeros(Nx)
+        b        = np.zeros(Nx+1)
+    
+        # Precompute sparse matrix (scipy format)
+        Fl = F*theta
+        Fr = F*(1-theta)
+        diagonal[:] = 1 + 2*Fl
+        lower[:] = -Fl  #1
+        upper[:] = -Fl  #1
+        # Insert boundary conditions
+        diagonal[0] = 1
+        upper[0] = 0
+        diagonal[Nx] = 1
+        lower[-1] = 0
+    
+        diags = [0, -1, 1]
+        A = scipy.sparse.diags(
+            diagonals=[diagonal, lower, upper],
+            offsets=[0, -1, 1], shape=(Nx+1, Nx+1),
+            format='csr')
+        #print A.todense()
+    
+        # Allow f to be None or 0
+        if f is None or f == 0:
+            f = lambda x, t: np.zeros((x.size)) \
+                if isinstance(x, np.ndarray) else 0
+    
+        # Set initial condition
+        if isinstance(I, np.ndarray):   # I is an array
+            u_n = np.copy(I)
+        else:                           # I is a function
+            for i in range(0, Nx+1):
+                u_n[i] = I(x[i])
+    
+        if user_action is not None:
+            user_action(u_n, x, t, step_no+0)
+    
+        # Time loop
+        for n in range(0, Nt):
+            b[1:-1] = u_n[1:-1] + \
+                      Fr*(u_n[:-2] - 2*u_n[1:-1] + u_n[2:]) + \
+                      dt*theta*f(u_n[1:-1], t[step_no+n+1]) + \
+                      dt*(1-theta)*f(u_n[1:-1], t[step_no+n])
+            b[0] = u_L; b[-1] = u_R  # boundary conditions
+            u[:] = scipy.sparse.linalg.spsolve(A, b)
+    
+            if user_action is not None:
+                user_action(u, x, t, step_no+(n+1))
+    
+            # Update u_n before next step
+            u_n, u = u, u_n
+    
+        # u is now contained in u_n (swapping)
+        return u_n
+    
+    
+    def reaction_FE(I, f, L, Nx, dt, dt_Rfactor, t, step_no,
+                    user_action=None):
+        """
+        Reaction solver: u'=f, Forward Euler method.
+    
+        t is a global time mesh, while this function solves
+        the reaction problem on [t[step_no], t[step_no+1]]
+        using a local, fine t mesh with step dt/dt_Rfactor, where
+        dt is the time step in the global mesh.
+        Return u at t[step_no+1] at all spatial mesh points in [0,L]
+        with resolution Nx.
+        """
+    
+        #bypass = True
+        #if not bypass:  # original code from sl
+    
+        u = np.copy(I)
+        dt_local = dt/float(dt_Rfactor)
+        Nt_local = int(round(dt/float(dt_local)))
+        x = np.linspace(0, L, Nx+1)
+    
+        for n in range(Nt_local):
+            time = t[step_no] + n*dt_local
+            u[1:Nx] = u[1:Nx] + dt_local*f(u[1:Nx], time)
+    
+        # BC already inserted in diffusion step, i.e. no action here
+    
+        return u
+    
+    def ordinary_splitting(I, a, b, f, L, dt,
+                           dt_Rfactor, F, t, T,
+                           user_action=None):
+        '''1st order scheme, i.e. Forward Euler is enough for both
+        the diffusion and the reaction part. The time step dt is
+        given for the diffusion step, while the time step for the
+        reaction part is found as dt/dt_Rfactor, where dt_Rfactor >= 1.
+        '''
+        Nt = int(round(T/float(dt)))
+        #t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points, global time
+        dx = np.sqrt(a*dt/F)
+        Nx = int(round(L/dx))
+        x = np.linspace(0, L, Nx+1)       # Mesh points in space
+        u = np.zeros(Nx+1)
+    
+        # Set initial condition u(x,0) = I(x)
+        for i in range(0, Nx+1):
+            u[i] = I(x[i])
+    
+        # In the following loop, each time step is "covered twice",
+        # first for diffusion, then for reaction
+        for n in range(0, Nt):
+            # Note: could avoid the call to diffusion_FE here...
+    
+            # Diffusion step (one time step dt)
+            u_s = diffusion_FE(I=u, a=a, f=0, L=L, dt=dt, F=F,
+                               t=t, T=dt, step_no=n,
+                               user_action=None)
+            # Reaction step (potentially many smaller steps within dt)
+            u = reaction_FE(I=u_s, f=f, L=L, Nx=Nx,
+                            dt=dt, dt_Rfactor=dt_Rfactor,
+                            t=t, step_no=n,
+                            user_action=None)
+    
+            if user_action is not None:
+                user_action(u, x, t, n+1)
+    
+    
+    def Strang_splitting_1stOrder(I, a, b, f, L, dt, dt_Rfactor,
+                                  F, t, T, user_action=None):
+        '''Strang splitting while still using FE for the diffusion
+        step and for the reaction step. Gives 1st order scheme.
+        Introduce an extra time mesh t2 for the diffusion part,
+        since it steps dt/2.
+        '''
+        Nt = int(round(T/float(dt)))
+        t2 = np.linspace(0, Nt*dt, (Nt+1)+Nt)   # Mesh points in diff
+        dx = np.sqrt(a*dt/F)
+        Nx = int(round(L/dx))
+        x = np.linspace(0, L, Nx+1)
+        u = np.zeros(Nx+1)
+    
+        # Set initial condition u(x,0) = I(x)
+        for i in range(0, Nx+1):
+            u[i] = I(x[i])
+    
+        for n in range(0, Nt):
+    
+            # Diffusion step (1/2 dt: from t_n to t_n+1/2)
+            u_s = diffusion_FE(I=u, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0,
+                               t=t2, T=dt/2.0, step_no=2*n,
+                               user_action=None)
+    
+            # Reaction step (1 dt: from t_n to t_n+1)
+            # (potentially many smaller steps within dt)
+            u_sss = reaction_FE(I=u_s, f=f, L=L, Nx=Nx,
+                            dt=dt, dt_Rfactor=dt_Rfactor,
+                            t=t, step_no=n,
+                            user_action=None)
+    
+            # Diffusion step (1/2 dt: from t_n+1/2 to t_n)
+            u = diffusion_FE(I=u_sss, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0,
+                               t=t2, T=dt/2.0, step_no=2*n+1,
+                               user_action=None)
+    
+            if user_action is not None:
+                user_action(u, x, t, n+1)
+    
+    
+    def Strang_splitting_2ndOrder(I, a, b, f, L, dt, dt_Rfactor,
+                                  F, t, T, user_action=None):
+        '''Strang splitting using Crank-Nicolson for the diffusion
+        step (theta-rule) and Adams-Bashforth 2 for the reaction step.
+        Gives 2nd order scheme. Introduce an extra time mesh t2 for
+        the diffusion part, since it steps dt/2.
+        '''
+        import odespy
+        Nt = int(round(T/float(dt)))
+        t2 = np.linspace(0, Nt*dt, (Nt+1)+Nt)   # Mesh points in diff
+        dx = np.sqrt(a*dt/F)
+        Nx = int(round(L/dx))
+        x = np.linspace(0, L, Nx+1)
+        u = np.zeros(Nx+1)
+    
+        # Set initial condition u(x,0) = I(x)
+        for i in range(0, Nx+1):
+            u[i] = I(x[i])
+    
+        reaction_solver = odespy.AdamsBashforth2(f)
+    
+        for n in range(0, Nt):
+    
+            # Diffusion step (1/2 dt: from t_n to t_n+1/2)
+            # Crank-Nicolson (theta = 0.5, gives 2nd order)
+            u_s = diffusion_theta(I=u, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0,
+                                  t=t2, T=dt/2.0, step_no=2*n, theta=0.5,
+                                  u_L=0, u_R=0, user_action=None)
+    
+            #u_s = diffusion_FE(I=u, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0,
+            #                   t=t2, T=dt/2.0, step_no=2*n,
+            #                   user_action=None)
+    
+            # Reaction step (1 dt: from t_n to t_n+1)
+            # (potentially many smaller steps within dt)
+            #sl: testing -----------------------------------
+            reaction_solver.set_initial_condition(u_s)
+            t_points = np.linspace(0, dt, dt_Rfactor+1)
+            u_AB2, t_ = reaction_solver.solve(t_points) # t_ not needed
+            u_sss = u_AB2[-1,:]  # pick sol at last point in time
+            #-----------------------------------------------
+    
+            #u_sss = reaction_FE(I=u_s, f=f, L=L, Nx=Nx,
+            #                dt=dt, dt_Rfactor=dt_Rfactor,
+            #                t=t, step_no=n,
+            #                user_action=None)
+    
+            # Diffusion step (1/2 dt: from t_n+1/2 to t_n)
+            # Crank-Nicolson (theta = 0.5, gives 2nd order)
+            u = diffusion_theta(I=u_sss, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0,
+                                t=t2, T=dt/2.0, step_no=2*n+1, theta=0.5,
+                                u_L=0, u_R=0, user_action=None)
+    
+            #u = diffusion_FE(I=u_sss, a=a, f=0, L=L, dt=dt/2.0, F=F/2.0,
+            #                   t=t2, T=dt/2.0, step_no=2*n+1,
+            #                   user_action=None)
+    
+            if user_action is not None:
+                user_action(u, x, t, n+1)
+    
+    
+    
+    def convergence_rates(scheme='diffusion'):
+        '''Computes empirical conv. rates for the different
+        splitting schemes'''
+    
+        F = 0.5
+        T = 1.2
+        a = 3.5
+        b = 1
+        L = 1.5
+        k = np.pi/L
+    
+        def exact(x, t):
+            '''exact sol. to: du/dt = a*d^2u/dx^2 - b*u'''
+            return np.exp(-(a*k**2 + b)*t) * np.sin(k*x)
+    
+        def f(u, t):
+            return -b*u
+    
+        def I(x):
+            return exact(x, 0)
+    
+        global error    # error computed in the user action function
+        error = 0
+    
+        # Convergence study
+        def action(u, x, t, n):
+            global error
+            if n == 1:      # New simulation, - reset error
+                error = 0
+            else:
+                error = max(error, np.abs(u - exact(x, t[n])).max())
+    
+        E = []
+        h = []
+        Nx_values = [10, 20, 40, 80, 160]
+        for Nx in Nx_values:
+            dx = L/Nx;  dt = F/a*dx**2
+            Nt = int(round(T/float(dt)))
+            t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points, global time
+    
+            if scheme == 'diffusion':
+                print 'Running FE on whole eqn...'
+                diffusion_FE(I, a, f, L, dt, F, t, T,
+                             step_no=0, user_action=action)
+            elif scheme == 'ordinary_splitting':
+                print 'Running ordinary splitting...'
+                ordinary_splitting(I=I, a=a, b=b, f=f, L=L, dt=dt,
+                                   dt_Rfactor=1, F=F, t=t, T=T,
+                                   user_action=action)
+            elif scheme == 'Strang_splitting_1stOrder':
+                print 'Running Strang splitting with 1st order schemes...'
+                Strang_splitting_1stOrder(I=I, a=a, b=b, f=f, L=L, dt=dt,
+                                          dt_Rfactor=1, F=F, t=t, T=T,
+                                          user_action=action)
+            elif scheme == 'Strang_splitting_2ndOrder':
+                print 'Running Strang splitting with 2nd order schemes...'
+                Strang_splitting_2ndOrder(I=I, a=a, b=b, f=f, L=L, dt=dt,
+                                          dt_Rfactor=1, F=F, t=t, T=T,
+                                          user_action=action)
+            else:
+                print 'Unknown scheme requested!'
+                sys.exit(0)
+    
+            h.append(dt)
+            E.append(error)
+    
+        print 'E:', E
+        print 'h:', h
+    
+        # Convergence rates
+        r = [np.log(E[i]/E[i-1])/np.log(h[i]/h[i-1])
+             for i in range(1,len(Nx_values))]
+        print 'Computed rates:', r
+    
+    
+    if __name__ == '__main__':
+    
+        schemes = ['diffusion',
+                   'ordinary_splitting',
+                   'Strang_splitting_1stOrder',
+                   'Strang_splitting_2ndOrder']
+    
+        for scheme in schemes:
+            convergence_rates(scheme=scheme)
+
+Analysis of the splitting method
+--------------------------------
+
+Let us address a linear PDE problem for which we can develop analytical
+solutions of the discrete equations, with and without splitting, and discuss
+these. Choosing :math:`f(u)=-\beta u` for a constant :math:`\beta` gives a linear
+problem. We use the Forward Euler method for both the PDE and ODE problems.
+
+We seek a 1D Fourier wave component solution of the problem, assuming
+homogeneous Dirichlet conditions at :math:`x=0` and :math:`x=L`:
+
+.. math::
+         u = e^{-{\alpha} k^2 t - \beta t}\sin kx,\quad k = \frac{\pi}{L}{\thinspace .}
+
+This component fits the 1D PDE problem (:math:`f=0`). On complex form we can
+write
+
+.. math::
+         u = e^{-{\alpha} k^2 t - \beta t + ikx},
+
+where :math:`i=\sqrt{-1}` and the imaginary part is taken as the physical solution.
+
+We refer to the section :ref:`diffu:pde1:analysis` and to
+the book [Ref02]_ for a discussion of exact numerical
+solutions to diffusion and decay problems, respectively.  The key idea
+is to search for solutions :math:`A^ne^{ikx}` and determine :math:`A`.  For the
+diffusion problem solved by a Forward Euler method one has
+
+.. math::
+         A = 1 - 4F\sin^p, 
+
+where :math:`F={\alpha}\Delta t/\Delta x^2` is the mesh Fourier number and :math:`p=k\Delta x/2`
+is a dimensionless number reflecting the spatial resolution (number of points
+per wave length in space). For the decay problem :math:`u'=-\beta u`, we have
+:math:`A=1 - q`, where :math:`q` is a dimensionless parameter reflecting the resolution
+in the decay problem: :math:`q = \beta\Delta t`.
+
+The original model problem can also be discretized by a Forward Euler scheme,
+
+.. math::
+         [D^+_t u = {\alpha} D_xD_x u - \beta u]^n_i{\thinspace .}
+
+Assuming :math:`A^ne^{ikx}` we find that
+
+.. math::
+         u^n_i = (1 - 4F\sin^p -q)^n\sin kx{\thinspace .}
+
+We are particularly interested in what happens at one time step. That is,
+
+.. math::
+         u^{n}_{i} = (1-4F\sin^2 p)u^{n-1}_i{\thinspace .}
+
+In the two stage algorithm, we first compute the diffusion step
+
+.. math::
+         u^{{*},n+1}_i = (1 - 4F\sin^2 p)u^{n-1}_i{\thinspace .}
+
+Then we use this as input to the decay algorithm and arrive at
+
+.. math::
+         u^{{**},n+1} = (1-q)u^{{*},n+1} = (1-q)(1-4F\sin^2 p) u^{n-1}_i{\thinspace .}
+
+The splitting approximation over one step is therefore
+
+.. math::
+         E = 1 - 4F\sin^p -q - (1-q)(1-4F\sin^2 p) = -q(2 - F\sin^2 p)) 
 

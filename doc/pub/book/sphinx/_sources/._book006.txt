@@ -10,13 +10,11 @@
 Generalization: reflecting boundaries
 =====================================
 
-The boundary condition :math:`u=0` in a wave equation
-reflects the wave, but :math:`u` changes sign at the boundary,
-while the condition :math:`u_x=0` reflects the wave as a mirror and preserves
-the sign, see
-a `web page <http://tinyurl.com/opdfafk/pub/mov-wave/demo_BC_gaussian/index.html>`__
-or a `movie file <http://tinyurl.com/opdfafk/pub/mov-wave/demo_BC_gaussian/movie.flv>`__
-for demonstration.
+The boundary condition :math:`u=0` in a wave equation reflects the wave, but
+:math:`u` changes sign at the boundary, while the condition :math:`u_x=0` reflects
+the wave as a mirror and preserves the sign, see a `web page <http://tinyurl.com/pu5uyfn/pub/pub/wave/html/mov-wave/demo_BC_gaussian/index.html>`__ or a
+`movie file <http://tinyurl.com/pu5uyfn/pub/pub/wave/html/mov-wave/demo_BC_gaussian/movie.flv>`__ for
+demonstration.
 
 Our next task is to explain how to implement the boundary
 condition :math:`u_x=0`, which is
@@ -53,7 +51,7 @@ the condition
 
 .. math::
 
-    \tag{153}
+    \tag{194}
     \frac{\partial u}{\partial n} \equiv \boldsymbol{n}\cdot\nabla u = 0
         
         {\thinspace .}
@@ -76,8 +74,8 @@ we have that
 .. admonition:: Boundary condition terminology
 
    Boundary conditions
-   that specify the value of :math:`\partial u/\partial n`,
-   or shorter :math:`u_n`, are known as
+   that specify the value of :math:`\partial u/\partial n`
+   (or shorter :math:`u_n`) are known as
    `Neumann <http://en.wikipedia.org/wiki/Neumann_boundary_condition>`__ conditions, while `Dirichlet conditions <http://en.wikipedia.org/wiki/Dirichlet_conditions>`__
    refer to specifications of :math:`u`.
    When the values are zero (:math:`\partial u/\partial n=0` or :math:`u=0`) we speak
@@ -91,27 +89,30 @@ we have that
 Discretization of derivatives at the boundary
 ---------------------------------------------
 
-How can we incorporate the condition :ref:`(153) <Eq:wave:pde1:Neumann:0>`
+.. index::
+   single: stencil; Neumann boundary
+
+How can we incorporate the condition :ref:`(194) <Eq:wave:pde1:Neumann:0>`
 in the finite difference scheme?  Since we have used central
 differences in all the other approximations to derivatives in the
-scheme, it is tempting to implement :ref:`(153) <Eq:wave:pde1:Neumann:0>` at
+scheme, it is tempting to implement :ref:`(194) <Eq:wave:pde1:Neumann:0>` at
 :math:`x=0` and :math:`t=t_n` by the difference
 
 .. _Eq:wave:pde1:Neumann:0:cd:
 
 .. math::
 
-    \tag{154}
-    [D_{2x} u]^n_0 = \frac{u_{-1}^n - u_1^n}{2\Delta x} = 0
+    \tag{195}
+    [D_{2x} u]^n_0 = \frac{u_{-1}^n - u_n^n}{2\Delta x} = 0
         {\thinspace .}
         
         
 
 The problem is that :math:`u_{-1}^n` is not a :math:`u` value that is being
 computed since the point is outside the mesh. However, if we combine
-:ref:`(154) <Eq:wave:pde1:Neumann:0:cd>` with the scheme
+:ref:`(195) <Eq:wave:pde1:Neumann:0:cd>` with the scheme
 
-.. :ref:`(132) <Eq:wave:pde1:step4>`
+.. :ref:`(173) <Eq:wave:pde1:step4>`
 
 for :math:`i=0`,
 
@@ -119,22 +120,22 @@ for :math:`i=0`,
 
 .. math::
 
-    \tag{155}
+    \tag{196}
     u^{n+1}_i = -u^{n-1}_i + 2u^n_i + C^2
         \left(u^{n}_{i+1}-2u^{n}_{i} + u^{n}_{i-1}\right),
         
         
 
 we can eliminate the fictitious value :math:`u_{-1}^n`. We see that
-:math:`u_{-1}^n=u_1^n` from :ref:`(154) <Eq:wave:pde1:Neumann:0:cd>`, which
-can be used in :ref:`(155) <Eq:wave:pde1:Neumann:0:scheme>` to
+:math:`u_{-1}^n=u_n^n` from :ref:`(195) <Eq:wave:pde1:Neumann:0:cd>`, which
+can be used in :ref:`(196) <Eq:wave:pde1:Neumann:0:scheme>` to
 arrive at a modified scheme for the boundary point :math:`u_0^{n+1}`:
 
-.. _Eq:_auto42:
+.. _Eq:_auto69:
 
 .. math::
 
-    \tag{156}
+    \tag{197}
     u^{n+1}_i = -u^{n-1}_i  + 2u^n_i + 2C^2
         \left(u^{n}_{i+1}-u^{n}_{i}\right),\quad i=0 {\thinspace .}   
         
@@ -143,9 +144,6 @@ Figure :ref:`wave:pde1:fig:Neumann:stencil` visualizes this equation
 for computing :math:`u^3_0` in terms of :math:`u^2_0`, :math:`u^1_0`, and
 :math:`u^2_1`.
 
-.. index::
-   single: stencil; Neumann boundary
-
 .. _wave:pde1:fig:Neumann:stencil:
 
 .. figure:: stencil_n_left.png
@@ -153,14 +151,14 @@ for computing :math:`u^3_0` in terms of :math:`u^2_0`, :math:`u^1_0`, and
 
    *Modified stencil at a boundary with a Neumann condition*
 
-Similarly, :ref:`(153) <Eq:wave:pde1:Neumann:0>` applied at :math:`x=L`
+Similarly, :ref:`(194) <Eq:wave:pde1:Neumann:0>` applied at :math:`x=L`
 is discretized by a central difference
 
 .. _Eq:wave:pde1:Neumann:0:cd2:
 
 .. math::
 
-    \tag{157}
+    \tag{198}
     \frac{u_{N_x+1}^n - u_{N_x-1}^n}{2\Delta x} = 0
         {\thinspace .}
         
@@ -169,21 +167,20 @@ is discretized by a central difference
 Combined with the scheme for :math:`i=N_x` we get a modified scheme for
 the boundary value :math:`u_{N_x}^{n+1}`:
 
-.. _Eq:_auto43:
+.. _Eq:_auto70:
 
 .. math::
 
-    \tag{158}
+    \tag{199}
     u^{n+1}_i = -u^{n-1}_i + 2u^n_i + 2C^2
         \left(u^{n}_{i-1}-u^{n}_{i}\right),\quad i=N_x {\thinspace .}   
         
 
 The modification of the scheme at the boundary is also required for
 the special formula for the first time step. How the stencil moves
-through the mesh and is modified at the boundary can be illustrated
-by an animation
-in a `web page <http://tinyurl.com/opdfafk/pub/mov-wave/wave1D_PDE_Neumann_stencil_gpl/index.html>`__
-or a `movie file <http://tinyurl.com/opdfafk/pub/mov-wave/wave1D_PDE_Neumann_stencil_gpl/movie.ogg>`__.
+through the mesh and is modified at the boundary can be illustrated by
+an animation in a `web page <http://tinyurl.com/pu5uyfn/pub/pub/wave/html/mov-wave/N_stencil_gpl/index.html>`__
+or a `movie file <http://tinyurl.com/pu5uyfn/pub/pub/wave/html/mov-wave/N_stencil_gpl/movie.ogg>`__.
 
 .. _wave:pde2:Neumann:impl:
 
@@ -208,27 +205,27 @@ is the general stencil formula):
 
 .. code-block:: python
 
-        i = 0
-        ip1 = i+1
-        im1 = ip1  # i-1 -> i+1
-        u[i] = u_1[i] + C2*(u_1[im1] - 2*u_1[i] + u_1[ip1])
-        
-        i = Nx
-        im1 = i-1
-        ip1 = im1  # i+1 -> i-1
-        u[i] = u_1[i] + C2*(u_1[im1] - 2*u_1[i] + u_1[ip1])
+    i = 0
+    ip1 = i+1
+    im1 = ip1  # i-1 -> i+1
+    u[i] = u_n[i] + C2*(u_n[im1] - 2*u_n[i] + u_n[ip1])
+    
+    i = Nx
+    im1 = i-1
+    ip1 = im1  # i+1 -> i-1
+    u[i] = u_n[i] + C2*(u_n[im1] - 2*u_n[i] + u_n[ip1])
 
 We can in fact create one loop over both the internal and boundary
 points and use only one updating formula:
 
 .. code-block:: python
 
-        for i in range(0, Nx+1):
-            ip1 = i+1 if i < Nx else i-1
-            im1 = i-1 if i > 0  else i+1
-            u[i] = u_1[i] + C2*(u_1[im1] - 2*u_1[i] + u_1[ip1])
+    for i in range(0, Nx+1):
+        ip1 = i+1 if i < Nx else i-1
+        im1 = i-1 if i > 0  else i+1
+        u[i] = u_n[i] + C2*(u_n[im1] - 2*u_n[i] + u_n[ip1])
 
-The program `wave1D_n0.py <http://tinyurl.com/nm5587k/wave/wave1D/wave1D_n0.py>`__
+The program `wave1D_n0.py <http://tinyurl.com/nu656p2/wave/wave1D/wave1D_n0.py>`__
 contains a complete implementation of the 1D wave equation with
 boundary conditions :math:`u_x = 0` at :math:`x=0` and :math:`x=L`.
 
@@ -254,12 +251,12 @@ Index set notation
 To improve our mathematical writing and our implementations,
 it is wise to introduce a special notation for index sets. This means
 that we write
-:math:`x_i`, :math:`i\in{\mathcal{I}_x}`, instead of :math:`i=0,\ldots,N_x`.
+:math:`x_i`, followed by :math:`i\in{\mathcal{I}_x}`, instead of :math:`i=0,\ldots,N_x`.
 Obviously, :math:`{\mathcal{I}_x}` must be the index set :math:`{\mathcal{I}_x} =\{0,\ldots,N_x\}`, but it
 is often advantageous to have a symbol for this set rather than
 specifying all its elements (all the time, as we have done up to
 now). This new notation saves writing and makes
-specifications of algorithms and their implementation of computer code
+specifications of algorithms and their implementation as computer code
 simpler.
 
 The first index in the set will be denoted :math:`{{\mathcal{I^0}_x}}`
@@ -311,11 +308,11 @@ conventions:
 For the current problem setting in the :math:`x,t` plane, we work with
 the index sets
 
-.. _Eq:_auto44:
+.. _Eq:_auto71:
 
 .. math::
 
-    \tag{159}
+    \tag{200}
     {\mathcal{I}_x} = \{0,\ldots,N_x\},\quad {\mathcal{I}_t} = \{0,\ldots,N_t\},
         
         
@@ -324,13 +321,13 @@ defined in Python as
 
 .. code-block:: python
 
-        Ix = range(0, Nx+1)
-        It = range(0, Nt+1)
+    Ix = range(0, Nx+1)
+    It = range(0, Nt+1)
 
 A finite difference scheme can with the index set notation be specified as
 
 .. math::
-        
+        \begin{align*}
         u_i^{n+1} &= u^n_i - \frac{1}{2}
         C^2\left(u^{n}_{i+1}-2u^{n}_{i} + u^{n}_{i-1}\right),\quad,
         i\in{{\mathcal{I^i}_x}},\ n=0,\\ 
@@ -341,29 +338,29 @@ A finite difference scheme can with the index set notation be specified as
         \quad i={{\mathcal{I^0}_x}},\ n\in{{\mathcal{I^-}_t}},\\ 
         u_i^{n+1} &= 0,
         \quad i={\mathcal{I^{-1}_x}},\ n\in{{\mathcal{I^-}_t}}{\thinspace .}
-        
+        \end{align*}
 
 The corresponding implementation becomes
 
 .. code-block:: python
 
-        # Initial condition
+    # Initial condition
+    for i in Ix[1:-1]:
+        u[i] = u_n[i] - 0.5*C2*(u_n[i-1] - 2*u_n[i] + u_n[i+1])
+    
+    # Time loop
+    for n in It[1:-1]:
+        # Compute internal points
         for i in Ix[1:-1]:
-            u[i] = u_1[i] - 0.5*C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1])
-        
-        # Time loop
-        for n in It[1:-1]:
-            # Compute internal points
-            for i in Ix[1:-1]:
-                u[i] = - u_2[i] + 2*u_1[i] + \ 
-                       C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1])
-            # Compute boundary conditions
-            i = Ix[0];  u[i] = 0
-            i = Ix[-1]; u[i] = 0
+            u[i] = - u_nm1[i] + 2*u_n[i] + \ 
+                   C2*(u_n[i-1] - 2*u_n[i] + u_n[i+1])
+        # Compute boundary conditions
+        i = Ix[0];  u[i] = 0
+        i = Ix[-1]; u[i] = 0
 
 
 .. note::
-   The program `wave1D_dn.py <http://tinyurl.com/nm5587k/wave/wave1D/wave1D_dn.py>`__
+   The program `wave1D_dn.py <http://tinyurl.com/nu656p2/wave/wave1D/wave1D_dn.py>`__
    applies the index set notation and
    solves the 1D wave equation :math:`u_{tt}=c^2u_{xx}+f(x,t)` with
    quite general boundary and initial conditions:
@@ -374,10 +371,10 @@ The corresponding implementation becomes
    
      * :math:`t=0`: :math:`u=I(x)`
    
-     * :math:`t=0`: :math:`u_t=I(x)`
+     * :math:`t=0`: :math:`u_t=V(x)`
    
    The program combines Dirichlet and Neumann conditions, scalar and vectorized
-   implementation of schemes, and the index notation into one piece of code.
+   implementation of schemes, and the index set notation into one piece of code.
    A lot of test examples are also included in the program:
    
     * A rectangular plug-shaped initial condition. (For :math:`C=1` the solution
@@ -397,8 +394,6 @@ The corresponding implementation becomes
 
 
 
-[**hpl 8**: Should include some experiments here or make exercises. Qualitative behavior of the wave equation can be exemplified.]
-
 .. _wave:pde1:verify:
 
 Verifying the implementation of Neumann conditions
@@ -417,43 +412,43 @@ consequently left with testing just a constant solution: :math:`u=\hbox{const}`.
 
 .. code-block:: python
 
-        def test_constant():
-            """
-            Check the scalar and vectorized versions for
-            a constant u(x,t). We simulate in [0, L] and apply
-            Neumann and Dirichlet conditions at both ends.
-            """
-            u_const = 0.45
-            u_exact = lambda x, t: u_const
-            I = lambda x: u_exact(x, 0)
-            V = lambda x: 0
-            f = lambda x, t: 0
-        
-            def assert_no_error(u, x, t, n):
-                u_e = u_exact(x, t[n])
-                diff = np.abs(u - u_e).max()
-                msg = 'diff=%E, t_%d=%g' % (diff, n, t[n])
-                tol = 1E-13
-                assert diff < tol, msg
-        
-            for U_0 in (None, lambda t: u_const):
-                for U_L in (None, lambda t: u_const):
-                    L = 2.5
-                    c = 1.5
-                    C = 0.75
-                    Nx = 3  # Very coarse mesh for this exact test
-                    dt = C*(L/Nx)/c
-                    T = 18  # long time integration
-        
-                    solver(I, V, f, c, U_0, U_L, L, dt, C, T,
-                           user_action=assert_no_error,
-                           version='scalar')
-                    solver(I, V, f, c, U_0, U_L, L, dt, C, T,
-                           user_action=assert_no_error,
-                           version='vectorized')
-                    print U_0, U_L
+    def test_constant():
+        """
+        Check the scalar and vectorized versions for
+        a constant u(x,t). We simulate in [0, L] and apply
+        Neumann and Dirichlet conditions at both ends.
+        """
+        u_const = 0.45
+        u_exact = lambda x, t: u_const
+        I = lambda x: u_exact(x, 0)
+        V = lambda x: 0
+        f = lambda x, t: 0
+    
+        def assert_no_error(u, x, t, n):
+            u_e = u_exact(x, t[n])
+            diff = np.abs(u - u_e).max()
+            msg = 'diff=%E, t_%d=%g' % (diff, n, t[n])
+            tol = 1E-13
+            assert diff < tol, msg
+    
+        for U_0 in (None, lambda t: u_const):
+            for U_L in (None, lambda t: u_const):
+                L = 2.5
+                c = 1.5
+                C = 0.75
+                Nx = 3  # Very coarse mesh for this exact test
+                dt = C*(L/Nx)/c
+                T = 18  # long time integration
+    
+                solver(I, V, f, c, U_0, U_L, L, dt, C, T,
+                       user_action=assert_no_error,
+                       version='scalar')
+                solver(I, V, f, c, U_0, U_L, L, dt, C, T,
+                       user_action=assert_no_error,
+                       version='vectorized')
+                print U_0, U_L
 
-The quadratic solution is very useful for testing though, but it requires
+The quadratic solution is very useful for testing, but it requires
 Dirichlet conditions at both ends.
 
 Another test may utilize the fact that the approximation error vanishes
@@ -466,27 +461,27 @@ test function reads
 
 .. code-block:: python
 
-        def test_plug():
-            """Check that an initial plug is correct back after one period."""
-            L = 1.0
-            c = 0.5
-            dt = (L/10)/c  # Nx=10
-            I = lambda x: 0 if abs(x-L/2.0) > 0.1 else 1
-        
-            u_s, x, t, cpu = solver(
-                I=I,
-                V=None, f=None, c=0.5, U_0=None, U_L=None, L=L,
-                dt=dt, C=1, T=4, user_action=None, version='scalar')
-            u_v, x, t, cpu = solver(
-                I=I,
-                V=None, f=None, c=0.5, U_0=None, U_L=None, L=L,
-                dt=dt, C=1, T=4, user_action=None, version='vectorized')
-            tol = 1E-13
-            diff = abs(u_s - u_v).max()
-            assert diff < tol
-            u_0 = np.array([I(x_) for x_ in x])
-            diff = np.abs(u_s - u_0).max()
-            assert diff < tol
+    def test_plug():
+        """Check that an initial plug is correct back after one period."""
+        L = 1.0
+        c = 0.5
+        dt = (L/10)/c  # Nx=10
+        I = lambda x: 0 if abs(x-L/2.0) > 0.1 else 1
+    
+        u_s, x, t, cpu = solver(
+            I=I,
+            V=None, f=None, c=0.5, U_0=None, U_L=None, L=L,
+            dt=dt, C=1, T=4, user_action=None, version='scalar')
+        u_v, x, t, cpu = solver(
+            I=I,
+            V=None, f=None, c=0.5, U_0=None, U_L=None, L=L,
+            dt=dt, C=1, T=4, user_action=None, version='vectorized')
+        tol = 1E-13
+        diff = abs(u_s - u_v).max()
+        assert diff < tol
+        u_0 = np.array([I(x_) for x_ in x])
+        diff = np.abs(u_s - u_0).max()
+        assert diff < tol
 
 Other tests must rely on an unknown approximation error, so effectively
 we are left with tests on the convergence rate.
@@ -501,14 +496,12 @@ Idea
 
 Instead of modifying the scheme at the boundary, we can introduce
 extra points outside the domain such that the fictitious values
-:math:`u_{-1}^n` and :math:`u_{N_x+1}^n`
-are defined in the mesh.
-Adding the intervals :math:`[-\Delta x,0]` and :math:`[L, L+\Delta x]`,
-often referred to as *ghost cells*, to the mesh gives us all the
-needed mesh points, corresponding to :math:`i=-1,0,\ldots,N_x,N_x+1`.
-The extra points :math:`i=-1` and :math:`i=N_x+1` are known as *ghost points*,
-and values at these points, :math:`u_{-1}^n` and :math:`u_{N_x+1}^n`, are
-called *ghost values*.
+:math:`u_{-1}^n` and :math:`u_{N_x+1}^n` are defined in the mesh.  Adding the
+intervals :math:`[-\Delta x,0]` and :math:`[L, L+\Delta x]`, known as *ghost
+cells*, to the mesh gives us all the needed mesh points, corresponding
+to :math:`i=-1,0,\ldots,N_x,N_x+1`.  The extra points with :math:`i=-1` and
+:math:`i=N_x+1` are known as *ghost points*, and values at these points,
+:math:`u_{-1}^n` and :math:`u_{N_x+1}^n`, are called *ghost values*.
 
 The important idea is
 to ensure that we always have
@@ -521,6 +514,13 @@ the application of the standard scheme at a boundary point :math:`i=0` or :math:
 will be correct and guarantee that the solution is compatible with the
 boundary condition :math:`u_x=0`.
 
+Some readers may find it strange to just extend the domain with ghost
+cells as a general technique, because in some problems there is a
+completely different medium with different physics and equations right
+outside of a boundary. Nevertheless, one should view the ghost cell
+technique as a purely mathematical technique, which is valid in the
+limit :math:`\Delta xrightarrow 0` and helps us to implement derivatives.
+
 Implementation          (5)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -529,9 +529,9 @@ points. Two new point values are needed:
 
 .. code-block:: python
 
-        u   = zeros(Nx+3)
+    u   = zeros(Nx+3)
 
-The arrays ``u_1`` and ``u_2`` must be defined accordingly.
+The arrays ``u_n`` and ``u_nm1`` must be defined accordingly.
 
 Unfortunately, a major indexing problem arises with ghost cells.
 The reason is that Python indices *must* start
@@ -555,8 +555,8 @@ indices for the real physical mesh points (:math:`1,2,\ldots,N_x+1`):
 
 .. code-block:: python
 
-        u = zeros(Nx+3)
-        Ix = range(1, u.shape[0]-1)
+    u = zeros(Nx+3)
+    Ix = range(1, u.shape[0]-1)
 
 That is, the boundary points have indices ``Ix[0]`` and ``Ix[-1]`` (as before).
 We first update the solution at all physical mesh points (i.e., interior
@@ -564,9 +564,9 @@ points in the mesh):
 
 .. code-block:: python
 
-        for i in Ix:
-            u[i] = - u_2[i] + 2*u_1[i] + \ 
-                   C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1])
+    for i in Ix:
+        u[i] = - u_nm1[i] + 2*u_n[i] + \ 
+               C2*(u_n[i-1] - 2*u_n[i] + u_n[i+1])
 
 The indexing becomes a bit more complicated when we call functions like
 ``V(x)`` and ``f(x, t)``, as we must remember that the appropriate
@@ -574,10 +574,10 @@ The indexing becomes a bit more complicated when we call functions like
 
 .. code-block:: python
 
-        for i in Ix:
-            u[i] = u_1[i] + dt*V(x[i-Ix[0]]) + \ 
-                   0.5*C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) + \ 
-                   0.5*dt2*f(x[i-Ix[0]], t[0])
+    for i in Ix:
+        u[i] = u_n[i] + dt*V(x[i-Ix[0]]) + \ 
+               0.5*C2*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) + \ 
+               0.5*dt2*f(x[i-Ix[0]], t[0])
 
 It remains to update the solution at ghost points, i.e, ``u[0]``
 and ``u[-1]`` (or ``u[Nx+2]``). For a boundary condition :math:`u_x=0`,
@@ -586,16 +586,16 @@ point. Computer code makes this statement precise:
 
 .. code-block:: python
 
-        i = Ix[0]          # x=0 boundary
-        u[i-1] = u[i+1]
-        i = Ix[-1]         # x=L boundary
-        u[i+1] = u[i-1]
+    i = Ix[0]          # x=0 boundary
+    u[i-1] = u[i+1]
+    i = Ix[-1]         # x=L boundary
+    u[i+1] = u[i-1]
 
 The physical solution to be plotted is now in ``u[1:-1]``, or
 equivalently ``u[Ix[0]:Ix[-1]+1]``, so this slice is
 the quantity to be returned from a solver function.
 A complete implementation appears in the program
-`wave1D_n0_ghost.py <http://tinyurl.com/nm5587k/wave/wave1D/wave1D_n0_ghost.py>`__.
+`wave1D_n0_ghost.py <http://tinyurl.com/nu656p2/wave/wave1D/wave1D_n0_ghost.py>`__.
 
 
 .. warning::
@@ -604,23 +604,23 @@ A complete implementation appears in the program
     
     .. code-block:: python
     
-            x = linspace(0, L, Nx+1)
+        x = linspace(0, L, Nx+1)
     
     "Standard coding" of the initial condition,
     
     .. code-block:: python
     
-            for i in Ix:
-                u_1[i] = I(x[i])
+        for i in Ix:
+            u_n[i] = I(x[i])
     
-    becomes wrong, since ``u_1`` and ``x`` have different lengths and the index ``i``
+    becomes wrong, since ``u_n`` and ``x`` have different lengths and the index ``i``
     corresponds to two different mesh points. In fact, ``x[i]`` corresponds
     to ``u[1+i]``. A correct implementation is
     
     .. code-block:: python
     
-            for i in Ix:
-                u_1[i] = I(x[i-Ix[0]])
+        for i in Ix:
+            u_n[i] = I(x[i-Ix[0]])
     
     Similarly, a source term usually coded as ``f(x[i], t[n])`` is incorrect
     if ``x`` is defined to be the physical points, so ``x[i]`` must be
@@ -641,17 +641,17 @@ is
 
 .. code-block:: python
 
-        u = zeros(Nx+2)
-        Ix = range(1, u.shape[0])
-        ...
-        for i in Ix[:-1]:
-            u[i] = - u_2[i] + 2*u_1[i] + \ 
-                   C2*(u_1[i-1] - 2*u_1[i] + u_1[i+1]) + \ 
-                   dt2*f(x[i-Ix[0]], t[n])
-        i = Ix[-1]
-        u[i] = U_0       # set Dirichlet value
-        i = Ix[0]
-        u[i-1] = u[i+1]  # update ghost value
+    u = zeros(Nx+2)
+    Ix = range(1, u.shape[0])
+    ...
+    for i in Ix[:-1]:
+        u[i] = - u_nm1[i] + 2*u_n[i] + \ 
+               C2*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) + \ 
+               dt2*f(x[i-Ix[0]], t[n])
+    i = Ix[-1]
+    u[i] = U_0       # set Dirichlet value
+    i = Ix[0]
+    u[i-1] = u[i+1]  # update ghost value
 
 The physical solution to be plotted is now in ``u[1:]``
 or (as always) ``u[Ix[0]:Ix[-1]+1]``.
@@ -661,8 +661,8 @@ or (as always) ``u[Ix[0]:Ix[-1]+1]``.
 Generalization: variable wave velocity
 ======================================
 
-Our next generalization of the 1D wave equation :ref:`(119) <Eq:wave:pde1>` or
-:ref:`(135) <Eq:wave:pde2>` is to allow for a variable wave velocity :math:`c`:
+Our next generalization of the 1D wave equation :ref:`(160) <Eq:wave:pde1>` or
+:ref:`(176) <Eq:wave:pde2>` is to allow for a variable wave velocity :math:`c`:
 :math:`c=c(x)`, usually motivated by wave motion in a domain composed of
 different physical media. When the media differ in physical properties
 like density or porosity, the wave velocity :math:`c` is affected and
@@ -693,7 +693,7 @@ A 1D wave equation with variable wave velocity often takes the form
 
 .. math::
 
-    \tag{160}
+    \tag{201}
     \frac{\partial^2 u}{\partial t^2} =
         \frac{\partial}{\partial x}\left( q(x)
         \frac{\partial u}{\partial x}\right) + f(x,t)
@@ -704,9 +704,9 @@ A 1D wave equation with variable wave velocity often takes the form
 This is the most frequent form of a wave
 equation with variable wave velocity,
 but other forms also appear, see the section :ref:`wave:app:string`
-and equation :ref:`(243) <Eq:wave:app:string:model2>`.
+and equation :ref:`(284) <Eq:wave:app:string:model2>`.
 
-As usual, we sample :ref:`(160) <Eq:wave:pde2:var:c:pde>` at a mesh point,
+As usual, we sample :ref:`(201) <Eq:wave:pde2:var:c:pde>` at a mesh point,
 
 .. math::
         
@@ -777,7 +777,7 @@ These intermediate results are now combined to
 
 .. math::
 
-    \tag{161}
+    \tag{202}
     \left[
         \frac{\partial}{\partial x}\left( q(x)
         \frac{\partial u}{\partial x}\right)\right]^n_i
@@ -794,11 +794,11 @@ With operator notation we can write the discretization as
 
 .. math::
 
-    \tag{162}
+    \tag{203}
     \left[
         \frac{\partial}{\partial x}\left( q(x)
         \frac{\partial u}{\partial x}\right)\right]^n_i
-        \approx [D_xq D_x u]^n_i
+        \approx [D_x (\overline{q}^{x} D_x u)]^n_i
         
         {\thinspace .}
         
@@ -822,7 +822,7 @@ With operator notation we can write the discretization as
    Our discretization reflects this
    principle directly: :math:`qu_x` at the right end of the cell minus :math:`qu_x`
    at the left end, because this follows from the formula
-   :ref:`(161) <Eq:wave:pde2:var:c:formula>` or :math:`[D_x(q D_x u)]^n_i`.
+   :ref:`(202) <Eq:wave:pde2:var:c:formula>` or :math:`[D_x(q D_x u)]^n_i`.
    
    When using the chain rule, we get two
    terms :math:`qu_{xx} + q_xu_x`. The typical discretization is
@@ -831,7 +831,7 @@ With operator notation we can write the discretization as
 
 .. math::
 
-    \tag{163}
+    \tag{204}
     D_x q D_x u + D_{2x}q D_{2x} u]_i^n,
            
            
@@ -843,10 +843,10 @@ With operator notation we can write the discretization as
    However, when :math:`q` exhibits (potentially large) jumps,
    :math:`[D_x(q D_x u)]^n_i` with harmonic averaging of :math:`q` yields
    a better solution than arithmetic averaging or
-   :ref:`(163) <Eq:wave:pde2:var:c:chainrule_scheme>`.
+   :ref:`(204) <Eq:wave:pde2:var:c:chainrule_scheme>`.
    In the literature, the discretization :math:`[D_x(q D_x u)]^n_i` totally
    dominates and very few mention the possibility of
-   :ref:`(163) <Eq:wave:pde2:var:c:chainrule_scheme>`.
+   :ref:`(204) <Eq:wave:pde2:var:c:chainrule_scheme>`.
 
 
 
@@ -865,12 +865,12 @@ Computing the coefficient between mesh points
 ---------------------------------------------
 
 If :math:`q` is a known function of :math:`x`, we can easily evaluate
-:math:`q_{i+\frac{1}{2}}` simply as :math:`q(x_{i+\frac{1}{2}})` with
-:math:`x_{i+\frac{1}{2}} = x_i + \frac{1}{2}\Delta x`.
-However, in many cases :math:`c`, and hence :math:`q`,
-is only known as a discrete function, often at the mesh points :math:`x_i`.
-Evaluating :math:`q` between two mesh points :math:`x_i` and :math:`x_{i+1}` can then
-be done by averaging in three ways:
+:math:`q_{i+\frac{1}{2}}` simply as :math:`q(x_{i+\frac{1}{2}})` with :math:`x_{i+\frac{1}{2}} = x_i +
+\frac{1}{2}\Delta x`.  However, in many cases :math:`c`, and hence :math:`q`, is only
+known as a discrete function, often at the mesh points :math:`x_i`.
+Evaluating :math:`q` between two mesh points :math:`x_i` and :math:`x_{i+1}` must then
+be done by *interpolation* techniques, of which three are of
+particular interest in this context:
 
 .. index:: geometric mean
 
@@ -891,7 +891,7 @@ be done by averaging in three ways:
 
 .. math::
 
-    \tag{164}
+    \tag{205}
     q_{i+\frac{1}{2}} \approx
         \frac{1}{2}\left( q_{i} + q_{i+1}\right) =
         [\overline{q}^{x}]_i
@@ -903,7 +903,7 @@ be done by averaging in three ways:
 
 .. math::
 
-    \tag{165}
+    \tag{206}
     q_{i+\frac{1}{2}} \approx
         2\left( \frac{1}{q_{i}} + \frac{1}{q_{i+1}}\right)^{-1}
         \quad \hbox{(harmonic mean)}
@@ -914,14 +914,14 @@ be done by averaging in three ways:
 
 .. math::
 
-    \tag{166}
+    \tag{207}
     q_{i+\frac{1}{2}} \approx
         \left(q_{i}q_{i+1}\right)^{1/2}
         \quad \hbox{(geometric mean)}
         
         
 
-The arithmetic mean in :ref:`(164) <Eq:wave:pde2:var:c:mean:arithmetic>` is by
+The arithmetic mean in :ref:`(205) <Eq:wave:pde2:var:c:mean:arithmetic>` is by
 far the most commonly used averaging technique and is well suited
 for smooth :math:`q(x)` functions.
 The harmonic mean is often preferred when :math:`q(x)` exhibits large
@@ -930,7 +930,7 @@ The geometric mean is less used, but popular in
 discretizations to linearize quadratic
 nonlinearities (see the section :ref:`vib:ode2:fdm:fquad` for an example).
 
-With the operator notation from :ref:`(164) <Eq:wave:pde2:var:c:mean:arithmetic>`
+With the operator notation from :ref:`(205) <Eq:wave:pde2:var:c:mean:arithmetic>`
 we can specify the discretization of the complete variable-coefficient
 wave equation in a compact way:
 
@@ -938,24 +938,23 @@ wave equation in a compact way:
 
 .. math::
 
-    \tag{167}
+    \tag{208}
     \lbrack D_tD_t u = D_x\overline{q}^{x}D_x u + f\rbrack^{n}_i
         {\thinspace .}
         
         
 
-From this notation we immediately see what kind of differences that
+Strictly speaking, :math:`\lbrack D_x\overline{q}^{x}D_x u\rbrack^{n}_i
+= \lbrack D_x (\overline{q}^{x}D_x u)\rbrack^{n}_i`.
+
+From the compact difference notation we immediately see what kind of differences that
 each term is approximated with. The notation :math:`\overline{q}^{x}`
 also specifies that the variable coefficient is approximated by
 an arithmetic mean, the definition being
 :math:`[\overline{q}^{x}]_{i+\frac{1}{2}}=(q_i+q_{i+1})/2`.
-With the notation :math:`[D_xq D_x u]^n_i`,
-we specify that :math:`q` is evaluated directly, as a function,
-between the mesh points:
-:math:`q(x_{i-\frac{1}{2}})` and :math:`q(x_{i+\frac{1}{2}})`.
 
-Before any implementation, it remains to solve
-:ref:`(167) <Eq:wave:pde2:var:c:scheme:op>` with respect to :math:`u_i^{n+1}`:
+Before implementing, it remains to solve
+:ref:`(208) <Eq:wave:pde2:var:c:scheme:op>` with respect to :math:`u_i^{n+1}`:
 
 .. math::
         
@@ -974,7 +973,7 @@ Before any implementation, it remains to solve
 
 .. math::
 
-    \tag{168}
+    \tag{209}
     \quad \Delta t^2 f^n_i
         {\thinspace .}
         
@@ -991,11 +990,11 @@ on the spatial location. We must therefore choose a :math:`\Delta t` that
 is small enough such that no mesh cell has :math:`\Delta x/c(x) >\Delta t`.
 That is, we must use the largest :math:`c` value in the criterion:
 
-.. _Eq:_auto45:
+.. _Eq:_auto72:
 
 .. math::
 
-    \tag{169}
+    \tag{210}
     \Delta t \leq \beta \frac{\Delta x}{\max_{x\in [0,L]}c(x)}
         {\thinspace .}
         
@@ -1007,8 +1006,8 @@ have stable solutions (:math:`\beta =0.9` may act as an all-round value).
 
 A different strategy to handle the stability criterion with variable
 wave velocity is to use a spatially varying :math:`\Delta t`. While the idea
-is mathematically attractive at first sight, the implementation quickly
-becomes very complicated, so we stick to using a constant :math:`\Delta t`
+is mathematically attractive at first sight, the implementation
+quickly becomes very complicated, so we stick to a constant :math:`\Delta t`
 and a worst case value of :math:`c(x)` (with a safety factor :math:`\beta`).
 
 .. _wave:pde2:var:c:Neumann:
@@ -1025,7 +1024,7 @@ discretized as
         u_{i+1}^n = u_{i-1}^n,
         
 
-for :math:`i=N_x`. Using the scheme :ref:`(168) <Eq:wave:pde2:var:c:scheme:impl>`
+for :math:`i=N_x`. Using the scheme :ref:`(209) <Eq:wave:pde2:var:c:scheme:impl>`
 at the end point :math:`i=N_x` with :math:`u_{i+1}^n=u_{i-1}^n` results in
 
 .. math::
@@ -1033,11 +1032,11 @@ at the end point :math:`i=N_x` with :math:`u_{i+1}^n=u_{i-1}^n` results in
         u^{n+1}_i = - u_i^{n-1}  + 2u_i^n + \nonumber
         
 
-.. _Eq:_auto46:
+.. _Eq:_auto73:
 
 .. math::
 
-    \tag{170}
+    \tag{211}
     \quad \left(\frac{\Delta t}{\Delta x}\right)^2 \left(
         q_{i+\frac{1}{2}}(u_{i-1}^n - u_{i}^n) -
         q_{i-\frac{1}{2}}(u_{i}^n - u_{i-1}^n)\right)
@@ -1049,7 +1048,7 @@ at the end point :math:`i=N_x` with :math:`u_{i+1}^n=u_{i-1}^n` results in
 
 .. math::
 
-    \tag{171}
+    \tag{212}
     = - u_i^{n-1}  + 2u_i^n + \left(\frac{\Delta t}{\Delta x}\right)^2
         (q_{i+\frac{1}{2}} + q_{i-\frac{1}{2}})(u_{i-1}^n - u_{i}^n) +
         \Delta t^2 f^n_i
@@ -1060,7 +1059,7 @@ at the end point :math:`i=N_x` with :math:`u_{i+1}^n=u_{i-1}^n` results in
 
 .. math::
 
-    \tag{172}
+    \tag{213}
     \approx - u_i^{n-1}  + 2u_i^n + \left(\frac{\Delta t}{\Delta x}\right)^2
         2q_{i}(u_{i-1}^n - u_{i}^n) + \Delta t^2 f^n_i
         {\thinspace .}
@@ -1089,18 +1088,19 @@ Here we used the approximation
         \nonumber
         
 
-.. _Eq:_auto47:
+.. _Eq:_auto74:
 
 .. math::
 
-    \tag{173}
+    \tag{214}
     \approx 2q_i
         {\thinspace .}
         
         
 
-An alternative derivation may apply the arithmetic mean of :math:`q` in
-:ref:`(171) <Eq:wave:pde2:var:c:scheme:impl:Neumann0>`, leading to the term
+An alternative derivation may apply the arithmetic mean of
+:math:`q_{n-\frac{1}{2}}` and :math:`q_{n+\frac{1}{2}}` in
+:ref:`(212) <Eq:wave:pde2:var:c:scheme:impl:Neumann0>`, leading to the term
 
 .. math::
          (q_i + \frac{1}{2}(q_{i+1}+q_{i-1}))(u_{i-1}^n-u_i^n){\thinspace .}
@@ -1127,11 +1127,11 @@ The implications for the scheme are
         + \nonumber
         
 
-.. _Eq:_auto48:
+.. _Eq:_auto75:
 
 .. math::
 
-    \tag{174}
+    \tag{215}
     \quad \Delta t^2 f^n_i
         
         
@@ -1140,7 +1140,7 @@ The implications for the scheme are
 
 .. math::
 
-    \tag{175}
+    \tag{216}
     = - u_i^{n-1}  + 2u_i^n + \left(\frac{\Delta t}{\Delta x}\right)^2
         2q_{i-\frac{1}{2}}(u_{i-1}^n - u_{i}^n) +
         \Delta t^2 f^n_i
@@ -1156,15 +1156,15 @@ Implementation of variable coefficients
 The implementation of the scheme with a variable wave velocity :math:`q(x)=c^2(x)`
 may assume that :math:`q` is available as an array ``q[i]`` at
 the spatial mesh points. The following loop is a straightforward
-implementation of the scheme :ref:`(168) <Eq:wave:pde2:var:c:scheme:impl>`:
+implementation of the scheme :ref:`(209) <Eq:wave:pde2:var:c:scheme:impl>`:
 
 .. code-block:: python
 
-        for i in range(1, Nx):
-            u[i] = - u_2[i] + 2*u_1[i] + \ 
-                   C2*(0.5*(q[i] + q[i+1])*(u_1[i+1] - u_1[i])  - \ 
-                       0.5*(q[i] + q[i-1])*(u_1[i] - u_1[i-1])) + \ 
-                   dt2*f(x[i], t[n])
+    for i in range(1, Nx):
+        u[i] = - u_nm1[i] + 2*u_n[i] + \ 
+               C2*(0.5*(q[i] + q[i+1])*(u_n[i+1] - u_n[i])  - \ 
+                   0.5*(q[i] + q[i-1])*(u_n[i] - u_n[i-1])) + \ 
+               dt2*f(x[i], t[n])
 
 The coefficient ``C2`` is now defined as ``(dt/dx)**2``, i.e., *not* as the
 squared Courant number, since the wave velocity is variable and appears
@@ -1181,13 +1181,13 @@ the boundary with the following code.
 
 .. code-block:: python
 
-        i = 0
-        ip1 = i+1
-        im1 = ip1
-        u[i] = - u_2[i] + 2*u_1[i] + \ 
-               C2*(0.5*(q[i] + q[ip1])*(u_1[ip1] - u_1[i])  - \ 
-                   0.5*(q[i] + q[im1])*(u_1[i] - u_1[im1])) + \ 
-               dt2*f(x[i], t[n])
+    i = 0
+    ip1 = i+1
+    im1 = ip1
+    u[i] = - u_nm1[i] + 2*u_n[i] + \ 
+           C2*(0.5*(q[i] + q[ip1])*(u_n[ip1] - u_n[i])  - \ 
+               0.5*(q[i] + q[im1])*(u_n[i] - u_n[im1])) + \ 
+           dt2*f(x[i], t[n])
 
 With ghost cells we can just reuse the formula for the interior
 points also at the boundary, provided that the ghost values of both
@@ -1198,10 +1198,10 @@ at internal mesh points becomes
 
 .. code-block:: python
 
-        u[1:-1] = - u_2[1:-1] + 2*u_1[1:-1] + \ 
-                  C2*(0.5*(q[1:-1] + q[2:])*(u_1[2:] - u_1[1:-1]) -
-                      0.5*(q[1:-1] + q[:-2])*(u_1[1:-1] - u_1[:-2])) + \ 
-                  dt2*f(x[1:-1], t[n])
+    u[1:-1] = - u_nm1[1:-1] + 2*u_n[1:-1] + \ 
+              C2*(0.5*(q[1:-1] + q[2:])*(u_n[2:] - u_n[1:-1]) -
+                  0.5*(q[1:-1] + q[:-2])*(u_n[1:-1] - u_n[:-2])) + \ 
+              dt2*f(x[1:-1], t[n])
 
 A more general PDE model with variable coefficients
 ---------------------------------------------------
@@ -1213,7 +1213,7 @@ the time-derivative term:
 
 .. math::
 
-    \tag{176}
+    \tag{217}
     \varrho(x)\frac{\partial^2 u}{\partial t^2} =
         \frac{\partial}{\partial x}\left( q(x)
         \frac{\partial u}{\partial x}\right) + f(x,t)
@@ -1224,13 +1224,13 @@ the time-derivative term:
 One example appears when modeling elastic waves in a rod
 with varying density, cf. |nbsp| (:ref:`wave:app:string`) with :math:`\varrho (x)`.
 
-A natural scheme for :ref:`(176) <Eq:wave:pde2:var:c:pde2>` is
+A natural scheme for :ref:`(217) <Eq:wave:pde2:var:c:pde2>` is
 
-.. _Eq:_auto49:
+.. _Eq:_auto76:
 
 .. math::
 
-    \tag{177}
+    \tag{218}
     [\varrho D_tD_t u = D_x\overline{q}^xD_x u + f]^n_i
         {\thinspace .}
         
@@ -1242,11 +1242,11 @@ in front of a derivative. There is hence no need for any averaging
 of :math:`\varrho`. Often, :math:`\varrho` will be moved to the right-hand side,
 also without any difficulty:
 
-.. _Eq:_auto50:
+.. _Eq:_auto77:
 
 .. math::
 
-    \tag{178}
+    \tag{219}
     [D_tD_t u = \varrho^{-1}D_x\overline{q}^xD_x u + f]^n_i
         {\thinspace .}
         
@@ -1270,7 +1270,7 @@ mechanical system):
 
 .. math::
 
-    \tag{179}
+    \tag{220}
     \frac{\partial^2 u}{\partial t^2} + b\frac{\partial u}{\partial t} =
         c^2\frac{\partial^2 u}{\partial x^2}
          + f(x,t),
@@ -1279,14 +1279,14 @@ mechanical system):
 
 where :math:`b \geq 0` is a prescribed damping coefficient.
 
-A typical discretization of :ref:`(179) <Eq:wave:pde3>` in terms of centered
+A typical discretization of :ref:`(220) <Eq:wave:pde3>` in terms of centered
 differences reads
 
 .. _Eq:wave:pde3:fd:
 
 .. math::
 
-    \tag{180}
+    \tag{221}
     [D_tD_t u + bD_{2t}u = c^2D_xD_x u + f]^n_i
         {\thinspace .}
         
@@ -1299,7 +1299,7 @@ gives the scheme
 
 .. math::
 
-    \tag{181}
+    \tag{222}
     u^{n+1}_i = (1 + {\frac{1}{2}}b\Delta t)^{-1}(({\frac{1}{2}}b\Delta t -1)
         u^{n-1}_i + 2u^n_i + C^2
         \left(u^{n}_{i+1}-2u^{n}_{i} + u^{n}_{i-1}\right) + \Delta t^2 f^n_i),
@@ -1319,7 +1319,7 @@ without damping relevant for a lot of applications.
 Building a general 1D wave equation solver
 ==========================================
 
-The program `wave1D_dn_vc.py <http://tinyurl.com/nm5587k/wave/wave1D/wave1D_dn_vc.py>`__
+The program `wave1D_dn_vc.py <http://tinyurl.com/nu656p2/wave/wave1D/wave1D_dn_vc.py>`__
 is a fairly general code for 1D wave propagation problems that
 targets the following initial-boundary value problem
 
@@ -1327,34 +1327,34 @@ targets the following initial-boundary value problem
 
 .. math::
 
-    \tag{182}
+    \tag{223}
     u_{tt} = (c^2(x)u_x)_x + f(x,t),\quad x\in (0,L),\ t\in (0,T]
         
         
 
-.. _Eq:_auto51:
+.. _Eq:_auto78:
 
 .. math::
 
-    \tag{183}
+    \tag{224}
     u(x,0) = I(x),\quad x\in [0,L]
         
         
 
-.. _Eq:_auto52:
+.. _Eq:_auto79:
 
 .. math::
 
-    \tag{184}
+    \tag{225}
     u_t(x,0) = V(t),\quad x\in [0,L]
         
         
 
-.. _Eq:_auto53:
+.. _Eq:_auto80:
 
 .. math::
 
-    \tag{185}
+    \tag{226}
     u(0,t) = U_0(t)\hbox{ or } u_x(0,t)=0,\quad t\in (0,T]
         
         
@@ -1363,7 +1363,7 @@ targets the following initial-boundary value problem
 
 .. math::
 
-    \tag{186}
+    \tag{227}
     u(L,t) = U_L(t)\hbox{ or } u_x(L,t)=0,\quad t\in (0,T]
         
         
@@ -1373,11 +1373,11 @@ These are trivial to implement:
 
 .. code-block:: python
 
-        i = Ix[0]  # x=0
-        u[i] = U_0(t[n+1])
-        
-        i = Ix[-1] # x=L
-        u[i] = U_L(t[n+1])
+    i = Ix[0]  # x=0
+    u[i] = U_0(t[n+1])
+    
+    i = Ix[-1] # x=L
+    u[i] = U_L(t[n+1])
 
 The ``solver`` function is a natural extension of the simplest
 ``solver`` function in the initial ``wave1D_u0.py`` program,
@@ -1386,7 +1386,10 @@ time-varying Dirichlet conditions, as well as
 a variable wave velocity. The different code segments needed
 to make these extensions have been shown and commented upon in the
 preceding text. We refer to the ``solver`` function in the
-``wave1D_dn_vc.py`` file for all the details.
+``wave1D_dn_vc.py`` file for all the details. Note in that
+ ``solver`` function, however, that the technique of "hashing" is
+used to check whether a certain simulation has been run before, or not.
+This technique is further explained in the section :ref:`softeng2:wave1D:filestorage:hash`.
 
 The vectorization is only applied inside the time loop, not for the
 initial condition or the first time steps, since this initial work
@@ -1398,14 +1401,13 @@ techniques applied in the general 1D wave equation solver.
 User action function as a class
 -------------------------------
 
-A useful feature in the ``wave1D_dn_vc.py`` program is the specification of
-the ``user_action`` function as a class. This part of the program may
+A useful feature in the ``wave1D_dn_vc.py`` program is the specification
+of the ``user_action`` function as a class. This part of the program may
 need some motivation and explanation. Although the ``plot_u_st``
-function (and the ``PlotMatplotlib`` class)
-in the ``wave1D_u0.viz`` function
-remembers the local variables in the ``viz`` function, it is a
-cleaner solution to store the needed variables together with
-the function, which is exactly what a class offers.
+function (and the ``PlotMatplotlib`` class) in the ``wave1D_u0.viz``
+function remembers the local variables in the ``viz`` function, it is a
+cleaner solution to store the needed variables together with the
+function, which is exactly what a class offers.
 
 The code
 ~~~~~~~~
@@ -1415,101 +1417,101 @@ files, like the function ``wave1D_u0.viz`` did, can be coded as follows:
 
 .. code-block:: python
 
-        class PlotAndStoreSolution:
-            """
-            Class for the user_action function in solver.
-            Visualizes the solution only.
-            """
-            def __init__(
-                self,
-                casename='tmp',    # Prefix in filenames
-                umin=-1, umax=1,   # Fixed range of y axis
-                pause_between_frames=None,  # Movie speed
-                backend='matplotlib',       # or 'gnuplot' or None
-                screen_movie=True, # Show movie on screen?
-                title='',          # Extra message in title
-                skip_frame=1,      # Skip every skip_frame frame
-                filename=None):    # Name of file with solutions
-                self.casename = casename
-                self.yaxis = [umin, umax]
-                self.pause = pause_between_frames
-                self.backend = backend
-                if backend is None:
-                    # Use native matplotlib
-                    import matplotlib.pyplot as plt
-                elif backend in ('matplotlib', 'gnuplot'):
-                    module = 'scitools.easyviz.' + backend + '_'
-                    exec('import %s as plt' % module)
-                self.plt = plt
-                self.screen_movie = screen_movie
-                self.title = title
-                self.skip_frame = skip_frame
-                self.filename = filename
-                if filename is not None:
-                    # Store time points when u is written to file
-                    self.t = []
-                    filenames = glob.glob('.' + self.filename + '*.dat.npz')
-                    for filename in filenames:
-                        os.remove(filename)
-        
-                # Clean up old movie frames
-                for filename in glob.glob('frame_*.png'):
+    class PlotAndStoreSolution:
+        """
+        Class for the user_action function in solver.
+        Visualizes the solution only.
+        """
+        def __init__(
+            self,
+            casename='tmp',    # Prefix in filenames
+            umin=-1, umax=1,   # Fixed range of y axis
+            pause_between_frames=None,  # Movie speed
+            backend='matplotlib',       # or 'gnuplot' or None
+            screen_movie=True, # Show movie on screen?
+            title='',          # Extra message in title
+            skip_frame=1,      # Skip every skip_frame frame
+            filename=None):    # Name of file with solutions
+            self.casename = casename
+            self.yaxis = [umin, umax]
+            self.pause = pause_between_frames
+            self.backend = backend
+            if backend is None:
+                # Use native matplotlib
+                import matplotlib.pyplot as plt
+            elif backend in ('matplotlib', 'gnuplot'):
+                module = 'scitools.easyviz.' + backend + '_'
+                exec('import %s as plt' % module)
+            self.plt = plt
+            self.screen_movie = screen_movie
+            self.title = title
+            self.skip_frame = skip_frame
+            self.filename = filename
+            if filename is not None:
+                # Store time points when u is written to file
+                self.t = []
+                filenames = glob.glob('.' + self.filename + '*.dat.npz')
+                for filename in filenames:
                     os.remove(filename)
-        
-            def __call__(self, u, x, t, n):
-                """
-                Callback function user_action, call by solver:
-                Store solution, plot on screen and save to file.
-                """
-                # Save solution u to a file using numpy.savez
-                if self.filename is not None:
-                    name = 'u%04d' % n  # array name
-                    kwargs = {name: u}
-                    fname = '.' + self.filename + '_' + name + '.dat'
-                    np.savez(fname, **kwargs)
-                    self.t.append(t[n])  # store corresponding time value
-                    if n == 0:           # save x once
-                        np.savez('.' + self.filename + '_x.dat', x=x)
-        
-                # Animate
-                if n % self.skip_frame != 0:
-                    return
-                title = 't=%.3f' % t[n]
-                if self.title:
-                    title = self.title + ' ' + title
-                if self.backend is None:
-                    # native matplotlib animation
-                    if n == 0:
-                        self.plt.ion()
-                        self.lines = self.plt.plot(x, u, 'r-')
-                        self.plt.axis([x[0], x[-1],
-                                       self.yaxis[0], self.yaxis[1]])
-                        self.plt.xlabel('x')
-                        self.plt.ylabel('u')
-                        self.plt.title(title)
-                        self.plt.legend(['t=%.3f' % t[n]])
-                    else:
-                        # Update new solution
-                        self.lines[0].set_ydata(u)
-                        self.plt.legend(['t=%.3f' % t[n]])
-                        self.plt.draw()
+    
+            # Clean up old movie frames
+            for filename in glob.glob('frame_*.png'):
+                os.remove(filename)
+    
+        def __call__(self, u, x, t, n):
+            """
+            Callback function user_action, call by solver:
+            Store solution, plot on screen and save to file.
+            """
+            # Save solution u to a file using numpy.savez
+            if self.filename is not None:
+                name = 'u%04d' % n  # array name
+                kwargs = {name: u}
+                fname = '.' + self.filename + '_' + name + '.dat'
+                np.savez(fname, **kwargs)
+                self.t.append(t[n])  # store corresponding time value
+                if n == 0:           # save x once
+                    np.savez('.' + self.filename + '_x.dat', x=x)
+    
+            # Animate
+            if n % self.skip_frame != 0:
+                return
+            title = 't=%.3f' % t[n]
+            if self.title:
+                title = self.title + ' ' + title
+            if self.backend is None:
+                # native matplotlib animation
+                if n == 0:
+                    self.plt.ion()
+                    self.lines = self.plt.plot(x, u, 'r-')
+                    self.plt.axis([x[0], x[-1],
+                                   self.yaxis[0], self.yaxis[1]])
+                    self.plt.xlabel('x')
+                    self.plt.ylabel('u')
+                    self.plt.title(title)
+                    self.plt.legend(['t=%.3f' % t[n]])
                 else:
-                    # scitools.easyviz animation
-                    self.plt.plot(x, u, 'r-',
-                                  xlabel='x', ylabel='u',
-                                  axis=[x[0], x[-1],
-                                        self.yaxis[0], self.yaxis[1]],
-                                  title=title,
-                                  show=self.screen_movie)
-                # pause
-                if t[n] == 0:
-                    time.sleep(2)  # let initial condition stay 2 s
-                else:
-                    if self.pause is None:
-                        pause = 0.2 if u.size < 100 else 0
-                    time.sleep(pause)
-        
-                self.plt.savefig('frame_%04d.png' % (n))
+                    # Update new solution
+                    self.lines[0].set_ydata(u)
+                    self.plt.legend(['t=%.3f' % t[n]])
+                    self.plt.draw()
+            else:
+                # scitools.easyviz animation
+                self.plt.plot(x, u, 'r-',
+                              xlabel='x', ylabel='u',
+                              axis=[x[0], x[-1],
+                                    self.yaxis[0], self.yaxis[1]],
+                              title=title,
+                              show=self.screen_movie)
+            # pause
+            if t[n] == 0:
+                time.sleep(2)  # let initial condition stay 2 s
+            else:
+                if self.pause is None:
+                    pause = 0.2 if u.size < 100 else 0
+                time.sleep(pause)
+    
+            self.plt.savefig('frame_%04d.png' % (n))
 
 Dissection
 ~~~~~~~~~~
@@ -1573,98 +1575,164 @@ Four types of initial conditions are available:
 
 4. half a period of a "cosine hat" (``half-cosinehat``)
 
-These peak-shaped initial
-conditions can be placed in the middle (``loc='center'``) or at
-the left end (``loc='left'``) of the domain.
-With the pulse in the middle, it splits in two parts, each with half the
-initial amplitude, traveling in opposite directions. With the pulse
-at the left end, centered at :math:`x=0`, and using the
-symmetry condition :math:`\partial u/\partial x=0`, only a right-going pulse
-is generated. There is also a left-going pulse, but it travels from :math:`x=0`
+These peak-shaped initial conditions can be placed in the middle
+(``loc='center'``) or at the left end (``loc='left'``) of the domain.
+With the pulse in the middle, it splits in two parts, each with half
+the initial amplitude, traveling in opposite directions. With the
+pulse at the left end, centered at :math:`x=0`, and using the symmetry
+condition :math:`\partial u/\partial x=0`, only a right-going pulse is
+generated. There is also a left-going pulse, but it travels from :math:`x=0`
 in negative :math:`x` direction and is not visible in the domain :math:`[0,L]`.
 
-The ``pulse``
-function is a flexible tool for playing around with various wave
-shapes and location of a medium with a different wave velocity.
-
-The code is shown to demonstrate how easy it is to reach this
-flexibility with the building blocks we have already developed:
+The ``pulse`` function is a flexible tool for playing around with
+various wave shapes and jumps in the wave velocity (i.e.,
+discontinuous media).  The code is shown to demonstrate how easy it is
+to reach this flexibility with the building blocks we have already
+developed:
 
 .. code-block:: python
 
-        def pulse(C=1,            # aximum Courant number
-                  Nx=200,         # spatial resolution
-                  animate=True,
-                  version='vectorized',
-                  T=2,            # end time
-                  loc='left',     # location of initial condition
-                  pulse_tp='gaussian',  # pulse/init.cond. type
-                  slowness_factor=2, # wave vel. in right medium
-                  medium=[0.7, 0.9], # interval for right medium
-                  skip_frame=1,      # skip frames in animations
-                  sigma=0.05,        # width measure of the pulse
-                  ):
-            """
-            Various peaked-shaped initial conditions on [0,1].
-            Wave velocity is decreased by the slowness_factor inside
-            medium. The loc parameter can be 'center' or 'left',
-            depending on where the initial pulse is to be located.
-            The sigma parameter governs the width of the pulse.
-            """
-            # Use scaled parameters: L=1 for domain length, c_0=1
-            # for wave velocity outside the domain.
-            L = 1.0
-            c_0 = 1.0
-            if loc == 'center':
-                xc = L/2
-            elif loc == 'left':
-                xc = 0
-        
-            if pulse_tp in ('gaussian','Gaussian'):
-                def I(x):
-                    return np.exp(-0.5*((x-xc)/sigma)**2)
-            elif pulse_tp == 'plug':
-                def I(x):
-                    return 0 if abs(x-xc) > sigma else 1
-            elif pulse_tp == 'cosinehat':
-                def I(x):
-                    # One period of a cosine
-                    w = 2
-                    a = w*sigma
-                    return 0.5*(1 + np.cos(np.pi*(x-xc)/a)) \ 
-                           if xc - a <= x <= xc + a else 0
-        
-            elif pulse_tp == 'half-cosinehat':
-                def I(x):
-                    # Half a period of a cosine
-                    w = 4
-                    a = w*sigma
-                    return np.cos(np.pi*(x-xc)/a) \ 
-                           if xc - 0.5*a <= x <= xc + 0.5*a else 0
-            else:
-                raise ValueError('Wrong pulse_tp="%s"' % pulse_tp)
-        
-            def c(x):
-                return c_0/slowness_factor \ 
-                       if medium[0] <= x <= medium[1] else c_0
-        
-            umin=-0.5; umax=1.5*I(xc)
-            casename = '%s_Nx%s_sf%s' % \ 
-                       (pulse_tp, Nx, slowness_factor)
-            action = PlotMediumAndSolution(
-                medium, casename=casename, umin=umin, umax=umax,
-                skip_frame=skip_frame, screen_movie=animate,
-                backend=None, filename='tmpdata')
-        
-            # Choose the stability limit with given Nx, worst case c
-            # (lower C will then use this dt, but smaller Nx)
-            dt = (L/Nx)/c_0
-            solver(I=I, V=None, f=None, c=c, U_0=None, U_L=None,
-                   L=L, dt=dt, C=C, T=T,
-                   user_action=action, version=version,
-                   stability_safety_factor=1)
+    def pulse(
+        C=1,            # Maximum Courant number
+        Nx=200,         # spatial resolution
+        animate=True,
+        version='vectorized',
+        T=2,            # end time
+        loc='left',     # location of initial condition
+        pulse_tp='gaussian',  # pulse/init.cond. type
+        slowness_factor=2, # inverse of wave vel. in right medium
+        medium=[0.7, 0.9], # interval for right medium
+        skip_frame=1,      # skip frames in animations
+        sigma=0.05         # width measure of the pulse
+        ):
+        """
+        Various peaked-shaped initial conditions on [0,1].
+        Wave velocity is decreased by the slowness_factor inside
+        medium. The loc parameter can be 'center' or 'left',
+        depending on where the initial pulse is to be located.
+        The sigma parameter governs the width of the pulse.
+        """
+        # Use scaled parameters: L=1 for domain length, c_0=1
+        # for wave velocity outside the domain.
+        L = 1.0
+        c_0 = 1.0
+        if loc == 'center':
+            xc = L/2
+        elif loc == 'left':
+            xc = 0
+    
+        if pulse_tp in ('gaussian','Gaussian'):
+            def I(x):
+                return np.exp(-0.5*((x-xc)/sigma)**2)
+        elif pulse_tp == 'plug':
+            def I(x):
+                return 0 if abs(x-xc) > sigma else 1
+        elif pulse_tp == 'cosinehat':
+            def I(x):
+                # One period of a cosine
+                w = 2
+                a = w*sigma
+                return 0.5*(1 + np.cos(np.pi*(x-xc)/a)) \ 
+                       if xc - a <= x <= xc + a else 0
+    
+        elif pulse_tp == 'half-cosinehat':
+            def I(x):
+                # Half a period of a cosine
+                w = 4
+                a = w*sigma
+                return np.cos(np.pi*(x-xc)/a) \ 
+                       if xc - 0.5*a <= x <= xc + 0.5*a else 0
+        else:
+            raise ValueError('Wrong pulse_tp="%s"' % pulse_tp)
+    
+        def c(x):
+            return c_0/slowness_factor \ 
+                   if medium[0] <= x <= medium[1] else c_0
+    
+        umin=-0.5; umax=1.5*I(xc)
+        casename = '%s_Nx%s_sf%s' % \ 
+                   (pulse_tp, Nx, slowness_factor)
+        action = PlotMediumAndSolution(
+            medium, casename=casename, umin=umin, umax=umax,
+            skip_frame=skip_frame, screen_movie=animate,
+            backend=None, filename='tmpdata')
+    
+        # Choose the stability limit with given Nx, worst case c
+        # (lower C will then use this dt, but smaller Nx)
+        dt = (L/Nx)/c_0
+        cpu, hashed_input = solver(
+            I=I, V=None, f=None, c=c,
+            U_0=None, U_L=None,
+            L=L, dt=dt, C=C, T=T,
+            user_action=action,
+            version=version,
+            stability_safety_factor=1)
+    
+        if cpu > 0:  # did we generate new data?
+            action.close_file(hashed_input)
             action.make_movie_file()
-            action.file_close()
+        print 'cpu (-1 means no new data generated):', cpu
+    
+    def convergence_rates(
+        u_exact,
+        I, V, f, c, U_0, U_L, L,
+        dt0, num_meshes,
+        C, T, version='scalar',
+        stability_safety_factor=1.0):
+        """
+        Half the time step and estimate convergence rates for
+        for num_meshes simulations.
+        """
+        class ComputeError:
+            def __init__(self, norm_type):
+                self.error = 0
+    
+            def __call__(self, u, x, t, n):
+                """Store norm of the error in self.E."""
+                error = np.abs(u - u_exact(x, t[n])).max()
+                self.error = max(self.error, error)
+    
+        E = []
+        h = []  # dt, solver adjusts dx such that C=dt*c/dx
+        dt = dt0
+        for i in range(num_meshes):
+            error_calculator = ComputeError('Linf')
+            solver(I, V, f, c, U_0, U_L, L, dt, C, T,
+                   user_action=error_calculator,
+                   version='scalar',
+                   stability_safety_factor=1.0)
+            E.append(error_calculator.error)
+            h.append(dt)
+            dt /= 2  # halve the time step for next simulation
+        print 'E:', E
+        print 'h:', h
+        r = [np.log(E[i]/E[i-1])/np.log(h[i]/h[i-1])
+             for i in range(1,num_meshes)]
+        return r
+    
+    def test_convrate_sincos():
+        n = m = 2
+        L = 1.0
+        u_exact = lambda x, t: np.cos(m*np.pi/L*t)*np.sin(m*np.pi/L*x)
+    
+        r = convergence_rates(
+            u_exact=u_exact,
+            I=lambda x: u_exact(x, 0),
+            V=lambda x: 0,
+            f=0,
+            c=1,
+            U_0=0,
+            U_L=0,
+            L=L,
+            dt0=0.1,
+            num_meshes=6,
+            C=0.9,
+            T=1,
+            version='scalar',
+            stability_safety_factor=1.0)
+        print 'rates sin(x)*cos(t) solution:', \ 
+              [round(r_,2) for r_ in r]
+        assert abs(r[-1] - 2) < 0.002
 
 The ``PlotMediumAndSolution`` class used here is a subclass of
 ``PlotAndStoreSolution`` where the medium with reduced :math:`c` value,
@@ -1694,8 +1762,8 @@ The reader is encouraged to play around with the ``pulse`` function:
 
 .. code-block:: ipy
 
-        >>> import wave1D_dn_vc as w
-        >>> w.pulse(loc='left', pulse_tp='cosinehat', Nx=50, every_frame=10)
+    >>> import wave1D_dn_vc as w
+    >>> w.pulse(Nx=50, loc='left', pulse_tp='cosinehat', slowness_factor=2)
 
 To easily kill the graphics by Ctrl-C and restart a new simulation it might be
 easier to run the above two statements from the command line
@@ -1703,7 +1771,7 @@ with
 
 .. code-block:: text
 
-        Terminal> python -c 'import wave1D_dn_vc as w; w.pulse(...)'
+    Terminal> python -c 'import wave1D_dn_vc as w; w.pulse(...)'
 
 Exercises          (3)
 ======================
@@ -1712,10 +1780,10 @@ Exercises          (3)
 
 .. _wave:exer:standingwave:damped:uex:
 
-Exercise 2.6: Find the analytical solution to a damped wave equation
+Exercise 2.7: Find the analytical solution to a damped wave equation
 --------------------------------------------------------------------
 
-Consider the wave equation with damping :ref:`(179) <Eq:wave:pde3>`.
+Consider the wave equation with damping :ref:`(220) <Eq:wave:pde3>`.
 The goal is to find an exact solution to a wave problem with damping and zero source term.
 A starting point is the standing wave solution from
 :ref:`wave:exer:standingwave`. It becomes necessary to
@@ -1745,7 +1813,7 @@ Filename: ``damped_waves``.
 
 .. _wave:exer:symmetry:bc:
 
-Problem 2.7: Explore symmetry boundary conditions
+Problem 2.8: Explore symmetry boundary conditions
 -------------------------------------------------
 
 Consider the simple "plug" wave where :math:`\Omega = [-L,L]` and
@@ -1812,16 +1880,19 @@ Filename: ``wave1D_symmetric``.
 
 .. _wave:app:exer:pulse1D:
 
-Exercise 2.8: Send pulse waves through a layered medium
+Exercise 2.9: Send pulse waves through a layered medium
 -------------------------------------------------------
 
 Use the ``pulse`` function in ``wave1D_dn_vc.py`` to investigate
 sending a pulse, located with its peak at :math:`x=0`, through two
 media with different wave velocities. The (scaled) velocity in
-the left medium is 1 while it is :math:`s_f` in the right medium.
+the left medium is 1 while it is :math:`\frac{1}{s_f}` in the right medium.
 Report what happens with a Gaussian pulse, a "cosine hat" pulse,
 half a "cosine hat" pulse, and a plug pulse for resolutions
 :math:`N_x=40,80,160`, and :math:`s_f=2,4`. Simulate until :math:`T=2`.
+
+.. removed !bsol ... !esol environment (because of the command-line option --without_solutions)
+
 Filename: ``pulse1D``.
 
 .. --- end exercise ---
@@ -1830,8 +1901,8 @@ Filename: ``pulse1D``.
 
 .. _wave:app:exer:pulse1D:analysis:
 
-Exercise 2.9: Explain why numerical noise occurs
-------------------------------------------------
+Exercise 2.10: Explain why numerical noise occurs
+-------------------------------------------------
 
 The experiments performed in :ref:`wave:app:exer:pulse1D` shows
 considerable numerical noise in the form of non-physical waves,
@@ -1848,7 +1919,7 @@ Filename: ``pulse1D_analysis``.
 
 .. _wave:app:exer:pulse1D:harmonic:
 
-Exercise 2.10: Investigate harmonic averaging in a 1D model
+Exercise 2.11: Investigate harmonic averaging in a 1D model
 -----------------------------------------------------------
 
 Harmonic means are often used if the wave velocity is non-smooth or
@@ -1862,7 +1933,7 @@ Filename: ``pulse1D_harmonic``.
 
 .. _wave:app:exer:radiationBC:
 
-Problem 2.11: Implement open boundary conditions
+Problem 2.12: Implement open boundary conditions
 ------------------------------------------------
 
 .. Solution file is actually periodic.py from Exer :ref:`wave:exer:periodic`,
@@ -1886,17 +1957,17 @@ following condition, called a *radiation condition* or
 
 .. math::
 
-    \tag{187}
+    \tag{228}
     \frac{\partial u}{\partial t} + c\frac{\partial u}{\partial x} = 0{\thinspace .}
         
         
 
 The parameter :math:`c` is the wave velocity.
 
-Show that :ref:`(187) <Eq:wave:app:exer:radiationBC:eq>` accepts
+Show that :ref:`(228) <Eq:wave:app:exer:radiationBC:eq>` accepts
 a solution :math:`u = g_R(x-ct)` (right-going wave),
 but not :math:`u = g_L(x+ct)` (left-going wave). This means
-that :ref:`(187) <Eq:wave:app:exer:radiationBC:eq>` will allow any
+that :ref:`(228) <Eq:wave:app:exer:radiationBC:eq>` will allow any
 right-going wave :math:`g_R(x-ct)` to pass through the boundary undisturbed.
 
 A corresponding open boundary condition for a left-going wave
@@ -1906,14 +1977,14 @@ through :math:`x=0` is
 
 .. math::
 
-    \tag{188}
+    \tag{229}
     \frac{\partial u}{\partial t} - c\frac{\partial u}{\partial x} = 0{\thinspace .}
         
         
 
 **a)**
 A natural idea for discretizing
-the condition :ref:`(187) <Eq:wave:app:exer:radiationBC:eq>`
+the condition :ref:`(228) <Eq:wave:app:exer:radiationBC:eq>`
 at the spatial end point :math:`i=N_x` is to apply
 centered differences in time and space:
 
@@ -1921,7 +1992,7 @@ centered differences in time and space:
 
 .. math::
 
-    \tag{189}
+    \tag{230}
     [D_{2t}u + cD_{2x}u =0]^n_{i},\quad i=N_x{\thinspace .}
         
         
@@ -1941,7 +2012,7 @@ at :math:`x=L` can be based on an explicit discretization
 
 .. math::
 
-    \tag{190}
+    \tag{231}
     [D^+_tu + cD_x^- u = 0]_i^n,\quad i=N_x{\thinspace .}
         
         
@@ -1953,7 +2024,7 @@ first order.
 
 Implement this scheme for a wave equation
 :math:`u_{tt}=c^2u_{xx}` in a domain :math:`[0,L]`,
-where you have :math:`u_x=0` at :math:`x=0`, the condition :ref:`(187) <Eq:wave:app:exer:radiationBC:eq>`
+where you have :math:`u_x=0` at :math:`x=0`, the condition :ref:`(228) <Eq:wave:app:exer:radiationBC:eq>`
 at :math:`x=L`, and an initial disturbance in the middle
 of the domain, e.g., a plug profile like
 
@@ -1976,7 +2047,7 @@ need to pursue the more complicated discretization in a).
 
 **Hint.**
 Modify the solver function in
-`wave1D_dn.py <http://tinyurl.com/nm5587k/wave/wave1D/wave1D_dn.py>`__.
+`wave1D_dn.py <http://tinyurl.com/nu656p2/wave/wave1D/wave1D_dn.py>`__.
 
 .. --- end hint in exercise ---
 
@@ -1989,7 +2060,7 @@ as
 
 .. math::
 
-    \tag{191}
+    \tag{232}
     [D^+_tu - cD_x^+ u = 0]_i^n,\quad i=0,
         
         
@@ -2017,17 +2088,17 @@ In 2D and 3D it is difficult to compute the correct wave velocity
 normal to the boundary, which is needed in generalizations of
 the open boundary conditions in higher dimensions. Test the effect
 of having a slightly wrong wave velocity in
-:ref:`(190) <Eq:wave:app:exer:radiationBC:eq:op:1storder>`.
+:ref:`(231) <Eq:wave:app:exer:radiationBC:eq:op:1storder>`.
 Make movies to illustrate what happens.
 
 Filename: ``wave1D_open_BC``.
 
 .. Closing remarks for this Problem
 
-Remarks          (3)
+Remarks          (4)
 ~~~~~~~~~~~~~~~~~~~~
 
-The condition :ref:`(187) <Eq:wave:app:exer:radiationBC:eq>`
+The condition :ref:`(228) <Eq:wave:app:exer:radiationBC:eq>`
 works perfectly in 1D when :math:`c` is known. In 2D and 3D, however, the
 condition reads :math:`u_t + c_x u_x + c_y u_y=0`, where :math:`c_x` and
 :math:`c_y` are the wave speeds in the :math:`x` and :math:`y` directions. Estimating
@@ -2041,7 +2112,7 @@ let waves move out of a computational domain.
 
 .. _wave:exer:periodic:
 
-Exercise 2.12: Implement periodic boundary conditions
+Exercise 2.13: Implement periodic boundary conditions
 -----------------------------------------------------
 
 .. index:: periodic boundary conditions
@@ -2093,14 +2164,14 @@ Filename: ``periodic``.
 
 .. --- begin exercise ---
 
-Exercise 2.13: Compare discretizations of a Neumann condition
+Exercise 2.14: Compare discretizations of a Neumann condition
 -------------------------------------------------------------
 
 We have a 1D wave equation with variable wave velocity:
 :math:`u_{tt}=(qu_x)_x`.
 A Neumann condition :math:`u_x` at :math:`x=0, L` can be
-discretized as shown in :ref:`(172) <Eq:wave:pde2:var:c:scheme:impl:Neumann>`
-and :ref:`(175) <Eq:wave:pde2:var:c:scheme:impl:Neumann2>`.
+discretized as shown in :ref:`(213) <Eq:wave:pde2:var:c:scheme:impl:Neumann>`
+and :ref:`(216) <Eq:wave:pde2:var:c:scheme:impl:Neumann2>`.
 
 The aim of this exercise is to examine the rate of the numerical
 error when using different ways of discretizing the Neumann condition.
@@ -2111,13 +2182,13 @@ adapted such that the solution has a simple form, say
 :math:`u(x,t)=\cos (\pi x/L)\cos (\omega t)` for, e.g., :math:`\omega = 1`.
 Perform numerical experiments and find the convergence rate of the
 error using the approximation
-:ref:`(172) <Eq:wave:pde2:var:c:scheme:impl:Neumann>`.
+:ref:`(213) <Eq:wave:pde2:var:c:scheme:impl:Neumann>`.
 
 **b)**
 Switch to :math:`q(x)=1+\cos(\pi x/L)`, which is symmetric at :math:`x=0,L`,
 and check the convergence rate
 of the scheme
-:ref:`(175) <Eq:wave:pde2:var:c:scheme:impl:Neumann2>`. Now,
+:ref:`(216) <Eq:wave:pde2:var:c:scheme:impl:Neumann2>`. Now,
 :math:`q_{i-1/2}` is a 2nd-order approximation to :math:`q_i`,
 :math:`q_{i-1/2}=q_i + 0.25q_i''\Delta x^2 + \cdots`, because :math:`q_i'=0`
 for :math:`i=N_x` (a similar argument can be applied to the case :math:`i=0`).
@@ -2157,15 +2228,15 @@ Filename: ``Neumann_discr``.
 
 .. _wave:fd2:exer:verify:cubic:
 
-Exercise 2.14: Verification by a cubic polynomial in space
+Exercise 2.15: Verification by a cubic polynomial in space
 ----------------------------------------------------------
 
 The purpose of this exercise is to verify the implementation of the
-``solver`` function in the program `wave1D_n0.py <http://tinyurl.com/nm5587k/wave/wave1D/wave1D_n0.py>`__ by using an exact numerical solution
+``solver`` function in the program `wave1D_n0.py <http://tinyurl.com/nu656p2/wave/wave1D/wave1D_n0.py>`__ by using an exact numerical solution
 for the wave equation :math:`u_{tt}=c^2u_{xx} + f` with Neumann boundary
 conditions :math:`u_x(0,t)=u_x(L,t)=0`.
 
-A similar verification is used in the file `wave1D_u0.py <http://tinyurl.com/nm5587k/wave/wave1D/wave1D_u0.py>`__, which solves the same PDE, but with
+A similar verification is used in the file `wave1D_u0.py <http://tinyurl.com/nu656p2/wave/wave1D/wave1D_u0.py>`__, which solves the same PDE, but with
 Dirichlet boundary conditions :math:`u(0,t)=u(L,t)=0`.  The idea of the
 verification test in function ``test_quadratic`` in ``wave1D_u0.py`` is to
 produce a solution that is a lower-order polynomial such that both the
@@ -2195,7 +2266,7 @@ by this choice of :math:`u`. The reason is that
 
 .. math::
 
-    \tag{192}
+    \tag{233}
     [D_{2x}u]^n_i = u_{x}(x_i,t_n) + \frac{1}{6}u_{xxx}(x_i,t_n)\Delta x^2
         + {\mathcal{O}(\Delta x^4)}{\thinspace .}
         
@@ -2249,16 +2320,16 @@ A starting point is to define :math:`u` as follows:
 
 .. code-block:: python
 
-        def test_cubic1():
-            import sympy as sm
-            x, t, c, L, dx, dt = sm.symbols('x t c L dx dt')
-            i, n = sm.symbols('i n', integer=True)
-        
-            # Assume discrete solution is a polynomial of degree 3 in x
-            T = lambda t: 1 + sm.Rational(1,2)*t  # Temporal term
-            a = sm.symbols('a_0 a_1 a_2 a_3')
-            X = lambda x: sum(a[q]*x**q for q in range(4))  # Spatial term
-            u = lambda x, t: X(x)*T(t)
+    def test_cubic1():
+        import sympy as sm
+        x, t, c, L, dx, dt = sm.symbols('x t c L dx dt')
+        i, n = sm.symbols('i n', integer=True)
+    
+        # Assume discrete solution is a polynomial of degree 3 in x
+        T = lambda t: 1 + sm.Rational(1,2)*t  # Temporal term
+        a = sm.symbols('a_0 a_1 a_2 a_3')
+        X = lambda x: sum(a[q]*x**q for q in range(4))  # Spatial term
+        u = lambda x, t: X(x)*T(t)
 
 The symbolic expression for :math:`u` is reached by calling ``u(x,t)``
 with ``x`` and ``t`` as ``sympy`` symbols.
@@ -2274,10 +2345,10 @@ Substitute :math:`a_0` and :math:`a_1` by 0 and 1, respectively, in
 
 .. code-block:: python
 
-        R_0 = R_0.subs(a[0], 0).subs(a[1], 1)
-        R_L = R_L.subs(a[0], 0).subs(a[1], 1)
-        a = list(a)  # enable in-place assignment
-        a[0:2] = 0, 1
+    R_0 = R_0.subs(a[0], 0).subs(a[1], 1)
+    R_L = R_L.subs(a[0], 0).subs(a[1], 1)
+    a = list(a)  # enable in-place assignment
+    a[0:2] = 0, 1
 
 Determining :math:`a_2` and :math:`a_3` from the discretized boundary conditions
 is then about solving two equations with respect to :math:`a_2` and :math:`a_3`,
@@ -2285,9 +2356,9 @@ i.e., ``a[2:]``:
 
 .. code-block:: python
 
-        s = sm.solve([R_0, R_L], a[2:])
-        # s is dictionary with the unknowns a[2] and a[3] as keys
-        a[2:] = s[a[2]], s[a[3]]
+    s = sm.solve([R_0, R_L], a[2:])
+    # s is dictionary with the unknowns a[2] and a[3] as keys
+    a[2:] = s[a[2]], s[a[3]]
 
 Now, ``a`` contains computed values and ``u`` will automatically use
 these new values since ``X`` accesses ``a``.
@@ -2314,7 +2385,7 @@ Python function ``e_exact(x,t,L,dx,dt,c)``, one can write
 
 .. code-block:: python
 
-        e_exact = sm.lambdify([x,t,L,dx,dt,c], e, 'numpy')
+    e_exact = sm.lambdify([x,t,L,dx,dt,c], e, 'numpy')
 
 The ``'numpy'`` argument is a good habit as the ``e_exact`` function
 will then work with array arguments if it contains mathematical
@@ -2340,30 +2411,30 @@ determine the coefficients :math:`a_1,a_2,a_3`. A value, e.g., 1 can be used for
 
 .. code-block:: python
 
-        def test_cubic2():
-            import sympy as sm
-            x, t, c, L, dx = sm.symbols('x t c L dx')
-            T = lambda t: 1 + sm.Rational(1,2)*t  # Temporal term
-            # Set u as a 3rd-degree polynomial in space
-            X = lambda x: sum(a[i]*x**i for i in range(4))
-            a = sm.symbols('a_0 a_1 a_2 a_3')
-            u = lambda x, t: X(x)*T(t)
-            # Force discrete boundary condition to be zero by adding
-            # a correction term the analytical suggestion x*(L-x)*T
-            # u_x = x*(L-x)*T(t) - 1/6*u_xxx*dx**2
-            R = sm.diff(u(x,t), x) - (
-                x*(L-x) - sm.Rational(1,6)*sm.diff(u(x,t), x, x, x)*dx**2)
-            # R is a polynomial: force all coefficients to vanish.
-            # Turn R to Poly to extract coefficients:
-            R = sm.poly(R, x)
-            coeff = R.all_coeffs()
-            s = sm.solve(coeff, a[1:])  # a[0] is not present in R
-            # s is dictionary with a[i] as keys
-            # Fix a[0] as 1
-            s[a[0]] = 1
-            X = lambda x: sm.simplify(sum(s[a[i]]*x**i for i in range(4)))
-            u = lambda x, t: X(x)*T(t)
-            print 'u:', u(x,t)
+    def test_cubic2():
+        import sympy as sm
+        x, t, c, L, dx = sm.symbols('x t c L dx')
+        T = lambda t: 1 + sm.Rational(1,2)*t  # Temporal term
+        # Set u as a 3rd-degree polynomial in space
+        X = lambda x: sum(a[i]*x**i for i in range(4))
+        a = sm.symbols('a_0 a_1 a_2 a_3')
+        u = lambda x, t: X(x)*T(t)
+        # Force discrete boundary condition to be zero by adding
+        # a correction term the analytical suggestion x*(L-x)*T
+        # u_x = x*(L-x)*T(t) - 1/6*u_xxx*dx**2
+        R = sm.diff(u(x,t), x) - (
+            x*(L-x) - sm.Rational(1,6)*sm.diff(u(x,t), x, x, x)*dx**2)
+        # R is a polynomial: force all coefficients to vanish.
+        # Turn R to Poly to extract coefficients:
+        R = sm.poly(R, x)
+        coeff = R.all_coeffs()
+        s = sm.solve(coeff, a[1:])  # a[0] is not present in R
+        # s is dictionary with a[i] as keys
+        # Fix a[0] as 1
+        s[a[0]] = 1
+        X = lambda x: sm.simplify(sum(s[a[i]]*x**i for i in range(4)))
+        u = lambda x, t: X(x)*T(t)
+        print 'u:', u(x,t)
 
 The next step is to find the source term ``f_e`` by inserting ``u_e``
 in the PDE. Thereafter, turn ``u``, ``f``, and the time derivative of ``u``
