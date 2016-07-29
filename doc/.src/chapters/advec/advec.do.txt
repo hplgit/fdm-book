@@ -319,6 +319,14 @@ written out as
 gives a generally popular and robust scheme that is stable if $C\leq 1$.
 As with the Leapfrog scheme, it becomes exact if $C=1$, exactly as shown in
 Figure ref{advec:1D:case_gaussian:fig:LFCS}.
+However, any $C<1$ gives a significant reduction in the amplitude of the
+solution, which is a purely numerical effect, see Figure
+ref{advec:1D:FTUS:fig:C08}. Experiments show, however, that
+reducing $\Delta t$ or $\Delta x$, while keeping $C$ fixed reduces the
+error.
+
+FIGURE: [fig-advec/gaussian_FTUS_C08, width=800 frac=1] Forward in time, upwind in space, $C=0.8$, $\Delta t = 0.01$ (left) and $\Delta t=0.001$ (right). label{advec:1D:FTUS:fig:C08}
+
 
 The amplification factor can be computed using the
 formula (ref{form:exp:fd1:bw}),
@@ -368,7 +376,7 @@ through the domain again.
 The periodic boundary condition is
 
 !bt
-\[ u(0,t) = u(L,t),\quad u_0^n = u_{N_x}^ntp\]
+\[ u(0,t) = u(L,t),\quad u_0^n = u_{N_x}^n\tp\]
 !et
 It means that we in the first equation, involving $u_0^n$, insert $u_{N_x}^n$,
 and that we in the last equation, involving $u^{n+1}_{N_x}$ insert $u^{n+1}_0$.
@@ -454,7 +462,7 @@ and using the formula (ref{form:exp:fd1c:center}) for the spatial
 differences:
 
 !bt
-\[ A = \frac{1 - (1-\theta) i C\sin p}{1 + theta i C\sin p}\tp\]
+\[ A = \frac{1 - (1-\theta) i C\sin p}{1 + \theta i C\sin p}\tp\]
 !et
 
 ===== The Lax-Wendroff method =====
@@ -471,14 +479,44 @@ The Lax-Wendroff method is based on three ideas:
 Let us do this:
 
 !bt
-\[ u^{n+1} = u^n_i + \Delta t\left(\frac{\partial u}{\partial t}\right)^n_i
+\[ u^{n+1}_i = u^n_i + \Delta t\left(\frac{\partial u}{\partial t}\right)^n_i
 + \frac{1}{2}\Delta t^2\left(\frac{\partial^2 u}{\partial t^2}\right)^n_i\tp\]
 !et
 From the PDE we have that
 
 !bt
+\[ \frac{\partial u}{\partial t} = -v\frac{\partial u}{\partial x},\]
+!et
+which we may use to replace the time-derivatives by spatial derivatives
+($\frac{\partial ^2}{\partial t^2} = v^2\frac{partial^2 u}{\partial x^2}$):
+
+!bt
+\[ u^{n+1}_i = u^n_i -v \Delta t\left(\frac{\partial u}{\partial x}\right)^n_i
++ \frac{1}{2}\Delta t^2 v^2
+\left(\frac{\partial^2 u}{\partial x^2}\right)^n_i\tp\]
+!et
+A natural spatial discretiztion is, for instance, central differences:
+
+!bt
+\[ u^{n+1}_i = u^n_i -v \Delta t [D_{2x} u]^n_i
++ \frac{1}{2}\Delta t^2 v^2 [D_xD_x u]^n_i,\]
+!et
+or
+
+!bt
+\[ u^{n+1}_i = u^n_i - C (u^{n}_{i+1} - u^{n}_{i-1})
++ \frac{1}{2} C^2 (u^{n}_{i+1}-2u^n_i+u^n_{i-1})\tp\]
+!et
+This is the explicit Lax-Wendroff scheme.
+
+From an analysis similar to the ones carried out above, we get an
+amplification factor
+
+!bt
 \[ A = 1 - iC\sin p - 2C^2\sin^2 (p/2)\tp\]
 !et
+This means that $|A|=1$ and also that we have an exact solution of $C=1$!
+
 
 ===== Analysis of dispersion relations =====
 label{advec:1D:disprel}
