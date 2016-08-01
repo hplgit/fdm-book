@@ -25,7 +25,7 @@ function system {
   fi
 }
 
-rm tmp_* *.dolog
+rm tmp_* *.dlog
 
 if [ $# -ge 1 ]; then
   spellcheck=$1
@@ -111,7 +111,7 @@ system pdflatex $name
 # file corresponding to a version without solutions.
 
 # With solutions, password protected
-compile --device=screen
+compile --device=screen --skip_inline_comments
 newname=${topicname}-book-4screen-sol
 password="f!d!mbk"
 pdftk $name.pdf output $newname.pdf owner_pw foo user_pw $password

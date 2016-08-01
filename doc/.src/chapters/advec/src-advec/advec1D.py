@@ -155,7 +155,6 @@ def run_FECS(case):
             plt.hold('on')
 
     plt.ion()
-    print 'Hei!'
     U0 = 0
     dt = 0.001
     C = 1

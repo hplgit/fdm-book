@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Systems of nonlinear algebraic equations</title>
+    <title>Linearization at the differential equation level</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -44,8 +44,8 @@
 
     
     <link rel="top" title="Finite Difference Computing with Partial Differential Equations" href="index.html" />
-    <link rel="next" title="Linearization at the differential equation level" href="._book016.html" />
-    <link rel="prev" title="Nonlinear problems" href="._book014.html" />
+    <link rel="next" title="1D stationary nonlinear differential equations" href="._book016.html" />
+    <link rel="prev" title="Systems of nonlinear algebraic equations" href="._book014.html" />
  
   
        <style type="text/css">
@@ -64,10 +64,10 @@
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
         <li class="right" >
-          <a href="._book016.html" title="Linearization at the differential equation level"
+          <a href="._book016.html" title="1D stationary nonlinear differential equations"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="._book014.html" title="Nonlinear problems"
+          <a href="._book014.html" title="Systems of nonlinear algebraic equations"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Finite Difference Computing with Partial Differential Equations</a> &raquo;</li> 
       </ul>
@@ -78,290 +78,328 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="systems-of-nonlinear-algebraic-equations">
-<span id="nonlin-systems-alg"></span><h1>Systems of nonlinear algebraic equations<a class="headerlink" href="#systems-of-nonlinear-algebraic-equations" title="Permalink to this headline">¶</a></h1>
-<p>Implicit time discretization methods for a system of ODEs, or a PDE,
-lead to <em>systems</em> of nonlinear algebraic equations, written
-compactly as</p>
+  <div class="section" id="linearization-at-the-differential-equation-level">
+<span id="nonlin-pdelevel"></span><h1>Linearization at the differential equation level<a class="headerlink" href="#linearization-at-the-differential-equation-level" title="Permalink to this headline">¶</a></h1>
+<p>The attention is now turned to nonlinear partial differential
+equations (PDEs) and application of the techniques explained above for
+ODEs.  The model problem is a nonlinear diffusion equation for
+<span class="math">\(u(\boldsymbol{x},t)\)</span>:</p>
+<div class="math" id="eq-nonlin-pdelevel-model-pde">
+\[\tag{543}
+\frac{\partial u}{\partial t} = \nabla\cdot ({\alpha}(u)\nabla u) + f(u),\quad
+    \boldsymbol{x}\in\Omega,\ t\in (0,T],\]</div>
+<div class="math" id="eq-nonlin-pdelevel-model-neumann">
+\[\tag{544}
+-{\alpha}(u)\frac{\partial u}{\partial n} = g,\quad \boldsymbol{x}\in\partial\Omega_N,\
+    t\in (0,T],\]</div>
+<div class="math" id="eq-nonlin-pdelevel-model-dirichlet">
+\[\tag{545}
+u = u_0,\quad \boldsymbol{x}\in\partial\Omega_D,\ t\in (0,T]{\thinspace .}\]</div>
+<p>In the present section, our aim is to discretize this problem in time
+and then present techniques for linearizing the time-discrete PDE
+problem &#8220;at the PDE level&#8221; such that we transform the nonlinear
+stationary PDE problem at each time level into a sequence of linear
+PDE problems, which can be solved using any method for linear
+PDEs. This strategy avoids the solution of systems of nonlinear
+algebraic equations.  In the section <a class="reference internal" href="._book016.html#nonlin-alglevel-1d"><span class="std std-ref">1D stationary nonlinear differential equations</span></a> we shall take
+the opposite (and more common) approach: discretize the nonlinear
+problem in time and space first, and then solve the resulting
+nonlinear algebraic equations at each time level by the methods of
+the section <a class="reference internal" href="._book014.html#nonlin-systems-alg"><span class="std std-ref">Systems of nonlinear algebraic equations</span></a>.  Very often, the two approaches are
+mathematically identical, so there is no preference from a
+computational efficiency point of view.  The details of the ideas
+sketched above will hopefully become clear through the forthcoming
+examples.</p>
+<div class="section" id="explicit-time-integration">
+<span id="nonlin-pdelevel-explicit"></span><h2>Explicit time integration<a class="headerlink" href="#explicit-time-integration" title="Permalink to this headline">¶</a></h2>
+<p>The nonlinearities in the PDE are trivial to deal with if we choose an
+explicit time integration method for <a class="reference internal" href="#eq-nonlin-pdelevel-model-pde"><span class="std std-ref">(543)</span></a>,
+such as the Forward Euler method:</p>
 <div class="math">
-\[F(u) = 0,\]</div>
-<p>where <span class="math">\(u\)</span> is a vector of unknowns <span class="math">\(u=(u_0,\ldots,u_N)\)</span>, and
-<span class="math">\(F\)</span> is a vector function: <span class="math">\(F=(F_0,\ldots,F_N)\)</span>.
-The system at the end of the section <a class="reference internal" href="._book014.html#nonlin-ode-generic-sys-pendulum"><span class="std std-ref">Systems of ODEs</span></a> fits
-this notation with <span class="math">\(N=2\)</span>, <span class="math">\(F_0(u)\)</span> given by the left-hand side of
-<a class="reference internal" href="._book014.html#eq-nonlin-ode-generic-sys-pendulum-u0"><span class="std std-ref">(510)</span></a>, while <span class="math">\(F_1(u)\)</span> is
-the left-hand side of <a class="reference internal" href="._book014.html#eq-nonlin-ode-generic-sys-pendulum-u1"><span class="std std-ref">(511)</span></a>.</p>
-<p>Sometimes the equation system has a special structure because of the
-underlying problem, e.g.,</p>
+\[[D_t^+ u = \nabla\cdot ({\alpha}(u)\nabla u) + f(u)]^n,\]</div>
+<p>or written out,</p>
 <div class="math">
-\[A(u)u = b(u),\]</div>
-<p>with <span class="math">\(A(u)\)</span> as
-an <span class="math">\((N+1)\times (N+1)\)</span> matrix function of <span class="math">\(u\)</span> and <span class="math">\(b\)</span> as a vector
-function: <span class="math">\(b=(b_0,\ldots,b_N)\)</span>.</p>
-<p>We shall next explain how Picard iteration and Newton&#8217;s method
-can be applied to systems like <span class="math">\(F(u)=0\)</span> and <span class="math">\(A(u)u=b(u)\)</span>.
-The exposition has a focus on ideas and practical computations.
-More theoretical considerations, including quite general results
-on convergence properties
-of these methods, can be found in Kelley <a class="reference internal" href="._book027.html#ref9" id="id1">[Ref9]</a>.</p>
-<div class="section" id="picard-iteration-2">
-<span id="nonlin-systems-alg-picard"></span><h2>Picard iteration<a class="headerlink" href="#picard-iteration-2" title="Permalink to this headline">¶</a></h2>
-<p>We cannot apply Picard iteration to nonlinear equations unless there is
-some special structure. For the commonly arising case
-<span class="math">\(A(u)u=b(u)\)</span> we can linearize the
-product <span class="math">\(A(u)u\)</span> to <span class="math">\(A(u^{-})u\)</span> and <span class="math">\(b(u)\)</span> as <span class="math">\(b(u^{-})\)</span>.
-That is, we use the most previously
-computed approximation in <span class="math">\(A\)</span> and <span class="math">\(b\)</span> to arrive at a <em>linear system</em> for
-<span class="math">\(u\)</span>:</p>
+\[\frac{u^{n+1} - u^n}{\Delta t} = \nabla\cdot ({\alpha}(u^n)\nabla u^n)
++ f(u^n),\]</div>
+<p>which is a linear equation in the unknown <span class="math">\(u^{n+1}\)</span> with solution</p>
 <div class="math">
-\[A(u^{-})u = b(u^{-}){\thinspace .}\]</div>
-<p>A relaxed iteration takes the form</p>
-<div class="math">
-\[A(u^{-})u^* = b(u^{-}),\quad u = \omega u^* + (1-\omega)u^{-}{\thinspace .}\]</div>
-<p>In other words, we solve a system of nonlinear algebraic equations as
-a sequence of linear systems.</p>
-<div class="admonition-algorithm-for-relaxed-picard-iteration admonition">
-<p class="first admonition-title">Algorithm for relaxed Picard iteration</p>
-<p>Given <span class="math">\(A(u)u=b(u)\)</span> and an initial guess <span class="math">\(u^{-}\)</span>, iterate until convergence:</p>
-<ol class="last arabic simple">
-<li>solve <span class="math">\(A(u^{-})u^* = b(u^{-})\)</span> with respect to <span class="math">\(u^*\)</span></li>
-<li><span class="math">\(u = \omega u^* + (1-\omega) u^{-}\)</span></li>
-<li><span class="math">\(u^{-}\ \leftarrow\ u\)</span></li>
-</ol>
+\[u^{n+1} = u^n + \Delta t\nabla\cdot ({\alpha}(u^n)\nabla u^n) +
+\Delta t f(u^n){\thinspace .}\]</div>
+<p>The disadvantage with this discretization is
+the strict stability criterion <span class="math">\(\Delta t \leq h^2/(6\max\alpha)\)</span>
+for the case <span class="math">\(f=0\)</span> and a standard 2nd-order finite difference discretization
+in 3D space with mesh cell sizes <span class="math">\(h=\Delta x=\Delta y=\Delta z\)</span>.</p>
 </div>
-<p>&#8220;Until convergence&#8221; means that the iteration is stopped when the
-change in the unknown, <span class="math">\(||u - u^{-}||\)</span>, or the residual <span class="math">\(||A(u)u-b||\)</span>,
-is sufficiently small, see the section <a class="reference internal" href="#nonlin-systems-alg-terminate"><span class="std std-ref">Stopping criteria</span></a> for
-more details.</p>
-</div>
-<div class="section" id="newton-s-method-2">
-<span id="nonlin-systems-alg-newton"></span><h2>Newton&#8217;s method<a class="headerlink" href="#newton-s-method-2" title="Permalink to this headline">¶</a></h2>
-<p>The natural starting point for Newton&#8217;s method is the general
-nonlinear vector equation <span class="math">\(F(u)=0\)</span>.
-As for a scalar equation, the idea is to approximate <span class="math">\(F\)</span>
-around a known value <span class="math">\(u^{-}\)</span> by a linear function <span class="math">\(\hat F\)</span>,
-calculated from the first two terms of a Taylor expansion of
-<span class="math">\(F\)</span>. In the multi-variate case these two terms become</p>
+<div class="section" id="backward-euler-scheme-and-picard-iteration">
+<span id="nonlin-pdelevel-picard"></span><h2>Backward Euler scheme and Picard iteration<a class="headerlink" href="#backward-euler-scheme-and-picard-iteration" title="Permalink to this headline">¶</a></h2>
+<p>A Backward Euler scheme for <a class="reference internal" href="#eq-nonlin-pdelevel-model-pde"><span class="std std-ref">(543)</span></a>
+reads</p>
 <div class="math">
-\[F(u^{-}) + J(u^{-}) \cdot (u - u^{-}),\]</div>
-<p>where <span class="math">\(J\)</span> is the <em>Jacobian</em> of <span class="math">\(F\)</span>, defined by</p>
-<div class="math">
-\[J_{i,j} = \frac{\partial F_i}{\partial u_j}{\thinspace .}\]</div>
-<p>So, the original nonlinear system is approximated by</p>
-<div class="math">
-\[\hat F(u) = F(u^{-}) + J(u^{-}) \cdot (u - u^{-})=0,\]</div>
-<p>which is linear in <span class="math">\(u\)</span> and can be solved in a two-step procedure:
-first solve <span class="math">\(J\delta u = -F(u^{-})\)</span> with respect to the vector <span class="math">\(\delta u\)</span>
-and then update <span class="math">\(u = u^{-} + \delta u\)</span>.
-A relaxation parameter can easily be incorporated:</p>
-<div class="math">
-\[u = \omega(u^{-} +\delta u)
-+ (1-\omega)u^{-} = u^{-}  + \omega\delta u{\thinspace .}\]</div>
-<div class="admonition-algorithm-for-newton-s-method admonition">
-<p class="first admonition-title">Algorithm for Newton&#8217;s method</p>
-<p>Given <span class="math">\(F(u)=0\)</span> and an initial guess <span class="math">\(u^{-}\)</span>, iterate until convergence:</p>
-<ol class="last arabic simple">
-<li>solve <span class="math">\(J\delta u = -F(u^{-})\)</span> with respect to <span class="math">\(\delta u\)</span></li>
-<li><span class="math">\(u = u^{-} + \omega\delta u\)</span></li>
-<li><span class="math">\(u^{-}\ \leftarrow\ u\)</span></li>
-</ol>
-</div>
-<p>For the special system with structure <span class="math">\(A(u)u=b(u)\)</span>,</p>
-<div class="math">
-\[F_i = \sum_k A_{i,k}(u)u_k - b_i(u),\]</div>
-<p>one gets</p>
-<div class="math" id="eq-auto192">
-\[\tag{512}
-J_{i,j} = \sum_k \frac{\partial A_{i,k}}{\partial u_j}u_k
-    + A_{i,j} -
-    \frac{\partial b_i}{\partial u_j}{\thinspace .}\]</div>
-<p>We realize that the Jacobian needed in Newton&#8217;s method consists of
-<span class="math">\(A(u^{-})\)</span> as in the Picard iteration plus two additional terms
-arising from the differentiation. Using the notation <span class="math">\(A^{\prime}(u)\)</span> for
-<span class="math">\(\partial A/\partial u\)</span> (a quantity with three indices: <span class="math">\(\partial
-A_{i,k}/\partial u_j\)</span>), and <span class="math">\(b^{\prime}(u)\)</span> for <span class="math">\(\partial b/\partial u\)</span> (a
-quantity with two indices: <span class="math">\(\partial b_i/\partial u_j\)</span>), we can write
-the linear system to be solved as</p>
-<div class="math">
-\[(A + A^{\prime}u + b^{\prime})\delta u = -Au + b,\]</div>
-<p>or</p>
-<div class="math">
-\[(A(u^{-}) + A^{\prime}(u^{-})u^{-} + b^{\prime}(u^{-}))\delta u
-= -A(u^{-})u^{-} + b(u^{-}){\thinspace .}\]</div>
-<p>Rearranging the terms demonstrates the difference from the system
-solved in each Picard iteration:</p>
-<div class="math">
-\[\underbrace{A(u^{-})(u^{-}+\delta u) - b(u^{-})}_{\hbox{Picard system}}
-+\, \gamma (A^{\prime}(u^{-})u^{-} + b^{\prime}(u^{-}))\delta u
-= 0{\thinspace .}\]</div>
-<p>Here we have inserted a parameter <span class="math">\(\gamma\)</span> such that <span class="math">\(\gamma=0\)</span>
-gives the Picard system and <span class="math">\(\gamma=1\)</span> gives the Newton system.
-Such a parameter can be handy in software to easily switch between
-the methods.</p>
-<div class="admonition-combined-algorithm-for-picard-and-newton-iteration admonition">
-<p class="first admonition-title">Combined algorithm for Picard and Newton iteration</p>
-<p>Given <span class="math">\(A(u)\)</span>, <span class="math">\(b(u)\)</span>, and an initial guess <span class="math">\(u^{-}\)</span>, iterate until convergence:</p>
-<ol class="arabic simple">
-<li>solve <span class="math">\((A + \gamma(A^{\prime}(u^{-})u^{-} +
-b^{\prime}(u^{-})))\delta u = -A(u^{-})u^{-} + b(u^{-})\)</span>
-with respect to <span class="math">\(\delta u\)</span></li>
-<li><span class="math">\(u = u^{-} + \omega\delta u\)</span></li>
-<li><span class="math">\(u^{-}\ \leftarrow\ u\)</span></li>
-</ol>
-<p class="last"><span class="math">\(\gamma =1\)</span> gives a Newton method while <span class="math">\(\gamma =0\)</span> corresponds to
-Picard iteration.</p>
+\[[D_t^- u = \nabla\cdot ({\alpha}(u)\nabla u) + f(u)]^n{\thinspace .}\]</div>
+<p>Written out,</p>
+<div class="math" id="eq-nonlin-pdelevel-pde-be">
+\[\tag{546}
+\frac{u^{n} - u^{n-1}}{\Delta t} = \nabla\cdot ({\alpha}(u^n)\nabla u^n)
+    + f(u^n){\thinspace .}\]</div>
+<p>This is a nonlinear PDE for the unknown function <span class="math">\(u^n(\boldsymbol{x})\)</span>. Such a
+PDE can be viewed as a time-independent PDE where
+<span class="math">\(u^{n-1}(\boldsymbol{x})\)</span> is a known function.</p>
+<p>We introduce a Picard iteration with <span class="math">\(k\)</span> as iteration counter.
+A typical linearization of the <span class="math">\(\nabla\cdot({\alpha}(u^n)\nabla u^n)\)</span> term
+in iteration <span class="math">\(k+1\)</span> is to use the previously computed <span class="math">\(u^{n,k}\)</span>
+approximation in the diffusion coefficient: <span class="math">\({\alpha}(u^{n,k})\)</span>.
+The nonlinear source term is treated similarly: <span class="math">\(f(u^{n,k})\)</span>.
+The unknown function <span class="math">\(u^{n,k+1}\)</span> then fulfills the linear PDE</p>
+<div class="math" id="eq-nonlin-pdelevel-pde-be-picard-k">
+\[\tag{547}
+\frac{u^{n,k+1} - u^{n-1}}{\Delta t} = \nabla\cdot ({\alpha}(u^{n,k})
+    \nabla u^{n,k+1})
+    + f(u^{n,k}){\thinspace .}\]</div>
+<p>The initial guess for the Picard iteration at this time level can be
+taken as the solution at the previous time level: <span class="math">\(u^{n,0}=u^{n-1}\)</span>.</p>
+<p>We can alternatively apply the implementation-friendly
+notation where <span class="math">\(u\)</span> corresponds to
+the unknown we want to solve for, i.e., <span class="math">\(u^{n,k+1}\)</span> above, and <span class="math">\(u^{-}\)</span>
+is the most recently computed value, <span class="math">\(u^{n,k}\)</span> above. Moreover,
+<span class="math">\(u^{(1)}\)</span> denotes the unknown function at the previous time level, <span class="math">\(u^{n-1}\)</span>
+above. The PDE to be solved in a Picard iteration then looks like</p>
+<div class="math" id="eq-nonlin-pdelevel-pde-be-picard">
+\[\tag{548}
+\frac{u - u^{(1)}}{\Delta t} = \nabla\cdot ({\alpha}(u^{-})
+    \nabla u)
+    + f(u^{-}){\thinspace .}\]</div>
+<p>At the beginning of the iteration we start with the value from the
+previous time level: <span class="math">\(u^{-}=u^{(1)}\)</span>, and after each
+iteration, <span class="math">\(u^{-}\)</span> is updated to <span class="math">\(u\)</span>.</p>
+<div class="admonition-remark-on-notation admonition">
+<p class="first admonition-title">Remark on notation</p>
+<p>The previous derivations of the numerical scheme for time discretizations
+of PDEs have, strictly
+speaking, a somewhat sloppy notation, but it is much used and convenient
+to read. A more precise notation must
+distinguish clearly between the exact solution of the PDE problem,
+here denoted <span class="math">\({u_{\small\mbox{e}}}(\boldsymbol{x},t)\)</span>, and the exact solution of the spatial
+problem, arising after time discretization at each time level,
+where <a class="reference internal" href="#eq-nonlin-pdelevel-pde-be"><span class="std std-ref">(546)</span></a> is an example. The latter
+is here represented as <span class="math">\(u^n(\boldsymbol{x})\)</span> and is an approximation to
+<span class="math">\({u_{\small\mbox{e}}}(\boldsymbol{x},t_n)\)</span>. Then we have another approximation <span class="math">\(u^{n,k}(\boldsymbol{x})\)</span>
+to <span class="math">\(u^n(\boldsymbol{x})\)</span> when solving the nonlinear PDE problem for
+<span class="math">\(u^n\)</span> by iteration methods, as in <a class="reference internal" href="#eq-nonlin-pdelevel-pde-be-picard-k"><span class="std std-ref">(547)</span></a>.</p>
+<p class="last">In our notation, <span class="math">\(u\)</span> is a synonym for <span class="math">\(u^{n,k+1}\)</span> and <span class="math">\(u^{(1)}\)</span> is
+a synonym for <span class="math">\(u^{n-1}\)</span>, inspired by what are natural variable names
+in a code.
+We will usually state the PDE problem in terms of <span class="math">\(u\)</span> and
+quickly redefine the symbol <span class="math">\(u\)</span> to mean the numerical approximation,
+while <span class="math">\({u_{\small\mbox{e}}}\)</span> is not explicitly introduced unless we need to talk about
+the exact solution and the approximate solution at the same time.</p>
 </div>
 </div>
-<div class="section" id="stopping-criteria-3">
-<span id="nonlin-systems-alg-terminate"></span><h2>Stopping criteria<a class="headerlink" href="#stopping-criteria-3" title="Permalink to this headline">¶</a></h2>
-<p id="index-0">Let <span class="math">\(||\cdot||\)</span> be the standard Euclidean vector norm. Four termination
-criteria are much in use:</p>
-<blockquote>
-<div><ul class="simple">
-<li>Absolute change in solution: <span class="math">\(||u - u^{-}||\leq \epsilon_u\)</span></li>
-<li>Relative change in solution: <span class="math">\(||u - u^{-}||\leq \epsilon_u ||u_0||\)</span>,
-where <span class="math">\(u_0\)</span> denotes the start value of <span class="math">\(u^{-}\)</span> in the iteration</li>
-<li>Absolute residual: <span class="math">\(||F(u)|| \leq \epsilon_r\)</span></li>
-<li>Relative residual: <span class="math">\(||F(u)|| \leq \epsilon_r ||F(u_0)||\)</span></li>
-</ul>
-</div></blockquote>
-<p>To prevent divergent iterations to run forever,
-one terminates the iterations when
-the current number of iterations <span class="math">\(k\)</span> exceeds a maximum value <span class="math">\(k_{\max}\)</span>.</p>
-<p>The relative criteria are most used since they are not sensitive to
-the characteristic size of <span class="math">\(u\)</span>. Nevertheless, the relative criteria
-can be misleading when the initial start value for the iteration is
-very close to the solution, since an unnecessary reduction in
-the error measure is enforced. In such cases the absolute criteria
-work better. It is common to combine the absolute and relative measures
-of the size of the residual,
-as in</p>
-<div class="math" id="eq-auto193">
-\[\tag{513}
-||F(u)|| \leq \epsilon_{rr} ||F(u_0)|| + \epsilon_{ra},\]</div>
-<p>where <span class="math">\(\epsilon_{rr}\)</span> is the tolerance in the relative criterion
-and <span class="math">\(\epsilon_{ra}\)</span> is the tolerance in the absolute criterion.
-With a very good initial guess for the iteration
-(typically the solution of a differential
-equation at the previous time level), the term <span class="math">\(||F(u_0)||\)</span> is small
-and <span class="math">\(\epsilon_{ra}\)</span> is the dominating tolerance. Otherwise,
-<span class="math">\(\epsilon_{rr} ||F(u_0)||\)</span> and the relative criterion dominates.</p>
-<p>With the change in solution as criterion we can formulate a combined
-absolute and relative measure of the change in the solution:</p>
-<div class="math" id="eq-auto194">
-\[\tag{514}
-||\delta u|| \leq \epsilon_{ur} ||u_0|| + \epsilon_{ua},\]</div>
-<p>The ultimate termination criterion, combining the residual and
-the change in solution with a test on the maximum number
-of iterations, can be expressed as</p>
-<div class="math" id="eq-auto195">
-\[\begin{split}\tag{515}
-||F(u)|| \leq \epsilon_{rr} ||F(u_0)|| + \epsilon_{ra}
-    \quad\hbox{or}\quad
-    ||\delta u|| \leq \epsilon_{ur} ||u_0|| + \epsilon_{ua}
-    \quad\hbox{or}\quad
-    k&gt;k_{\max}{\thinspace .}\end{split}\]</div>
-</div>
-<div class="section" id="example-a-nonlinear-ode-model-from-epidemiology">
-<span id="nonlin-systems-alg-si"></span><h2>Example: A nonlinear ODE model from epidemiology<a class="headerlink" href="#example-a-nonlinear-ode-model-from-epidemiology" title="Permalink to this headline">¶</a></h2>
-<p>The simplest model spreading of a disease, such as a flu, takes
-the form of a <span class="math">\(2\times 2\)</span> ODE system</p>
-<div class="math" id="eq-auto196">
-\[\tag{516}
-S^{\prime} = -\beta SI,\]</div>
-<div class="math" id="eq-auto197">
-\[\tag{517}
-I^{\prime} = \beta SI - \nu I,\]</div>
-<p>where <span class="math">\(S(t)\)</span> is the number of people who can get ill (susceptibles)
-and <span class="math">\(I(t)\)</span> is the number of people who are ill (infected).
-The constants <span class="math">\(\beta &gt;0\)</span> and <span class="math">\(\nu &gt;0\)</span> must be given along with
-initial conditions <span class="math">\(S(0)\)</span> and <span class="math">\(I(0)\)</span>.</p>
-<div class="section" id="implicit-time-discretization">
-<h3>Implicit time discretization<a class="headerlink" href="#implicit-time-discretization" title="Permalink to this headline">¶</a></h3>
-<p>A Crank-Nicolson scheme leads to a <span class="math">\(2\times 2\)</span> system of nonlinear
-algebraic equations in the unknowns <span class="math">\(S^{n+1}\)</span> and <span class="math">\(I^{n+1}\)</span>:</p>
-<div class="math" id="eq-auto198">
-\[\tag{518}
-\frac{S^{n+1}-S^n}{\Delta t} = -\beta [SI]^{n+\frac{1}{2}}
-    \approx -\frac{\beta}{2}(S^nI^n + S^{n+1}I^{n+1}),\]</div>
-<div class="math" id="eq-auto199">
-\[\tag{519}
-\frac{I^{n+1}-I^n}{\Delta t} = \beta [SI]^{n+\frac{1}{2}} -
-    \nu I^{n+\frac{1}{2}}
-    \approx \frac{\beta}{2}(S^nI^n + S^{n+1}I^{n+1}) -
-    \frac{\nu}{2}(I^n + I^{n+1}){\thinspace .}\]</div>
-<p>Introducing <span class="math">\(S\)</span> for <span class="math">\(S^{n+1}\)</span>, <span class="math">\(S^{(1)}\)</span> for <span class="math">\(S^n\)</span>, <span class="math">\(I\)</span> for <span class="math">\(I^{n+1}\)</span>,
-<span class="math">\(I^{(1)}\)</span> for <span class="math">\(I^n\)</span>, we can rewrite the system as</p>
-<div class="math" id="eq-nonlin-systems-alg-si-cn-fs">
-\[\tag{520}
-F_S(S,I) = S - S^{(1)} +
-    \frac{1}{2}\Delta t\beta(S^{(1)}I^{(1)} + SI) = 0,\]</div>
-<div class="math" id="eq-nonlin-systems-alg-si-cn-fi">
-\[\tag{521}
-F_I(S,I) = I - I^{(1)} -
-    \frac{1}{2}\Delta t\beta(S^{(1)}I^{(1)} + SI) +
-    \frac{1}{2}\Delta t\nu(I^{(1)} + I) =0{\thinspace .}\]</div>
-</div>
-<div class="section" id="a-picard-iteration">
-<h3>A Picard iteration<a class="headerlink" href="#a-picard-iteration" title="Permalink to this headline">¶</a></h3>
-<p>We assume that we have approximations <span class="math">\(S^{-}\)</span> and <span class="math">\(I^{-}\)</span> to <span class="math">\(S\)</span> and <span class="math">\(I\)</span>.
-A way of linearizing the only nonlinear term <span class="math">\(SI\)</span> is to write
-<span class="math">\(I^{-}S\)</span> in the <span class="math">\(F_S=0\)</span> equation and <span class="math">\(S^{-}I\)</span> in the <span class="math">\(F_I=0\)</span> equation,
-which also <em>decouples</em> the equations. Solving the resulting linear
-equations with respect to the unknowns <span class="math">\(S\)</span> and <span class="math">\(I\)</span> gives</p>
+<div class="section" id="backward-euler-scheme-and-newton-s-method">
+<span id="nonlin-pdelevel-newton"></span><h2>Backward Euler scheme and Newton&#8217;s method<a class="headerlink" href="#backward-euler-scheme-and-newton-s-method" title="Permalink to this headline">¶</a></h2>
+<p>At time level <span class="math">\(n\)</span>, we have to solve the stationary PDE
+<a class="reference internal" href="#eq-nonlin-pdelevel-pde-be"><span class="std std-ref">(546)</span></a>. In the previous section, we
+saw how this can be done with Picard iterations.
+Another alternative is to apply the idea of Newton&#8217;s method
+in a clever way.
+Normally, Newton&#8217;s method is defined for systems of <em>algebraic equations</em>,
+but the idea of the method can be applied at the PDE level too.</p>
+<div class="section" id="linearization-via-taylor-expansions">
+<h3>Linearization via Taylor expansions<a class="headerlink" href="#linearization-via-taylor-expansions" title="Permalink to this headline">¶</a></h3>
+<p>Let <span class="math">\(u^{n,k}\)</span> be an approximation to the unknown <span class="math">\(u^n\)</span>. We seek a
+better approximation on
+the form</p>
+<div class="math" id="eq-nonlin-pdelevel-newton-ansatz">
+\[\tag{549}
+u^{n} = u^{n,k} + \delta u{\thinspace .}\]</div>
+<p>The idea is to insert <a class="reference internal" href="#eq-nonlin-pdelevel-newton-ansatz"><span class="std std-ref">(549)</span></a> in
+<a class="reference internal" href="#eq-nonlin-pdelevel-pde-be"><span class="std std-ref">(546)</span></a>, Taylor expand the nonlinearities
+and keep only the terms that are
+linear in <span class="math">\(\delta u\)</span> (which makes <a class="reference internal" href="#eq-nonlin-pdelevel-newton-ansatz"><span class="std std-ref">(549)</span></a>
+an approximation for <span class="math">\(u^{n}\)</span>). Then we can solve a linear PDE for
+the correction <span class="math">\(\delta u\)</span> and use <a class="reference internal" href="#eq-nonlin-pdelevel-newton-ansatz"><span class="std std-ref">(549)</span></a>
+to find a new approximation</p>
 <div class="math">
-\[\begin{split}S &amp;= \frac{S^{(1)} - \frac{1}{2}\Delta t\beta S^{(1)}I^{(1)}}
-{1 + \frac{1}{2}\Delta t\beta I^{-}},
-\\
-I &amp;= \frac{I^{(1)} + \frac{1}{2}\Delta t\beta S^{(1)}I^{(1)} - \frac{1}{2}\Delta t\nu I^{(1)}}
-{1 - \frac{1}{2}\Delta t\beta S^{-} + \frac{1}{2}\Delta t \nu}{\thinspace .}\end{split}\]</div>
-<p>Before a new iteration, we must update <span class="math">\(S^{-}\ \leftarrow\ S\)</span> and
-<span class="math">\(I^{-}\ \leftarrow\ I\)</span>.</p>
-</div>
-<div class="section" id="newton-s-method-3">
-<h3>Newton&#8217;s method<a class="headerlink" href="#newton-s-method-3" title="Permalink to this headline">¶</a></h3>
-<p>The nonlinear system
-<a class="reference internal" href="#eq-nonlin-systems-alg-si-cn-fs"><span class="std std-ref">(520)</span></a>-<a class="reference internal" href="#eq-nonlin-systems-alg-si-cn-fi"><span class="std std-ref">(521)</span></a>
-can be written as <span class="math">\(F(u)=0\)</span> with <span class="math">\(F=(F_S,F_I)\)</span> and <span class="math">\(u=(S,I)\)</span>.  The
-Jacobian becomes</p>
+\[u^{n,k+1}=u^{n,k}+\delta u\]</div>
+<p>to <span class="math">\(u^{n}\)</span>.
+Repeating this procedure gives a sequence <span class="math">\(u^{n,k+1}\)</span>, <span class="math">\(k=0,1,\ldots\)</span>
+that hopefully converges to the goal <span class="math">\(u^n\)</span>.</p>
+<p>Let us carry out all the mathematical details for the nonlinear diffusion
+PDE discretized by the Backward Euler method.
+Inserting <a class="reference internal" href="#eq-nonlin-pdelevel-newton-ansatz"><span class="std std-ref">(549)</span></a> in
+<a class="reference internal" href="#eq-nonlin-pdelevel-pde-be"><span class="std std-ref">(546)</span></a> gives</p>
+<div class="math" id="eq-nonlin-pdelevel-pde-be-newton1">
+\[\tag{550}
+\frac{u^{n,k} +\delta u - u^{n-1}}{\Delta t} =
+    \nabla\cdot ({\alpha}(u^{n,k} + \delta u)\nabla (u^{n,k}+\delta u))
+    + f(u^{n,k}+\delta u){\thinspace .}\]</div>
+<p>We can Taylor expand <span class="math">\({\alpha}(u^{n,k} + \delta u)\)</span> and
+<span class="math">\(f(u^{n,k}+\delta u)\)</span>:</p>
 <div class="math">
-\[\begin{split}J = \left(\begin{array}{cc}
-\frac{\partial}{\partial S} F_S &amp; \frac{\partial}{\partial I}F_S\\
-\frac{\partial}{\partial S} F_I &amp; \frac{\partial}{\partial I}F_I
-\end{array}\right)
-= \left(\begin{array}{cc}
-1 + \frac{1}{2}\Delta t\beta I &amp; \frac{1}{2}\Delta t\beta S\\
-- \frac{1}{2}\Delta t\beta I &amp; 1 - \frac{1}{2}\Delta t\beta S +
-\frac{1}{2}\Delta t\nu
-\end{array}\right)
-{\thinspace .}\end{split}\]</div>
-<p>The Newton system <span class="math">\(J(u^{-})\delta u = -F(u^{-})\)</span>
-to be solved in each iteration is then</p>
+\[\begin{split}\begin{align*}
+{\alpha}(u^{n,k} + \delta u) &amp; = {\alpha}(u^{n,k}) + \frac{d{\alpha}}{du}(u^{n,k})
+\delta u + {\mathcal{O}(\delta u^2)}\approx {\alpha}(u^{n,k}) + {\alpha}^{\prime}(u^{n,k})\delta u,\\
+f(u^{n,k}+\delta u) &amp;=  f(u^{n,k}) + \frac{df}{du}(u^{n,k})\delta u
++ {\mathcal{O}(\delta u^2)}\approx f(u^{n,k}) + f^{\prime}(u^{n,k})\delta u{\thinspace .}
+\end{align*}\end{split}\]</div>
+<p>Inserting the linear approximations of <span class="math">\({\alpha}\)</span> and <span class="math">\(f\)</span> in
+<a class="reference internal" href="#eq-nonlin-pdelevel-pde-be-newton1"><span class="std std-ref">(550)</span></a> results in</p>
 <div class="math">
-\[\begin{split}&amp;
-\left(\begin{array}{cc}
-1 + \frac{1}{2}\Delta t\beta I^{-} &amp; \frac{1}{2}\Delta t\beta S^{-}\\
-- \frac{1}{2}\Delta t\beta I^{-} &amp; 1 - \frac{1}{2}\Delta t\beta S^{-} +
-\frac{1}{2}\Delta t\nu
-\end{array}\right)
-\left(\begin{array}{c}
-\delta S\\
-\delta I
-\end{array}\right)
-=\\
-&amp; \qquad\qquad
-\left(\begin{array}{c}
-S^{-} - S^{(1)} + \frac{1}{2}\Delta t\beta(S^{(1)}I^{(1)} + S^{-}I^{-})\\
-I^{-} - I^{(1)} - \frac{1}{2}\Delta t\beta(S^{(1)}I^{(1)} + S^{-}I^{-}) +
-\frac{1}{2}\Delta t\nu(I^{(1)} + I^{-})
-\end{array}\right)\end{split}\]</div>
-<p><strong>Remark.</strong>
-For this particular system of ODEs, explicit time integration methods work very
-well. Even a Forward Euler scheme is fine, but (as also experienced more
-generally)
-the 4-th order Runge-Kutta method is an excellent
-balance between high accuracy, high efficiency, and simplicity.</p>
+\[\frac{u^{n,k} +\delta u - u^{n-1}}{\Delta t} =
+\nabla\cdot ({\alpha}(u^{n,k})\nabla u^{n,k}) + f(u^{n,k}) + \nonumber\]</div>
+<div class="math">
+\[\qquad \nabla\cdot ({\alpha}(u^{n,k})\nabla \delta u)
++ \nabla\cdot ({\alpha}^{\prime}(u^{n,k})\delta u\nabla u^{n,k}) + \nonumber\]</div>
+<div class="math" id="eq-nonlin-pdelevel-pde-be-newton2">
+\[\tag{551}
+\qquad \nabla\cdot ({\alpha}^{\prime}(u^{n,k})\delta u\nabla \delta u)
+    + f^{\prime}(u^{n,k})\delta u{\thinspace .}\]</div>
+<p>The term <span class="math">\({\alpha}^{\prime}(u^{n,k})\delta u\nabla \delta u\)</span> is of
+order <span class="math">\(\delta u^2\)</span>
+and therefore omitted since we expect the correction <span class="math">\(\delta u\)</span>
+to be small (<span class="math">\(\delta u \gg \delta u^2\)</span>).
+Reorganizing the equation gives a PDE
+for <span class="math">\(\delta u\)</span> that we can write in short form as</p>
+<div class="math">
+\[\delta F(\delta u; u^{n,k}) = -F(u^{n,k}),\]</div>
+<p>where</p>
+<div class="math" id="eq-nonlin-pdelevel-pde-be-newton2-f">
+\[\tag{552}
+F(u^{n,k}) = \frac{u^{n,k} - u^{n-1}}{\Delta t} -
+    \nabla\cdot ({\alpha}(u^{n,k})\nabla u^{n,k}) + f(u^{n,k}),\]</div>
+<div class="math">
+\[\delta F(\delta u; u^{n,k}) =
+- \frac{1}{\Delta t}\delta u +
+\nabla\cdot ({\alpha}(u^{n,k})\nabla \delta u) + \nonumber\]</div>
+<div class="math" id="eq-auto224">
+\[\tag{553}
+\quad \nabla\cdot ({\alpha}^{\prime}(u^{n,k})\delta u\nabla u^{n,k})
+    + f^{\prime}(u^{n,k})\delta u{\thinspace .}\]</div>
+<p>Note that <span class="math">\(\delta F\)</span> is a linear function of <span class="math">\(\delta u\)</span>, and
+<span class="math">\(F\)</span> contains only terms that are known, such that
+the PDE for <span class="math">\(\delta u\)</span> is indeed linear.</p>
+<div class="admonition-observations admonition">
+<p class="first admonition-title">Observations</p>
+<p class="last">The notational form <span class="math">\(\delta F = -F\)</span> resembles the Newton system <span class="math">\(J\delta u =-F\)</span>
+for systems of algebraic equations, with <span class="math">\(\delta F\)</span> as <span class="math">\(J\delta u\)</span>.
+The unknown vector in a linear system of algebraic equations enters
+the system as a linear operator in terms of a
+matrix-vector product (<span class="math">\(J\delta u\)</span>), while at
+the PDE level we have a linear differential operator instead
+(<span class="math">\(\delta F\)</span>).</p>
 </div>
+</div>
+<div class="section" id="similarity-with-picard-iteration">
+<h3>Similarity with Picard iteration<a class="headerlink" href="#similarity-with-picard-iteration" title="Permalink to this headline">¶</a></h3>
+<p>We can rewrite the PDE for <span class="math">\(\delta u\)</span> in a slightly different way too
+if we define <span class="math">\(u^{n,k} + \delta u\)</span> as <span class="math">\(u^{n,k+1}\)</span>.</p>
+<div class="math">
+\[ \frac{u^{n,k+1} - u^{n-1}}{\Delta t} =
+\nabla\cdot ({\alpha}(u^{n,k})\nabla u^{n,k+1}) + f(u^{n,k})\nonumber\]</div>
+<div class="math" id="eq-auto225">
+\[\tag{554}
+\qquad  + \nabla\cdot ({\alpha}^{\prime}(u^{n,k})\delta u\nabla u^{n,k})
+    + f^{\prime}(u^{n,k})\delta u{\thinspace .}\]</div>
+<p>Note that the first line is the same PDE as arises in the Picard
+iteration, while the remaining terms arise from the differentiations
+that are an inherent ingredient in Newton&#8217;s method.</p>
+</div>
+<div class="section" id="implementation-11">
+<h3>Implementation<a class="headerlink" href="#implementation-11" title="Permalink to this headline">¶</a></h3>
+<p>For coding we want to introduce <span class="math">\(u\)</span> for <span class="math">\(u^n\)</span>, <span class="math">\(u^{-}\)</span> for <span class="math">\(u^{n,k}\)</span> and
+<span class="math">\(u^{(1)}\)</span> for <span class="math">\(u^{n-1}\)</span>. The formulas for <span class="math">\(F\)</span> and <span class="math">\(\delta F\)</span>
+are then more clearly written as</p>
+<div class="math" id="eq-nonlin-pdelevel-pde-be-newton2-f2">
+\[\tag{555}
+F(u^{-}) = \frac{u^{-} - u^{(1)}}{\Delta t} -
+    \nabla\cdot ({\alpha}(u^{-})\nabla u^{-}) + f(u^{-}),\]</div>
+<div class="math">
+\[\delta F(\delta u; u^{-}) =
+- \frac{1}{\Delta t}\delta u +
+\nabla\cdot ({\alpha}(u^{-})\nabla \delta u) + \nonumber\]</div>
+<div class="math" id="eq-auto226">
+\[\tag{556}
+\quad \nabla\cdot ({\alpha}^{\prime}(u^{-})\delta u\nabla u^{-})
+    + f^{\prime}(u^{-})\delta u{\thinspace .}\]</div>
+<p>The form that orders the PDE as the Picard iteration terms plus
+the Newton method&#8217;s derivative terms becomes</p>
+<div class="math">
+\[ \frac{u - u^{(1)}}{\Delta t} =
+\nabla\cdot ({\alpha}(u^{-})\nabla u) + f(u^{-}) + \nonumber\]</div>
+<div class="math" id="eq-auto227">
+\[\tag{557}
+\qquad  \gamma(\nabla\cdot ({\alpha}^{\prime}(u^{-})(u - u^{-})\nabla u^{-})
+    + f^{\prime}(u^{-})(u - u^{-})){\thinspace .}\]</div>
+<p>The Picard and full Newton versions correspond to
+<span class="math">\(\gamma=0\)</span> and <span class="math">\(\gamma=1\)</span>, respectively.</p>
+</div>
+<div class="section" id="derivation-with-alternative-notation">
+<h3>Derivation with alternative notation<a class="headerlink" href="#derivation-with-alternative-notation" title="Permalink to this headline">¶</a></h3>
+<p>Some may prefer to derive the linearized PDE for <span class="math">\(\delta u\)</span> using
+the more compact notation. We start with inserting <span class="math">\(u^n=u^{-}+\delta u\)</span>
+to get</p>
+<div class="math">
+\[\frac{u^{-} +\delta u - u^{n-1}}{\Delta t} =
+\nabla\cdot ({\alpha}(u^{-} + \delta u)\nabla (u^{-}+\delta u))
++ f(u^{-}+\delta u){\thinspace .}\]</div>
+<p>Taylor expanding,</p>
+<div class="math">
+\[\begin{split}\begin{align*}
+{\alpha}(u^{-} + \delta u) &amp; \approx {\alpha}(u^{-}) + {\alpha}^{\prime}(u^{-})\delta u,\\
+f(u^{-}+\delta u) &amp; \approx f(u^{-}) + f^{\prime}(u^{-})\delta u,
+\end{align*}\end{split}\]</div>
+<p>and inserting these expressions gives a less cluttered PDE for <span class="math">\(\delta u\)</span>:</p>
+<div class="math">
+\[\begin{split}\begin{align*}
+\frac{u^{-} +\delta u - u^{n-1}}{\Delta t} &amp;=
+\nabla\cdot ({\alpha}(u^{-})\nabla u^{-}) + f(u^{-}) + \\
+&amp;\qquad \nabla\cdot ({\alpha}(u^{-})\nabla \delta u)
++ \nabla\cdot ({\alpha}^{\prime}(u^{-})\delta u\nabla u^{-}) + \\
+&amp;\qquad \nabla\cdot ({\alpha}^{\prime}(u^{-})\delta u\nabla \delta u)
++ f^{\prime}(u^{-})\delta u{\thinspace .}
+\end{align*}\end{split}\]</div>
+</div>
+</div>
+<div class="section" id="crank-nicolson-discretization-2">
+<span id="nonlin-pdelevel-picard-cn"></span><h2>Crank-Nicolson discretization<a class="headerlink" href="#crank-nicolson-discretization-2" title="Permalink to this headline">¶</a></h2>
+<p>A Crank-Nicolson discretization of
+<a class="reference internal" href="#eq-nonlin-pdelevel-model-pde"><span class="std std-ref">(543)</span></a> applies a centered difference
+at <span class="math">\(t_{n+\frac{1}{2}}\)</span>:</p>
+<div class="math">
+\[[D_t u = \nabla\cdot ({\alpha}(u)\nabla u) + f(u)]^{n+\frac{1}{2}}{\thinspace .}\]</div>
+<p>The standard technique is to apply an arithmetic average for
+quantities defined between two mesh points, e.g.,</p>
+<div class="math">
+\[u^{n+\frac{1}{2}}\approx \frac{1}{2}(u^n + u^{n+1}){\thinspace .}\]</div>
+<p>However, with nonlinear terms we have many choices of formulating
+an arithmetic mean:</p>
+<div class="math" id="eq-auto228">
+\[\tag{558}
+[f(u)]^{n+\frac{1}{2}} \approx f(\frac{1}{2}(u^n + u^{n+1}))
+    = [f(\overline{u}^t)]^{n+\frac{1}{2}},\]</div>
+<div class="math" id="eq-auto229">
+\[\tag{559}
+[f(u)]^{n+\frac{1}{2}} \approx \frac{1}{2}(f(u^n) + f(u^{n+1}))
+    =[\overline{f(u)}^t]^{n+\frac{1}{2}},\]</div>
+<div class="math" id="eq-auto230">
+\[\tag{560}
+[{\alpha}(u)\nabla u]^{n+\frac{1}{2}} \approx
+    {\alpha}(\frac{1}{2}(u^n + u^{n+1}))\nabla (\frac{1}{2}(u^n + u^{n+1}))
+    = [{\alpha}(\overline{u}^t)\nabla \overline{u}^t]^{n+\frac{1}{2}},\]</div>
+<div class="math" id="eq-auto231">
+\[\tag{561}
+[{\alpha}(u)\nabla u]^{n+\frac{1}{2}} \approx
+    \frac{1}{2}({\alpha}(u^n) + {\alpha}(u^{n+1}))\nabla (\frac{1}{2}(u^n + u^{n+1}))
+    = [\overline{{\alpha}(u)}^t\nabla\overline{u}^t]^{n+\frac{1}{2}},\]</div>
+<div class="math" id="eq-auto232">
+\[\tag{562}
+[{\alpha}(u)\nabla u]^{n+\frac{1}{2}} \approx
+    \frac{1}{2}({\alpha}(u^n)\nabla u^n + {\alpha}(u^{n+1})\nabla u^{n+1})
+    = [\overline{{\alpha}(u)\nabla u}^t]^{n+\frac{1}{2}}{\thinspace .}\]</div>
+<p>A big question is whether there are significant differences in accuracy
+between taking the products of arithmetic means or taking the arithmetic
+mean of products. <a class="reference internal" href="._book019.html#nonlin-exer-products-arith-mean"><span class="std std-ref">Exercise 5.6: Find the truncation error of arithmetic mean of products</span></a> investigates
+this question, and the answer is that the approximation is
+<span class="math">\({\mathcal{O}(\Delta t^2)}\)</span> in both cases.</p>
 </div>
 </div>
 
@@ -378,26 +416,27 @@ balance between high accuracy, high efficiency, and simplicity.</p>
             </center>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Systems of nonlinear algebraic equations</a><ul>
-<li><a class="reference internal" href="#picard-iteration-2">Picard iteration</a></li>
-<li><a class="reference internal" href="#newton-s-method-2">Newton&#8217;s method</a></li>
-<li><a class="reference internal" href="#stopping-criteria-3">Stopping criteria</a></li>
-<li><a class="reference internal" href="#example-a-nonlinear-ode-model-from-epidemiology">Example: A nonlinear ODE model from epidemiology</a><ul>
-<li><a class="reference internal" href="#implicit-time-discretization">Implicit time discretization</a></li>
-<li><a class="reference internal" href="#a-picard-iteration">A Picard iteration</a></li>
-<li><a class="reference internal" href="#newton-s-method-3">Newton&#8217;s method</a></li>
+<li><a class="reference internal" href="#">Linearization at the differential equation level</a><ul>
+<li><a class="reference internal" href="#explicit-time-integration">Explicit time integration</a></li>
+<li><a class="reference internal" href="#backward-euler-scheme-and-picard-iteration">Backward Euler scheme and Picard iteration</a></li>
+<li><a class="reference internal" href="#backward-euler-scheme-and-newton-s-method">Backward Euler scheme and Newton&#8217;s method</a><ul>
+<li><a class="reference internal" href="#linearization-via-taylor-expansions">Linearization via Taylor expansions</a></li>
+<li><a class="reference internal" href="#similarity-with-picard-iteration">Similarity with Picard iteration</a></li>
+<li><a class="reference internal" href="#implementation-11">Implementation</a></li>
+<li><a class="reference internal" href="#derivation-with-alternative-notation">Derivation with alternative notation</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#crank-nicolson-discretization-2">Crank-Nicolson discretization</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="._book014.html"
-                        title="previous chapter">Nonlinear problems</a></p>
+                        title="previous chapter">Systems of nonlinear algebraic equations</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="._book016.html"
-                        title="next chapter">Linearization at the differential equation level</a></p>
+                        title="next chapter">1D stationary nonlinear differential equations</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -408,14 +447,11 @@ balance between high accuracy, high efficiency, and simplicity.</p>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
     </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
-    </p>
 </div>
 <script type="text/javascript">$('#searchbox').show(0);</script>
         </div>
@@ -429,10 +465,10 @@ balance between high accuracy, high efficiency, and simplicity.</p>
           <a href="genindex.html" title="General Index"
              >index</a></li>
         <li class="right" >
-          <a href="._book016.html" title="Linearization at the differential equation level"
+          <a href="._book016.html" title="1D stationary nonlinear differential equations"
              >next</a> |</li>
         <li class="right" >
-          <a href="._book014.html" title="Nonlinear problems"
+          <a href="._book014.html" title="Systems of nonlinear algebraic equations"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="index.html">Finite Difference Computing with Partial Differential Equations</a> &raquo;</li> 
       </ul>

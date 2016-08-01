@@ -1,633 +1,1215 @@
 .. !split
 
-.. _ch:staggered:
+.. _ch:nonlin:
 
-Staggered mesh discretization
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Nonlinear problems
+%%%%%%%%%%%%%%%%%%
 
-Ordinary differential equations
-===============================
+.. _nonlin:timediscrete:logistic:
 
-The Euler-Cromer scheme on a standard mesh
-------------------------------------------
-
-Consider the fundamental model problem for simple harmonic oscillations,
-
-.. _Eq:stag:vib:ODE2nd:
-
-.. math::
-
-    \tag{462}
-    u'' + \omega^2u = 0,\quad u(0)=I,\ u'(0)=0,
-        
-        
-
-where :math:`\omega` is the frequency of the oscillations (the exact solution
-is :math:`u(t)=I\cos\omega t`). This model can equivalently be
-formulated as two first-order equations,
-
-.. _Eq:stag:vib:EulerCromer:veq:
-
-.. math::
-
-    \tag{463}
-    v' = -\omega^2 u,
-         
-        
-
-.. _Eq:stag:vib:EulerCromer:ueq:
-
-.. math::
-
-    \tag{464}
-    u' = v{\thinspace .}
-        
-        
-
-The popular Euler-Cromer scheme for this :math:`2\times 2` system of ODEs
-applies an explicit
-forward difference in :ref:`(463) <Eq:stag:vib:EulerCromer:veq>` and a
-backward difference in :ref:`(464) <Eq:stag:vib:EulerCromer:ueq>`:
-
-.. _Eq:stag:vib:EulerCromer:dveq0:
-
-.. math::
-
-    \tag{465}
-    \frac{v^{n+1}- v^n}{\Delta t} =- \omega^2u^{n},
-        
-        
-
-.. _Eq:stag:vib:EulerCromer:dueq0:
-
-.. math::
-
-    \tag{466}
-    \frac{u^{n+1} - u^n}{\Delta t} = v^{n+1}{\thinspace .}
-        
-        
-
-For a time domain :math:`[0,T]`, we have introduced a mesh with points
-:math:`0=t_0 < t_1 < \cdots < t_n=T`. The most common case is a mesh with
-uniform spacing :math:`\Delta t`: :math:`t_n=n\Delta t`. Then
-:math:`v^n` is an approximation to :math:`v(t)` at mesh point :math:`t_n`, and
-:math:`u^n` is an approximation to :math:`u(t)` at the same point.
-Note that the backward difference in :ref:`(468) <Eq:stag:vib:EulerCromer:dueq>`
-leads to an explicit updating formula for :math:`u^{n+1}`
-since :math:`v^{n+1}` is already computed:
-
-.. _Eq:stag:vib:EulerCromer:dveq:
-
-.. math::
-
-    \tag{467}
-    v^{n+1} = v^n -\Delta t \omega^2u^{n},
-        
-        
-
-.. _Eq:stag:vib:EulerCromer:dueq:
-
-.. math::
-
-    \tag{468}
-    u^{n+1} = u^n + \Delta t v^{n+1}{\thinspace .}
-        
-        
-
-The Euler-Cromer scheme is equivalent with the standard second-order
-accurate scheme for :ref:`(462) <Eq:stag:vib:ODE2nd>`:
-
-.. _Eq:stag:vib:dODE2nd:
-
-.. math::
-
-    \tag{469}
-    u^{n+1} = 2u^n - u^{n-1} - \Delta t^2\omega^2 u^n,\ n=1,2,\ldots,
-        
-        
-
-but for the first time step, the method for :ref:`(462) <Eq:stag:vib:ODE2nd>`
-leads to
-
-.. _Eq:_auto182:
-
-.. math::
-
-    \tag{470}
-    u^1= u^0 - \frac{1}{2}\Delta t^2\omega^2u^0,
-        
-        
-
-while Euler-Cromer gives
-
-.. _Eq:_auto183:
-
-.. math::
-
-    \tag{471}
-    u^1= u^0 - \Delta t^2\omega^2u^0,
-        
-        
-
-which can be interpreted as a first-order, backward difference approximation
-of :math:`u'(0)=0` combined with :ref:`(469) <Eq:stag:vib:dODE2nd>`. At later time steps,
-however, the alternating use of forward and backward differences in
-:ref:`(467) <Eq:stag:vib:EulerCromer:dveq>`-:ref:`(468) <Eq:stag:vib:EulerCromer:dueq>`
-leads to a method with error :math:`{\mathcal{O}(\Delta t^2)}`.
-
-.. _vib:model2x2:staggered:
-
-The Euler-Cromer scheme on a staggered mesh
--------------------------------------------
-
-.. index:: staggered mesh
-
-.. index:: staggered Euler-Cromer scheme
-
-.. index:: alternating mesh
-
-[**hpl 26**: Do the equations in different sequence, first vel, then pos.]
-
-The fact that the forward and backward differences used in the Euler-Cromer
-method yield a second-order accurate method, is not obvious from intuition.
-A much more intuitive discretization employs solely centered differences
-and leads to a scheme that is equivalent to the Euler-Cromer scheme.
-It is in fact fully equivalent to the second-order scheme for
-:ref:`(462) <Eq:stag:vib:ODE2nd>`, also for the first time step.
-This alternative scheme is based on using a *staggered* (or
-alternating) mesh in time.
-
-In a staggered mesh, the unknowns are sought at different points in
-the mesh. Specifically, :math:`u` is sought at
-integer time points :math:`t_n` and :math:`v` is sought at :math:`t_{n+1/2}`
-*between* two :math:`u` points.
-The unknowns are then :math:`u^1, v^{3/2}, u^2, v^{5/2}`, and so on.
-We typically use the notation
-:math:`u^n` and :math:`v^{n+\frac{1}{2}}` for the two unknown mesh functions.
-Figure :ref:`staggered:EC:fig1` presents a graphical sketch of two
-mesh functions :math:`u` and :math:`v` on a staggered mesh.
-
-.. _staggered:EC:fig1:
-
-.. figure:: staggered_time.png
-   :width: 500
-
-   *Examples on mesh functions on a staggered mesh in time*
-
-On a staggered mesh it is natural to
-use centered difference approximations, expressed
-in operator notation as
-
-.. _Eq:_auto184:
-
-.. math::
-
-    \tag{472}
-    \lbrack D_t u = v\rbrack^{n+\frac{1}{2}},
-        
-        
-
-.. _Eq:_auto185:
-
-.. math::
-
-    \tag{473}
-    \lbrack D_t v = -\omega u\rbrack^{n+1}
-        {\thinspace .}
-        
-        
-
-Writing out the formulas gives
-
-.. _Eq:vib:model2x2:EulerCromer:ueq1s:
-
-.. math::
-
-    \tag{474}
-    u^{n+1} = u^{n} + \Delta t v^{n+\frac{1}{2}},
-        
-        
-
-.. _Eq:vib:model2x2:EulerCromer:veq1s:
-
-.. math::
-
-    \tag{475}
-    v^{n+\frac{3}{2}} = v^{n+\frac{1}{2}} -\Delta t \omega^2u^{n+1}
-        
-        {\thinspace .}
-        
-
-Of esthetic reasons one often writes these equations at the
-previous time level to replace the :math:`\frac{3}{2}` by :math:`\frac{1}{2}` in the
-left-most term in the last equation,
-
-.. _Eq:vib:model2x2:EulerCromer:ueq1s2:
-
-.. math::
-
-    \tag{476}
-    u^{n} = u^{n-1} + \Delta t v^{n-\frac{1}{2}},
-        
-        
-
-.. _Eq:vib:model2x2:EulerCromer:veq1s2:
-
-.. math::
-
-    \tag{477}
-    v^{n+\frac{1}{2}} = v^{n-\frac{1}{2}} -\Delta t \omega^2u^{n}
-        
-        {\thinspace .}
-        
-
-Such a rewrite is only mathematical cosmetics. The important thing
-is that this centered scheme has exactly the same computational
-structure as the forward-backward scheme. We shall use the names
-*forward-backward Euler-Cromer* and *staggered Euler-Cromer*
-to distinguish the two schemes.
-
-We can eliminate the :math:`v`
-values and get back the centered scheme based on the second-order
-differential equation, so all these three schemes are equivalent.
-However, they differ somewhat in the treatment of the initial
-conditions.
-
-Suppose we have :math:`u(0)=I` and :math:`u'(0)=v(0)=0` as mathematical
-initial conditions. This means :math:`u^0=I` and
-
-.. math::
-         v(0)\approx \frac{1}{2}(v^{-\frac{1}{2}} + v^{\frac{1}{2}}) = 0,
-        \quad\Rightarrow\quad v^{-\frac{1}{2}} =- v^\frac{1}{2}{\thinspace .}
-
-Using the discretized equation :ref:`(477) <Eq:vib:model2x2:EulerCromer:veq1s2>` for
-:math:`n=0` yields
-
-.. math::
-         v^\frac{1}{2} = v^{-\frac{1}{2}} -\Delta t\omega^2 I,
-
-and eliminating :math:`v^{-\frac{1}{2}} =- v^{\frac{1}{2}}`
-results in :math:`v^\frac{1}{2} = -\frac{1}{2}\Delta t\omega^2I` and
-
-.. math::
-         u^1 = u^0 - \frac{1}{2}\Delta t^2\omega^2 I,
-
-which is exactly the same equation for :math:`u^1` as we had in the
-centered scheme based on the second-order differential equation
-(and hence corresponds to a centered difference approximation of
-the initial condition for :math:`u'(0)`).
-The conclusion is that a staggered mesh is fully equivalent with
-that scheme, while the forward-backward version gives a slight
-deviation in the computation of :math:`u^1`.
-
-We can redo the derivation of the initial conditions when :math:`u'(0)=V`:
-
-.. math::
-         v(0)\approx \frac{1}{2}(v^{-\frac{1}{2}} + v^{\frac{1}{2}}) = V,
-        \quad\Rightarrow\quad v^{-\frac{1}{2}} = 2V - v^\frac{1}{2}{\thinspace .}
-
-Using this :math:`v^{-\frac{1}{2}}` in
-
-.. math::
-         v^\frac{1}{2} = v^{-\frac{1}{2}} -\Delta t\omega^2 I,
-
-then gives :math:`v^\frac{1}{2} = V - \frac{1}{2}\Delta t\omega^2 I`.
-The general initial conditions are therefore
-
-.. _Eq:vib:ode2:staggered:u0:
-
-.. math::
-
-    \tag{478}
-    u^0 = I,
-        
-        
-
-.. _Eq:vib:ode2:staggered:v0:
-
-.. math::
-
-    \tag{479}
-    v^\frac{1}{2} = V - \frac{1}{2}\Delta t\omega^2I
-        {\thinspace .}
-        
-
-Implementation of the scheme on a staggered mesh
-------------------------------------------------
-
-The algorithm goes like this:
-
-1. Set the initial values :ref:`(478) <Eq:vib:ode2:staggered:u0>` and
-   :ref:`(479) <Eq:vib:ode2:staggered:v0>`.
-
-2. For :math:`n=1,2,\ldots`:
-
-  a. Compute :math:`u^{n}` from :ref:`(476) <Eq:vib:model2x2:EulerCromer:ueq1s2>`.
-
-  b. Compute :math:`v^{n+\frac{1}{2}}` from :ref:`(477) <Eq:vib:model2x2:EulerCromer:veq1s2>`.
-
-Implementation with integer indices
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Translating the schemes :ref:`(476) <Eq:vib:model2x2:EulerCromer:ueq1s2>`
-and :ref:`(477) <Eq:vib:model2x2:EulerCromer:veq1s2>` to computer code
-faces the problem of how to store and access :math:`v^{n+\frac{1}{2}}`,
-since arrays only allow integer indices with base 0.
-We must then introduce a convention: :math:`v^{1+\frac{1}{2}}` is stored
-in ``v[n]`` while :math:`v^{1-\frac{1}{2}}` is stored in ``v[n-1]``.
-We can then write the algorithm in Python as
-
-.. code-block:: python
-
-        def solver(I, w, dt, T):
-            dt = float(dt)
-            Nt = int(round(T/dt))
-            u = zeros(Nt+1)
-            v = zeros(Nt+1)
-            t = linspace(0, Nt*dt, Nt+1)  # mesh for u
-            t_v = t + dt/2                # mesh for v
-        
-            u[0] = I
-            v[0] = 0 - 0.5*dt*w**2*u[0]
-            for n in range(1, Nt+1):
-                u[n] = u[n-1] + dt*v[n-1]
-                v[n] = v[n-1] - dt*w**2*u[n]
-            return u, t, v, t_v
-
-Note that :math:`u` and :math:`v` are returned together with the mesh points such
-that the complete mesh function for :math:`u` is described by ``u`` and ``t``,
-while ``v`` and ``t_v`` represent the mesh function for :math:`v`.
-
-Implementation with half-integer indices
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Some prefer to see a closer relationship between the code and
-the mathematics for the quantities with half-integer indices.
-For example, we would like to replace the updating equation for
-``v[n]`` by
-
-.. code-block:: python
-
-        v[n+half] = v[n-half] - dt*w**2*u[n]
-
-This is easy to do if we could be sure that ``n+half`` means ``n`` and
-``n-half`` means ``n-1``. A possible solution is to define ``half`` as a
-special object such that an integer plus ``half`` results in the integer,
-while an integer minus ``half`` equals the integer minus 1.
-A simple Python class may realize the ``half`` object:
-
-.. code-block:: python
-
-        class HalfInt:
-            def __radd__(self, other):
-                return other
-        
-            def __rsub__(self, other):
-                return other - 1
-        
-        half = HalfInt()
-
-The ``__radd__`` function is invoked for all expressions ``n+half``
-("right add" with ``self`` as ``half`` and ``other`` as ``n``). Similarly,
-the ``__rsub__`` function is invoked for ``n-half`` and results in ``n-1``.
-
-Using the ``half`` object, we can implement the algorithms in an even
-more readable way:
-
-.. code-block:: python
-
-        def solver(I, w, dt, T):
-            """
-            Solve u'=v, v' = - w**2*u for t in (0,T], u(0)=I and v(0)=0,
-            by a central finite difference method with time step dt.
-            """
-            dt = float(dt)
-            Nt = int(round(T/dt))
-            u = zeros(Nt+1)
-            v = zeros(Nt+1)
-            t = linspace(0, Nt*dt, Nt+1)  # mesh for u
-            t_v = t + dt/2                # mesh for v
-        
-            u[0] = I
-            v[0+half] = 0 - 0.5*dt*w**2*u[0]
-            for n in range(1, Nt+1):
-                print n, n+half, n-half
-                u[n] = u[n-1] + dt*v[n-half]
-                v[n+half] = v[n-half] - dt*w**2*u[n]
-            return u, t, v, t_v
-
-Verification of this code is easy as we can just compare the computed
-``u`` with the ``u`` produced by the ``solver`` function in
-``vib_undamped.py`` (which solves :math:`u''+\omega^2u=0` directly).  The
-values should coincide to machine precision since the two numerical
-methods are mathematically equivalent.  We refer to the file
-`vib_undamped_staggered.py <http://tinyurl.com/nm5587k/vib/vib_undamped_staggered.py>`__
-for the details of a unit test (``test_staggered``) that checks this property.
-
-.. _vib:ode2:staggered:
-
-A staggered Euler-Cromer scheme for a generalized model
--------------------------------------------------------
-
-The more general model for vibration problems,
-
-.. _Eq:_auto186:
-
-.. math::
-
-    \tag{480}
-    mu'' + f(u') + s(u) = F(t),\quad u(0)=I,\ u'(0)=V,\ t\in (0,T],
-        
-        
-
-can be rewritten as a first-order ODE system
-
-.. _Eq:vib:ode2:staggered:ueq:
-
-.. math::
-
-    \tag{481}
-    u' = v,
-         
-        
-
-.. _Eq:vib:ode2:staggered:veq:
-
-.. math::
-
-    \tag{482}
-    v' = m^{-1}\left(F(t) - f(v) - s(u)\right){\thinspace .}
-        
-        
-
-It is natural to introduce a staggered mesh (see the section :ref:`vib:model2x2:staggered`) and seek :math:`u` at mesh points :math:`t_n` (the numerical value is
-denoted by :math:`u^n`) and :math:`v` between mesh points at :math:`t_{n+1/2}` (the numerical
-value is denoted by :math:`v^{n+\frac{1}{2}}`).
-A centered difference approximation to :ref:`(481) <Eq:vib:ode2:staggered:ueq>`-:ref:`(482) <Eq:vib:ode2:staggered:veq>` can then be written in operator notation as
-
-.. _Eq:vib:ode2:staggered:dueq:
-
-.. math::
-
-    \tag{483}
-    \lbrack D_t u = v\rbrack^{n-\frac{1}{2}},
-         
-        
-
-.. _Eq:vib:ode2:staggered:dveq:
-
-.. math::
-
-    \tag{484}
-    \lbrack D_tv = m^{-1}\left(F(t) - f(v) - s(u)\right)\rbrack^n{\thinspace .}
-        
-        
-
-Written out,
-
-.. _Eq:vib:ode2:staggered:dueq2:
-
-.. math::
-
-    \tag{485}
-    \frac{u^n - u^{n-1}}{\Delta t} = v^{n-\frac{1}{2}},
-         
-        
-
-.. _Eq:vib:ode2:staggered:dveq2:
-
-.. math::
-
-    \tag{486}
-    \frac{v^{n+\frac{1}{2}} - v^{n-\frac{1}{2}}}{\Delta t}
-        = m^{-1}\left(F^n - f(v^n) - s(u^n)\right){\thinspace .}
-        
-        
-
-With linear damping, :math:`f(v)=bv`, we can use an arithmetic mean
-for :math:`f(v^n)`: :math:`f(v^n)\approx = \frac{1}{2}(f(v^{n-\frac{1}{2}}) +
-f(v^{n+\frac{1}{2}}))`. The system
-:ref:`(485) <Eq:vib:ode2:staggered:dueq2>`-:ref:`(486) <Eq:vib:ode2:staggered:dveq2>`
-can then be solved with respect to the unknowns :math:`u^n` and :math:`v^{n+\frac{1}{2}}`:
-
-.. _Eq:vib:ode2:staggered:u:scheme:lin:
-
-.. math::
-
-    \tag{487}
-    u^n  = u^{n-1} + {\Delta t}v^{n-\frac{1}{2}},
-         
-        
-
-.. _Eq:vib:ode2:staggered:v:scheme:lin:
-
-.. math::
-
-    \tag{488}
-    v^{n+\frac{1}{2}} = \left(1 + \frac{b}{2m}\Delta t\right)^{-1}\left(
-        v^{n-\frac{1}{2}} + {\Delta t}
-        m^{-1}\left(F^n - {\frac{1}{2}}f(v^{n-\frac{1}{2}}) - s(u^n)\right)\right){\thinspace .}
-        
-        
-
-In case of quadratic damping, :math:`f(v)=b|v|v`, we can use a geometric mean:
-:math:`f(v^n)\approx b|v^{n-\frac{1}{2}}|v^{n+\frac{1}{2}}`. Inserting this approximation
-in :ref:`(485) <Eq:vib:ode2:staggered:dueq2>`-:ref:`(486) <Eq:vib:ode2:staggered:dveq2>` and
-solving for the unknowns :math:`u^n` and :math:`v^{n+\frac{1}{2}}` results in
-
-.. _Eq:vib:ode2:staggered:u:scheme:quad:
-
-.. math::
-
-    \tag{489}
-    u^n  = u^{n-1} + {\Delta t}v^{n-\frac{1}{2}},
-         
-        
-
-.. _Eq:vib:ode2:staggered:v:scheme:quad:
-
-.. math::
-
-    \tag{490}
-    v^{n+\frac{1}{2}} = (1 + \frac{b}{m}|v^{n-\frac{1}{2}}|\Delta t)^{-1}\left(
-        v^{n-\frac{1}{2}} + {\Delta t}
-        m^{-1}\left(F^n - s(u^n)\right)\right){\thinspace .}
-        
-        
-
-The initial conditions are derived at the end of
-the section :ref:`vib:model2x2:staggered`:
-
-.. _Eq:vib:ode2:staggered:u02:
-
-.. math::
-
-    \tag{491}
-    u^0 = I,
-        
-        
-
-.. _Eq:vib:ode2:staggered:v02:
-
-.. math::
-
-    \tag{492}
-    v^\frac{1}{2} = V - \frac{1}{2}\Delta t\omega^2I
-        {\thinspace .}
-        
-
-Exercises          (8)
-======================
-
-.. --- begin exercise ---
-
-.. _vib:exer:quad:damping:fwbw:
-
-Exercise 5.1: Use the forward-backward scheme with quadratic damping
---------------------------------------------------------------------
-
-We consider the generalized model with quadratic damping, expressed
-as a system of two first-order equations as in the section :ref:`vib:ode2:staggered`:
-
-.. math::
-        
-        u^{\prime} &= v,\\ 
-        v' &= \frac{1}{m}\left( F(t) - \beta |v|v - s(u)\right){\thinspace .}
-        
-
-However, contrary to what is done in the section :ref:`vib:ode2:staggered`,
-we want to apply the idea of a forward-backward discretization:
-:math:`u` is marched forward by a one-sided Forward Euler scheme applied
-to the first equation, and
-thereafter :math:`v` can be marched forward by a Backward Euler scheme in the
-second
-equation, see in the section :ref:`vib:model2x2:EulerCromer`.
-Express the idea in operator notation and write out the
-scheme. Unfortunately, the backward difference for the :math:`v` equation
-creates a nonlinearity :math:`|v^{n+1}|v^{n+1}`.  To linearize this
-nonlinearity, use the known value :math:`v^n` inside the absolute value
-factor, i.e., :math:`|v^{n+1}|v^{n+1}\approx |v^n|v^{n+1}`.  Show that the
-resulting scheme is equivalent to the one in the section :ref:`vib:ode2:staggered` for some time level :math:`n\geq 1`.
-
-What we learn from this exercise is that the first-order differences
-and the linearization trick play together in "the right way" such that
-the scheme is as good as when we (in the section :ref:`vib:ode2:staggered`)
-carefully apply centered differences and a geometric mean on a
-staggered mesh to achieve second-order accuracy.
-There is a
-difference in the handling of the initial conditions, though, as
-explained at the end of the section :ref:`vib:model2x2:EulerCromer`.
-Filename: ``vib_gen_bwdamping``.
-
-.. --- end exercise ---
-
-Partial differential equations
+Introduction of basic concepts
 ==============================
 
-.. _staggered:wave:fig1:
+Linear versus nonlinear equations
+---------------------------------
 
-.. figure:: staggered_space.png
-   :width: 500
+Algebraic equations
+~~~~~~~~~~~~~~~~~~~
 
-   *Examples on mesh functions on a staggered mesh in space*
+A linear, scalar, algebraic equation in :math:`x` has the form
+
+.. math::
+         ax + b = 0,
+
+for arbitrary real constants :math:`a` and :math:`b`. The unknown is a number :math:`x`.
+All other algebraic equations, e.g., :math:`x^2 + ax + b = 0`, are nonlinear.
+The typical feature in a nonlinear algebraic equation is that the unknown
+appears in products with itself, like :math:`x^2` or :math:`e^x = 1 + x +\frac{1}{2} x^2 +
+\frac{1}{3!}x^3 + \cdots`.
+
+We know how to solve a linear algebraic equation, :math:`x=-b/a`, but there are
+no general methods for finding the exact solutions of
+nonlinear algebraic equations, except for very special cases (quadratic
+equations constitute a primary example). A nonlinear algebraic equation
+may have no solution, one solution, or many solutions. The tools for
+solving nonlinear algebraic equations are *iterative methods*, where
+we construct a series of linear equations, which we know how to solve,
+and hope that the solutions of the linear equations converge to a
+solution of the nonlinear equation we want to solve.
+Typical methods for nonlinear algebraic equation equations are
+Newton's method, the Bisection method, and the Secant method.
+
+Differential equations
+~~~~~~~~~~~~~~~~~~~~~~
+
+The unknown in a differential equation is a function and not a number.
+In a linear differential equation, all terms involving the unknown function
+are linear in the unknown function or its derivatives. Linear here means that
+the unknown function, or a derivative of it, is multiplied by a number or
+a known function. All other differential equations are non-linear.
+
+The easiest way to see if an equation is nonlinear, is to spot nonlinear terms
+where the unknown function or its derivatives are multiplied by
+each other. For example, in
+
+.. math::
+         u^{\prime}(t) = -a(t)u(t) + b(t),
+
+the terms involving the unknown function :math:`u` are linear: :math:`u^{\prime}` contains
+the derivative of the unknown function multiplied by unity, and :math:`au` contains
+the unknown function multiplied by a known function.
+However,
+
+.. math::
+         u^{\prime}(t) = u(t)(1 - u(t)),
+
+is nonlinear because of the term :math:`-u^2` where the unknown function is
+multiplied by itself. Also
+
+.. math::
+         \frac{\partial u}{\partial t} + u\frac{\partial u}{\partial x} = 0,
+
+is nonlinear because of the term :math:`uu_x` where the unknown
+function appears in a product with its derivative.
+(Note here that we use different notations for derivatives: :math:`u^{\prime}`
+or :math:`du/dt` for a function :math:`u(t)` of one variable,
+:math:`\frac{\partial u}{\partial t}` or :math:`u_t` for a function of more than one
+variable.)
+
+Another example of a nonlinear equation is
+
+.. math::
+         u^{\prime\prime} + \sin(u) =0,
+
+because :math:`\sin(u)` contains products of :math:`u`, which becomes clear
+if we expand the function in a Taylor series:
+
+.. math::
+         \sin(u) = u - \frac{1}{3} u^3 + \ldots
+
+
+.. admonition:: Mathematical proof of linearity
+
+   To really prove mathematically that some differential equation
+   in an unknown :math:`u` is linear,
+   show for each term :math:`T(u)` that with :math:`u = au_1 + bu_2` for
+   constants :math:`a` and :math:`b`,
+   
+   .. math::
+            T(au_1 + bu_2) = aT(u_1) + bT(u_2){\thinspace .} 
+   
+   For example, the term :math:`T(u) = (\sin^2 t)u'(t)` is linear because
+   
+   .. math::
+           \begin{align*}
+           T(au_1 + bu_2) &= (\sin^2 t)(au_1(t) + b u_2(t))\\ 
+           & = a(\sin^2 t)u_1(t) + b(\sin^2 t)u_2(t)\\ 
+           & =aT(u_1) + bT(u_2){\thinspace .}
+           \end{align*}
+   
+   However, :math:`T(u)=\sin u` is nonlinear because
+   
+   .. math::
+            T(au_1 + bu_2) = \sin (au_1 + bu_2) \neq a\sin u_1 + b\sin u_2{\thinspace .}
+
+
+
+
+A simple model problem          (2)
+-----------------------------------
+
+A series of forthcoming examples will explain how to tackle
+nonlinear differential equations with various techniques.
+We start with the (scaled) logistic equation as model problem:
+
+.. _Eq:nonlin:timediscrete:logistic:eq:
+
+.. math::
+
+    \tag{514}
+    u^{\prime}(t) = u(t)(1 - u(t)) {\thinspace .}
+        
+        
+
+This is a nonlinear ordinary differential equation (ODE)
+which will be solved by
+different strategies in the following.
+Depending on the chosen
+time discretization of :ref:`(514) <Eq:nonlin:timediscrete:logistic:eq>`,
+the mathematical problem to be solved at every time level will
+either be a linear algebraic equation or a nonlinear
+algebraic equation.
+In the former case, the time discretization method transforms
+the nonlinear ODE into linear subproblems at each time level, and
+the solution is straightforward to find since linear algebraic equations
+are easy to solve. However,
+when the time discretization leads to nonlinear algebraic equations, we
+cannot (except in very rare cases) solve these without turning to
+approximate, iterative solution methods.
+
+The next subsections introduce various methods
+for solving nonlinear differential equations,
+using :ref:`(514) <Eq:nonlin:timediscrete:logistic:eq>` as model. We shall go through
+the following set of cases:
+
+ * explicit time discretization methods (with no need to
+   solve nonlinear algebraic equations)
+
+ * implicit Backward Euler time discretization, leading to nonlinear
+   algebraic equations solved by
+
+  * an exact analytical technique
+
+  * Picard iteration based on manual linearization
+
+  * a single Picard step
+
+  * Newton's method
+
+ * implicit Crank-Nicolson time discretization and linearization
+   via a geometric mean formula
+
+Thereafter, we compare the performance of the various approaches. Despite
+the simplicity of :ref:`(514) <Eq:nonlin:timediscrete:logistic:eq>`, the conclusions
+reveal typical features of the various methods in much more complicated
+nonlinear PDE problems.
+
+.. _nonlin:timediscrete:logistic:FE:
+
+Linearization by explicit time discretization
+---------------------------------------------
+
+.. index::
+   single: linearization; explicit time integration
+
+Time discretization methods are divided into explicit and implicit
+methods. Explicit methods lead to a closed-form formula for
+finding new values of the unknowns, while implicit methods give
+a linear or nonlinear system of equations that couples (all) the
+unknowns at a new time level. Here we shall demonstrate that
+explicit methods constitute an efficient way to deal with nonlinear
+differential equations.
+
+The Forward Euler
+method is an explicit method. When applied to
+:ref:`(514) <Eq:nonlin:timediscrete:logistic:eq>`, sampled at :math:`t=t_n`, it results in
+
+.. math::
+         \frac{u^{n+1} - u^n}{\Delta t} = u^n(1 - u^n),
+
+which is a *linear* algebraic
+equation for the unknown value :math:`u^{n+1}` that we can easily solve:
+
+.. math::
+         u^{n+1} = u^n + \Delta t\,u^n(1 - u^n){\thinspace .}
+
+The nonlinearity in the original equation poses in this case no difficulty
+in the discrete algebraic equation.
+Any other explicit scheme in time will also give only linear
+algebraic equations
+to solve. For example, a typical 2nd-order Runge-Kutta method
+for :ref:`(514) <Eq:nonlin:timediscrete:logistic:eq>` leads to the following
+formulas:
+
+.. math::
+        \begin{align*}
+        u^* &= u^n + \Delta t u^n(1 - u^n),\\ 
+        u^{n+1} &= u^n + \Delta t \frac{1}{2} \left(
+        u^n(1 - u^n) + u^*(1 - u^*))
+        \right){\thinspace .}
+        \end{align*}
+
+The first step is linear in the unknown :math:`u^*`. Then :math:`u^*` is
+known in the next step, which is linear in the unknown :math:`u^{n+1}` .
+
+.. _nonlin:timediscrete:logistic:roots:
+
+Exact solution of nonlinear algebraic equations
+-----------------------------------------------
+
+Switching to a Backward Euler scheme for
+:ref:`(514) <Eq:nonlin:timediscrete:logistic:eq>`,
+
+.. _Eq:nonlin:timediscrete:logistic:eq:BE:
+
+.. math::
+
+    \tag{515}
+    \frac{u^{n} - u^{n-1}}{\Delta t} = u^n(1 - u^n),
+        
+        
+
+results in a nonlinear algebraic equation for the unknown value :math:`u^n`.
+The equation is of quadratic type:
+
+.. math::
+         \Delta t (u^n)^2 + (1-\Delta t)u^n - u^{n-1} = 0, 
+
+and may be solved exactly by the well-known formula for such equations.
+Before we do so, however, we will
+introduce a shorter, and often cleaner, notation for
+nonlinear algebraic equations at a given time level. The notation is
+inspired by the natural notation (i.e., variable names) used in a
+program, especially in more advanced partial differential equation
+problems. The unknown in the algebraic equation is denoted by :math:`u`,
+while :math:`u^{(1)}` is the value of the unknown at the previous time level
+(in general, :math:`u^{(\ell)}` is the value of the unknown :math:`\ell` levels
+back in time). The notation will be frequently used in later
+sections. What is meant by :math:`u` should be evident from the context: :math:`u`
+may be 1) the exact solution of the ODE/PDE problem,
+2) the numerical approximation to the exact solution, or 3) the unknown
+solution at a certain time level.
+
+The quadratic equation for the unknown :math:`u^n` in
+:ref:`(515) <Eq:nonlin:timediscrete:logistic:eq:BE>` can, with the new
+notation, be written
+
+.. _Eq:nonlin:timediscrete:logistic:eq:F:
+
+.. math::
+
+    \tag{516}
+    F(u) = \Delta t u^2 + (1-\Delta t)u - u^{(1)} = 0{\thinspace .}
+        
+        
+
+The solution is readily found to be
+
+.. _Eq:nonlin:timediscrete:logistic:eq:roots:
+
+.. math::
+
+    \tag{517}
+    u = \frac{1}{2\Delta t}
+        \left(-1+\Delta t \pm \sqrt{(1-\Delta t)^2 - 4\Delta t u^{(1)}}\right)
+        {\thinspace .}
+        
+        
+
+Now we encounter a fundamental challenge with nonlinear
+algebraic equations:
+the equation may have more than one solution. How do we pick the right
+solution? This is in general a hard problem.
+In the present simple case, however, we can analyze the roots mathematically
+and provide an answer. The idea is to expand the roots
+in a series in :math:`\Delta t` and truncate after the linear term since
+the Backward Euler scheme will introduce an error proportional to
+:math:`\Delta t` anyway. Using ``sympy`` we find the following Taylor series
+expansions of the roots:
+
+.. code-block:: python
+
+    >>> import sympy as sym
+    >>> dt, u_1, u = sym.symbols('dt u_1 u')
+    >>> r1, r2 = sym.solve(dt*u**2 + (1-dt)*u - u_1, u)  # find roots
+    >>> r1
+    (dt - sqrt(dt**2 + 4*dt*u_1 - 2*dt + 1) - 1)/(2*dt)
+    >>> r2
+    (dt + sqrt(dt**2 + 4*dt*u_1 - 2*dt + 1) - 1)/(2*dt)
+    >>> print r1.series(dt, 0, 2)    # 2 terms in dt, around dt=0
+    -1/dt + 1 - u_1 + dt*(u_1**2 - u_1) + O(dt**2)
+    >>> print r2.series(dt, 0, 2)
+    u_1 + dt*(-u_1**2 + u_1) + O(dt**2)
+
+We see that the ``r1`` root, corresponding to
+a minus sign in front of the square root in
+:ref:`(517) <Eq:nonlin:timediscrete:logistic:eq:roots>`,
+behaves as :math:`1/\Delta t` and will therefore
+blow up as :math:`\Delta t\rightarrow 0`! Since we know that :math:`u` takes on
+finite values, actually it is less than or equal to 1,
+only the ``r2`` root is of relevance in this case: as :math:`\Delta t\rightarrow 0`,
+:math:`u\rightarrow u^{(1)}`, which is the expected result.
+
+For those who are not well experienced with approximating mathematical
+formulas by series expansion, an alternative method of investigation
+is simply to compute the limits of the two roots as :math:`\Delta t\rightarrow 0`
+and see if a limit unreasonable:
+
+.. code-block:: python
+
+    >>> print r1.limit(dt, 0)
+    -oo
+    >>> print r2.limit(dt, 0)
+    u_1
+
+Linearization
+-------------
+
+When the time integration of an ODE results in a nonlinear algebraic
+equation, we must normally find its solution by defining a sequence
+of linear equations and hope that the solutions of these linear equations
+converge to the desired solution of the nonlinear algebraic equation.
+Usually, this means solving the linear equation repeatedly in an
+iterative fashion.
+Alternatively, the nonlinear equation can sometimes be approximated by one
+linear equation, and consequently there is no need for iteration.
+
+.. index:: linearization
+
+Constructing a linear equation from a nonlinear one requires
+*linearization* of each nonlinear term. This can be done manually
+as in Picard iteration, or fully algorithmically as in Newton's method.
+Examples will best illustrate how to linearize nonlinear problems.
+
+.. _nonlin:timediscrete:logistic:Picard:
+
+Picard iteration          (1)
+-----------------------------
+
+.. index:: Picard iteration
+
+.. index:: successive substitutions
+
+.. index:: fixed-point iteration
+
+.. index::
+   single: linearization; Picard iteration
+
+.. index::
+   single: linearization; successive substitutions
+
+.. index::
+   single: linearization; fixed-point iteration
+
+Let us write :ref:`(516) <Eq:nonlin:timediscrete:logistic:eq:F>` in a
+more compact form
+
+.. math::
+         F(u) = au^2 + bu + c = 0,
+
+with :math:`a=\Delta t`, :math:`b=1-\Delta t`, and :math:`c=-u^{(1)}`.
+Let :math:`u^{-}` be an available approximation of the unknown :math:`u`.
+Then we can linearize the term :math:`u^2` simply by writing
+:math:`u^{-}u`. The resulting equation, :math:`\hat F(u)=0`, is now linear
+and hence easy to solve:
+
+.. math::
+         F(u)\approx\hat F(u) = au^{-}u + bu + c = 0{\thinspace .}
+
+Since the equation :math:`\hat F=0` is only approximate, the solution :math:`u`
+does not equal the exact solution :math:`{u_{\small\mbox{e}}}` of the exact
+equation :math:`F({u_{\small\mbox{e}}})=0`, but we can hope that :math:`u` is closer to
+:math:`{u_{\small\mbox{e}}}` than :math:`u^{-}` is, and hence it makes sense to repeat the
+procedure, i.e., set :math:`u^{-}=u` and solve :math:`\hat F(u)=0` again.
+There is no guarantee that :math:`u` is closer to :math:`{u_{\small\mbox{e}}}` than :math:`u^{-}`,
+but this approach has proven to be effective in a wide range of
+applications.
+
+The idea of turning a nonlinear equation into a linear one by
+using an approximation :math:`u^{-}` of :math:`u` in nonlinear terms is
+a widely used approach that goes under many names:
+*fixed-point iteration*, the method of *successive substitutions*,
+*nonlinear Richardson iteration*, and *Picard iteration*.
+We will stick to the latter name.
+
+Picard iteration for solving the nonlinear equation
+arising from the Backward Euler discretization of the logistic
+equation can be written as
+
+.. math::
+         u = -\frac{c}{au^{-} + b},\quad u^{-}\ \leftarrow\ u{\thinspace .}
+
+The :math:`\leftarrow` symbols means assignment (we set :math:`u^{-}` equal to
+the value of :math:`u`).
+The iteration is started with the value of the unknown at the
+previous time level: :math:`u^{-}=u^{(1)}`.
+
+Some prefer an explicit iteration counter as superscript
+in the mathematical notation. Let :math:`u^k` be the computed approximation
+to the solution in iteration :math:`k`. In iteration :math:`k+1` we want
+to solve
+
+.. math::
+         au^k u^{k+1} + bu^{k+1} + c = 0\quad\Rightarrow\quad u^{k+1}
+        = -\frac{c}{au^k + b},\quad k=0,1,\ldots
+
+Since we need to perform the iteration at every time level, the
+time level counter is often also included:
+
+.. math::
+         au^{n,k} u^{n,k+1} + bu^{n,k+1} - u^{n-1} = 0\quad\Rightarrow\quad u^{n,k+1}
+        = \frac{u^n}{au^{n,k} + b},\quad k=0,1,\ldots,
+
+with the start value :math:`u^{n,0}=u^{n-1}` and the final converged value
+:math:`u^{n}=u^{n,k}` for sufficiently large :math:`k`.
+
+However, we will normally apply a mathematical notation in our
+final formulas that is as close as possible to what we aim to write
+in a computer code and then it becomes natural to use :math:`u` and :math:`u^{-}`
+instead of :math:`u^{k+1}` and :math:`u^k` or :math:`u^{n,k+1}` and :math:`u^{n,k}`.
+
+.. index:: stopping criteria (nonlinear problems)
+
+Stopping criteria          (2)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The iteration method can typically be terminated when the change
+in the solution is smaller than a tolerance :math:`\epsilon_u`:
+
+.. math::
+         |u - u^{-}| \leq\epsilon_u,
+
+or when the residual in the equation is sufficiently small (:math:`< \epsilon_r`),
+
+.. math::
+         |F(u)|= |au^2+bu + c| < \epsilon_r{\thinspace .}
+
+.. index:: single Picard iteration technique
+
+A single Picard iteration
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Instead of iterating until a stopping criterion is fulfilled, one may
+iterate a specific number of times. Just one Picard iteration is
+popular as this corresponds to the intuitive idea of approximating a
+nonlinear term like :math:`(u^n)^2` by :math:`u^{n-1}u^n`. This follows from the
+linearization :math:`u^{-}u^n` and the initial choice of :math:`u^{-}=u^{n-1}` at
+time level :math:`t_n`. In other words, a single Picard iteration
+corresponds to using the solution at the previous time level to
+linearize nonlinear terms. The resulting discretization becomes (using
+proper values for :math:`a`, :math:`b`, and :math:`c`)
+
+.. _Eq:nonlin:timediscrete:logistic:BE:Picard:1it:
+
+.. math::
+
+    \tag{518}
+    \frac{u^{n} - u^{n-1}}{\Delta t} = u^n(1 - u^{n-1}),
+        
+        
+
+which is a linear algebraic equation in the unknown :math:`u^n`, making
+it easy to solve for :math:`u^n` without any need for
+any alternative notation.
+
+We shall later refer to the strategy of taking one Picard step, or
+equivalently, linearizing terms with use of the solution at the
+previous time step, as the *Picard1* method. It is a widely used
+approach in science and technology, but with some limitations if
+:math:`\Delta t` is not sufficiently small (as will be illustrated later).
+
+
+.. note::
+   
+   Equation :ref:`(518) <Eq:nonlin:timediscrete:logistic:BE:Picard:1it>` does not
+   correspond to a "pure" finite difference method where the equation
+   is sampled at a point and derivatives replaced by differences (because
+   the :math:`u^{n-1}` term on the right-hand side must then be :math:`u^n`). The
+   best interpretation of the scheme
+   :ref:`(518) <Eq:nonlin:timediscrete:logistic:BE:Picard:1it>` is a Backward Euler
+   difference combined with a single (perhaps insufficient) Picard
+   iteration at each time level, with the value at the previous time
+   level as start for the Picard iteration.
+
+
+
+
+.. _nonlin:timediscrete:logistic:geometric:mean:
+
+Linearization by a geometric mean
+---------------------------------
+
+We consider now a Crank-Nicolson discretization of
+:ref:`(514) <Eq:nonlin:timediscrete:logistic:eq>`. This means that the
+time derivative is approximated by a centered
+difference,
+
+.. math::
+         [D_t u = u(1-u)]^{n+\frac{1}{2}},
+
+written out as
+
+.. _Eq:nonlin:timediscrete:logistic:geometric:mean:scheme:
+
+.. math::
+
+    \tag{519}
+    \frac{u^{n+1}-u^n}{\Delta t} = u^{n+\frac{1}{2}} -
+        (u^{n+\frac{1}{2}})^2{\thinspace .}
+        
+        
+
+The term :math:`u^{n+\frac{1}{2}}` is normally approximated by an arithmetic
+mean,
+
+.. math::
+         u^{n+\frac{1}{2}}\approx \frac{1}{2}(u^n + u^{n+1}),
+
+such that the scheme involves the unknown function only at the time levels
+where we actually compute it.
+The same arithmetic mean applied to the nonlinear term gives
+
+.. math::
+         (u^{n+\frac{1}{2}})^2\approx \frac{1}{4}(u^n + u^{n+1})^2,
+
+which is nonlinear in the unknown :math:`u^{n+1}`.
+However, using a *geometric mean* for :math:`(u^{n+\frac{1}{2}})^2`
+is a way of linearizing the nonlinear term in
+:ref:`(519) <Eq:nonlin:timediscrete:logistic:geometric:mean:scheme>`:
+
+.. math::
+         (u^{n+\frac{1}{2}})^2\approx u^nu^{n+1}{\thinspace .}
+
+Using an arithmetic mean on the linear :math:`u^{n+\frac{1}{2}}` term in
+:ref:`(519) <Eq:nonlin:timediscrete:logistic:geometric:mean:scheme>` and a geometric
+mean for the second term, results in a linearized equation for the
+unknown :math:`u^{n+1}`:
+
+.. math::
+         \frac{u^{n+1}-u^n}{\Delta t} =
+        \frac{1}{2}(u^n + u^{n+1}) + u^nu^{n+1},
+
+which can readily be solved:
+
+.. math::
+        
+        u^{n+1} = \frac{1 + \frac{1}{2}\Delta t}{1+\Delta t u^n - \frac{1}{2}\Delta t}
+        u^n{\thinspace .}
+
+This scheme can be coded directly, and since
+there is no nonlinear algebraic equation to iterate over,
+we skip the simplified notation with :math:`u` for :math:`u^{n+1}`
+and :math:`u^{(1)}` for :math:`u^n`. The technique with using
+a geometric average is an example of transforming a nonlinear
+algebraic equation to a linear one, without any need for iterations.
+
+The geometric mean approximation is often very effective for
+linearizing quadratic nonlinearities. Both the arithmetic and geometric mean
+approximations have truncation errors of order :math:`\Delta t^2` and are
+therefore compatible with the truncation error :math:`{\mathcal{O}(\Delta t^2)}`
+of the centered difference approximation for :math:`u^\prime` in the Crank-Nicolson
+method.
+
+Applying the operator notation for the means and finite differences,
+the linearized Crank-Nicolson scheme for the logistic equation can be
+compactly expressed as
+
+.. math::
+         [D_t u = \overline{u}^{t} + \overline{u^2}^{t,g}]^{n+\frac{1}{2}}{\thinspace .}
+
+
+.. admonition:: Remark
+
+   If we use an arithmetic instead of a geometric mean
+   for the nonlinear term in
+   :ref:`(519) <Eq:nonlin:timediscrete:logistic:geometric:mean:scheme>`,
+   we end up with a nonlinear term :math:`(u^{n+1})^2`.
+   This term can be linearized as :math:`u^{-}u^{n+1}` in a Picard iteration
+   approach and in particular as
+   :math:`u^nu^{n+1}` in a Picard1 iteration approach.
+   The latter gives a scheme almost identical to the one arising from
+   a geometric mean (the difference in :math:`u^{n+1}`
+   being :math:`\frac{1}{4}\Delta t u^n(u^{n+1}-u^n)\approx \frac{1}{4}\Delta t^2
+   u^\prime u`, i.e., a difference of size :math:`\Delta t^2`).
+
+
+
+
+.. _nonlin:timediscrete:logistic:Newton:
+
+Newton's method          (1)
+----------------------------
+
+The Backward Euler scheme :ref:`(515) <Eq:nonlin:timediscrete:logistic:eq:BE>`
+for the logistic equation leads to a nonlinear algebraic equation
+:ref:`(516) <Eq:nonlin:timediscrete:logistic:eq:F>`. Now we write any nonlinear
+algebraic equation in the general and compact form
+
+.. math::
+         F(u) = 0{\thinspace .}
+
+Newton's method linearizes this equation by approximating :math:`F(u)` by
+its Taylor series expansion around a computed value :math:`u^{-}`
+and keeping only the linear part:
+
+.. math::
+        \begin{align*}
+        F(u) &= F(u^{-}) + F^{\prime}(u^{-})(u - u^{-}) + {\frac{1}{2}}F^{\prime\prime}(u^{-})(u-u^{-})^2
+        +\cdots\\ 
+        & \approx F(u^{-}) + F^{\prime}(u^{-})(u - u^{-}) = \hat F(u){\thinspace .}
+        \end{align*}
+
+The linear equation :math:`\hat F(u)=0` has the solution
+
+.. math::
+         u = u^{-} - \frac{F(u^{-})}{F^{\prime}(u^{-})}{\thinspace .}
+
+Expressed with an iteration index in the unknown, Newton's method takes
+on the more familiar mathematical form
+
+.. math::
+         u^{k+1} = u^k - \frac{F(u^k)}{F^{\prime}(u^k)},\quad k=0,1,\ldots
+
+It can be shown that the error in iteration :math:`k+1` of Newton's method is
+proportional to
+the square of the error in iteration :math:`k`, a result referred to as
+*quadratic convergence*. This means that for
+small errors the method converges very fast, and in particular much
+faster than Picard iteration and other iteration methods.
+(The proof of this result is found in most textbooks on numerical analysis.)
+However, the quadratic convergence appears only if :math:`u^k` is sufficiently
+close to the solution. Further away from the solution the method can
+easily converge very slowly or diverge. The reader is encouraged to do
+:ref:`nonlin:exer:Newton:problems1` to get a better understanding
+for the behavior of the method.
+
+Application of Newton's method to the logistic equation discretized
+by the Backward Euler method is straightforward
+as we have
+
+.. math::
+         F(u) = au^2 + bu + c,\quad a=\Delta t,\ b = 1-\Delta t,\ c=-u^{(1)},
+
+and then
+
+.. math::
+         F^{\prime}(u) = 2au + b{\thinspace .}
+
+The iteration method becomes
+
+.. _Eq:nonlin:timediscrete:logistic:Newton:alg1:
+
+.. math::
+
+    \tag{520}
+    u = u^{-} + \frac{a(u^{-})^2 + bu^{-} + c}{2au^{-} + b},\quad
+        u^{-}\ \leftarrow u{\thinspace .}
+        
+        
+
+At each time level, we start the iteration by setting :math:`u^{-}=u^{(1)}`.
+Stopping criteria as listed for the Picard iteration can be used also
+for Newton's method.
+
+An alternative mathematical form, where we write out :math:`a`, :math:`b`, and :math:`c`,
+and use a time level counter :math:`n` and an iteration counter :math:`k`, takes
+the form
+
+.. _Eq:nonlin:timediscrete:logistic:Newton:alg2:
+
+.. math::
+
+    \tag{521}
+    u^{n,k+1} = u^{n,k} +
+        \frac{\Delta t (u^{n,k})^2 + (1-\Delta t)u^{n,k} - u^{n-1}}
+        {2\Delta t u^{n,k} + 1 - \Delta t},\quad u^{n,0}=u^{n-1},
+        
+        
+
+for :math:`k=0,1,\ldots`.
+A program implementation is much closer to :ref:`(520) <Eq:nonlin:timediscrete:logistic:Newton:alg1>` than to :ref:`(521) <Eq:nonlin:timediscrete:logistic:Newton:alg2>`, but
+the latter is better aligned with the established mathematical
+notation used in the literature.
+
+.. _nonlin:timediscrete:logistic:relaxation:
+
+Relaxation          (2)
+-----------------------
+
+.. index:: relaxation (nonlinear equations)
+
+One iteration in Newton's method or
+Picard iteration consists of solving a linear problem :math:`\hat F(u)=0`.
+Sometimes convergence problems arise because the new solution :math:`u`
+of :math:`\hat F(u)=0` is "too far away" from the previously computed
+solution :math:`u^{-}`. A remedy is to introduce a relaxation, meaning that
+we first solve :math:`\hat F(u^*)=0` for a suggested value :math:`u^*` and
+then we take :math:`u` as a weighted mean of what we had, :math:`u^{-}`, and
+what our linearized equation :math:`\hat F=0` suggests, :math:`u^*`:
+
+.. math::
+         u = \omega u^* + (1-\omega) u^{-}{\thinspace .}
+
+The parameter :math:`\omega`
+is known as a *relaxation parameter*, and a choice :math:`\omega < 1`
+may prevent divergent iterations.
+
+Relaxation in Newton's method can be directly incorporated
+in the basic iteration formula:
+
+.. _Eq:nonlin:timediscrete:logistic:relaxation:Newton:formula:
+
+.. math::
+
+    \tag{522}
+    u = u^{-} - \omega \frac{F(u^{-})}{F^{\prime}(u^{-})}{\thinspace .}
+        
+        
+
+.. _nonlin:timediscrete:logistic:impl:
+
+Implementation and experiments
+------------------------------
+
+The program `logistic.py <http://tinyurl.com/nu656p2/nonlin/logistic.py>`__ contains
+implementations of all the methods described above.
+Below is an extract of the file showing how the Picard and Newton
+methods are implemented for a Backward Euler discretization of
+the logistic equation.
+
+.. @@@CODE src-nonlin/logistic.py fromto: def BE_logistic@def CN_logistic
+
+.. code-block:: python
+
+    def BE_logistic(u0, dt, Nt, choice='Picard',
+                    eps_r=1E-3, omega=1, max_iter=1000):
+        if choice == 'Picard1':
+            choice = 'Picard'
+            max_iter = 1
+    
+        u = np.zeros(Nt+1)
+        iterations = []
+        u[0] = u0
+        for n in range(1, Nt+1):
+            a = dt
+            b = 1 - dt
+            c = -u[n-1]
+    
+            if choice == 'Picard':
+    
+                def F(u):
+                    return a*u**2 + b*u + c
+    
+                u_ = u[n-1]
+                k = 0
+                while abs(F(u_)) > eps_r and k < max_iter:
+                    u_ = omega*(-c/(a*u_ + b)) + (1-omega)*u_
+                    k += 1
+                u[n] = u_
+                iterations.append(k)
+    
+            elif choice == 'Newton':
+    
+                def F(u):
+                    return a*u**2 + b*u + c
+    
+                def dF(u):
+                    return 2*a*u + b
+    
+                u_ = u[n-1]
+                k = 0
+                while abs(F(u_)) > eps_r and k < max_iter:
+                    u_ = u_ - F(u_)/dF(u_)
+                    k += 1
+                u[n] = u_
+                iterations.append(k)
+        return u, iterations
+
+The Crank-Nicolson method utilizing a linearization based on the
+geometric mean gives a simpler algorithm:
+
+.. code-block:: python
+
+    def CN_logistic(u0, dt, Nt):
+        u = np.zeros(Nt+1)
+        u[0] = u0
+        for n in range(0, Nt):
+            u[n+1] = (1 + 0.5*dt)/(1 + dt*u[n] - 0.5*dt)*u[n]
+        return u
+
+We may run experiments with the model problem
+:ref:`(514) <Eq:nonlin:timediscrete:logistic:eq>` and the different strategies for
+dealing with nonlinearities as described above. For a quite coarse
+time resolution, :math:`\Delta t=0.9`, use of a tolerance :math:`\epsilon_r=0.1`
+in the stopping criterion introduces an iteration error, especially in
+the Picard iterations, that is visibly much larger than the
+time discretization error due to a large :math:`\Delta t`. This is illustrated
+by comparing the upper two plots in
+Figure :ref:`nonlin:timediscrete:logistic:impl:fig:u`. The one to
+the right has a stricter tolerance :math:`\epsilon = 10^{-3}`, which leads
+to all the curves corresponding to Picard and Newton iteration to be
+on top of each other (and no changes can be visually observed by
+reducing :math:`\epsilon_r` further). The reason why Newton's method does
+much better than Picard iteration in the upper left plot is that
+Newton's method with one step comes far below the :math:`\epsilon_r` tolerance,
+while the Picard iteration needs on average 7 iterations to bring the
+residual down to :math:`\epsilon_r=10^{-1}`, which gives insufficient
+accuracy in the solution of the nonlinear equation. It is obvious
+that the Picard1 method gives significant errors in addition to
+the time discretization unless the time step is as small as in
+the lower right plot.
+
+The *BE exact* curve corresponds to using the exact solution of the
+quadratic equation at each time level, so this curve is only affected
+by the Backward Euler time discretization.  The *CN gm* curve
+corresponds to the theoretically more accurate Crank-Nicolson
+discretization, combined with a geometric mean for linearization.
+This curve appears more accurate, especially if we take the plot in
+the lower right with a small :math:`\Delta t` and an appropriately small
+:math:`\epsilon_r` value as the exact curve.
+
+When it comes to the need for iterations, Figure
+:ref:`nonlin:timediscrete:logistic:impl:fig:iter` displays the number of
+iterations required at each time level for Newton's method and
+Picard iteration. The smaller :math:`\Delta t` is, the better starting value
+we have for the iteration, and the faster the convergence is.
+With :math:`\Delta t = 0.9` Picard iteration requires on average 32 iterations
+per time step, but this number is dramatically reduced as :math:`\Delta t`
+is reduced.
+
+However, introducing relaxation and a parameter :math:`\omega=0.8`
+immediately reduces the average of 32 to 7, indicating that for the large
+:math:`\Delta t=0.9`, Picard iteration takes too long steps. An approximately optimal
+value for :math:`\omega` in this case is 0.5, which results in an average of only
+2 iterations! An even more dramatic impact of :math:`\omega` appears when
+:math:`\Delta t = 1`: Picard iteration does not convergence in 1000 iterations,
+but :math:`\omega=0.5` again brings the average number of iterations down to 2.
+
+.. _nonlin:timediscrete:logistic:impl:fig:u:
+
+.. figure:: logistic_u.png
+   :width: 800
+
+   *Impact of solution strategy and time step length on the solution*
+
+.. _nonlin:timediscrete:logistic:impl:fig:iter:
+
+.. figure:: logistic_iter.png
+   :width: 800
+
+   *Comparison of the number of iterations at various time levels for Picard and Newton iteration*
+
+**Remark.**
+The simple Crank-Nicolson method with a geometric mean for the quadratic
+nonlinearity gives visually more accurate solutions than the
+Backward Euler discretization. Even with a tolerance of :math:`\epsilon_r=10^{-3}`,
+all the methods for treating the nonlinearities in the Backward Euler
+discretization give graphs that cannot be distinguished. So for
+accuracy in this problem, the time discretization is much more crucial
+than :math:`\epsilon_r`. Ideally, one should estimate the error in the
+time discretization, as the solution progresses, and set :math:`\epsilon_r`
+accordingly.
+
+.. _nonlin:ode:generic:
+
+Generalization to a general nonlinear ODE
+-----------------------------------------
+
+Let us see how the various methods in the previous sections
+can be applied to the more generic model
+
+.. _Eq:nonlin:ode:generic:model:
+
+.. math::
+
+    \tag{523}
+    u^{\prime} = f(u, t),
+        
+        
+
+where :math:`f` is a nonlinear function of :math:`u`.
+
+Explicit time discretization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Explicit ODE methods like the Forward Euler scheme, Runge-Kutta methods,
+Adams-Bashforth methods all evaluate :math:`f` at time levels where
+:math:`u` is already computed, so nonlinearities in :math:`f` do not
+pose any difficulties.
+
+Backward Euler discretization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Approximating :math:`u^{\prime}` by a backward difference leads to a Backward Euler
+scheme, which can be written as
+
+.. math::
+         F(u^n) = u^{n} - \Delta t\, f(u^n, t_n) - u^{n-1}=0,
+
+or alternatively
+
+.. math::
+         F(u) = u - \Delta t\, f(u, t_n) - u^{(1)} = 0{\thinspace .}
+
+A simple Picard iteration, not knowing anything about the nonlinear
+structure of :math:`f`, must approximate :math:`f(u,t_n)` by :math:`f(u^{-},t_n)`:
+
+.. math::
+         \hat F(u) = u - \Delta t\, f(u^{-},t_n) - u^{(1)}{\thinspace .}
+
+The iteration starts with :math:`u^{-}=u^{(1)}` and proceeds with repeating
+
+.. math::
+         u^* = \Delta t\, f(u^{-},t_n) + u^{(1)},\quad u = \omega u^* + (1-\omega)u^{-},
+        \quad u^{-}\ \leftarrow\ u,
+
+until a stopping criterion is fulfilled.
+
+
+.. admonition:: Explicit vs implicit treatment of nonlinear terms
+
+   Evaluating :math:`f` for a known :math:`u^{-}` is referred to as *explicit* treatment of
+   :math:`f`, while if :math:`f(u,t)` has some structure, say :math:`f(u,t) = u^3`, parts of
+   :math:`f` can involve the known :math:`u`, as in the manual linearization
+   like :math:`(u^{-})^2u`, and then the treatment of :math:`f` is "more implicit"
+   and "less explicit". This terminology is inspired by time discretization
+   of :math:`u^{\prime}=f(u,t)`, where evaluating :math:`f` for known :math:`u` values gives
+   explicit schemes, while treating :math:`f` or parts of :math:`f` implicitly,
+   makes :math:`f` contribute to the unknown terms in the equation at the new
+   time level.
+   
+   Explicit treatment of :math:`f` usually means stricter conditions on
+   :math:`\Delta t` to achieve stability of time discretization schemes. The same
+   applies to iteration techniques for nonlinear algebraic equations: the "less"
+   we linearize :math:`f` (i.e., the more we keep of :math:`u` in the original formula),
+   the faster the convergence may be.
+   
+   We may say that :math:`f(u,t)=u^3` is treated explicitly if we evaluate :math:`f`
+   as :math:`(u^{-})^3`, partially implicit if we linearize as :math:`(u^{-})^2u`
+   and fully implicit if we represent :math:`f` by :math:`u^3`. (Of course, the
+   fully implicit representation will require further linearization,
+   but with :math:`f(u,t)=u^2` a fully implicit treatment is possible if
+   the resulting quadratic equation is solved with a formula.)
+   
+   For the ODE :math:`u^{\prime}=-u^3` with :math:`f(u,t)=-u^3` and coarse
+   time resolution :math:`\Delta t = 0.4`, Picard iteration with :math:`(u^{-})^2u`
+   requires 8 iterations with :math:`\epsilon_r = 10^{-3}` for the first
+   time step, while :math:`(u^{-})^3` leads to 22 iterations. After about 10
+   time steps both approaches are down to about 2 iterations per time
+   step, but this example shows a potential of treating :math:`f` more
+   implicitly.
+   
+   A trick to treat :math:`f` implicitly in Picard iteration is to
+   evaluate it as :math:`f(u^{-},t)u/u^{-}`. For a polynomial :math:`f`, :math:`f(u,t)=u^m`,
+   this corresponds to :math:`(u^{-})^{m}u/u^{-1}=(u^{-})^{m-1}u`. Sometimes this more implicit
+   treatment has no effect, as with :math:`f(u,t)=\exp(-u)` and :math:`f(u,t)=\ln (1+u)`,
+   but with :math:`f(u,t)=\sin(2(u+1))`, the :math:`f(u^{-},t)u/u^{-}` trick
+   leads to 7, 9, and 11 iterations during the first three steps, while
+   :math:`f(u^{-},t)` demands 17, 21, and 20 iterations.
+   (Experiments can be done with the code `ODE_Picard_tricks.py <http://tinyurl.com/nu656p2/nonlin/ODE_Picard_tricks.py>`__.)
+
+
+
+
+Newton's method applied to a Backward Euler discretization of
+:math:`u^{\prime}=f(u,t)`
+requires the computation of the derivative
+
+.. math::
+         F^{\prime}(u) = 1 - \Delta t\frac{\partial f}{\partial u}(u,t_n){\thinspace .}
+
+Starting with the solution at the previous time level, :math:`u^{-}=u^{(1)}`,
+we can just use the standard formula
+
+.. _Eq:nonlin:ode:generic:Newton:
+
+.. math::
+
+    \tag{524}
+    u = u^{-} - \omega \frac{F(u^{-})}{F^{\prime}(u^{-})}
+        = u^{-} - \omega \frac{u^{-} - \Delta t\, f(u^{-}, t_n) - u^{(1)}}{1 - \Delta t
+        \frac{\partial}{\partial u}f(u^{-},t_n)}
+        {\thinspace .}
+        
+        
+
+.. The geometric mean trick cannot be used unless we know that :math:`f` has
+
+.. a special structure with quadratic expressions in :math:`u`.
+
+Crank-Nicolson discretization          (1)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The standard Crank-Nicolson scheme with arithmetic mean approximation of
+:math:`f` takes the form
+
+.. math::
+         \frac{u^{n+1} - u^n}{\Delta t} = \frac{1}{2}(f(u^{n+1}, t_{n+1})
+        + f(u^n, t_n)){\thinspace .}
+
+We can write the scheme as a nonlinear algebraic equation
+
+.. _Eq:nonlin:ode:generic:Newton2:
+
+.. math::
+
+    \tag{525}
+    F(u) = u - u^{(1)} - \Delta t{\frac{1}{2}}f(u,t_{n+1}) -
+        \Delta t{\frac{1}{2}}f(u^{(1)},t_{n}) = 0{\thinspace .}
+        
+        
+
+A Picard iteration scheme must in general employ the linearization
+
+.. math::
+         \hat F(u) = u - u^{(1)} - \Delta t{\frac{1}{2}}f(u^{-},t_{n+1}) -
+        \Delta t{\frac{1}{2}}f(u^{(1)},t_{n}),
+
+while Newton's method can apply the general formula
+:ref:`(524) <Eq:nonlin:ode:generic:Newton>` with :math:`F(u)` given in
+:ref:`(525) <Eq:nonlin:ode:generic:Newton2>` and
+
+.. math::
+         F^{\prime}(u)= 1 - \frac{1}{2}\Delta t\frac{\partial f}{\partial u}(u,t_{n+1}){\thinspace .}
+
+.. What about pendulum sin(u) as u/u_ sin(u_)? Check in odespy if it
+
+.. converges faster (should be able to store the no of Newton and
+
+.. Picard iterations in the classes and poll afterwards). It the trick
+
+.. pays off, describe it here. Can odespy be used here? That is, can we
+
+.. provide the linearization? No...?
+
+.. _nonlin:ode:generic:sys:pendulum:
+
+Systems of ODEs
+---------------
+
+We may write a system of ODEs
+
+.. math::
+        \begin{align*}
+        \frac{d}{dt}u_0(t) &= f_0(u_0(t),u_1(t),\ldots,u_N(t),t),\\ 
+        \frac{d}{dt}u_1(t) &= f_1(u_0(t),u_1(t),\ldots,u_N(t),t),\\ 
+        &\vdots\\ 
+        \frac{d}{dt}u_m(t) &= f_m(u_0(t),u_1(t),\ldots,u_N(t),t),
+        \end{align*}
+
+as
+
+.. _Eq:_auto211:
+
+.. math::
+
+    \tag{526}
+    u^{\prime} = f(u,t),\quad u(0)=U_0,
+        
+        
+
+if we interpret :math:`u` as a vector :math:`u=(u_0(t),u_1(t),\ldots,u_N(t))`
+and :math:`f` as a vector function with components
+:math:`(f_0(u,t),f_1(u,t),\ldots,f_N(u,t))`.
+
+Most solution methods for scalar ODEs, including
+the Forward and Backward Euler schemes and the
+Crank-Nicolson method, generalize in a
+straightforward way to systems of ODEs simply by using vector
+arithmetics instead of scalar arithmetics, which corresponds to
+applying the scalar scheme to each component of the system.  For
+example, here is a backward difference scheme applied to each
+component,
+
+.. math::
+        \begin{align*}
+        \frac{u_0^n- u_0^{n-1}}{\Delta t} &= f_0(u^n,t_n),\\ 
+        \frac{u_1^n- u_1^{n-1}}{\Delta t} &= f_1(u^n,t_n),\\ 
+        &\vdots\\ 
+        \frac{u_N^n- u_N^{n-1}}{\Delta t} &= f_N(u^n,t_n),
+        \end{align*}
+
+which can be written more compactly in vector form as
+
+.. math::
+         \frac{u^n- u^{n-1}}{\Delta t} = f(u^n,t_n){\thinspace .}
+
+This is a *system of algebraic equations*,
+
+.. math::
+         u^n - \Delta t\,f(u^n,t_n) - u^{n-1}=0,
+
+or written out
+
+.. math::
+        \begin{align*}
+        u_0^n - \Delta t\, f_0(u^n,t_n) - u_0^{n-1} &= 0,\\ 
+        &\vdots\\ 
+        u_N^n - \Delta t\, f_N(u^n,t_n) - u_N^{n-1} &= 0{\thinspace .}
+        \end{align*}
+
+Example
+~~~~~~~
+
+We shall address the :math:`2\times 2` ODE system for
+oscillations of a pendulum
+subject to gravity and air drag. The system can be written as
+
+.. _Eq:_auto212:
+
+.. math::
+
+    \tag{527}
+    \dot\omega = -\sin\theta -\beta \omega |\omega|,
+        
+        
+
+.. _Eq:_auto213:
+
+.. math::
+
+    \tag{528}
+    \dot\theta = \omega,
+        
+        
+
+where :math:`\beta` is a dimensionless parameter (this is the scaled, dimensionless
+version of the original, physical model). The unknown components of the
+system are the
+angle :math:`\theta(t)` and the angular velocity :math:`\omega(t)`.
+We introduce :math:`u_0=\omega` and :math:`u_1=\theta`, which leads to
+
+.. math::
+        \begin{align*}
+        u_0^{\prime} = f_0(u,t) &= -\sin u_1 - \beta u_0|u_0|,\\ 
+        u_1^{\prime} = f_1(u,t) &= u_0{\thinspace .}
+        \end{align*}
+
+A Crank-Nicolson scheme reads
+
+.. math::
+        
+        \frac{u_0^{n+1}-u_0^{n}}{\Delta t} = -\sin u_1^{n+\frac{1}{2}}
+        - \beta u_0^{n+\frac{1}{2}}|u_0^{n+\frac{1}{2}}|\nonumber
+        
+
+.. _Eq:_auto214:
+
+.. math::
+
+    \tag{529}
+    \approx -\sin\left(\frac{1}{2}(u_1^{n+1} + u_1n)\right)
+        - \beta\frac{1}{4} (u_0^{n+1} + u_0^n)|u_0^{n+1}+u_0^n|,
+        
+        
+
+.. _Eq:_auto215:
+
+.. math::
+
+    \tag{530}
+    \frac{u_1^{n+1}-u_1^n}{\Delta t} = u_0^{n+\frac{1}{2}}\approx
+        \frac{1}{2} (u_0^{n+1}+u_0^n){\thinspace .}
+        
+        
+
+This is a *coupled system* of two nonlinear algebraic equations
+in two unknowns :math:`u_0^{n+1}` and :math:`u_1^{n+1}`.
+
+Using the notation :math:`u_0` and :math:`u_1` for the unknowns :math:`u_0^{n+1}` and
+:math:`u_1^{n+1}` in this system, writing :math:`u_0^{(1)}` and
+:math:`u_1^{(1)}` for the previous values :math:`u_0^n` and :math:`u_1^n`, multiplying
+by :math:`\Delta t` and moving the terms to the left-hand sides, gives
+
+.. _Eq:nonlin:ode:generic:sys:pendulum:u0:
+
+.. math::
+
+    \tag{531}
+    u_0 - u_0^{(1)} + \Delta t\,\sin\left(\frac{1}{2}(u_1 + u_1^{(1)})\right)
+        + \frac{1}{4}\Delta t\beta (u_0 + u_0^{(1)})|u_0 + u_0^{(1)}| =0,
+        
+        
+
+.. _Eq:nonlin:ode:generic:sys:pendulum:u1:
+
+.. math::
+
+    \tag{532}
+    u_1 - u_1^{(1)} -\frac{1}{2}\Delta t(u_0 + u_0^{(1)}) =0{\thinspace .}
+        
+        
+
+Obviously, we have a need for solving systems of nonlinear algebraic
+equations, which is the topic of the next section.
 

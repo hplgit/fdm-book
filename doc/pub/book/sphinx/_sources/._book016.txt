@@ -1,535 +1,586 @@
 .. !split
 
-.. _nonlin:pdelevel:
+.. _nonlin:alglevel:1D:
 
-Linearization at the differential equation level
-================================================
+1D stationary nonlinear differential equations
+==============================================
 
-The attention is now turned
-to nonlinear partial differential equations (PDEs)
-and application of the techniques explained above for ODEs.
-The model problem is a nonlinear diffusion equation for
-:math:`u(\boldsymbol{x},t)`:
+The section :ref:`nonlin:pdelevel` presented methods for linearizing
+time-discrete PDEs directly prior to discretization in space.  We can
+alternatively carry out the discretization in space of the
+time-discrete nonlinear PDE problem and get a system of nonlinear
+algebraic equations, which can be solved by Picard iteration or
+Newton's method as presented in the section :ref:`nonlin:systems:alg`.
+This latter approach will now be described in detail.
 
-.. _Eq:nonlin:pdelevel:model:pde:
+We shall work with the 1D problem
 
-.. math::
-
-    \tag{522}
-    \frac{\partial u}{\partial t} = \nabla\cdot ({\alpha}(u)\nabla u) + f(u),\quad
-        \boldsymbol{x}\in\Omega,\ t\in (0,T],
-        
-        
-
-.. _Eq:nonlin:pdelevel:model:Neumann:
+.. _Eq:nonlin:alglevel:1D:pde:
 
 .. math::
 
-    \tag{523}
-    -{\alpha}(u)\frac{\partial u}{\partial n} = g,\quad \boldsymbol{x}\in\partial\Omega_N,\ 
-        t\in (0,T],
+    \tag{563}
+    -({\alpha}(u)u^{\prime})^{\prime} + au = f(u),\quad x\in (0,L),
+        \quad {\alpha}(u(0))u^{\prime}(0) = C,\ u(L)=D
+        {\thinspace .}
         
         
 
-.. _Eq:nonlin:pdelevel:model:Dirichlet:
+The problem :ref:`(563) <Eq:nonlin:alglevel:1D:pde>` arises from the stationary
+limit of a diffusion equation,
+
+.. _Eq:nonlin:alglevel:1D:pde:tver:
 
 .. math::
 
-    \tag{524}
-    u = u_0,\quad \boldsymbol{x}\in\partial\Omega_D,\ t\in (0,T]{\thinspace .}
+    \tag{564}
+    \frac{\partial u}{\partial t} = \frac{\partial}{\partial x}\left(
+        \alpha(u)\frac{\partial u}{\partial x}\right) - au + f(u),
         
         
 
-In the present section, our aim is to discretize this problem in time
-and then present techniques for linearizing the time-discrete PDE
-problem "at the PDE level" such that we transform the nonlinear
-stationary PDE problem at each time level into a sequence of linear
-PDE problems, which can be solved using any method for linear
-PDEs. This strategy avoids the solution of systems of nonlinear
-algebraic equations.  In the section :ref:`nonlin:alglevel:1D` we shall take
-the opposite (and more common) approach: discretize the nonlinear
-problem in time and space first, and then solve the resulting
-nonlinear algebraic equations at each time level by the methods of
-the section :ref:`nonlin:systems:alg`.  Very often, the two approaches are
-mathematically identical, so there is no preference from a
-computational efficiency point of view.  The details of the ideas
-sketched above will hopefully become clear through the forthcoming
-examples.
+as :math:`t\rightarrow\infty` and :math:`\partial u/\partial t\rightarrow 0`.
+Alternatively, the problem :ref:`(563) <Eq:nonlin:alglevel:1D:pde>` arises
+at each time level from implicit time discretization of
+:ref:`(564) <Eq:nonlin:alglevel:1D:pde:tver>`. For example, a Backward Euler
+scheme for :ref:`(564) <Eq:nonlin:alglevel:1D:pde:tver>` leads to
 
-.. _nonlin:pdelevel:explicit:
-
-Explicit time integration
--------------------------
-
-The nonlinearities in the PDE are trivial to deal with if we choose an
-explicit time integration method for :ref:`(522) <Eq:nonlin:pdelevel:model:pde>`,
-such as the Forward Euler method:
-
-.. math::
-         [D_t^+ u = \nabla\cdot ({\alpha}(u)\nabla u) + f(u)]^n,
-
-or written out,
-
-.. math::
-         \frac{u^{n+1} - u^n}{\Delta t} = \nabla\cdot ({\alpha}(u^n)\nabla u^n)
-        + f(u^n),
-
-which is a linear equation in the unknown :math:`u^{n+1}` with solution
-
-.. math::
-         u^{n+1} = u^n + \Delta t\nabla\cdot ({\alpha}(u^n)\nabla u^n) +
-        \Delta t f(u^n){\thinspace .} 
-
-The disadvantage with this discretization is
-the strict stability criterion :math:`\Delta t \leq h^2/(6\max\alpha)`
-for the case :math:`f=0` and a standard 2nd-order finite difference discretization
-in 3D space with mesh cell sizes :math:`h=\Delta x=\Delta y=\Delta z`.
-
-.. BC
-
-.. _nonlin:pdelevel:Picard:
-
-Backward Euler scheme and Picard iteration
-------------------------------------------
-
-A Backward Euler scheme for :ref:`(522) <Eq:nonlin:pdelevel:model:pde>`
-reads
-
-.. math::
-         [D_t^- u = \nabla\cdot ({\alpha}(u)\nabla u) + f(u)]^n{\thinspace .}
-
-Written out,
-
-.. _Eq:nonlin:pdelevel:pde:BE:
+.. _Eq:nonlin:alglevel:1D:pde:tver:BE:
 
 .. math::
 
-    \tag{525}
-    \frac{u^{n} - u^{n-1}}{\Delta t} = \nabla\cdot ({\alpha}(u^n)\nabla u^n)
-        + f(u^n){\thinspace .}
+    \tag{565}
+    \frac{u^{n}-u^{n-1}}{\Delta t} =
+        \frac{d}{dx}\left(
+        \alpha(u^n)\frac{du^n}{dx}\right) - au^n + f(u^n){\thinspace .}
         
         
 
-This is a nonlinear PDE for the unknown function :math:`u^n(\boldsymbol{x})`. Such a
-PDE can be viewed as a time-independent PDE where
-:math:`u^{n-1}(\boldsymbol{x})` is a known function.
+Introducing :math:`u(x)` for :math:`u^n(x)`, :math:`u^{(1)}` for :math:`u^{n-1}`, and defining :math:`f(u)`
+in :ref:`(563) <Eq:nonlin:alglevel:1D:pde>` to be :math:`f(u)` in
+:ref:`(565) <Eq:nonlin:alglevel:1D:pde:tver:BE>` plus :math:`u^{n-1}/\Delta t`, gives
+:ref:`(563) <Eq:nonlin:alglevel:1D:pde>` with :math:`a=1/\Delta t`.
 
-We introduce a Picard iteration with :math:`k` as iteration counter.
-A typical linearization of the :math:`\nabla\cdot({\alpha}(u^n)\nabla u^n)` term
-in iteration :math:`k+1` is to use the previously computed :math:`u^{n,k}`
-approximation in the diffusion coefficient: :math:`{\alpha}(u^{n,k})`.
-The nonlinear source term is treated similarly: :math:`f(u^{n,k})`.
-The unknown function :math:`u^{n,k+1}` then fulfills the linear PDE
+.. _nonlin:alglevel:1D:fd:
 
-.. _Eq:nonlin:pdelevel:pde:BE:Picard:k:
+Finite difference discretization          (2)
+---------------------------------------------
+
+The nonlinearity in the differential equation
+:ref:`(563) <Eq:nonlin:alglevel:1D:pde>` poses no more difficulty than a variable
+coefficient, as in the term :math:`({\alpha}(x)u^{\prime})^{\prime}`.  We can
+therefore use a standard finite difference approach to discretizing
+the Laplace term with a variable coefficient:
+
+.. math::
+         [-D_x{\alpha} D_x u +au = f]_i{\thinspace .}
+
+Writing this out for a uniform mesh with points :math:`x_i=i\Delta x`,
+:math:`i=0,\ldots,N_x`, leads to
+
+.. _Eq:nonlin:alglevel:1D:fd:deq0:
 
 .. math::
 
-    \tag{526}
-    \frac{u^{n,k+1} - u^{n-1}}{\Delta t} = \nabla\cdot ({\alpha}(u^{n,k})
-        \nabla u^{n,k+1})
-        + f(u^{n,k}){\thinspace .}
+    \tag{566}
+    -\frac{1}{\Delta x^2}
+        \left({\alpha}_{i+\frac{1}{2}}(u_{i+1}-u_i) -
+        {\alpha}_{i-\frac{1}{2}}(u_{i}-u_{i-1})\right)
+        + au_i = f(u_i){\thinspace .}
         
         
 
-The initial guess for the Picard iteration at this time level can be
-taken as the solution at the previous time level: :math:`u^{n,0}=u^{n-1}`.
+This equation is valid at all the mesh points :math:`i=0,1,\ldots,N_x-1`.
+At :math:`i=N_x` we have the Dirichlet condition :math:`u_i=0`.
+The only difference from the case with :math:`({\alpha}(x)u^{\prime})^{\prime}` and :math:`f(x)` is that
+now :math:`{\alpha}` and :math:`f` are functions of :math:`u` and not only of :math:`x`:
+:math:`({\alpha}(u(x))u^{\prime})^{\prime}` and :math:`f(u(x))`.
 
-We can alternatively apply the implementation-friendly
-notation where :math:`u` corresponds to
-the unknown we want to solve for, i.e., :math:`u^{n,k+1}` above, and :math:`u^{-}`
-is the most recently computed value, :math:`u^{n,k}` above. Moreover,
-:math:`u^{(1)}` denotes the unknown function at the previous time level, :math:`u^{n-1}`
-above. The PDE to be solved in a Picard iteration then looks like
+The quantity :math:`{\alpha}_{i+\frac{1}{2}}`, evaluated between two mesh points,
+needs a comment. Since :math:`{\alpha}` depends on :math:`u` and :math:`u` is only known
+at the mesh points, we need to express :math:`{\alpha}_{i+\frac{1}{2}}` in
+terms of :math:`u_i` and :math:`u_{i+1}`. For this purpose we use an arithmetic
+mean, although a harmonic mean is also common in this context if
+:math:`{\alpha}` features large jumps.
+There are two choices of arithmetic means:
 
-.. _Eq:nonlin:pdelevel:pde:BE:Picard:
+.. _Eq:nonlin:alglevel:1D:fd:dfc:mean:u:
 
 .. math::
 
-    \tag{527}
-    \frac{u - u^{(1)}}{\Delta t} = \nabla\cdot ({\alpha}(u^{-})
-        \nabla u)
-        + f(u^{-}){\thinspace .}
+    \tag{567}
+    {\alpha}_{i+\frac{1}{2}} \approx
+        {\alpha}(\frac{1}{2}(u_i + u_{i+1}) =
+        [{\alpha}(\overline{u}^x)]^{i+\frac{1}{2}},
         
         
 
-At the beginning of the iteration we start with the value from the
-previous time level: :math:`u^{-}=u^{(1)}`, and after each
-iteration, :math:`u^{-}` is updated to :math:`u`.
-
-
-.. admonition:: Remark on notation
-
-   The previous derivations of the numerical scheme for time discretizations
-   of PDEs have, strictly
-   speaking, a somewhat sloppy notation, but it is much used and convenient
-   to read. A more precise notation must
-   distinguish clearly between the exact solution of the PDE problem,
-   here denoted :math:`{u_{\small\mbox{e}}}(\boldsymbol{x},t)`, and the exact solution of the spatial
-   problem, arising after time discretization at each time level,
-   where :ref:`(525) <Eq:nonlin:pdelevel:pde:BE>` is an example. The latter
-   is here represented as :math:`u^n(\boldsymbol{x})` and is an approximation to
-   :math:`{u_{\small\mbox{e}}}(\boldsymbol{x},t_n)`. Then we have another approximation :math:`u^{n,k}(\boldsymbol{x})`
-   to :math:`u^n(\boldsymbol{x})` when solving the nonlinear PDE problem for
-   :math:`u^n` by iteration methods, as in :ref:`(526) <Eq:nonlin:pdelevel:pde:BE:Picard:k>`.
-   
-   In our notation, :math:`u` is a synonym for :math:`u^{n,k+1}` and :math:`u^{(1)}` is
-   a synonym for :math:`u^{n-1}`, inspired by what are natural variable names
-   in a code.
-   We will usually state the PDE problem in terms of :math:`u` and
-   quickly redefine the symbol :math:`u` to mean the numerical approximation,
-   while :math:`{u_{\small\mbox{e}}}` is not explicitly introduced unless we need to talk about
-   the exact solution and the approximate solution at the same time.
-
-
-
-
-.. _nonlin:pdelevel:Newton:
-
-Backward Euler scheme and Newton's method
------------------------------------------
-
-At time level :math:`n`, we have to solve the stationary PDE
-:ref:`(525) <Eq:nonlin:pdelevel:pde:BE>`. In the previous section, we
-saw how this can be done with Picard iterations.
-Another alternative is to apply the idea of Newton's method
-in a clever way.
-Normally, Newton's method is defined for systems of *algebraic equations*,
-but the idea of the method can be applied at the PDE level too.
-
-Linearization via Taylor expansions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Let :math:`u^{n,k}` be an approximation to the unknown :math:`u^n`. We seek a
-better approximation on
-the form
-
-.. _Eq:nonlin:pdelevel:Newton:ansatz:
+.. _Eq:nonlin:alglevel:1D:fd:dfc:mean:dfc:
 
 .. math::
 
-    \tag{528}
-    u^{n} = u^{n,k} + \delta u{\thinspace .}
+    \tag{568}
+    {\alpha}_{i+\frac{1}{2}} \approx
+        \frac{1}{2}({\alpha}(u_i) + {\alpha}(u_{i+1})) = [\overline{{\alpha}(u)}^x]^{i+\frac{1}{2}}
         
         
 
-The idea is to insert :ref:`(528) <Eq:nonlin:pdelevel:Newton:ansatz>` in
-:ref:`(525) <Eq:nonlin:pdelevel:pde:BE>`, Taylor expand the nonlinearities
-and keep only the terms that are
-linear in :math:`\delta u` (which makes :ref:`(528) <Eq:nonlin:pdelevel:Newton:ansatz>`
-an approximation for :math:`u^{n}`). Then we can solve a linear PDE for
-the correction :math:`\delta u` and use :ref:`(528) <Eq:nonlin:pdelevel:Newton:ansatz>`
-to find a new approximation
-
-.. math::
-         u^{n,k+1}=u^{n,k}+\delta u
-
-to :math:`u^{n}`.
-Repeating this procedure gives a sequence :math:`u^{n,k+1}`, :math:`k=0,1,\ldots`
-that hopefully converges to the goal :math:`u^n`.
-
-Let us carry out all the mathematical details for the nonlinear diffusion
-PDE discretized by the Backward Euler method.
-Inserting :ref:`(528) <Eq:nonlin:pdelevel:Newton:ansatz>` in
-:ref:`(525) <Eq:nonlin:pdelevel:pde:BE>` gives
-
-.. _Eq:nonlin:pdelevel:pde:BE:Newton1:
-
-.. math::
-
-    \tag{529}
-    \frac{u^{n,k} +\delta u - u^{n-1}}{\Delta t} =
-        \nabla\cdot ({\alpha}(u^{n,k} + \delta u)\nabla (u^{n,k}+\delta u))
-        + f(u^{n,k}+\delta u){\thinspace .}
-        
-        
-
-We can Taylor expand :math:`{\alpha}(u^{n,k} + \delta u)` and
-:math:`f(u^{n,k}+\delta u)`:
+Equation :ref:`(566) <Eq:nonlin:alglevel:1D:fd:deq0>` with
+the latter approximation then looks like
 
 .. math::
         
-        {\alpha}(u^{n,k} + \delta u) & = {\alpha}(u^{n,k}) + \frac{d{\alpha}}{du}(u^{n,k})
-        \delta u + {\mathcal{O}(\delta u^2)}\approx {\alpha}(u^{n,k}) + {\alpha}^{\prime}(u^{n,k})\delta u,\\ 
-        f(u^{n,k}+\delta u) &=  f(u^{n,k}) + \frac{df}{du}(u^{n,k})\delta u
-        + {\mathcal{O}(\delta u^2)}\approx f(u^{n,k}) + f^{\prime}(u^{n,k})\delta u{\thinspace .}
+        -\frac{1}{2\Delta x^2}
+        \left(({\alpha}(u_i)+{\alpha}(u_{i+1}))(u_{i+1}-u_i) -
+        ({\alpha}(u_{i-1})+{\alpha}(u_{i}))(u_{i}-u_{i-1})\right)\nonumber
         
 
-Inserting the linear approximations of :math:`{\alpha}` and :math:`f` in
-:ref:`(529) <Eq:nonlin:pdelevel:pde:BE:Newton1>` results in
-
-.. math::
-        
-        \frac{u^{n,k} +\delta u - u^{n-1}}{\Delta t} =
-        \nabla\cdot ({\alpha}(u^{n,k})\nabla u^{n,k}) + f(u^{n,k}) + \nonumber
-        
-
-.. math::
-          
-        \qquad \nabla\cdot ({\alpha}(u^{n,k})\nabla \delta u)
-        + \nabla\cdot ({\alpha}^{\prime}(u^{n,k})\delta u\nabla u^{n,k}) + \nonumber
-        
-
-.. _Eq:nonlin:pdelevel:pde:BE:Newton2:
+.. _Eq:nonlin:alglevel:1D:fd:deq:
 
 .. math::
 
-    \tag{530}
-    \qquad \nabla\cdot ({\alpha}^{\prime}(u^{n,k})\delta u\nabla \delta u)
-        + f^{\prime}(u^{n,k})\delta u{\thinspace .}
+    \tag{569}
+    \qquad\qquad + au_i = f(u_i),
         
         
 
-The term :math:`{\alpha}^{\prime}(u^{n,k})\delta u\nabla \delta u` is of
-order :math:`\delta u^2`
-and therefore omitted since we expect the correction :math:`\delta u`
-to be small (:math:`\delta u \gg \delta u^2`).
-Reorganizing the equation gives a PDE
-for :math:`\delta u` that we can write in short form as
+or written more compactly,
 
 .. math::
-         \delta F(\delta u; u^{n,k}) = -F(u^{n,k}),
+         [-D_x\overline{{\alpha}}^x D_x u +au = f]_i{\thinspace .}
+
+At mesh point :math:`i=0` we have the boundary condition :math:`{\alpha}(u)u^{\prime}=C`,
+which is discretized by
+
+.. math::
+         [{\alpha}(u)D_{2x}u = C]_0,
+
+meaning
+
+.. _Eq:nonlin:alglevel:1D:fd:Neumann:x0:
+
+.. math::
+
+    \tag{570}
+    {\alpha}(u_0)\frac{u_{1} - u_{-1}}{2\Delta x} = C{\thinspace .}
+        
+        
+
+The fictitious value :math:`u_{-1}` can be eliminated with the aid
+of :ref:`(569) <Eq:nonlin:alglevel:1D:fd:deq>` for :math:`i=0`.
+Formally, :ref:`(569) <Eq:nonlin:alglevel:1D:fd:deq>` should be solved with
+respect to :math:`u_{i-1}` and that value (for :math:`i=0`) should be inserted in
+:ref:`(570) <Eq:nonlin:alglevel:1D:fd:Neumann:x0>`, but it is algebraically
+much easier to do it the other way around. Alternatively, one can
+use a ghost cell :math:`[-\Delta x,0]` and update the :math:`u_{-1}` value
+in the ghost cell according to :ref:`(570) <Eq:nonlin:alglevel:1D:fd:Neumann:x0>`
+after every Picard or Newton iteration. Such an approach means that
+we use a known :math:`u_{-1}` value in :ref:`(569) <Eq:nonlin:alglevel:1D:fd:deq>`
+from the previous iteration.
+
+Solution of algebraic equations
+-------------------------------
+
+The structure of the equation system
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The nonlinear algebraic equations :ref:`(569) <Eq:nonlin:alglevel:1D:fd:deq>` are
+of the form :math:`A(u)u = b(u)` with
+
+.. math::
+        \begin{align*}
+        A_{i,i} &= \frac{1}{2\Delta x^2}({\alpha}(u_{i-1}) + 2{\alpha}(u_{i})
+        {\alpha}(u_{i+1})) + a,\\ 
+        A_{i,i-1} &= -\frac{1}{2\Delta x^2}({\alpha}(u_{i-1}) + {\alpha}(u_{i})),\\ 
+        A_{i,i+1} &= -\frac{1}{2\Delta x^2}({\alpha}(u_{i}) + {\alpha}(u_{i+1})),\\ 
+        b_i &= f(u_i){\thinspace .}
+        \end{align*}
+
+The matrix :math:`A(u)` is tridiagonal: :math:`A_{i,j}=0` for :math:`j > i+1` and :math:`j < i-1`.
+
+The above expressions are valid for internal mesh points :math:`1\leq i\leq N_x-1`.
+For :math:`i=0` we need to express :math:`u_{i-1}=u_{-1}` in terms of :math:`u_1` using
+:ref:`(570) <Eq:nonlin:alglevel:1D:fd:Neumann:x0>`:
+
+.. _Eq:nonlin:alglevel:1D:fd:Neumann:x0:um1:
+
+.. math::
+
+    \tag{571}
+    u_{-1} = u_1 -\frac{2\Delta x}{{\alpha}(u_0)}C{\thinspace .}
+        
+        
+
+This value must be inserted in :math:`A_{0,0}`. The expression for :math:`A_{i,i+1}`
+applies for :math:`i=0`, and :math:`A_{i,i-1}` does not enter the system when :math:`i=0`.
+
+Regarding the last equation, its form depends on whether we include
+the Dirichlet condition :math:`u(L)=D`, meaning :math:`u_{N_x}=D`, in the
+nonlinear algebraic equation system or not. Suppose we choose
+:math:`(u_0,u_1,\ldots,u_{N_x-1})` as unknowns, later referred to as
+*systems without Dirichlet conditions*. The last equation
+corresponds to :math:`i=N_x-1`. It involves the boundary value :math:`u_{N_x}`,
+which is substituted by :math:`D`. If the unknown vector includes the
+boundary value, :math:`(u_0,u_1,\ldots,u_{N_x})`, later referred to as
+*system including Dirichlet conditions*, the equation for :math:`i=N_x-1`
+just involves the unknown :math:`u_{N_x}`, and the final equation becomes
+:math:`u_{N_x}=D`, corresponding to :math:`A_{i,i}=1` and :math:`b_i=D` for :math:`i=N_x`.
+
+Picard iteration          (3)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The obvious Picard iteration scheme is to use previously computed
+values of :math:`u_i` in :math:`A(u)` and :math:`b(u)`, as described more in detail in
+the section :ref:`nonlin:systems:alg`. With the notation :math:`u^{-}` for the
+most recently computed value of :math:`u`, we have the system :math:`F(u)\approx
+\hat F(u) = A(u^{-})u - b(u^{-})`, with :math:`F=(F_0,F_1,\ldots,F_m)`,
+:math:`u=(u_0,u_1,\ldots,u_m)`.  The index :math:`m` is :math:`N_x` if the system
+includes the Dirichlet condition as a separate equation and :math:`N_x-1`
+otherwise.  The matrix :math:`A(u^{-})` is tridiagonal, so the solution
+procedure is to fill a tridiagonal matrix data structure and the
+right-hand side vector with the right numbers and call a Gaussian
+elimination routine for tridiagonal linear systems.
+
+Mesh with two cells
+~~~~~~~~~~~~~~~~~~~
+
+It helps on the understanding of the details to write out all the
+mathematics in a specific
+case with a small mesh, say just two cells (:math:`N_x=2`). We use :math:`u^{-}_i`
+for the :math:`i`-th component in :math:`u^{-}`.
+
+The starting point is the basic expressions for the
+nonlinear equations at mesh point :math:`i=0` and :math:`i=1` are
+
+.. _Eq:nonlin:alglevel:1D:fd:2x2:x0:
+
+.. math::
+
+    \tag{572}
+    A_{0,-1}u_{-1} + A_{0,0}u_0 + A_{0,1}u_1 = b_0,
+        
+        
+
+.. _Eq:nonlin:alglevel:1D:fd:2x2:x1:
+
+.. math::
+
+    \tag{573}
+    A_{1,0}u_{0} + A_{1,1}u_1 + A_{1,2}u_2 = b_1{\thinspace .}
+        
+        
+
+Equation :ref:`(572) <Eq:nonlin:alglevel:1D:fd:2x2:x0>` written out reads
+
+.. math::
+        \begin{align*}
+        \frac{1}{2\Delta x^2}(& -({\alpha}(u_{-1}) + {\alpha}(u_{0}))u_{-1}\, +\\ 
+        & ({\alpha}(u_{-1}) + 2{\alpha}(u_{0}) + {\alpha}(u_{1}))u_0\, -\\ 
+        & ({\alpha}(u_{0}) + {\alpha}(u_{1})))u_1 + au_0
+        =f(u_0){\thinspace .}
+        \end{align*}
+
+We must then replace :math:`u_{-1}` by
+:ref:`(571) <Eq:nonlin:alglevel:1D:fd:Neumann:x0:um1>`.
+With Picard iteration we get
+
+.. u_{-1} = u_1 -\frac{2\Delta x}{{\alpha}(u_0)}C
+
+.. math::
+        \begin{align*}
+        \frac{1}{2\Delta x^2}(& -({\alpha}(u^-_{-1}) + 2{\alpha}(u^-_{0}
+        + {\alpha}(u^-_{1}))u_1\, +\\ 
+        &({\alpha}(u^-_{-1}) + 2{\alpha}(u^-_{0}) + {\alpha}(u^-_{1}))u_0
+         + au_0\\ 
+        &=f(u^-_0) -
+        \frac{1}{{\alpha}(u^-_0)\Delta x}({\alpha}(u^-_{-1}) + {\alpha}(u^-_{0}))C,
+        \end{align*}
 
 where
 
-.. _Eq:nonlin:pdelevel:pde:BE:Newton2:F:
+.. math::
+         u^-_{-1} = u_1^- -\frac{2\Delta x}{{\alpha}(u^-_0)}C{\thinspace .}
+
+Equation :ref:`(573) <Eq:nonlin:alglevel:1D:fd:2x2:x1>` contains the unknown :math:`u_2`
+for which we have a Dirichlet condition. In case we omit the
+condition as a separate equation, :ref:`(573) <Eq:nonlin:alglevel:1D:fd:2x2:x1>`
+with Picard iteration becomes
 
 .. math::
+        \begin{align*}
+        \frac{1}{2\Delta x^2}(&-({\alpha}(u^-_{0}) + {\alpha}(u^-_{1}))u_{0}\, + \\ 
+        &({\alpha}(u^-_{0}) + 2{\alpha}(u^-_{1}) + {\alpha}(u^-_{2}))u_1\, -\\ 
+        &({\alpha}(u^-_{1}) + {\alpha}(u^-_{2})))u_2 + au_1
+        =f(u^-_1){\thinspace .}
+        \end{align*}
 
-    \tag{531}
-    F(u^{n,k}) = \frac{u^{n,k} - u^{n-1}}{\Delta t} -
-        \nabla\cdot ({\alpha}(u^{n,k})\nabla u^{n,k}) + f(u^{n,k}),
-        
-        
-
-.. math::
-          
-        \delta F(\delta u; u^{n,k}) =
-        - \frac{1}{\Delta t}\delta u +
-        \nabla\cdot ({\alpha}(u^{n,k})\nabla \delta u) + \nonumber
-        
-
-.. _Eq:_auto200:
+We must now move the :math:`u_2` term to the right-hand side and replace all
+occurrences of :math:`u_2` by :math:`D`:
 
 .. math::
+        \begin{align*}
+        \frac{1}{2\Delta x^2}(&-({\alpha}(u^-_{0}) + {\alpha}(u^-_{1}))u_{0}\, +\\ 
+        & ({\alpha}(u^-_{0}) + 2{\alpha}(u^-_{1}) + {\alpha}(D))u_1 + au_1\\ 
+        &=f(u^-_1) + \frac{1}{2\Delta x^2}({\alpha}(u^-_{1}) + {\alpha}(D))D{\thinspace .}
+        \end{align*}
 
-    \tag{532}
-    \quad \nabla\cdot ({\alpha}^{\prime}(u^{n,k})\delta u\nabla u^{n,k})
-        + f^{\prime}(u^{n,k})\delta u{\thinspace .}
-        
-        
-
-Note that :math:`\delta F` is a linear function of :math:`\delta u`, and
-:math:`F` contains only terms that are known, such that
-the PDE for :math:`\delta u` is indeed linear.
-
-
-.. admonition:: Observations
-
-   The notational form :math:`\delta F = -F` resembles the Newton system :math:`J\delta u =-F`
-   for systems of algebraic equations, with :math:`\delta F` as :math:`J\delta u`.
-   The unknown vector in a linear system of algebraic equations enters
-   the system as a linear operator in terms of a
-   matrix-vector product (:math:`J\delta u`), while at
-   the PDE level we have a linear differential operator instead
-   (:math:`\delta F`).
-
-
-
-
-Similarity with Picard iteration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We can rewrite the PDE for :math:`\delta u` in a slightly different way too
-if we define :math:`u^{n,k} + \delta u` as :math:`u^{n,k+1}`.
+The two equations can be written as a :math:`2\times 2` system:
 
 .. math::
         
-         \frac{u^{n,k+1} - u^{n-1}}{\Delta t} =
-        \nabla\cdot ({\alpha}(u^{n,k})\nabla u^{n,k+1}) + f(u^{n,k})\nonumber
+        \left(\begin{array}{cc}
+        B_{0,0}& B_{0,1}\\ 
+        B_{1,0} & B_{1,1}
+        \end{array}\right)
+        \left(\begin{array}{c}
+        u_0\\ 
+        u_1
+        \end{array}\right)
+        =
+        \left(\begin{array}{c}
+        d_0\\ 
+        d_1
+        \end{array}\right),
         
 
-.. _Eq:_auto201:
+where
+
+.. _Eq:_auto233:
 
 .. math::
 
-    \tag{533}
-    \qquad  + \nabla\cdot ({\alpha}^{\prime}(u^{n,k})\delta u\nabla u^{n,k})
-        + f^{\prime}(u^{n,k})\delta u{\thinspace .}
+    \tag{574}
+    B_{0,0} =\frac{1}{2\Delta x^2}({\alpha}(u^-_{-1}) + 2{\alpha}(u^-_{0}) + {\alpha}(u^-_{1}))
+        + a
         
         
 
-Note that the first line is the same PDE as arise in the Picard
-iteration, while the remaining terms arise from the differentiations
-that are an inherent ingredient in Newton's method.
+.. _Eq:_auto234:
 
-Implementation          (11)
+.. math::
+
+    \tag{575}
+    B_{0,1} =
+        -\frac{1}{2\Delta x^2}({\alpha}(u^-_{-1}) + 2{\alpha}(u^-_{0})
+        + {\alpha}(u^-_{1})),
+        
+        
+
+.. _Eq:_auto235:
+
+.. math::
+
+    \tag{576}
+    B_{1,0} =
+        -\frac{1}{2\Delta x^2}({\alpha}(u^-_{0}) + {\alpha}(u^-_{1})),
+        
+        
+
+.. _Eq:_auto236:
+
+.. math::
+
+    \tag{577}
+    B_{1,1} =
+        \frac{1}{2\Delta x^2}({\alpha}(u^-_{0}) + 2{\alpha}(u^-_{1}) + {\alpha}(D)) + a,
+        
+        
+
+.. _Eq:_auto237:
+
+.. math::
+
+    \tag{578}
+    d_0 =
+        f(u^-_0) -
+        \frac{1}{{\alpha}(u^-_0)\Delta x}({\alpha}(u^-_{-1}) + {\alpha}(u^-_{0}))C,
+        
+        
+
+.. _Eq:_auto238:
+
+.. math::
+
+    \tag{579}
+    d_1 = f(u^-_1) + \frac{1}{2\Delta x^2}({\alpha}(u^-_{1}) + {\alpha}(D))D{\thinspace .}
+        
+        
+
+The system with the Dirichlet condition becomes
+
+.. math::
+        
+        \left(\begin{array}{ccc}
+        B_{0,0}& B_{0,1} & 0\\ 
+        B_{1,0} & B_{1,1} & B_{1,2}\\ 
+        0  & 0 & 1
+        \end{array}\right)
+        \left(\begin{array}{c}
+        u_0\\ 
+        u_1\\ 
+        u_2
+        \end{array}\right)
+        =
+        \left(\begin{array}{c}
+        d_0\\ 
+        d_1\\ 
+        D
+        \end{array}\right),
+        
+
+with
+
+.. _Eq:_auto239:
+
+.. math::
+
+    \tag{580}
+    B_{1,1} =
+        \frac{1}{2\Delta x^2}({\alpha}(u^-_{0}) + 2{\alpha}(u^-_{1}) + {\alpha}(u_2)) + a,
+        
+        
+
+.. _Eq:_auto240:
+
+.. math::
+
+    \tag{581}
+    B_{1,2} = -
+        \frac{1}{2\Delta x^2}({\alpha}(u^-_{1}) + {\alpha}(u_2))),
+        
+        
+
+.. _Eq:_auto241:
+
+.. math::
+
+    \tag{582}
+    d_1 = f(u^-_1){\thinspace .}
+        
+        
+
+Other entries are as in the :math:`2\times 2` system.
+
+Newton's method          (4)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For coding we want to introduce :math:`u` for :math:`u^n`, :math:`u^{-}` for :math:`u^{n,k}` and
-:math:`u^{(1)}` for :math:`u^{n-1}`. The formulas for :math:`F` and :math:`\delta F`
-are then more clearly written as
-
-.. _Eq:nonlin:pdelevel:pde:BE:Newton2:F2:
-
-.. math::
-
-    \tag{534}
-    F(u^{-}) = \frac{u^{-} - u^{(1)}}{\Delta t} -
-        \nabla\cdot ({\alpha}(u^{-})\nabla u^{-}) + f(u^{-}),
-        
-        
+The Jacobian must be derived in order to use Newton's method. Here it means
+that we need to differentiate :math:`F(u)=A(u)u - b(u)` with respect to
+the unknown parameters
+:math:`u_0,u_1,\ldots,u_m` (:math:`m=N_x` or :math:`m=N_x-1`, depending on whether the
+Dirichlet condition is included in the nonlinear system :math:`F(u)=0` or not).
+Nonlinear equation number :math:`i` has the structure
 
 .. math::
-          
-        \delta F(\delta u; u^{-}) =
-        - \frac{1}{\Delta t}\delta u +
-        \nabla\cdot ({\alpha}(u^{-})\nabla \delta u) + \nonumber
-        
+         F_i = A_{i,i-1}(u_{i-1},u_i)u_{i-1} +
+        A_{i,i}(u_{i-1},u_i,u_{i+1})u_i +
+        A_{i,i+1}(u_i, u_{i+1})u_{i+1} - b_i(u_i){\thinspace .}
 
-.. _Eq:_auto202:
+Computing the Jacobian requires careful differentiation. For example,
 
 .. math::
+        \begin{align*}
+        \frac{\partial}{\partial u_i}(A_{i,i}(u_{i-1},u_i,u_{i+1})u_i) &=
+        \frac{\partial A_{i,i}}{\partial u_i}u_i + A_{i,i}
+        \frac{\partial u_i}{\partial u_i}\\ 
+        &=
+        \frac{\partial}{\partial u_i}(
+        \frac{1}{2\Delta x^2}({\alpha}(u_{i-1}) + 2{\alpha}(u_{i})
+        +{\alpha}(u_{i+1})) + a)u_i +\\ 
+        &\quad\frac{1}{2\Delta x^2}({\alpha}(u_{i-1}) + 2{\alpha}(u_{i})
+        +{\alpha}(u_{i+1})) + a\\ 
+        &= \frac{1}{2\Delta x^2}(2{\alpha}^\prime (u_i)u_i
+        +{\alpha}(u_{i-1}) + 2{\alpha}(u_{i})
+        +{\alpha}(u_{i+1})) + a{\thinspace .}
+        \end{align*}
 
-    \tag{535}
-    \quad \nabla\cdot ({\alpha}^{\prime}(u^{-})\delta u\nabla u^{-})
-        + f^{\prime}(u^{-})\delta u{\thinspace .}
-        
-        
-
-The form that orders the PDE as the Picard iteration terms plus
-the Newton method's derivative terms becomes
-
-.. math::
-        
-         \frac{u - u^{(1)}}{\Delta t} =
-        \nabla\cdot ({\alpha}(u^{-})\nabla u) + f(u^{-}) + \nonumber
-        
-
-.. _Eq:_auto203:
-
-.. math::
-
-    \tag{536}
-    \qquad  \gamma(\nabla\cdot ({\alpha}^{\prime}(u^{-})(u - u^{-})\nabla u^{-})
-        + f^{\prime}(u^{-})(u - u^{-})){\thinspace .}
-        
-        
-
-The Picard and full Newton versions correspond to
-:math:`\gamma=0` and :math:`\gamma=1`, respectively.
-
-Derivation with alternative notation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Some may prefer to derive the linearized PDE for :math:`\delta u` using
-the more compact notation. We start with inserting :math:`u^n=u^{-}+\delta u`
-to get
+The complete Jacobian becomes
 
 .. math::
-        
-        \frac{u^{-} +\delta u - u^{n-1}}{\Delta t} =
-        \nabla\cdot ({\alpha}(u^{-} + \delta u)\nabla (u^{-}+\delta u))
-        + f(u^{-}+\delta u){\thinspace .}
-        
+        \begin{align*}
+        J_{i,i} &= \frac{\partial F_i}{\partial u_i}
+        = \frac{\partial A_{i,i-1}}{\partial u_i}u_{i-1}
+        + \frac{\partial A_{i,i}}{\partial u_i}u_i
+        + A_{i,i}
+        + \frac{\partial A_{i,i+1}}{\partial u_i}u_{i+1}
+        - \frac{\partial b_i}{\partial u_{i}}\\ 
+        &=
+        \frac{1}{2\Delta x^2}(
+        -{\alpha}^{\prime}(u_i)u_{i-1}
+        +2{\alpha}^{\prime}(u_i)u_{i}
+        +{\alpha}(u_{i-1}) + 2{\alpha}(u_i) + {\alpha}(u_{i+1})) +\\ 
+        &\quad a
+        -\frac{1}{2\Delta x^2}{\alpha}^{\prime}(u_{i})u_{i+1}
+        - b^{\prime}(u_i),\\ 
+        J_{i,i-1} &= \frac{\partial F_i}{\partial u_{i-1}}
+        = \frac{\partial A_{i,i-1}}{\partial u_{i-1}}u_{i-1}
+        + A_{i-1,i}
+        + \frac{\partial A_{i,i}}{\partial u_{i-1}}u_i
+        - \frac{\partial b_i}{\partial u_{i-1}}\\ 
+        &=
+        \frac{1}{2\Delta x^2}(
+        -{\alpha}^{\prime}(u_{i-1})u_{i-1} - ({\alpha}(u_{i-1}) + {\alpha}(u_i))
+        + {\alpha}^{\prime}(u_{i-1})u_i),\\ 
+        J_{i,i+1} &= \frac{\partial A_{i,i+1}}{\partial u_{i-1}}u_{i+1}
+        + A_{i+1,i} +
+        \frac{\partial A_{i,i}}{\partial u_{i+1}}u_i
+        - \frac{\partial b_i}{\partial u_{i+1}}\\ 
+        &=\frac{1}{2\Delta x^2}(
+        -{\alpha}^{\prime}(u_{i+1})u_{i+1} - ({\alpha}(u_{i}) + {\alpha}(u_{i+1}))
+        + {\alpha}^{\prime}(u_{i+1})u_i)
+        {\thinspace .}
+        \end{align*}
 
-Taylor expanding,
-
-.. math::
-        
-        {\alpha}(u^{-} + \delta u) & \approx {\alpha}(u^{-}) + {\alpha}^{\prime}(u^{-})\delta u,\\ 
-        f(u^{-}+\delta u) & \approx f(u^{-}) + f^{\prime}(u^{-})\delta u,
-        
-
-and inserting these expressions gives a less cluttered PDE for :math:`\delta u`:
+The explicit expression for nonlinear equation number :math:`i`,
+:math:`F_i(u_0,u_1,\ldots)`, arises from moving the :math:`f(u_i)` term in
+:ref:`(569) <Eq:nonlin:alglevel:1D:fd:deq>` to the left-hand side:
 
 .. math::
         
-        \frac{u^{-} +\delta u - u^{n-1}}{\Delta t} &=
-        \nabla\cdot ({\alpha}(u^{-})\nabla u^{-}) + f(u^{-}) + \\ 
-        &\qquad \nabla\cdot ({\alpha}(u^{-})\nabla \delta u)
-        + \nabla\cdot ({\alpha}^{\prime}(u^{-})\delta u\nabla u^{-}) + \\ 
-        &\qquad \nabla\cdot ({\alpha}^{\prime}(u^{-})\delta u\nabla \delta u)
-        + f^{\prime}(u^{-})\delta u{\thinspace .}
+        F_i = -\frac{1}{2\Delta x^2}
+        \left(({\alpha}(u_i)+{\alpha}(u_{i+1}))(u_{i+1}-u_i) -
+        ({\alpha}(u_{i-1})+{\alpha}(u_{i}))(u_{i}-u_{i-1})\right)\nonumber
         
 
-.. _nonlin:pdelevel:Picard:CN:
-
-Crank-Nicolson discretization          (2)
-------------------------------------------
-
-A Crank-Nicolson discretization of
-:ref:`(522) <Eq:nonlin:pdelevel:model:pde>` applies a centered difference
-at :math:`t_{n+\frac{1}{2}}`:
-
-.. math::
-         [D_t u = \nabla\cdot ({\alpha}(u)\nabla u) + f(u)]^{n+\frac{1}{2}}{\thinspace .}
-
-The standard technique is to apply an arithmetic average for
-quantities defined between two mesh points, e.g.,
-
-.. math::
-         u^{n+\frac{1}{2}}\approx \frac{1}{2}(u^n + u^{n+1}){\thinspace .}
-
-However, with nonlinear terms we have many choices of formulating
-an arithmetic mean:
-
-.. _Eq:_auto204:
+.. _Eq:nonlin:alglevel:1D:fd:deq2:
 
 .. math::
 
-    \tag{537}
-    [f(u)]^{n+\frac{1}{2}} \approx f(\frac{1}{2}(u^n + u^{n+1}))
-        = [f(\overline{u}^t)]^{n+\frac{1}{2}},
+    \tag{583}
+    \qquad\qquad + au_i - f(u_i) = 0{\thinspace .}
         
         
 
-.. _Eq:_auto205:
+At the boundary point :math:`i=0`, :math:`u_{-1}` must be replaced using
+the formula :ref:`(571) <Eq:nonlin:alglevel:1D:fd:Neumann:x0:um1>`.
+When the Dirichlet condition at :math:`i=N_x` is not a part of the
+equation system, the last equation :math:`F_m=0` for :math:`m=N_x-1`
+involves the quantity :math:`u_{N_x-1}` which must be replaced by :math:`D`.
+If :math:`u_{N_x}` is treated as an unknown in the system, the
+last equation :math:`F_m=0` has :math:`m=N_x` and reads
 
 .. math::
+         F_{N_x}(u_0,\ldots,u_{N_x}) = u_{N_x} - D = 0{\thinspace .}
 
-    \tag{538}
-    [f(u)]^{n+\frac{1}{2}} \approx \frac{1}{2}(f(u^n) + f(u^{n+1}))
-        =[\overline{f(u)}^t]^{n+\frac{1}{2}},
-        
-        
+Similar replacement of :math:`u_{-1}` and :math:`u_{N_x}` must be done in
+the Jacobian for the first and last row. When :math:`u_{N_x}`
+is included as an unknown, the last row in the Jacobian
+must help implement the condition :math:`\delta u_{N_x}=0`, since
+we assume that :math:`u` contains the right Dirichlet value
+at the beginning of the iteration (:math:`u_{N_x}=D`), and then
+the Newton update should be zero for :math:`i=0`, i.e., :math:`\delta u_{N_x}=0`.
+This also forces the right-hand side to be :math:`b_i=0`, :math:`i=N_x`.
 
-.. _Eq:_auto206:
+We have seen, and can see from the present example, that the
+linear system in Newton's method contains all the terms present
+in the system that arises in the Picard iteration method.
+The extra terms in Newton's method can be multiplied by a factor
+such that it is easy to program one linear system and set this
+factor to 0 or 1 to generate the Picard or Newton system.
 
-.. math::
+.. Remark: Neumann cond at x=L and Dirichlet at x=0 leads to different
 
-    \tag{539}
-    [{\alpha}(u)\nabla u]^{n+\frac{1}{2}} \approx
-        {\alpha}(\frac{1}{2}(u^n + u^{n+1}))\nabla (\frac{1}{2}(u^n + u^{n+1}))
-        = [{\alpha}(\overline{u}^t)\nabla \overline{u}^t]^{n+\frac{1}{2}},
-        
-        
+.. numbering of unknowns and u at mesh points. Must address this
 
-.. _Eq:_auto207:
-
-.. math::
-
-    \tag{540}
-    [{\alpha}(u)\nabla u]^{n+\frac{1}{2}} \approx
-        \frac{1}{2}({\alpha}(u^n) + {\alpha}(u^{n+1}))\nabla (\frac{1}{2}(u^n + u^{n+1}))
-        = [\overline{{\alpha}(u)}^t\nabla\overline{u}^t]^{n+\frac{1}{2}},
-        
-        
-
-.. _Eq:_auto208:
-
-.. math::
-
-    \tag{541}
-    [{\alpha}(u)\nabla u]^{n+\frac{1}{2}} \approx
-        \frac{1}{2}({\alpha}(u^n)\nabla u^n + {\alpha}(u^{n+1})\nabla u^{n+1})
-        = [\overline{{\alpha}(u)\nabla u}^t]^{n+\frac{1}{2}}{\thinspace .}
-        
-        
-
-A big question is whether there are significant differences in accuracy
-between taking the products of arithmetic means or taking the arithmetic
-mean of products. :ref:`nonlin:exer:products:arith:mean` investigates
-this question, and the answer is that the approximation is
-:math:`{\mathcal{O}(\Delta t^2)}` in both cases.
+.. in a remark and treat it properly in diffu.
 
