@@ -48,8 +48,38 @@ label{advec:1D:pde1:sol}
 This is also the solution we expect locally in a finite domain before boundary
 conditions have reflected or modified the wave.
 
-[hpl: Should perhaps have more about boundary conditions and exact solutions,
-but this is a difficult topic for first-order PDEs.]
+A particular feature of the solution (ref{advec:1D:pde1:sol}) is that
+
+!bt
+\begin{equation}
+u(x_i, t_{n+1}) = u(x_{i-1}, t_n),
+label{advec:1D:pde1:uprop1}
+\end{equation}
+!et
+if $x_i=i\Delta x$ and $t_n=n\Delta t$ are points in a uniform mesh.
+We see this relation from
+
+!bt
+\[ u(i\Delta x, (n+1)\Delta t) = I(i\Delta x - v(n+1)\Delta t) =
+I((i-1)\Delta x - vn\Delta t - v\Delta t - \Delta x)
+= I((i-1)\Delta x - vn\Delta t) = u((i-1)\Delta x, n\Delta t),\]
+!et
+provided $v = \Delta x/\Delta t$. So, whenever we see a scheme that
+collapses to
+
+!bt
+\begin{equation}
+u^{n+1}_i = u_{i-1}^n,
+label{advec:1D:pde1:uprop2}
+\end{equation}
+!et
+for the PDE in question, we have in fact a scheme that reproduces the
+analytical solution, and many of the schemes to be presented possess
+this nice property!
+
+Finally, we add that a discussion of appropriate boundary conditions
+for the advection PDE in multiple dimensions is a challenching topic beyond
+the scope of this text.
 
 ===== Simplest scheme: forward in time, centered in space =====
 label{advec:1D:FTCS}
@@ -71,7 +101,7 @@ centered differences in space:
 Written out, we see that this expression reads
 
 !bt
-\[ u^{n+1} = u^n - \half C (u^n_{i+1}-u_{i-1}),\]
+\[ u^{n+1} = u^n - \half C (u^n_{i+1}-u_{i-1}^n),\]
 !et
 with $C$ as the Courant number
 
@@ -141,7 +171,10 @@ It is easy to show that a typical Fourier component
 \[ u(x,t)= B\sin (k(x-ct))\]
 !et
 is a solution of our PDE for any spatial wave length $\lambda = 2\pi /k$
-and any amplitude $B$.
+and any amplitude $B$. (Since the PDE to be investigated by this method
+is homogeneous and linear, $B$ will always cancel out, so we tend to skip
+this amplitude, but keep it here in the beginning for completeness.)
+
 A general solution can be thought to be build of a collection of long and
 short waves such waves with different amplitudes. Algebraically, the work
 simplifies if we introduce the complex Fourier component
@@ -157,9 +190,10 @@ with
 Note that $|\Aex| \leq 1$.
 
 It turns out that many schemes also allow a Fourier wave component as
-solution, and we can use the numerical value of $A$ to learn about the
+solution, and we can use the numerically computed values of $\Aex$
+(denoted $A$) to learn about the
 quality of the scheme. Hence, to analyze the difference scheme we just
-have implemented, we look at how treats the Fourier component
+have implemented, we look at how it treats the Fourier component
 
 !bt
 \[ u_q^n = A^n e^{ikq\Delta x}\tp\]
@@ -204,7 +238,7 @@ time and combine it with central differences in space:
 which results in the updating formula
 
 !bt
-\[ u^{n+1} = u^{n-1} - C(u_{i+1}-u_{i-1})\tp\]
+\[ u^{n+1}_i = u^{n-1}_i - C^2(u_{i+1}^n-u_{i-1}^n)\tp\]
 !et
 A special scheme is needed to compute $u^1$, but we leave that problem for
 now.
@@ -264,7 +298,7 @@ and
 \[ A = -iC\sin(k\Delta x) \pm \sqrt{1-C^2\sin^2(k\Delta x)}\tp\]
 !et
 Rewriting to polar form, $A=A_re^{i\phi}$, we see that $A_r=1$, so the
-numerical component is not increasing or decreasing in time, which is
+numerical component is neither increasing nor decreasing in time, which is
 exactly what we want. However, for $C>1$, the square root can become
 complex valued, so stability is obtained only as long as $C\leq 1$.
 
@@ -280,8 +314,8 @@ and is to be compared to the exact amplification factor
 !bt
 \[ \Aex = e^{-ikv\Delta t} = e^{-ikC\Delta x} = e^{-iCp}\tp\]
 !et
-Section ref{advec:1D:disprel} compares many numerical amplification factors
-with the exact expression.
+Section ref{advec:1D:disprel} compares numerical amplification factors
+of many schemes with the exact expression.
 
 
 ===== Upwind differences in space =====
@@ -318,7 +352,8 @@ written out as
 !et
 gives a generally popular and robust scheme that is stable if $C\leq 1$.
 As with the Leapfrog scheme, it becomes exact if $C=1$, exactly as shown in
-Figure ref{advec:1D:case_gaussian:fig:LFCS}.
+Figure ref{advec:1D:case_gaussian:fig:LFCS}. This is easy to see since
+$C=1$ gives the property (ref{advec:1D:pde1:uprop2}).
 However, any $C<1$ gives a significant reduction in the amplitude of the
 solution, which is a purely numerical effect, see Figure
 ref{advec:1D:FTUS:fig:C08}. Experiments show, however, that
@@ -327,6 +362,9 @@ error.
 
 FIGURE: [fig-advec/gaussian_FTUS_C08, width=800 frac=1] Forward in time, upwind in space, $C=0.8$, $\Delta t = 0.01$ (left) and $\Delta t=0.001$ (right). label{advec:1D:FTUS:fig:C08}
 
+MOVIE: [mov-advec/gaussian/UP/C08_dt001.ogg] Forward in time, upwind in space, $C=0.8$, $\Delta t = 0.01$. label{advec:1D:FTUS:mov:C08:dt1}
+
+MOVIE: [mov-advec/gaussian/UP/C08_dt0005.ogg] Forward in time, upwind in space, $C=0.8$, $\Delta t = 0.005$. label{advec:1D:FTUS:mov:C08:dt2}
 
 The amplification factor can be computed using the
 formula (ref{form:exp:fd1:bw}),
@@ -340,8 +378,9 @@ which means
 \[ A = 1 - C(1 - \cos(p) - i\sin(p))\tp\]
 !et
 For $C<1$ there is, unfortunately,
-non-physical damping of discrete Fourier components. This damping can
-be quite severe.
+non-physical damping of discrete Fourier components, giving rise to reduced
+amplitude of $u^n_i$ as in Figure ref{advec:1D:FTUS:fig:C08}. The damping
+is this figure is seen to be quite severe.
 
 !bnotice Interpretation of upwind difference as artificial diffusion
 One can interpret the upwind difference as extra, artificial diffusion
@@ -369,7 +408,7 @@ label{advec:1D:periodic_BC}
 So far, we have given then value of on the left boundary, $u_0^n$, and used
 the scheme to propagate the solution signal through the domain.
 Often, we want to follow such signals for long time series, and periodic
-boundary conditions are then relevant since then enable a signal that
+boundary conditions are then relevant since they enable a signal that
 leaves the right boundary to immediately enter the left boundary and propagate
 through the domain again.
 
@@ -423,19 +462,12 @@ This gives rise to an *implicit* scheme,
 \[ u^{n+1}_i + \frac{\theta}{2} C (u^{n+1}_{i+1} - u^{n+1}_{i-1})
 = u^n_i - \frac{1-\theta}{2} C (u^{n}_{i+1} - u^{n}_{i-1})\]
 !et
-for $i=1,\ldots,N_x-1$. At the boundaries we use periodic conditions:
+for $i=1,\ldots,N_x-1$. At the boundaries we set $u=0$ and simulate just to
+the point of time when the signal hits the boundary (and gets reflected).
 
 !bt
-\[ u^{n+1}_0 = u^{n+1}_{N_x},\]
+\[ u^{n+1}_0 = u^{n+1}_{N_x} = 0\tp\]
 !et
-however, this destroys the tridiagonal structure of the coefficient matrix.
-We therefore try the rough approximation
-
-!bt
-\[ u^{n+1}_0 = u^{n}_{N_x},\quad u^{n+1}_{N_x}=u^n_0\tp\]
-!et
-Otherwise, we need to prescribe $u_0^{n+1}$ and $u_{N_x}^{n+1}$.
-
 The elements on the diagonal in the matrix become:
 
 !bt
@@ -457,6 +489,17 @@ b_{N_x} &= u^n_0
 \end{align*}
 !et
 
+FIGURE: [fig-advec/gaussian_CN_C08, width=800 frac=1] Crank-Nicolson in time, centered in space, $C=0.8$, $\Delta t = 0.01$ (left) and $\Delta t=0.005$ (right). label{advec:1D:CN:fig:C08}
+
+MOVIE: [mov-advec/gaussian/CN/C08_dt0005.ogg] Crank-Nicolson in time, centered in space, $C=0.8$, $\Delta t = 0.005$. label{advec:1D:CN:mov:C08:dt2}
+
+Figure ref{advec:1D:CN:fig:C08} depicts a numerical solution for $C=0.8$
+with severe oscillations behind the main wave. These oscillations are
+damped as the mesh is refined.
+
+[hpl: There is a bug in the implementation, because running `run` with
+$C=1$ does not give exact solution! Debug!]
+
 The dispersion relation follows from inserting $u^n_i = A^ne^{ikx}$
 and using the formula (ref{form:exp:fd1c:center}) for the spatial
 differences:
@@ -470,38 +513,44 @@ label{advec:1D:LaxW}
 
 The Lax-Wendroff method is based on three ideas:
 
- o Express $u^{n+1}_i$ in terms of quantities at $t=t_n$ by
-   means of a Taylor polynomial of second degree.
+ o Express the new unknown $u^{n+1}_i$ in terms of known
+   quantities at $t=t_n$ by means of a Taylor polynomial of second degree.
  o Replace time-derivatives at $t=t_n$ by spatial derivatives,
    using the PDE.
- o Discretize the spatial derivatives by second-order differences.
+ o Discretize the spatial derivatives by second-order differences so we
+   achieve a scheme of accuracy $\Oof{\Delta t^2} + \Oof{\Delta x^2}$.
 
-Let us do this:
+Let us follow the recipe. First we have the three-term Taylor polynomial,
 
 !bt
 \[ u^{n+1}_i = u^n_i + \Delta t\left(\frac{\partial u}{\partial t}\right)^n_i
 + \frac{1}{2}\Delta t^2\left(\frac{\partial^2 u}{\partial t^2}\right)^n_i\tp\]
 !et
-From the PDE we have that
+From the PDE we have that temporal derivatives can be substituted by
+spatial derivatives:
 
 !bt
 \[ \frac{\partial u}{\partial t} = -v\frac{\partial u}{\partial x},\]
 !et
-which we may use to replace the time-derivatives by spatial derivatives
-($\frac{\partial ^2}{\partial t^2} = v^2\frac{partial^2 u}{\partial x^2}$):
+and furthermore,
+
+!bt
+\[ \frac{\partial ^2}{\partial t^2} = v^2\frac{\partial^2 u}{\partial x^2}\tp\]
+!et
+Inserted in the Taylor polynomial formula, we get
 
 !bt
 \[ u^{n+1}_i = u^n_i -v \Delta t\left(\frac{\partial u}{\partial x}\right)^n_i
 + \frac{1}{2}\Delta t^2 v^2
 \left(\frac{\partial^2 u}{\partial x^2}\right)^n_i\tp\]
 !et
-A natural spatial discretization is, for instance, central differences:
+To obtain second-order accuracy in space we now use central differences:
 
 !bt
 \[ u^{n+1}_i = u^n_i -v \Delta t [D_{2x} u]^n_i
 + \frac{1}{2}\Delta t^2 v^2 [D_xD_x u]^n_i,\]
 !et
-or
+or written out,
 
 !bt
 \[ u^{n+1}_i = u^n_i - C (u^{n}_{i+1} - u^{n}_{i-1})
@@ -509,8 +558,26 @@ or
 !et
 This is the explicit Lax-Wendroff scheme.
 
+!bnotice Lax-Wendroff works because of artificial viscosity
+We can immediately from the formulas above
+see that the Lax-Wendroff method is nothing but
+a Forward Euler, central difference in space scheme, which we have shown
+to be useless because of chronic instability, plus an artificial
+diffusion term of strength $\half\Delta t v^2$. It means that we can take
+an unstable scheme and add some diffusion to stabilize it. This is a common
+trick to deal with advection problems. Sometimes, the real physical diffusion
+is not sufficiently large to make schemes stable, so then we also add
+artificial diffusion.
+!enotice
+
+[hpl: Lax-Wendroff does work! It's even unstable for $C=1$.]
+
+#FIGURE: [fig-advec/gaussian_LW_C08, width=800 frac=1] Lax-Wendroff scheme, $C=0.8$, $\Delta t = 0.01$ (left) and $\Delta t=0.005$ (right). label{advec:1D:LW:fig:C08}
+
+#MOVIE: [fig-advec/
+
 From an analysis similar to the ones carried out above, we get an
-amplification factor
+amplification factor for the Lax-Wendroff method that equals
 
 !bt
 \[ A = 1 - iC\sin p - 2C^2\sin^2 (p/2)\tp\]
@@ -567,11 +634,30 @@ so
 !bt
 \[ c = \frac{\phi v}{Cp}\tp\]
 !et
-An appropriate dimensionless quantity to plot is $c/v$:
+An appropriate dimensionless quantity to plot is the scaled wave velocity $c/v$:
 
 !bt
 \[ \frac{c}{v} = \frac{\phi}{Cp}\tp\]
 !et
+
+Figures ref{advec:1D:disprel:C099}--ref{advec:1D:disprel:C05} contain
+dispersion curves, velocity and damping, for various values of $C$.
+The horizontal axis shows the dimensionless frequency $p$ of the wave,
+while the figures to the left illustrate the error in wave velocity $c/v$
+(should ideally be 1 for all $p$), and the figures to the right display
+the absolute value (magnitude) of the damping factor $A_r$.
+The curves are labeled according to the table below.
+
+|---c------c----------------------|
+| Label | Method |
+|---l------l----------------------|
+| FE | Forward Euler in time, centered difference in space |
+| LF | Leapfrog in time, centered difference in space |
+| UP | Forward Euler in time, upwind difference in space |
+| CN | Crank-Nicolson in time, centered difference in space |
+| LW | Lax-Wendroff's method |
+| BE | Backward Euler in time, centered difference in space |
+|---------------------------------|
 
 FIGURE: [fig-advec/disprel_C0_99, width=800 frac=1] Dispersion relations for $C=0.99$. label{advec:1D:disprel:C099}
 
@@ -581,13 +667,11 @@ FIGURE: [fig-advec/disprel_C0_8, width=800 frac=1] Dispersion relations for $C=0
 
 FIGURE: [fig-advec/disprel_C0_5, width=800 frac=1] Dispersion relations for $C=0.5$. label{advec:1D:disprel:C05}
 
-FIGURE: [fig-advec/disprel_C0_99, width=800 frac=1] Dispersion relations for $C=0.99$. label{advec:1D:disprel:C99}
-
 The total damping after some time $T=n\Delta t$ is reflected by
 $A_r(C,p)^n$. Since normally $A_r<1$, the damping goes like
 $A_r^{1/\Delta t}$ and approaches zero as $\Delta t\rightarrow 0$.
-[hpl: No, how do we explain that reducing $\Delta t$ reduces the
-damping, while keeping $C$ fixed?]
+The only two ways to reduce the damping are to increase $C$ and the mesh
+resolution.
 
 ======= One-dimensional stationary advection-diffusion equation =======
 label{advec:1D:stationary}
@@ -603,7 +687,7 @@ label{advec:1D:stat:pde1}
 !et
 For simplicity, we assume $v$ and $\dfc$ to be constant, but the extension to
 the variable-coefficient case is trivial.
-This is equation can be viewed as the stationary limit of the corresponding
+This equation can be viewed as the stationary limit of the corresponding
 time-dependent problem
 
 !bt
@@ -616,11 +700,15 @@ label{advec:1D:stat:pde2}
 
 Equations of the form (ref{advec:1D:stat:pde1}) or
 (ref{advec:1D:stat:pde2}) arise from transport phenomena, either mass
-or heat transport. One can also view the equations as simple model
-problems for the Navier-Stokes equations. A fundamental difficulty
-with solving these equations is numerical instability if the
-first-derivative spatial term dominates over the second-derivative
-term.
+or heat transport. One can also view the equations as a simple model
+problem for the Navier-Stokes equations. With the chosen boundary
+conditions, the differential equation problem models the phenomenon of
+a *boundary layer*, where the solution changes rapidly very close to
+the boundary. This is a characteristic of many fluid flow problems and
+make strong demands to numerical methods. The fundamental numerical
+difficulty is related to non-physical oscillations of the solution
+(instability) if the first-derivative spatial term dominates over the
+second-derivative term.
 
 ===== A simple model problem =====
 label{advec:1D:stationary:model}
@@ -651,18 +739,16 @@ label{advec:1D:stat:pde1s}
 !et
 
 There are two competing effects in this equation: the advection term
-transports signals to the right (with velocity $v$, later with unit
-velocity), while the diffusion term transports signals to the left and
-right )with strength $\dfc$, later with strength $\epsilon$). The
-value $u(0)=0$ is transported through the domain if $\epsilon$ is
-small, and $u\approx 0$ except in the vicinity of $x=0$, where
-$u(1)=1$ and the diffusion transports some information about $u(1)=1$
-to the left. For large $\epsilon$, diffusion dominates and the $u$
-takes on the ``average'' value, i.e., $u$ gets a linear variation from
-0 to 1 throughout the domain.
+transports signals to the right, while the diffusion term transports
+signals to the left and the right. The value $u(0)=0$ is transported
+through the domain if $\epsilon$ is small, and $u\approx 0$ except in
+the vicinity of $x=0$, where $u(1)=1$ and the diffusion transports
+some information about $u(1)=1$ to the left. For large $\epsilon$,
+diffusion dominates and the $u$ takes on the ``average'' value, i.e.,
+$u$ gets a linear variation from 0 to 1 throughout the domain.
 
 It turns out that we can find an exact solution to the differential
-equation problem and also to many of its discretization. This is one
+equation problem and also to many of its discretizations. This is one
 reason why this model problem has been so successful in designing and
 investigating numerical methods for mixed convection/advection and
 diffusion.  The exact solution reads
@@ -729,7 +815,7 @@ FIGURE: [fig-advec/twopt_BVP_cen_001, width=800 frac=1] Comparison of exact and 
 !bnotice Solver
 A suitable solver for doing the experiments is presented below.
 
-#@@@CODE src-advec/twopt_BVP.py fromto: import numpy@def u_exact
+@@@CODE src-advec/twopt_BVP.py fromto: import numpy@def u_exact
 !enotice
 
 ===== Remedy: upwind finite difference scheme =====
@@ -738,7 +824,7 @@ label{advec:1D:stationary:upwind}
 The scheme can be stabilized by letting the advective transport term, which
 is the dominating term, collect its information in the flow direction, i.e.,
 upstream or upwind of the point in question. So, instead of using a
-center difference
+centered difference
 
 !bt
 \[ \frac{du}{dx}_i\approx \frac{u_{i+1}-u_{i-1}}{2\Delta x},\]
@@ -836,7 +922,7 @@ label{advec:1D:stationary:exer:analysis2}
 file=twopt_BVP_analysis2
 
 Consider an upwind, one-sided difference approximation to
-a term $du/dx$ in a differential equation. Show that this this
+a term $du/dx$ in a differential equation. Show that this
 formula can be expressed as a centered difference plus an artificial
 diffusion term of strength proportional to $\Delta x$.
 This means that introducing an upwind difference also means introducing
