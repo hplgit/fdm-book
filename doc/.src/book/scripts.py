@@ -1,6 +1,6 @@
 import sys, re, os, shutil, glob
 
-chapters = "vib wave diffu trunc staggered softeng2 formulas advec".split()
+chapters = "vib wave diffu trunc nonlin advec softeng2 formulas".split()
 chaptersdir = 'chapters'
 
 ignored_files = '*.o *.so *.a *.pyc *.bak *.swp *~ .*~ *.old tmp* temp* .#* \\#* *.log *.dvi *.aux *.blg *.idx *.nav *.out *.toc *.snm *.vrb *.cproject *.project .DS_Store Trash'.split()

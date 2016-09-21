@@ -32,6 +32,7 @@ def solver(eps, Nx, method='centered'):
     diagonal[0] = diagonal[-1] = 1
     b[-1] = 1.0
 
+    # Set up sparse matrix and solve
     diags = [0, -1, 1]
     import scipy.sparse
     import scipy.sparse.linalg
