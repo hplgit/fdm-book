@@ -3,13 +3,22 @@ label{ch:advec}
 Wave (Chapter ref{ch:wave}) and diffusion (Chapter ref{ch:diffu})
 equations are solved reliably by finite difference methods. As soon as
 we add a first-order derivative in space, representing *advective
-transport* (also known as convective transport), the numerics gets
+transport, also known as *convective* transport, the numerics gets
 more complicated, and intuitively attractive methods no longer work
 well. We shall show how and why such methods fail and provide
 remedies. The present chapter builds on basic knowledge about finite
 difference methods for diffusion and wave equations, including the
 analysis by Fourier components, truncation error analysis (Appendix
 ref{ch:trunc}), and compact difference notation.
+
+!bnotice Remark on terminology
+It is common to refer to movement of a fluid as convection, while advection
+is the transport of some material dissolved or suspended in the fluid.
+We shall mostly choose the word advection here, but both terms are
+in heavy use, and for mass transport of a substance the PDE has an
+advection term, while the similar term for the heat equation is a
+convection term.
+!enotice
 
 ======= One-dimensional time-dependent advection equations =======
 label{advec:1D}
@@ -256,10 +265,10 @@ u_1 = np.zeros(Nx+1)
 u_2 = np.zeros(Nx+1)
 ...
 for n in range(0, Nt):
-    if scheme == 'FECS':
+    if scheme == 'UP':
         for i in range(1, Nx):
             u[i] = u_1[i] - 0.5*C*(u_1[i+1] - u_1[i-1])
-    elif scheme == 'LFCS':
+    elif scheme == 'LF':
         if n == 0:
             # Use some scheme for the first step
             for i in range(1, Nx):
@@ -281,7 +290,28 @@ Choosing scaled variables as $\Delta t=0.1$, $T=1$, and $C=1$ gives
 the plot in Figure ref{advec:1D:case_gaussian:fig:LFCS}, which
 is in fact identical to the exact solution (!).
 
-FIGURE: [fig-advec/solver_FE_Upw, width=500 frac=0.8] Leapfrog scheme with $\Delta t = 0.1$ and $C=1$. label{advec:1D:case_gaussian:fig:LFCS}
+FIGURE: [fig-advec/solver_FE_Upw, width=500 frac=0.8] Exact solution obtained by Leapfrog scheme with $\Delta t = 0.1$ and $C=1$. label{advec:1D:case_gaussian:fig:LFCS}
+
+=== Running more test cases ===
+
+We can run two types of initial conditions for $C=0.8$: one very
+smooth with a Gaussian function (Figure ref{advec:1D:UP:fig1:C08}) and
+one with a discontinuity in the first derivative (Figure
+ref{advec:1D:UP:fig2:C08}).  Unless we have a very fine mesh, as in
+the left plots in the figures, we get small ripples behind the main
+wave, and this main wave has the amplitude reduced.
+
+FIGURE: [fig-advec/gaussian_LF_C08, width=800 frac=1] Advection of a Gaussian function with a leapfrog scheme and $C=0.8$, $\Delta t = 0.001$ (left) and $\Delta t=0.01$ (right). label{advec:1D:LF:fig1:C08}
+
+MOVIE: [mov-advec/gaussian/LF/C08_dt01.ogg] Advection of a Gaussian function with a leapfrog scheme and $C=0.8$, $\Delta t = 0.01$. label{advec:1D:LF:mov1:C08:dt1}
+
+MOVIE: [mov-advec/gaussian/LF/C08_dt001.ogg] Advection of a Gaussian function with a leapfrog scheme and $C=0.8$, $\Delta t = 0.001$. label{advec:1D:LF:mov1:C08:dt2}
+
+FIGURE: [fig-advec/cosinehat_LF_C08, width=800 frac=1] Advection of half a cosine function with a leapfrog scheme and $C=0.8$, $\Delta t = 0.001$ (left) and $\Delta t=0.01$ (right). label{advec:1D:LF:fig2:C08}
+
+MOVIE: [mov-advec/cosinehat/UP/C08_dt01.ogg] Advection of half a cosine function with a leapfrog scheme and $C=0.8$, $\Delta t = 0.01$. label{advec:1D:LF:mov2:C08:dt1}
+
+MOVIE: [mov-advec/cosinehat/UP/C08_dt001.ogg] Advection of half a cosine function with a leapfrog scheme and $C=0.8$, $\Delta t = 0.001$. label{advec:1D:LF:mov2:C08:dt2}
 
 
 === Analysis ===
@@ -355,16 +385,23 @@ As with the Leapfrog scheme, it becomes exact if $C=1$, exactly as shown in
 Figure ref{advec:1D:case_gaussian:fig:LFCS}. This is easy to see since
 $C=1$ gives the property (ref{advec:1D:pde1:uprop2}).
 However, any $C<1$ gives a significant reduction in the amplitude of the
-solution, which is a purely numerical effect, see Figure
-ref{advec:1D:FTUS:fig:C08}. Experiments show, however, that
+solution, which is a purely numerical effect, see Figures
+ref{advec:1D:UP:fig1:C08} and ref{advec:1D:UP:fig2:C08}.
+Experiments show, however, that
 reducing $\Delta t$ or $\Delta x$, while keeping $C$ fixed reduces the
 error.
 
-FIGURE: [fig-advec/gaussian_FTUS_C08, width=800 frac=1] Forward in time, upwind in space, $C=0.8$, $\Delta t = 0.01$ (left) and $\Delta t=0.001$ (right). label{advec:1D:FTUS:fig:C08}
+FIGURE: [fig-advec/gaussian_UP_C08, width=800 frac=1] Advection of a Gaussian function with a forward in time, upwind in space scheme and $C=0.8$, $\Delta t = 0.001$ (left) and $\Delta t=0.01$ (right). label{advec:1D:UP:fig1:C08}
 
-MOVIE: [mov-advec/gaussian/UP/C08_dt001.ogg] Forward in time, upwind in space, $C=0.8$, $\Delta t = 0.01$. label{advec:1D:FTUS:mov:C08:dt1}
+MOVIE: [mov-advec/gaussian/UP/C08_dt01.ogg] Forward in time, upwind in space, $C=0.8$, $\Delta t = 0.01$. label{advec:1D:UP:mov1:C08:dt1}
 
-MOVIE: [mov-advec/gaussian/UP/C08_dt0005.ogg] Forward in time, upwind in space, $C=0.8$, $\Delta t = 0.005$. label{advec:1D:FTUS:mov:C08:dt2}
+MOVIE: [mov-advec/gaussian/UP/C08_dt001.ogg] Forward in time, upwind in space, $C=0.8$, $\Delta t = 0.001$. label{advec:1D:UP:mov1:C08:dt2}
+
+FIGURE: [fig-advec/cosinehat_UP_08, width=800 frac=1] Advection of half a cosine function with a forward in time, upwind in space scheme and $C=0.8$, $\Delta t = 0.01$ (left) and $\Delta t=0.001$ (right). label{advec:1D:UP:fig2:C08}
+
+MOVIE: [mov-advec/cosinehat/UP/C08_dt01.ogg] Advection of half a cosine function with a forward in time, upwind in space scheme and $C=0.8$, $\Delta t = 0.01$. label{advec:1D:UP:mov2:C08:dt1}
+
+MOVIE: [mov-advec/cosinehat/UP/C08_dt0005.ogg] Advection of half a cosine function with a forward in time, upwind in space scheme and $C=0.8$, $\Delta t = 0.005$. label{advec:1D:UP:mov2:C08:dt2}
 
 The amplification factor can be computed using the
 formula (ref{form:exp:fd1:bw}),
@@ -379,7 +416,8 @@ which means
 !et
 For $C<1$ there is, unfortunately,
 non-physical damping of discrete Fourier components, giving rise to reduced
-amplitude of $u^n_i$ as in Figure ref{advec:1D:FTUS:fig:C08}. The damping
+amplitude of $u^n_i$ as in Figures ref{advec:1D:UP:fig1:C08}
+and ref{advec:1D:UP:fig2:C08}. The damping
 is this figure is seen to be quite severe.
 
 !bnotice Interpretation of upwind difference as artificial diffusion
@@ -399,7 +437,13 @@ gives actually the upwind scheme (ref{advec:1D:upwind}) if
 $\nu = v\Delta x/2$. That is, solving the PDE $u_t + vu_x=0$
 by centered differences in space and forward difference in time is
 unsuccessful, but by adding some artificial diffusion $\nu u_{xx}$,
-the method becomes stable.
+the method becomes stable:
+
+!bt
+\[ \frac{\partial u}{\partial t} + v
+\frac{\partial u}{\partial x} = \left(\dfc + \frac{v\Delta x}{2}\right)
+\frac{\partial^2 u}{\partial x^2}\tp\]
+!et
 !enotice
 
 ===== Periodic boundary conditions =====
@@ -440,6 +484,222 @@ if periodic_bc:
     u[Nx] = u[0]
 !ec
 
+===== Implementation =====
+
+Analytically, we can show that the integral in space under the $u(x,t)$ curve
+is constant:
+
+!bt
+\begin{align*}
+\int_0^L \left(\frac{\partial u}{\partial t} + v\frac{\partial u}{\partial x}
+\right) dx &= 0\\
+\frac{\partial u}{\partial t} \int_0^L udx &=
+- \int_0^L v\frac{\partial u}{\partial x}dx\\
+\frac{\partial u}{\partial t} \int_0^L udx &=
+[v u]_0^L =0
+\end{align*}
+!et
+as long as $u(0)=u(L)=0$. We can therefore use the property
+
+!bt
+\[ \int_0^L u(x,t)dx = \hbox{const} \]
+!et
+as a partial verification during the simulation. Now, any numerical method
+with $C\neq 1$ will deviate from the constant, expected value, so
+the integral is a measure of the error in the scheme. The integral can
+be computed by the Trapezoidal integration rule
+
+!bc pycod
+dx*(0.5*u[0] + 0.5*u[Nx] + np.sum(u[1:-1]))
+!ec
+if `u` is an array holding the solution.
+
+An appropriate `solver` function for multiple schemes may go as shown
+below.
+
+!bc pycod
+def solver(I, U0, v, L, dt, C, T, user_action=None,
+           scheme='FE', periodic_bc=True):
+
+Nt = int(round(T/float(dt)))
+    t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
+    dx = v*dt/C
+    Nx = int(round(L/dx))
+    x = np.linspace(0, L, Nx+1)       # Mesh points in space
+    # Make sure dx and dt are compatible with x and t
+    dx = x[1] - x[0]
+    dt = t[1] - t[0]
+    C = v*dt/dx
+    print 'dt=%g, dx=%g, Nx=%d, C=%g' % (dt, dx, Nx, C)
+
+    u   = np.zeros(Nx+1)
+    u_n = np.zeros(Nx+1)
+    u_nm1 = np.zeros(Nx+1)
+    integral = np.zeros(Nt+1)
+
+    # Set initial condition u(x,0) = I(x)
+    for i in range(0, Nx+1):
+        u_n[i] = I(x[i])
+
+    # Insert boundary condition
+    u[0] = U0
+
+    # Compute the integral under the curve
+    integral[0] = dx*(0.5*u_n[0] + 0.5*u_n[Nx] + np.sum(u_n[1:-1]))
+
+    if user_action is not None:
+        user_action(u_n, x, t, 0)
+
+    for n in range(0, Nt):
+        if scheme == 'FE':
+            if periodic_bc:
+                i = 0
+                u[i] = u_n[i] - 0.5*C*(u_n[i+1] - u_n[Nx])
+                u[Nx] = u[0]
+            for i in range(1, Nx):
+                u[i] = u_n[i] - 0.5*C*(u_n[i+1] - u_n[i-1])
+        elif scheme == 'LF':
+            if n == 0:
+                # Use upwind for first step
+                if periodic_bc:
+                    i = 0
+                    u_n[i] = u_n[Nx]
+                for i in range(1, Nx+1):
+                    u[i] = u_n[i] - C*(u_n[i] - u_n[i-1])
+            else:
+                if periodic_bc:
+                    i = 0
+                    u[i] = u_nm1[i] - C*(u_n[i+1] - u_n[Nx-1])
+                for i in range(1, Nx):
+                    u[i] = u_nm1[i] - C*(u_n[i+1] - u_n[i-1])
+                if periodic_bc:
+                    u[Nx] = u[0]
+        elif scheme == 'UP':
+            if periodic_bc:
+                u_n[0] = u_n[Nx]
+            for i in range(1, Nx+1):
+                u[i] = u_n[i] - C*(u_n[i] - u_n[i-1])
+        elif scheme == 'LW':
+            if periodic_bc:
+                i = 0
+                u[i] = u_n[i] - C*(u_n[i+1] - u_n[Nx-1]) + \
+                       0.5*C*(u_n[i+1] - 2*u_n[i] + u_n[Nx-1])
+            for i in range(1, Nx):
+                u[i] = u_n[i] - C*(u_n[i+1] - u_n[i-1]) + \
+                       0.5*C*(u_n[i+1] - 2*u_n[i] + u_n[i-1])
+            if periodic_bc:
+                u[Nx] = u[0]
+        else:
+            raise ValueError('scheme="%s" not implemented' % scheme)
+
+        if not periodic_bc:
+            # Insert boundary condition
+            u[0] = U0
+
+        # Compute the integral under the curve
+        integral[n+1] = dx*(0.5*u[0] + 0.5*u[Nx] + np.sum(u[1:-1]))
+
+        if user_action is not None:
+            user_action(u, x, t, n+1)
+
+        # Switch variables before next step
+        u_nm1, u_n, u = u_n, u, u_nm1
+        print 'I:', integral[n+1]
+    return integral
+!ec
+
+We need to call up the `solver` function in some kind of administering
+problem solving function that can solve specific problems and make
+appropriate visualization. The function below makes both static plots,
+screen animation, and hard copy videos in various formats.
+
+!bc pycod
+def run(scheme='UP', case='gaussian', C=1, dt=0.01):
+    """General admin routine for explicit and implicit solvers."""
+
+    if case == 'gaussian':
+        def I(x):
+            return np.exp(-0.5*((x-L/10)/sigma)**2)
+    elif case == 'cosinehat':
+        def I(x):
+            return np.cos(np.pi*5/L*(x - L/10)) if x < L/5 else 0
+
+    L = 1.0
+    sigma = 0.02
+    global lines  # needs to be saved between calls to plot
+
+    def plot(u, x, t, n):
+        """Plot t=0 and t=0.6 in the same figure."""
+        plt.figure(1)
+        global lines
+        if n == 0:
+            lines = plt.plot(x, u)
+            plt.axis([x[0], x[-1], -0.5, 1.5])
+            plt.xlabel('x'); plt.ylabel('u')
+            plt.axes().set_aspect(0.15)
+            plt.savefig('tmp_%04d.png' % n)
+            plt.savefig('tmp_%04d.pdf' % n)
+        else:
+            lines[0].set_ydata(u)
+            plt.axis([x[0], x[-1], -0.5, 1.5])
+            plt.title('C=%g, dt=%g, dx=%g' %
+                      (C, t[1]-t[0], x[1]-x[0]))
+            plt.legend(['t=%.3f' % t[n]])
+            plt.xlabel('x'); plt.ylabel('u')
+            plt.draw()
+            plt.savefig('tmp_%04d.png' % n)
+        plt.figure(2)
+        eps = 1E-14
+        if abs(t[n] - 0.6) > eps and abs(t[n] - 0) > eps:
+            return
+        print 't=%g, n=%d, u in [%g, %g] w/%d points' % \
+              (t[n], n, u.min(), u.max(), x.size)
+        if np.abs(u).max() > 3:  # Instability?
+            return
+        plt.plot(x, u)
+        plt.hold('on')
+        plt.draw()
+        if n > 0:
+            y = [I(x_-v*t[n]) for x_ in x]
+            plt.plot(x, y, 'k--')
+            if abs(t[n] - 0.6) < eps:
+                filename = ('tmp_%s_dt%s_C%s' % \
+                            (scheme, t[1]-t[0], C)).replace('.', '')
+                np.savez(filename, x=x, u=u, u_e=y)
+
+    plt.ion()
+    U0 = 0
+    T = 0.7
+    v = 1
+    # Define video formats and libraries
+    codecs = dict(flv='flv', mp4='libx264', webm='libvpx',
+                  ogg='libtheora')
+    # Remove video files
+    import glob, os
+    for name in glob.glob('tmp_*.png'):
+        os.remove(name)
+    for ext in codecs:
+        name = 'movie.%s' % ext
+        if os.path.isfile(name):
+            os.remove(name)
+
+   integral = solver(
+       I=I, U0=U0, v=v, L=L, dt=dt, C=C, T=T,
+       scheme=scheme, user_action=plot)
+    # Finish up figure(2)
+    plt.figure(2)
+    plt.axis([0, L, -0.5, 1.1])
+    plt.xlabel('$x$');  plt.ylabel('$u$')
+    plt.savefig('tmp1.png'); plt.savefig('tmp1.pdf')
+    plt.show()
+    # Make videos from figure(1) animation files
+    for codec in codecs:
+        cmd = 'ffmpeg -i tmp_%%04d.png -r 25 -vcodec %s movie.%s' % \
+              (codecs[codec], codec)
+        os.system(cmd)
+    print 'Integral of u:', integral.max(), integral.min()
+!ec
+All the code is found in "`advec1D.py`": "${src_advec}/advec/advec1D.py".
 
 ===== A Crank-Nicolson discretization in time and centered differences in space =====
 label{advec:1D:CN}
@@ -497,9 +757,6 @@ Figure ref{advec:1D:CN:fig:C08} depicts a numerical solution for $C=0.8$
 with severe oscillations behind the main wave. These oscillations are
 damped as the mesh is refined.
 
-[hpl: There is a bug in the implementation, because running `run` with
-$C=1$ does not give exact solution! Debug!]
-
 The dispersion relation follows from inserting $u^n_i = A^ne^{ikx}$
 and using the formula (ref{form:exp:fd1c:center}) for the spatial
 differences:
@@ -507,6 +764,7 @@ differences:
 !bt
 \[ A = \frac{1 - (1-\theta) i C\sin p}{1 + \theta i C\sin p}\tp\]
 !et
+
 
 ===== The Lax-Wendroff method =====
 label{advec:1D:LaxW}
@@ -640,7 +898,8 @@ An appropriate dimensionless quantity to plot is the scaled wave velocity $c/v$:
 \[ \frac{c}{v} = \frac{\phi}{Cp}\tp\]
 !et
 
-Figures ref{advec:1D:disprel:C099}--ref{advec:1D:disprel:C05} contain
+Figures
+ref{advec:1D:disprel:C1:1}--ref{advec:1D:disprel:C05:2} contain
 dispersion curves, velocity and damping, for various values of $C$.
 The horizontal axis shows the dimensionless frequency $p$ of the wave,
 while the figures to the left illustrate the error in wave velocity $c/v$
@@ -659,19 +918,28 @@ The curves are labeled according to the table below.
 | BE | Backward Euler in time, centered difference in space |
 |---------------------------------|
 
-FIGURE: [fig-advec/disprel_C0_99, width=800 frac=1] Dispersion relations for $C=0.99$. label{advec:1D:disprel:C099}
+FIGURE: [fig-advec/disprel_C1_LW_UP_LF, width=800 frac=1] Dispersion relations for $C=1$. label{advec:1D:disprel:C1:1}
 
-FIGURE: [fig-advec/disprel_C0_9, width=800 frac=1] Dispersion relations for $C=0.9$. label{advec:1D:disprel:C09}
+FIGURE: [fig-advec/disprel_C1_CN_BE_FE, width=800 frac=1] Dispersion relations for $C=1$. label{advec:1D:disprel:C1:2}
 
-FIGURE: [fig-advec/disprel_C0_8, width=800 frac=1] Dispersion relations for $C=0.8$. label{advec:1D:disprel:C08}
+FIGURE: [fig-advec/disprel_C0_8_LW_UP_LF, width=800 frac=1] Dispersion relations for $C=0.8$. label{advec:1D:disprel:C08:1}
 
-FIGURE: [fig-advec/disprel_C0_5, width=800 frac=1] Dispersion relations for $C=0.5$. label{advec:1D:disprel:C05}
+FIGURE: [fig-advec/disprel_C0_8_CN_BE_FE, width=800 frac=1] Dispersion relations for $C=0.8$. label{advec:1D:disprel:C08:2}
+
+FIGURE: [fig-advec/disprel_C0_8_LW_UP_LF, width=800 frac=1] Dispersion relations for $C=0.5$. label{advec:1D:disprel:C05:1}
+
+FIGURE: [fig-advec/disprel_C0_8_CN_BE_FE, width=800 frac=1] Dispersion relations for $C=0.5$. label{advec:1D:disprel:C05:2}
 
 The total damping after some time $T=n\Delta t$ is reflected by
 $A_r(C,p)^n$. Since normally $A_r<1$, the damping goes like
 $A_r^{1/\Delta t}$ and approaches zero as $\Delta t\rightarrow 0$.
 The only two ways to reduce the damping are to increase $C$ and the mesh
 resolution.
+
+We can learn a lot from the dispersion relation plots.
+For example, the schemes LW, UP, and LF has no amplitude reduction, but
+LF has a wrong phase velocity for the shortest wave in the mesh. This
+wave does not (normally) have enough amplitude to be seen[[[
 
 ======= One-dimensional stationary advection-diffusion equation =======
 label{advec:1D:stationary}
@@ -714,9 +982,8 @@ second-derivative term.
 label{advec:1D:stationary:model}
 
 We consider (ref{advec:1D:stat:pde1}) on $[0,L]$ equipped with the
-boundary conditions $u(0)=U_0$, $u(L)=U_L$.  By scaling we can get rid
-of lots of physical parameter and instead reduce the discussion to
-combinations of physical parameters. We scale $x$ by $\bar x = x/L$,
+boundary conditions $u(0)=U_0$, $u(L)=U_L$.  By scaling we can reduce the
+number of parameters in the problem. We scale $x$ by $\bar x = x/L$,
 and $u$ by
 
 !bt
@@ -756,7 +1023,8 @@ diffusion.  The exact solution reads
 !bt
 \[ \uex (x) = \frac{e^{x/\epsilon} - 1}{e^{1/\epsilon} - 1}\tp\]
 !et
-
+The forthcoming plots illustrates this function for various values of
+$\epsilon$.
 
 ===== A centered finite difference scheme =====
 label{advec:1D:stationary:fdm}
@@ -885,11 +1153,73 @@ diffusion into one equation:
 \dfc\frac{\partial^2 u}{\partial x^2}\tp
 label{advec:1D:stat:pde3}
 \end{equation}
-
-seen that upwind has been critical, so that will work, but will centered
-also work in this case?
-
 !et
+
+=== Analytical insight ===
+
+The diffusion is now dominated by convection, a wave, and diffusion, a loss
+of amplitude. One possible analytical solution is a traveling Gaussian
+function
+
+!bt
+\[ u(x,t) = B\exp{\left(-\left(\frac{x - vt}{4at}\right)\right)}\tp\]
+!et
+This function moves with velocity $v>0$ to the right
+($v<0$ to the left) due to convection, but at the same time we have a damping
+$e^{-16a^2t^2}$ from diffusion.
+
+===== Forward in time, centered in space scheme =====
+
+The Forward Euler for the diffusion equation is a successful scheme, but it
+has a very strict stability condition. The similar Forward in time, centered
+in space strategy always gives unstable solutions for the advection PDE.
+What happens when we have both diffusion and advection present at once?
+
+!bt
+\[ [D_t u + vD_{2x} u = \dfc D_xD_x u + f]_i^n\tp \]
+!et
+We expect that diffusion will stabilize the scheme, but that advection will
+destabilize it.
+
+Another problem is non-physical oscillations, but not growing amplitudes,
+due to centered differences in the advection term. There will hence be
+two types of instabilities to consider.
+Our analysis showed that pure advection with centered
+differences in space needs some artificial diffusion to become stable
+(and then it produces upwind differences for the advection term).
+Adding more physical diffusion should further help the numerics to stabilize
+the non-physical oscillations.
+
+The scheme is quickly implemented, but suffers from the need for small
+space and time steps, according to this reasoning. A better approach is
+to get rid of the non-physical oscillations in space by simply applying
+an upwind difference on the advection term.
+
+===== Forward in time, upwind in space scheme =====
+
+A good approximation for the pure advection equation is to use upwind
+discretization of the advection term. We also know that centered differences
+are good for the diffusion term, so let us combine these two discretizations:
+
+!bt
+\begin{equation}
+[D_t u + vD^-_{x} u = \dfc D_xD_x u + f]_i^n,
+\end{equation}
+!et
+for $v>0$. Use $vD^+ u$ if $v<0$.
+In this case the physical diffusion and the extra numerical diffusion
+$v\Delta x/2$ will stabilize the solution, but give an overall too large
+reduction in amplitude compared with the exact solution.
+
+We may also interpret the upwind difference as artificial numerical diffusion
+and centered differences in space everywhere, so the scheme can be expressed as
+
+!bt
+\begin{equation}
+[D_t u + vD^-_{2x} u = \dfc \frac{v\Delta x}{2}) D_xD_x u + f]_i^n\tp
+\end{equation}
+!et
+
 
 
 ======= Two-dimensional advection-diffusion equations =======
@@ -897,6 +1227,76 @@ label{advec:2D}
 
 ======= Applications of advection equations =======
 label{advec:app}
+
+There are two major areas where advection and convection applications arises:
+transport of a substance and heat transport *in a fluid*.
+To derive the models, we may look at the similar derivations of
+diffusion models in Section ref{diffu:app},
+but change the assumption from a solid to fluid medium.
+This gives rise to the extra advection or convection term $\v\cdot\nabla u$.
+We briefly show how this is done.
+
+Normally, transport in a fluid is dominated by the fluid flow and not
+diffusion, so we can neglect diffusion compared to advection or convection.
+The end result is anyway an equation of the form
+
+!bt
+\[ \frac{\partial u}{\partial t} + \v\cdot\nabla u = 0\tp\]
+!et
+
+===== Transport of a substance =====
+label{advec:app:mass}
+
+The diffusion of a substance in Section ref{diffu:app:substance} takes place
+in a solid medium, but in a fluid we can have two transport mechanisms:
+one by diffusion and one by advection.
+The letter arises from the fact
+that the substance particles are moved with the fluid velocity $\v$ such that
+the effective flux now consists of two and not only one component as in
+(ref{diffu:app:substance:Fick}):
+
+!bt
+\[ \q = -\dfc\nabla c + \v\c\tp\]
+!et
+Inserted in the equation $\nabla\cdot\q = 0$ we get the extra advection
+term $\nabla\cdot (\v\c)$. Very often we deal with incompressible flows,
+$\nabla\cdot\v = 0$ such that the advective term becomes $\v\cdot\nabla c$.
+The mass transport equation for a substance then reads
+
+!bt
+\begin{equation}
+\frac{\partial c}{\partial t} + \v\cdot\nabla c = \dfc\nabla^2 c\tp
+\end{equation}
+!et
+
+===== Transport of a heat =====
+label{advec:app:heat}
+
+The derivation of the heat equation in Section ref{diffu:app:heat} is limited
+to heat transport in solid bodies. If we turn the attention to heat transport
+in fluids, we get a material derivative of the internal energy in
+(ref{diffu:app:heat:PDE1}),
+
+!bt
+\[ \frac{De}{dt} - \nabla\cdot\q,\]
+!et
+and more terms if work by stresses is also included, where
+
+!bt
+\[ \frac{De}{dt} = \frac{\partial e}{\partial t} + \v\cdot\nabla e,\]
+!et
+$\v$ being the velocity of the fluid. The convective term
+$\v\nabla e$ must therefore be added to the governing equation,
+resulting typically in
+
+!bt
+\begin{equation}
+\varrho c\left(\frac{\partial T}{\partial t} + \v\cdot\nabla T\right)
+= \nabla\cdot(k\nabla T) + f,
+label{advec:app:heat:PDE}
+\end{equation}
+!et
+where $f$ is some external heating inside the medium.
 
 ======= Exercises =======
 

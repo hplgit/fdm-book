@@ -188,7 +188,8 @@ def run(scheme='UP', case='gaussian', C=1, dt=0.01):
             return np.exp(-0.5*((x-L/10)/sigma)**2)
     elif case == 'cosinehat':
         def I(x):
-            return np.cos(np.pi*5/L*(x - L/10)) if x < L/5 else 0
+            return np.cos(np.pi*5/L*(x - L/10)) \
+                   if 0 < x < L/5 else 0
 
     L = 1.0
     sigma = 0.02
@@ -202,7 +203,9 @@ def run(scheme='UP', case='gaussian', C=1, dt=0.01):
             lines = plt.plot(x, u)
             plt.axis([x[0], x[-1], -0.5, 1.5])
             plt.xlabel('x'); plt.ylabel('u')
+            plt.axes().set_aspect(0.15)
             plt.savefig('tmp_%04d.png' % n)
+            plt.savefig('tmp_%04d.pdf' % n)
         else:
             lines[0].set_ydata(u)
             plt.axis([x[0], x[-1], -0.5, 1.5])
@@ -224,11 +227,12 @@ def run(scheme='UP', case='gaussian', C=1, dt=0.01):
         plt.hold('on')
         plt.draw()
         if n > 0:
-            plt.plot(x, I(x-v*t[n]), 'k--')
-        if abs(t[n] - 0.6) < eps:
-            filename = ('tmp_%s_dt%s_C%s' % \
-                       (scheme, t[1]-t[0], C)).replace('.', '')
-            np.savez(filename, x=x, u=u, u_e=I(x-v*t[n]))
+            y = [I(x_-v*t[n]) for x_ in x]
+            plt.plot(x, y, 'k--')
+            if abs(t[n] - 0.6) < eps:
+                filename = ('tmp_%s_dt%s_C%s' % \
+                            (scheme, t[1]-t[0], C)).replace('.', '')
+                np.savez(filename, x=x, u=u, u_e=y)
 
     plt.ion()
     U0 = 0
@@ -260,6 +264,7 @@ def run(scheme='UP', case='gaussian', C=1, dt=0.01):
     plt.figure(2)
     plt.axis([0, L, -0.5, 1.1])
     plt.xlabel('$x$');  plt.ylabel('$u$')
+    plt.axes().set_aspect(0.5)  # no effect
     plt.savefig('tmp1.png'); plt.savefig('tmp1.pdf')
     plt.show()
     # Make videos from figure(1) animation files
@@ -355,7 +360,8 @@ def solver_theta(I, v, L, dt, C, T, theta=0.5, user_action=None, FE=False):
 
 if __name__ == '__main__':
     #run(scheme='LF', case='gaussian', C=1)
-    #run(scheme='UP', case='gaussian', C=0.8)
-    #run(scheme='LF', case='gaussian', C=0.8)
-    #run(scheme='CN', case='gaussian', C=0.8, dt=0.01)
-    run(scheme='LW', case='gaussian', C=1, dt=0.01)
+    #run(scheme='UP', case='gaussian', C=0.8, dt=0.01)
+    run(scheme='LF', case='gaussian', C=0.8, dt=0.001)
+    #run(scheme='LF', case='cosinehat', C=0.8, dt=0.01)
+    #run(scheme='CN', case='gaussian', C=1, dt=0.01)
+    #run(scheme='LW', case='gaussian', C=1, dt=0.01)
