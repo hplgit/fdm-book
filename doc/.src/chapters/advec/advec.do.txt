@@ -20,6 +20,13 @@ advection term, while the similar term for the heat equation is a
 convection term.
 !enotice
 
+Much more comprehensive discussion of dispersion analysis for
+advection problems can be found in the book by Duran cite{Duran_2010}.
+This is a an excellent resource for further studies on the topic of
+advection PDEs, with emphasis on generalizations to real geophysical
+problems. The book by Fletcher cite{FletcherI_2013} also has a good
+overview of methods for advection and convection problems.
+
 ======= One-dimensional time-dependent advection equations =======
 label{advec:1D}
 
@@ -486,6 +493,8 @@ if periodic_bc:
 
 ===== Implementation =====
 
+=== Test condition ===
+
 Analytically, we can show that the integral in space under the $u(x,t)$ curve
 is constant:
 
@@ -493,7 +502,7 @@ is constant:
 \begin{align*}
 \int_0^L \left(\frac{\partial u}{\partial t} + v\frac{\partial u}{\partial x}
 \right) dx &= 0\\
-\frac{\partial u}{\partial t} \int_0^L udx &=
+\frac{\partial }{\partial t} \int_0^L udx &=
 - \int_0^L v\frac{\partial u}{\partial x}dx\\
 \frac{\partial u}{\partial t} \int_0^L udx &=
 [v u]_0^L =0
@@ -514,6 +523,8 @@ dx*(0.5*u[0] + 0.5*u[Nx] + np.sum(u[1:-1]))
 !ec
 if `u` is an array holding the solution.
 
+=== The code ===
+
 An appropriate `solver` function for multiple schemes may go as shown
 below.
 
@@ -521,7 +532,7 @@ below.
 def solver(I, U0, v, L, dt, C, T, user_action=None,
            scheme='FE', periodic_bc=True):
 
-Nt = int(round(T/float(dt)))
+    Nt = int(round(T/float(dt)))
     t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
     dx = v*dt/C
     Nx = int(round(L/dx))
@@ -579,16 +590,6 @@ Nt = int(round(T/float(dt)))
                 u_n[0] = u_n[Nx]
             for i in range(1, Nx+1):
                 u[i] = u_n[i] - C*(u_n[i] - u_n[i-1])
-        elif scheme == 'LW':
-            if periodic_bc:
-                i = 0
-                u[i] = u_n[i] - C*(u_n[i+1] - u_n[Nx-1]) + \
-                       0.5*C*(u_n[i+1] - 2*u_n[i] + u_n[Nx-1])
-            for i in range(1, Nx):
-                u[i] = u_n[i] - C*(u_n[i+1] - u_n[i-1]) + \
-                       0.5*C*(u_n[i+1] - 2*u_n[i] + u_n[i-1])
-            if periodic_bc:
-                u[Nx] = u[0]
         else:
             raise ValueError('scheme="%s" not implemented' % scheme)
 
@@ -604,9 +605,10 @@ Nt = int(round(T/float(dt)))
 
         # Switch variables before next step
         u_nm1, u_n, u = u_n, u, u_nm1
-        print 'I:', integral[n+1]
     return integral
 !ec
+
+=== Solving a specific problem ===
 
 We need to call up the `solver` function in some kind of administering
 problem solving function that can solve specific problems and make
@@ -699,7 +701,8 @@ def run(scheme='UP', case='gaussian', C=1, dt=0.01):
         os.system(cmd)
     print 'Integral of u:', integral.max(), integral.min()
 !ec
-All the code is found in "`advec1D.py`": "${src_advec}/advec/advec1D.py".
+The complete code is found in the file
+"`advec1D.py`": "${src_advec}/advec/advec1D.py".
 
 ===== A Crank-Nicolson discretization in time and centered differences in space =====
 label{advec:1D:CN}
@@ -749,14 +752,6 @@ b_{N_x} &= u^n_0
 \end{align*}
 !et
 
-FIGURE: [fig-advec/gaussian_CN_C08, width=800 frac=1] Crank-Nicolson in time, centered in space, $C=0.8$, $\Delta t = 0.01$ (left) and $\Delta t=0.005$ (right). label{advec:1D:CN:fig:C08}
-
-MOVIE: [mov-advec/gaussian/CN/C08_dt0005.ogg] Crank-Nicolson in time, centered in space, $C=0.8$, $\Delta t = 0.005$. label{advec:1D:CN:mov:C08:dt2}
-
-Figure ref{advec:1D:CN:fig:C08} depicts a numerical solution for $C=0.8$
-with severe oscillations behind the main wave. These oscillations are
-damped as the mesh is refined.
-
 The dispersion relation follows from inserting $u^n_i = A^ne^{ikx}$
 and using the formula (ref{form:exp:fd1c:center}) for the spatial
 differences:
@@ -764,6 +759,26 @@ differences:
 !bt
 \[ A = \frac{1 - (1-\theta) i C\sin p}{1 + \theta i C\sin p}\tp\]
 !et
+
+FIGURE: [fig-advec/gaussian_CN_C08, width=800 frac=1] Crank-Nicolson in time, centered in space, Gaussian profile, $C=0.8$, $\Delta t = 0.01$ (left) and $\Delta t=0.005$ (right). label{advec:1D:CN:fig:C08}
+
+FIGURE: [fig-advec/cosinehat_BE_C08, width=800 frac=1] Backward-Euler in time, centered in space, half a cosine profile, $C=0.8$, $\Delta t = 0.01$ (left) and $\Delta t=0.005$ (right). label{advec:1D:BE:fig:C08}
+
+MOVIE: [mov-advec/gaussian/CN/C08_dt0005.ogg] Crank-Nicolson in time, centered in space, $C=0.8$, $\Delta t = 0.005$. label{advec:1D:CN:mov:C08:dt2}
+
+MOVIE: [mov-advec/gaussian/BE/C08_dt005.ogg] Backward-Euler in time, centered in space, $C=0.8$, $\Delta t = 0.005$. label{advec:1D:BE:mov:C08:dt2}
+
+Figure ref{advec:1D:CN:fig:C08} depicts a numerical solution for $C=0.8$
+and the Crank-Nicolson
+with severe oscillations behind the main wave. These oscillations are
+damped as the mesh is refined. Switching to the Backward Euler scheme
+helps on the oscillations as they are removed, but the amplitude is
+significantly reduced. One could expect that the discontinuous derivative
+in the initial condition of the half a cosine wave would make even
+stronger demands on producing a smooth profile, but Figure ref{advec:1D:BE:fig:C08} shows that also here, Backward-Euler is capable of producing a
+smooth profile. All in all, there are no major differences between the
+Gaussian initial condition and the half a cosine condition for any of
+the schemes.
 
 
 ===== The Lax-Wendroff method =====
@@ -849,7 +864,9 @@ label{advec:1D:disprel}
 We have developed expressions for $A(C,p)$ in the exact solution
 $u_q^n=A^ne^{ikq\Delta x}$ of the discrete equations. These
 expressions are valuable for investigating the quality of the numerical
-solutions. Note that the Fourier component that solves the original
+solutions,see the file
+"`dispersion_analysis.py`": "${src_advec}/advec/dispersion_analysis.py".
+Note that the Fourier component that solves the original
 PDE problem has no damping and moves with constant velocity $v$. There
 are two basic errors in the numerical Fourier component: there may be
 damping and the wave velocity may depend on $C$ and $p=k\Delta x$.
@@ -926,9 +943,9 @@ FIGURE: [fig-advec/disprel_C0_8_LW_UP_LF, width=800 frac=1] Dispersion relations
 
 FIGURE: [fig-advec/disprel_C0_8_CN_BE_FE, width=800 frac=1] Dispersion relations for $C=0.8$. label{advec:1D:disprel:C08:2}
 
-FIGURE: [fig-advec/disprel_C0_8_LW_UP_LF, width=800 frac=1] Dispersion relations for $C=0.5$. label{advec:1D:disprel:C05:1}
+FIGURE: [fig-advec/disprel_C0_5_LW_UP_LF, width=800 frac=1] Dispersion relations for $C=0.5$. label{advec:1D:disprel:C05:1}
 
-FIGURE: [fig-advec/disprel_C0_8_CN_BE_FE, width=800 frac=1] Dispersion relations for $C=0.5$. label{advec:1D:disprel:C05:2}
+FIGURE: [fig-advec/disprel_C0_5_CN_BE_FE, width=800 frac=1] Dispersion relations for $C=0.5$. label{advec:1D:disprel:C05:2}
 
 The total damping after some time $T=n\Delta t$ is reflected by
 $A_r(C,p)^n$. Since normally $A_r<1$, the damping goes like
@@ -936,10 +953,35 @@ $A_r^{1/\Delta t}$ and approaches zero as $\Delta t\rightarrow 0$.
 The only two ways to reduce the damping are to increase $C$ and the mesh
 resolution.
 
-We can learn a lot from the dispersion relation plots.
-For example, the schemes LW, UP, and LF has no amplitude reduction, but
-LF has a wrong phase velocity for the shortest wave in the mesh. This
-wave does not (normally) have enough amplitude to be seen[[[
+We can learn a lot from the dispersion relation plots. For example,
+looking at the plots for $C=1$, the schemes LW, UP, and LF has no
+amplitude reduction, but LF has a wrong phase velocity for the
+shortest wave in the mesh. This wave does not (normally) have enough
+amplitude to be seen, so for all practical purposes, there is no
+damping or wrong velocity of the individual waves, so the total shape
+of the wave is also correct. For the CN scheme, see Figure
+ref{advec:1D:CN:fig:C08}, each individual wave has its amplitude, but
+they move with different velocities, so after a while, we see some of
+these waves lagging behind.  For the BE scheme, see Figure
+ref{advec:1D:BE:fig:C08}, each of the shorter waves are so heavily
+damped that we cannot see them after a while. All the we see are the
+very longest wave, which have slightly wrong velocity, but visible
+amplitudes are sufficiently equal to produce what looks like a smooth
+profile.
+
+Another feature was that the Leapfrog method produced oscillations,
+while the upwind scheme did not. Since the Leapfrog method does not
+damp the shorter waves, which have wrong wave velocities of order 10
+percent, we can see these waves as noise. The upwind scheme, however,
+damp these waves. The same effect is also present in the Lax-Wendroff
+scheme, but the damping of the intermediate waves is hardly present, so
+there is visible noise in the total signal.
+
+We realize that there is more understanding of the
+behavior of the schemes in the dispersion analysis compared with a
+pure truncation error analysis. The latter just says Lax-Wendroff is
+better than upwind, because of the increased order in time, but
+most people would say upwind is the better by looking at the plots.
 
 ======= One-dimensional stationary advection-diffusion equation =======
 label{advec:1D:stationary}

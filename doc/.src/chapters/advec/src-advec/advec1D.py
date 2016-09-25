@@ -190,6 +190,8 @@ def run(scheme='UP', case='gaussian', C=1, dt=0.01):
         def I(x):
             return np.cos(np.pi*5/L*(x - L/10)) \
                    if 0 < x < L/5 else 0
+    else:
+        raise ValueError('Wrong name of I')
 
     L = 1.0
     sigma = 0.02
@@ -361,7 +363,8 @@ def solver_theta(I, v, L, dt, C, T, theta=0.5, user_action=None, FE=False):
 if __name__ == '__main__':
     #run(scheme='LF', case='gaussian', C=1)
     #run(scheme='UP', case='gaussian', C=0.8, dt=0.01)
-    run(scheme='LF', case='gaussian', C=0.8, dt=0.001)
+    #run(scheme='LF', case='gaussian', C=0.8, dt=0.001)
+    run(scheme='BE', case='cosinehat', C=1, dt=0.01)
     #run(scheme='LF', case='cosinehat', C=0.8, dt=0.01)
     #run(scheme='CN', case='gaussian', C=1, dt=0.01)
     #run(scheme='LW', case='gaussian', C=1, dt=0.01)
