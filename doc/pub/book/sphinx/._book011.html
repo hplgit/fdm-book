@@ -43,7 +43,7 @@
         </style>
 
     
-    <link rel="top" title="Finite Difference Computing with Partial Differential Equations" href="index.html" />
+    <link rel="top" title="Finite Difference Computing with PDEs" href="index.html" />
     <link rel="next" title="Advection-dominated equations" href="._book012.html" />
     <link rel="prev" title="Exercises" href="._book010.html" />
  
@@ -69,7 +69,7 @@
         <li class="right" >
           <a href="._book010.html" title="Exercises"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Finite Difference Computing with Partial Differential Equations</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Finite Difference Computing with PDEs</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -80,16 +80,6 @@
             
   <div class="section" id="diffusion-equations-1">
 <span id="ch-diffu"></span><h1>Diffusion equations<a class="headerlink" href="#diffusion-equations-1" title="Permalink to this headline">¶</a></h1>
-<blockquote>
-<div><ul class="simple">
-<li>There are few index entries, see the &#8220;wave equation&#8221; index entries and
-how many sub-entries we have there...</li>
-<li>Check if the material on diffusion equation with radial symmetry is
-okay.</li>
-<li>Implement a diffusion equation with axi-symmetry such we can solve
-pulsating flow in a circular blood vessel, see <a class="reference internal" href="#diffu-exer-bloodflow"><span class="std std-ref">Problem 3.10: Oscillating and pulsating flow in tubes</span></a>.</li>
-</ul>
-</div></blockquote>
 <span class="target" id="index-0"></span><span class="target" id="index-1"></span><span class="target" id="index-2"></span><p id="index-3">The famous <em>diffusion equation</em>, also known as the <em>heat equation</em>,
 reads</p>
 <div class="math">
@@ -127,7 +117,15 @@ process converges to a stationary state. Therefore, implicit schemes
 (as described in the section <a class="reference internal" href="#diffu-pde1-implicit"><span class="std std-ref">Implicit methods for the 1D diffusion equation</span></a>) are popular, but
 these require solutions of systems of algebraic equations. We shall
 use ready-made software for this purpose, but also program some simple
-iterative methods.</p>
+iterative methods.
+The exposition is, as usual in this book, very basic and focuses on
+the basic ideas and how to implement. More comprehensive mathematical
+treatments and classical analysis
+of the methods are found in lots of textbooks. A favorite
+of ours in this respect is the one by LeVeque <a class="reference internal" href="._book027.html#ref06" id="id1">[Ref06]</a>.
+The books by Strikwerda <a class="reference internal" href="._book027.html#ref07" id="id2">[Ref07]</a> and by
+Lapidus and Pinder <a class="reference internal" href="._book027.html#ref08" id="id3">[Ref08]</a> are also highly recommended
+as additional material on the topic.</p>
 <div class="section" id="an-explicit-method-for-the-1d-diffusion-equation">
 <span id="diffu-pde1-fesec"></span><h2>An explicit method for the 1D diffusion equation<a class="headerlink" href="#an-explicit-method-for-the-1d-diffusion-equation" title="Permalink to this headline">¶</a></h2>
 <p>Explicit finite difference methods for the wave equation <span class="math">\(u_{tt}=c^2u_{xx}\)</span>
@@ -139,7 +137,7 @@ equations from the chapter <a class="reference internal" href="._book005.html#ch
 Forward Euler, Backward Euler, and Crank-Nicolson (or centered or
 midpoint) discretization methods in time should consult, e.g.,
 the
-section <a class="reference external" href="http://hplgit.github.io/decay-book/doc/pub/book/sphinx/._book002.html#finite-difference-methods">Finite difference methods</a> in <a class="reference internal" href="._book027.html#ref02" id="id1">[Ref02]</a>.</p>
+section <a class="reference external" href="http://hplgit.github.io/decay-book/doc/pub/book/sphinx/._book002.html#finite-difference-methods">Finite difference methods</a> in <a class="reference internal" href="._book027.html#ref02" id="id4">[Ref02]</a>.</p>
 <div class="section" id="the-initial-boundary-value-problem-for-1d-diffusion">
 <h3>The initial-boundary value problem for 1D diffusion<a class="headerlink" href="#the-initial-boundary-value-problem-for-1d-diffusion" title="Permalink to this headline">¶</a></h3>
 <p>To obtain a unique solution of the diffusion equation, or equivalently,
@@ -230,7 +228,7 @@ of the numerical method are critically dependent upon the value of
 <p>The computational algorithm then becomes</p>
 <blockquote>
 <div><ol class="arabic simple">
-<li>compute $u^0_i=I(x_i)$for <span class="math">\(i=0,\ldots,N_x\)</span></li>
+<li>compute <span class="math">\(u^0_i=I(x_i)\)</span> for <span class="math">\(i=0,\ldots,N_x\)</span></li>
 <li>for <span class="math">\(n=0,1,\ldots,N_t\)</span>:</li>
 </ol>
 <blockquote>
@@ -429,9 +427,10 @@ that the manufactured <code class="docutils literal"><span class="pre">u</span><
 \lbrack 5x(L-x)D_t^+ t  = 5 t{\alpha} D_x D_x (xL-x^2) +\\
 &amp;\quad\quad 10{\alpha} t + 5x(L-x)\rbrack^n_i\\
 &amp;=
-\lbrack 5x(L-x)  = 5 t{\alpha} (-2) + 10{\alpha} t + 5x(L-x) \rbrack^n_i{\thinspace .}
+\lbrack 5x(L-x)  = 5 t{\alpha} (-2) + 10{\alpha} t + 5x(L-x) \rbrack^n_i,
 \end{align*}\end{split}\]</div>
-<p>The computation of the source term, given any <span class="math">\(u\)</span>,
+<p>which is a 0=0 expression.
+The computation of the source term, given any <span class="math">\(u\)</span>,
 is easily automated with <code class="docutils literal"><span class="pre">sympy</span></code>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sympy</span> <span class="kn">as</span> <span class="nn">sym</span>
 <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">L</span> <span class="o">=</span> <span class="n">sym</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s1">&#39;x t a L&#39;</span><span class="p">)</span>
@@ -529,19 +528,27 @@ time and space. For the numerical error,</p>
 <div class="math">
 \[E = C_t\Delta t^r + C_x\Delta x^p,\]</div>
 <p>we should get convergence rates <span class="math">\(r=1\)</span> and <span class="math">\(p=2\)</span> (<span class="math">\(C_t\)</span> and <span class="math">\(C_x\)</span> are unknown constants).
-As previously, we simplify matters by introducing a single discretization parameter.
-We introduce</p>
+As previously,
+in the section <a class="reference internal" href="._book005.html#wave-pde2-fd-mms"><span class="std std-ref">Manufactured solution and estimation of convergence rates</span></a>,
+we simplify matters by introducing a single discretization parameter <span class="math">\(h\)</span>:</p>
 <div class="math">
-\[h = \Delta x^p,\quad h = K^{-1}\Delta t,\]</div>
-<p>where <span class="math">\(K\)</span> is a constant. The error formula then becomes</p>
+\[h = \Delta t,\quad \Delta x = Kh^{r/p},\]</div>
+<p>where <span class="math">\(K\)</span> is any constant. This allows us to factor out only <em>one</em>
+discretization parameter <span class="math">\(h\)</span> from the formula:</p>
 <div class="math">
-\[E = C_t K^rh^r + C_xh^r = \tilde C h^r,\quad \tilde C = C_tK^r + C_x{\thinspace .}\]</div>
-<p>where the computed rate <span class="math">\(r\)</span> should approach 1 with increasing resolution.
-It is tempting to choose <span class="math">\(K=1\)</span>, but for the Forward Euler method,
-stability requires <span class="math">\(\Delta t = hK \leq h/(4{\alpha})\)</span>, so <span class="math">\(K\leq 1/(4{\alpha})\)</span>.</p>
-<p>The alternative error measures are as outlined for the wave equation and
-convergence rate computations may follow what was described previously in
-the section <a class="reference internal" href="._book005.html#wave-pde2-fd-mms"><span class="std std-ref">Manufactured solution and estimation of convergence rates</span></a>.</p>
+\[E = C_t h + C_x (K^{r/p})^p = \tilde C h^r,\quad
+\tilde C = C_t + C_sK^r{\thinspace .}\]</div>
+<p>The computed rate <span class="math">\(r\)</span> should approach 1 with increasing resolution.</p>
+<p>It is tempting, for simplicity,
+to choose <span class="math">\(K=1\)</span>, which gives <span class="math">\(\Delta x = h^{r/p}\)</span>, expected to be
+<span class="math">\(\sqrt{\Delta t}\)</span>. However,
+we have to control the stability requirement: <span class="math">\(F\leq\frac{1}{2}\)</span>,
+which means</p>
+<div class="math">
+\[\frac{{\alpha}\Delta t}{\Delta x^2}\leq\frac{1}{2}\quad\Rightarrow
+\quad \Delta x \geq \sqrt{2{\alpha}}h^{1/2} ,\]</div>
+<p>implying that <span class="math">\(K=\sqrt{2{\alpha}}\)</span> is our choice in experiments where we
+lie on the stability limit <span class="math">\(F=1/2\)</span>.</p>
 </div>
 </div>
 <div class="section" id="numerical-experiments">
@@ -553,7 +560,7 @@ solutions.</p>
 <p>We target a scaled diffusion problem where <span class="math">\(x/L\)</span> is a new spatial
 coordinate and <span class="math">\({\alpha} t/L^2\)</span> is a new time coordinate. The source term
 <span class="math">\(f\)</span> is omitted, and <span class="math">\(u\)</span> is scaled by <span class="math">\(\max_{x\in [0,L]}|I(x)|\)</span> (see
-<a class="reference external" href="http://hplgit.github.io/scaling-book/doc/pub/book/html/._scaling-book008.html#sec:scale:diffu">Scaling of the diffusion equation</a> <a class="reference internal" href="._book027.html#ref03" id="id2">[Ref03]</a> for details).
+<a class="reference external" href="http://hplgit.github.io/scaling-book/doc/pub/book/html/._scaling-book008.html#sec:scale:diffu">Scaling of the diffusion equation</a> <a class="reference internal" href="._book027.html#ref03" id="id5">[Ref03]</a> for details).
 The governing PDE is then</p>
 <div class="math">
 \[\frac{\partial u}{\partial t} = \frac{\partial^2 u}{\partial x^2},\]</div>
@@ -680,15 +687,15 @@ if (!!(window.safari)) {
 </script><p>Increasing <span class="math">\(F\)</span> slightly beyond the limit 0.5, to <span class="math">\(F=0.51\)</span>,
 gives growing, non-physical instabilities,
 as seen in Figure <a class="reference internal" href="#diffu-pde1-fe-fig-f-0-51"><span class="std std-ref">Forward Euler scheme for </span></a>.</p>
-<div class="figure" id="id8">
+<div class="figure" id="id13">
 <span id="diffu-pde1-fe-fig-f-0-5"></span><a class="reference internal image-reference" href="_images/plug_FE_F05.png"><img alt="_images/plug_FE_F05.png" src="_images/plug_FE_F05.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text">Forward Euler scheme for <span class="math">\(F=0.5\)</span></span></p>
 </div>
-<div class="figure" id="id9">
+<div class="figure" id="id14">
 <span id="diffu-pde1-fe-fig-f-0-25"></span><a class="reference internal image-reference" href="_images/plug_FE_F025.png"><img alt="_images/plug_FE_F025.png" src="_images/plug_FE_F025.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text">Forward Euler scheme for <span class="math">\(F=0.25\)</span></span></p>
 </div>
-<div class="figure" id="id10">
+<div class="figure" id="id15">
 <span id="diffu-pde1-fe-fig-f-0-51"></span><a class="reference internal image-reference" href="_images/plug_FE_F051.png"><img alt="_images/plug_FE_F051.png" src="_images/plug_FE_F051.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text">Forward Euler scheme for <span class="math">\(F=0.51\)</span></span></p>
 </div>
@@ -709,7 +716,7 @@ is smooth for all times, and this is true for any <span class="math">\(F\leq 0.5
 <script language="javascript">
 if (!!(window.safari)) {
   document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
-</script><div class="figure" id="id11">
+</script><div class="figure" id="id16">
 <span id="diffu-pde1-fe-fig-gauss-f-0-5"></span><a class="reference internal image-reference" href="_images/gaussian_FE_F05.png"><img alt="_images/gaussian_FE_F05.png" src="_images/gaussian_FE_F05.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text">Forward Euler scheme for <span class="math">\(F=0.5\)</span></span></p>
 </div>
@@ -785,9 +792,9 @@ u^{n}_2
 u^{n-1}_1 + \Delta t f_1^n\\
 u^{n-1}_2 + \Delta t f_2^n
 \end{array}\right)\end{split}\]</div>
-<div class="admonition-implicit-vs-explicit-methods admonition">
-<p class="first admonition-title">Implicit vs. explicit methods</p>
-<p class="last">Discretization methods that lead to a coupled system of equations
+<div class="admonition-terminology-implicit-vs-explicit-methods admonition">
+<p class="first admonition-title">Terminology: implicit vs. explicit methods</p>
+<p>Discretization methods that lead to a coupled system of equations
 for the unknown function at a new time level are said to be
 <em>implicit methods</em>.
 The counterpart, <em>explicit methods</em>, refers to discretization
@@ -795,7 +802,14 @@ methods where there is a simple explicit formula for the values of
 the unknown function at each of the spatial mesh points at the new
 time level. From an implementational point of view, implicit methods
 are more comprehensive to code since they require
-the solution of coupled equations, i.e., a matrix system, at each time level.</p>
+the solution of coupled equations, i.e., a matrix system, at each time level.
+With explicit methods we have a closed-form formula for the value of
+the unknown at each mesh point.</p>
+<p class="last">Very often explicit schemes have a restriction on the size of the time
+step that can be relaxed by using implicit schemes. In fact,
+implicit schemes are frequently unconditionally stable, so the size of the
+time step is governed by accuracy and not by stability. This is the great
+advantage of implicit schemes.</p>
 </div>
 <p>In the general case, <a class="reference internal" href="#eq-diffu-pde1-step3bbe"><span class="std std-ref">(359)</span></a> gives rise to
 a coupled <span class="math">\((N_x-1)\times (N_x-1)\)</span> system of algebraic equations for
@@ -1149,7 +1163,7 @@ to see if the Backward Euler or Crank-Nicolson schemes have problems
 with sawtooth-like noise when starting with a discontinuous initial
 condition. We can also verify that we can have <span class="math">\(F&gt;\frac{1}{2}\)</span>,
 which allows larger time steps than in the Forward Euler method.</p>
-<div class="figure" id="id12">
+<div class="figure" id="id17">
 <span id="diffu-pde1-be-fig-f-0-5"></span><a class="reference internal image-reference" href="_images/plug_BE_F05.png"><img alt="_images/plug_BE_F05.png" src="_images/plug_BE_F05.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text">Backward Euler scheme for <span class="math">\(F=0.5\)</span></span></p>
 </div>
@@ -1166,11 +1180,11 @@ simulations with larger <span class="math">\(F\)</span>.</p>
 increases. Figures <a class="reference internal" href="#diffu-pde1-cn-fig-f-3"><span class="std std-ref">Crank-Nicolson scheme for </span></a> and <a class="reference internal" href="#diffu-pde1-cn-fig-f-10"><span class="std std-ref">Crank-Nicolson scheme for </span></a>
 demonstrate the effect for <span class="math">\(F=3\)</span> and <span class="math">\(F=10\)</span>, respectively.
 The section <a class="reference internal" href="#diffu-pde1-analysis"><span class="std std-ref">Analysis of schemes for the diffusion equation</span></a> explains why such noise occur.</p>
-<div class="figure" id="id13">
+<div class="figure" id="id18">
 <span id="diffu-pde1-cn-fig-f-3"></span><a class="reference internal image-reference" href="_images/plug_CN_F3.png"><img alt="_images/plug_CN_F3.png" src="_images/plug_CN_F3.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text">Crank-Nicolson scheme for <span class="math">\(F=3\)</span></span></p>
 </div>
-<div class="figure" id="id14">
+<div class="figure" id="id19">
 <span id="diffu-pde1-cn-fig-f-10"></span><a class="reference internal image-reference" href="_images/plug_CN_F10.png"><img alt="_images/plug_CN_F10.png" src="_images/plug_CN_F10.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text">Crank-Nicolson scheme for <span class="math">\(F=10\)</span></span></p>
 </div>
@@ -1334,7 +1348,7 @@ slowly varying <span class="math">\(\sin (\pi x)\)</span> term. After about <spa
 oscillations do not have a visible amplitude, while we have to wait
 until <span class="math">\(t\sim 0.5\)</span> before the amplitude of the long wave <span class="math">\(\sin (\pi x)\)</span>
 becomes very small.</p>
-<div class="figure" id="id15">
+<div class="figure" id="id20">
 <span id="diffu-pde1-fig-damping"></span><a class="reference internal image-reference" href="_images/diffusion_damping.png"><img alt="_images/diffusion_damping.png" src="_images/diffusion_damping.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text"><em>Evolution of the solution of a diffusion problem: initial condition (upper left), 1/100 reduction of the small waves (upper right), 1/10 reduction of the long wave (lower left), and 1/100 reduction of the long wave (lower right)</em></span></p>
 </div>
@@ -1667,15 +1681,15 @@ for different choices of the <span class="math">\(F\)</span> parameter. Figures
 damped by the various schemes compared to the exact damping. As long
 as all schemes are stable, the amplification factor is positive,
 except for Crank-Nicolson when <span class="math">\(F&gt;0.5\)</span>.</p>
-<div class="figure" id="id16">
+<div class="figure" id="id21">
 <span id="diffu-pde1-fig-a-err-c20"></span><a class="reference internal image-reference" href="_images/diffusion_A_F20_F2.png"><img alt="_images/diffusion_A_F20_F2.png" src="_images/diffusion_A_F20_F2.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text"><em>Amplification factors for large time steps</em></span></p>
 </div>
-<div class="figure" id="id17">
+<div class="figure" id="id22">
 <span id="diffu-pde1-fig-a-err-c0-5"></span><a class="reference internal image-reference" href="_images/diffusion_A_F05_F025.png"><img alt="_images/diffusion_A_F05_F025.png" src="_images/diffusion_A_F05_F025.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text"><em>Amplification factors for time steps around the Forward Euler stability limit</em></span></p>
 </div>
-<div class="figure" id="id18">
+<div class="figure" id="id23">
 <span id="diffu-pde1-fig-a-err-c0-1"></span><a class="reference internal image-reference" href="_images/diffusion_A_F01_F001.png"><img alt="_images/diffusion_A_F01_F001.png" src="_images/diffusion_A_F01_F001.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text"><em>Amplification factors for small time steps</em></span></p>
 </div>
@@ -2275,7 +2289,7 @@ is of the same size as <span class="math">\(\max u = \max(U_0,U_L)\)</span>).</p
 <span class="n">U_0</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">;</span>  <span class="n">U_L</span> <span class="o">=</span> <span class="mi">5</span>     <span class="c1"># boundary conditions</span>
 </pre></div>
 </div>
-<div class="figure" id="id19">
+<div class="figure" id="id24">
 <span id="diffu-fd2-pde-st-sol-pc-fig1"></span><a class="reference internal image-reference" href="_images/flow_in_layers_case1.png"><img alt="_images/flow_in_layers_case1.png" src="_images/flow_in_layers_case1.png" style="width: 400px;" /></a>
 <p class="caption"><span class="caption-text"><em>Solution of the stationary diffusion equation corresponding to a piecewise constant diffusion coefficient</em></span></p>
 </div>
@@ -2283,7 +2297,7 @@ is of the same size as <span class="math">\(\max u = \max(U_0,U_L)\)</span>).</p
 class, we can experiment with smoothed versions of <span class="math">\(\alpha\)</span> and see
 the (small) impact on <span class="math">\(u\)</span>. Figure <a class="reference internal" href="#diffu-fd2-pde-st-sol-pc-fig2"><span class="std std-ref">Solution of the stationary diffusion equation corresponding to a smoothed piecewise constant diffusion coefficient</span></a>
 shows the result.</p>
-<div class="figure" id="id20">
+<div class="figure" id="id25">
 <span id="diffu-fd2-pde-st-sol-pc-fig2"></span><a class="reference internal image-reference" href="_images/flow_in_layers_case1_eps.png"><img alt="_images/flow_in_layers_case1_eps.png" src="_images/flow_in_layers_case1_eps.png" style="width: 400px;" /></a>
 <p class="caption"><span class="caption-text">Solution of the stationary diffusion equation corresponding to a <em>smoothed</em> piecewise constant diffusion coefficient</span></p>
 </div>
@@ -2528,7 +2542,7 @@ F_y
 <div class="math">
 \[F_x = \frac{{\alpha}\Delta t}{\Delta x^2},\quad F_y = \frac{{\alpha}\Delta t}{\Delta y^2},\]</div>
 <p>are the Fourier numbers in <span class="math">\(x\)</span> and <span class="math">\(y\)</span> direction, respectively.</p>
-<div class="figure" id="id21">
+<div class="figure" id="id26">
 <span id="diffu-2d-fig-mesh3x2"></span><a class="reference internal image-reference" href="_images/mesh3x2.png"><img alt="_images/mesh3x2.png" src="_images/mesh3x2.png" style="width: 500px;" /></a>
 <p class="caption"><span class="caption-text"><em>3x2 2D mesh</em></span></p>
 </div>
@@ -2722,7 +2736,7 @@ We must now number the unknowns at the interior points:</p>
 <div class="math">
 \[p = (j-1)(N_x-1) + i,\]</div>
 <p>for <span class="math">\(i=1,\ldots,N_x-1\)</span>, <span class="math">\(j=1,\ldots,N_y-1\)</span>.</p>
-<div class="figure" id="id22">
+<div class="figure" id="id27">
 <span id="diffu-2d-fig-mesh4x3"></span><a class="reference internal image-reference" href="_images/mesh4x3.png"><img alt="_images/mesh4x3.png" src="_images/mesh4x3.png" style="width: 700px;" /></a>
 <p class="caption"><span class="caption-text"><em>4x3 2D mesh</em></span></p>
 </div>
@@ -4221,7 +4235,7 @@ That is, the efficiency of the Jacobi method quickly deteriorates with
 the increasing mesh resolution, and SOR is much to be preferred
 (even if the optimal
 <span class="math">\(\omega\)</span> remains an open question). We refer to
-Chapter 4 of <a class="reference internal" href="._book027.html#ref06" id="id3">[Ref06]</a> for more information on the convergence theory.
+Chapter 4 of <a class="reference internal" href="._book027.html#ref09" id="id6">[Ref09]</a> for more information on the convergence theory.
 One important result is that if <span class="math">\(A\)</span> is symmetric and positive definite,
 then SOR will converge for any <span class="math">\(0&lt;\omega &lt;2\)</span>.</p>
 <p>The optimal <span class="math">\(\omega\)</span> parameter can be theoretically established for
@@ -4248,7 +4262,8 @@ new sweep but visiting the points in reverse order.</p>
 method, so we refer to the many excellent expositions in the
 literature for the idea of the method and how the algorithm is
 derived. In particular, we recommend the books
-<a class="reference internal" href="._book027.html#ref07" id="id4">[Ref07]</a> <a class="reference internal" href="._book027.html#ref06" id="id5">[Ref06]</a> <a class="reference internal" href="._book027.html#ref08" id="id6">[Ref08]</a>.  A brief overview is
+<a class="reference internal" href="._book027.html#ref10" id="id7">[Ref10]</a> <a class="reference internal" href="._book027.html#ref11" id="id8">[Ref11]</a> <a class="reference internal" href="._book027.html#ref09" id="id9">[Ref09]</a> <a class="reference internal" href="._book027.html#ref12" id="id10">[Ref12]</a>.
+A brief overview is
 provided in the <a class="reference external" href="https://en.wikipedia.org/wiki/Conjugate_gradient_method">Wikipedia article</a>. Here, we
 just state the pros and cons of the method from a user&#8217;s perspective
 and how we utilize it in code.</p>
@@ -4266,9 +4281,8 @@ for the system. That is, instead of solving <span class="math">\(Au=b\)</span>, 
 <em>preconditioned</em> system. The matrix <span class="math">\(M\)</span> is the <em>preconditioner</em> or
 preconditioning matrix.  Now we need to perform matrix-vector products
 <span class="math">\(y = M^{-1}Au\)</span>, which is done in two steps: first the matrix-vector
-product <span class="math">\(v=Au\)</span> is carried out and then the system
-<span class="math">\(My=v\)</span> must be solved.
-Therefore, <span class="math">\(M\)</span> must be cheap to compute and systems <span class="math">\(My=v\)</span>
+product <span class="math">\(v=Au\)</span> is carried out and then the system <span class="math">\(My=v\)</span> must be
+solved.  Therefore, <span class="math">\(M\)</span> must be cheap to compute and systems <span class="math">\(My=v\)</span>
 must be cheap to solve.</p>
 <p>A perfect preconditioner is <span class="math">\(M=A\)</span>, but in each iteration in the
 Conjugate gradient method one then has so solve a system with <span class="math">\(A\)</span> as
@@ -4422,7 +4436,9 @@ primary reason why we treat random walk in this chapter: two very
 different algorithms (finite difference stencils and random walk)
 solve the same type of problems. The simplicity of the random walk
 algorithm makes it particularly attractive for solving diffusion
-equations on massively parallel computers.</p>
+equations on massively parallel computers.
+The exposition here is as simple as possible, and good thorough
+derivation of the models is provided by Hjorth-Jensen <a class="reference internal" href="._book027.html#ref13" id="id11">[Ref13]</a>.</p>
 <div class="section" id="random-walk-in-1d">
 <span id="diffu-randomwalk-1d"></span><h3>Random walk in 1D<a class="headerlink" href="#random-walk-in-1d" title="Permalink to this headline">¶</a></h3>
 <p>Imagine that we have some particles that perform random moves, either
@@ -4436,7 +4452,7 @@ or right, and repeat the process.</p>
 <p>We introduce the symbol <span class="math">\(N\)</span> for the number of steps in a random walk.
 Figure <a class="reference internal" href="#diffu-randomwalk-1d-fig-ensemble"><span class="std std-ref">Ensemble of 4 random walks, each with 200 steps</span></a> shows four different
 random walks with <span class="math">\(N=200\)</span>.</p>
-<div class="figure" id="id23">
+<div class="figure" id="id28">
 <span id="diffu-randomwalk-1d-fig-ensemble"></span><a class="reference internal image-reference" href="_images/rw1D_ensemble4.png"><img alt="_images/rw1D_ensemble4.png" src="_images/rw1D_ensemble4.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text"><em>Ensemble of 4 random walks, each with 200 steps</em></span></p>
 </div>
@@ -4583,7 +4599,7 @@ depicted in Figure <a class="reference internal" href="#diffu-randomwalk-1d-code
 at the origin and moves with <span class="math">\(p=\frac{1}{2}\)</span>. Since the seed is the same,
 the plot to the left is just a magnification of the first 1,000 steps in
 the plot to the right.</p>
-<div class="figure" id="id24">
+<div class="figure" id="id29">
 <span id="diffu-randomwalk-1d-code1-fig1"></span><a class="reference internal image-reference" href="_images/rw1D_1sample.png"><img alt="_images/rw1D_1sample.png" src="_images/rw1D_1sample.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text"><em>1,000 (left) and 50,000 (right) steps of a random walk</em></span></p>
 </div>
@@ -5069,15 +5085,15 @@ arising from solving the diffusion equation
 <a class="reference internal" href="#eq-diffu-randomwalk-1d-pde-dimless"><span class="std std-ref">(463)</span></a> instead. As always, we realize
 that one needs significantly more statistical samples to estimate a
 histogram accurately than the expectation or variance.</p>
-<div class="figure" id="id25">
+<div class="figure" id="id30">
 <span id="diffu-randomwalk-1d-fig-demo1-ex"></span><a class="reference internal image-reference" href="_images/rw1D_EX_100_10000_100000_1000000.png"><img alt="_images/rw1D_EX_100_10000_100000_1000000.png" src="_images/rw1D_EX_100_10000_100000_1000000.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text"><em>Estimated expected value for 1000 steps, using 100 walks (upper left), 10,000 (upper right), 100,000 (lower left), and 1,000,000 (lower right)</em></span></p>
 </div>
-<div class="figure" id="id26">
+<div class="figure" id="id31">
 <span id="diffu-randomwalk-1d-fig-demo1-varx"></span><a class="reference internal image-reference" href="_images/rw1D_VarX_100_10000_100000_1000000.png"><img alt="_images/rw1D_VarX_100_10000_100000_1000000.png" src="_images/rw1D_VarX_100_10000_100000_1000000.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text"><em>Estimated variance over 1000 steps, using 100 walks (upper left), 10,000 (upper right), 100,000 (lower left), and 1,000,000 (lower right)</em></span></p>
 </div>
-<div class="figure" id="id27">
+<div class="figure" id="id32">
 <span id="diffu-randomwalk-1d-fig-demo1-histx"></span><a class="reference internal image-reference" href="_images/rw1D_HistX_100_10000_100000_1000000.png"><img alt="_images/rw1D_HistX_100_10000_100000_1000000.png" src="_images/rw1D_HistX_100_10000_100000_1000000.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text"><em>Estimated probability distribution at step 800, using 100 walks (upper left), 10,000 (upper right), 100,000 (lower left), and 1,000,000 (lower right)</em></span></p>
 </div>
@@ -5222,7 +5238,7 @@ an example on 200 steps with this kind of walk. We may refer to this walk
 as a walk on a <em>rectangular mesh</em> as we move from any spatial
 mesh point <span class="math">\((i,j)\)</span> to one of its four neighbors in the rectangular directions:
 <span class="math">\((i+1,j)\)</span>, <span class="math">\((i-1,j)\)</span>, <span class="math">\((i,j+1)\)</span>, or <span class="math">\((i,j-1)\)</span>.</p>
-<div class="figure" id="id28">
+<div class="figure" id="id33">
 <span id="diffu-randomwalk-2d-fig-rect-vs-diag"></span><a class="reference internal image-reference" href="_images/rw2D_sample200.png"><img alt="_images/rw2D_sample200.png" src="_images/rw2D_sample200.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text"><em>Random walks in 2D with 200 steps: rectangular mesh (left) and diagonal mesh (right)</em></span></p>
 </div>
@@ -5287,7 +5303,7 @@ filled in the <code class="docutils literal"><span class="pre">position</span></
     <span class="k">return</span> <span class="n">position</span>
 </pre></div>
 </div>
-<div class="figure" id="id29">
+<div class="figure" id="id34">
 <span id="diffu-randomwalk-2d-fig-samples"></span><a class="reference internal image-reference" href="_images/rw2D_samples_5000.png"><img alt="_images/rw2D_samples_5000.png" src="_images/rw2D_samples_5000.png" style="width: 800px;" /></a>
 <p class="caption"><span class="caption-text"><em>Four random walks with 5000 steps in 2D</em></span></p>
 </div>
@@ -5422,7 +5438,7 @@ vanish too, and we get the mass conservation PDE for the substance:</p>
 \[\tag{469}
 \frac{\partial c}{\partial t} +
     \nabla\cdot \boldsymbol{q} = 0{\thinspace .}\]</div>
-<div class="figure" id="id30">
+<div class="figure" id="id35">
 <span id="diffu-app-substance-fig1"></span><a class="reference internal image-reference" href="_images/continuum.png"><img alt="_images/continuum.png" src="_images/continuum.png" style="width: 200px;" /></a>
 <p class="caption"><span class="caption-text"><em>An arbitrary volume of a fluid</em></span></p>
 </div>
@@ -5792,7 +5808,7 @@ V\)</span> where there is an injection of current.</p>
 <p>It is well known that the Crank-Nicolson method may give rise to
 non-physical oscillations in the solution of diffusion equations
 if the initial data exhibit jumps (see the section <a class="reference internal" href="#diffu-pde1-analysis-cn"><span class="std std-ref">Analysis of the Crank-Nicolson scheme</span></a>).
-Rannacher <a class="reference internal" href="._book027.html#ref09" id="id7">[Ref09]</a> suggested a stabilizing technique
+Rannacher <a class="reference internal" href="._book027.html#ref14" id="id12">[Ref14]</a> suggested a stabilizing technique
 consisting of using the Backward Euler scheme for the first two
 time steps with step length <span class="math">\(\frac{1}{2}\Delta t\)</span>. One can generalize
 this idea to taking <span class="math">\(2m\)</span> time steps of size <span class="math">\(\frac{1}{2}\Delta t\)</span> with
@@ -6402,7 +6418,7 @@ Implement this scheme. Construct appropriate test problems.</p>
         <li class="right" >
           <a href="._book010.html" title="Exercises"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Finite Difference Computing with Partial Differential Equations</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Finite Difference Computing with PDEs</a> &raquo;</li> 
       </ul>
     </div>
 <div class="wrapper">
