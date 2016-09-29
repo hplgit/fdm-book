@@ -238,7 +238,9 @@ def Strang_splitting_2ndOrder(I, a, b, f, L, dt, dt_Rfactor,
 
 def convergence_rates(scheme='diffusion'):
     
-    F = 0.5
+    F = 0.5     # Upper limit for FE (stability). For CN, this 
+                # limit does not apply, but for simplicity, we
+                # choose F = 0.5 as the initial F value.
     T = 1.2
     a = 3.5
     b = 1
@@ -268,42 +270,62 @@ def convergence_rates(scheme='diffusion'):
 
     E = []
     h = []
-    Nx_values = [10, 20, 40, 80]   
+    Nx_values = [10, 20, 40, 80]   # i.e., dx halved each time
     for Nx in Nx_values:        
-        dx = L/Nx
-        dt = F/a*dx**2
-        Nt = int(round(T/float(dt)))
-        t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points, global time
-        
-        if scheme == 'diffusion':
-            print 'Running FE on whole eqn...'
-            diffusion_theta(I, a, f, L, dt, F, t, T,
-                            step_no=0, theta=0,
-                            u_L=0, u_R=0, user_action=action)                         
-            h.append(dx**2)
-        elif scheme == 'ordinary_splitting':
-            print 'Running ordinary splitting...'
-            ordinary_splitting(I=I, a=a, b=b, f=f, L=L, dt=dt, 
-                               dt_Rfactor=1, F=F, t=t, T=T,
-                               user_action=action)        
-            h.append(dx**2)
-        elif scheme == 'Strang_splitting_1stOrder':
-            print 'Running Strang splitting with 1st order schemes...'
-            Strang_splitting_1stOrder(I=I, a=a, b=b, f=f, L=L, dt=dt, 
-                                      dt_Rfactor=1, F=F, t=t, T=T,
-                                      user_action=action)       
-            h.append(dx**2)
-        elif scheme == 'Strang_splitting_2ndOrder':
-            print 'Running Strang splitting with 2nd order schemes...'
+        dx = L/Nx           
+        if scheme == 'Strang_splitting_2ndOrder':
+            print 'Strang splitting with 2nd order schemes...'
+            # In this case, E = C*h**r (with r = 2) and since 
+            # h = dx = K*dt, the ratio dt/dx must be constant.
+            # To fulfill this demand, we must let F change
+            # when dx changes. From F = a*dt/dx**2, it follows
+            # that halving dx AND doubling F assures dt/dx const.
+            # Initially, we simply choose F = 0.5.
+
+            dt = F/a*dx**2
+            #print 'dt/dx:', dt/dx            
+            Nt = int(round(T/float(dt)))
+            t = np.linspace(0, Nt*dt, Nt+1)   # global time            
             Strang_splitting_2ndOrder(I=I, a=a, b=b, f=f, L=L, dt=dt, 
                                       dt_Rfactor=1, F=F, t=t, T=T,
                                       user_action=action)    
             h.append(dx)
-        else:
-            print 'Unknown scheme requested!'
-            sys.exit(0)
+            # prepare for next iteration (make F match dx/2)
+            F = F*2       # assures dt/dx const. when dx = dx/2                                      
+        else:   
+            # In these cases, E = C*h**r (with r = 1) and since 
+            # h = dx**2 = K*dt, the ratio dt/dx**2 must be constant.
+            # This is fulfilled by choosing F = 0.5 (for FE stability)
+            # and make sure that F, dx and dt comply to F = a*dt/dx**2.            
+            dt = F/a*dx**2
+            Nt = int(round(T/float(dt)))
+            t = np.linspace(0, Nt*dt, Nt+1)   # global time
+            if scheme == 'diffusion':
+                print 'FE on whole eqn...'
+                diffusion_theta(I, a, f, L, dt, F, t, T,
+                                step_no=0, theta=0,
+                                u_L=0, u_R=0, user_action=action)                         
+                h.append(dx**2)
+            elif scheme == 'ordinary_splitting':
+                print 'Ordinary splitting...'
+                ordinary_splitting(I=I, a=a, b=b, f=f, L=L, dt=dt, 
+                                   dt_Rfactor=1, F=F, t=t, T=T,
+                                   user_action=action)        
+                h.append(dx**2)
+            elif scheme == 'Strang_splitting_1stOrder':
+                print 'Strang splitting with 1st order schemes...'
+                Strang_splitting_1stOrder(I=I, a=a, b=b, f=f, L=L, dt=dt, 
+                                          dt_Rfactor=1, F=F, t=t, T=T,
+                                          user_action=action)       
+                h.append(dx**2)
+            else:
+                print 'Unknown scheme requested!'
+                sys.exit(0)
+        
+            #print 'dt/dx**2:', dt/dx**2            
         
         E.append(error)
+        Nx *= 2         # Nx doubled gives dx/2
 
     print 'E:', E
     print 'h:', h
