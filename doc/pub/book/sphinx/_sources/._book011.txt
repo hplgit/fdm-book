@@ -5,15 +5,6 @@
 Diffusion equations          (1)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- * There are few index entries, see the "wave equation" index entries and
-   how many sub-entries we have there...
-
- * Check if the material on diffusion equation with radial symmetry is
-   okay.
-
- * Implement a diffusion equation with axi-symmetry such we can solve
-   pulsating flow in a circular blood vessel, see :ref:`diffu:exer:bloodflow`.
-
 .. index::
    single: diffusion equation; 1D
 
@@ -75,6 +66,14 @@ process converges to a stationary state. Therefore, implicit schemes
 these require solutions of systems of algebraic equations. We shall
 use ready-made software for this purpose, but also program some simple
 iterative methods.
+The exposition is, as usual in this book, very basic and focuses on
+the basic ideas and how to implement. More comprehensive mathematical
+treatments and classical analysis
+of the methods are found in lots of textbooks. A favorite
+of ours in this respect is the one by LeVeque [Ref06]_.
+The books by Strikwerda [Ref07]_ and by
+Lapidus and Pinder [Ref08]_ are also highly recommended
+as additional material on the topic.
 
 .. _diffu:pde1:FEsec:
 
@@ -296,7 +295,7 @@ where we have introduced the *mesh Fourier number*:
 
 The computational algorithm then becomes
 
- 1. compute $u^0_i=I(x_i)$for :math:`i=0,\ldots,N_x`
+ 1. compute :math:`u^0_i=I(x_i)` for :math:`i=0,\ldots,N_x`
 
  2. for :math:`n=0,1,\ldots,N_t`:
 
@@ -524,9 +523,10 @@ that the manufactured ``u`` fulfills the scheme:
         \lbrack 5x(L-x)D_t^+ t  = 5 t{\alpha} D_x D_x (xL-x^2) +\\ 
         &\quad\quad 10{\alpha} t + 5x(L-x)\rbrack^n_i\\ 
         &=
-        \lbrack 5x(L-x)  = 5 t{\alpha} (-2) + 10{\alpha} t + 5x(L-x) \rbrack^n_i{\thinspace .}
+        \lbrack 5x(L-x)  = 5 t{\alpha} (-2) + 10{\alpha} t + 5x(L-x) \rbrack^n_i,
         \end{align*}
 
+which is a 0=0 expression.
 The computation of the source term, given any :math:`u`,
 is easily automated with ``sympy``:
 
@@ -642,24 +642,35 @@ time and space. For the numerical error,
          E = C_t\Delta t^r + C_x\Delta x^p,
 
 we should get convergence rates :math:`r=1` and :math:`p=2` (:math:`C_t` and :math:`C_x` are unknown constants).
-As previously, we simplify matters by introducing a single discretization parameter.
-We introduce
+As previously,
+in the section :ref:`wave:pde2:fd:MMS`,
+we simplify matters by introducing a single discretization parameter :math:`h`:
 
 .. math::
-         h = \Delta x^p,\quad h = K^{-1}\Delta t,
+         h = \Delta t,\quad \Delta x = Kh^{r/p},
 
-where :math:`K` is a constant. The error formula then becomes
+where :math:`K` is any constant. This allows us to factor out only *one*
+discretization parameter :math:`h` from the formula:
 
 .. math::
-         E = C_t K^rh^r + C_xh^r = \tilde C h^r,\quad \tilde C = C_tK^r + C_x{\thinspace .}
+        
+        E = C_t h + C_x (K^{r/p})^p = \tilde C h^r,\quad
+        \tilde C = C_t + C_sK^r{\thinspace .}
 
-where the computed rate :math:`r` should approach 1 with increasing resolution.
-It is tempting to choose :math:`K=1`, but for the Forward Euler method,
-stability requires :math:`\Delta t = hK \leq h/(4{\alpha})`, so :math:`K\leq 1/(4{\alpha})`.
+The computed rate :math:`r` should approach 1 with increasing resolution.
 
-The alternative error measures are as outlined for the wave equation and
-convergence rate computations may follow what was described previously in
-the section :ref:`wave:pde2:fd:MMS`.
+It is tempting, for simplicity,
+to choose :math:`K=1`, which gives :math:`\Delta x = h^{r/p}`, expected to be
+:math:`\sqrt{\Delta t}`. However,
+we have to control the stability requirement: :math:`F\leq\frac{1}{2}`,
+which means
+
+.. math::
+         \frac{{\alpha}\Delta t}{\Delta x^2}\leq\frac{1}{2}\quad\Rightarrow
+        \quad \Delta x \geq \sqrt{2{\alpha}}h^{1/2} ,
+
+implying that :math:`K=\sqrt{2{\alpha}}` is our choice in experiments where we
+lie on the stability limit :math:`F=1/2`.
 
 .. _diffu:pde1:FE:experiments:
 
@@ -1015,7 +1026,7 @@ the unknowns :math:`u^n_1` and :math:`u^n_2`. The equivalent matrix form is
         
 
 
-.. admonition:: Implicit vs. explicit methods
+.. admonition:: Terminology: implicit vs. explicit methods
 
    Discretization methods that lead to a coupled system of equations
    for the unknown function at a new time level are said to be
@@ -1026,6 +1037,14 @@ the unknowns :math:`u^n_1` and :math:`u^n_2`. The equivalent matrix form is
    time level. From an implementational point of view, implicit methods
    are more comprehensive to code since they require
    the solution of coupled equations, i.e., a matrix system, at each time level.
+   With explicit methods we have a closed-form formula for the value of
+   the unknown at each mesh point.
+   
+   Very often explicit schemes have a restriction on the size of the time
+   step that can be relaxed by using implicit schemes. In fact,
+   implicit schemes are frequently unconditionally stable, so the size of the
+   time step is governed by accuracy and not by stability. This is the great
+   advantage of implicit schemes.
 
 
 
@@ -5898,7 +5917,7 @@ That is, the efficiency of the Jacobi method quickly deteriorates with
 the increasing mesh resolution, and SOR is much to be preferred
 (even if the optimal
 :math:`\omega` remains an open question). We refer to
-Chapter 4 of [Ref06]_ for more information on the convergence theory.
+Chapter 4 of [Ref09]_ for more information on the convergence theory.
 One important result is that if :math:`A` is symmetric and positive definite,
 then SOR will converge for any :math:`0<\omega <2`.
 
@@ -5939,7 +5958,8 @@ There is no simple intuitive derivation of the Conjugate gradient
 method, so we refer to the many excellent expositions in the
 literature for the idea of the method and how the algorithm is
 derived. In particular, we recommend the books
-[Ref07]_ [Ref06]_ [Ref08]_.  A brief overview is
+[Ref10]_ [Ref11]_ [Ref09]_ [Ref12]_.
+A brief overview is
 provided in the `Wikipedia article <https://en.wikipedia.org/wiki/Conjugate_gradient_method>`__. Here, we
 just state the pros and cons of the method from a user's perspective
 and how we utilize it in code.
@@ -5977,9 +5997,8 @@ for the system. That is, instead of solving :math:`Au=b`, we try to solve
 *preconditioned* system. The matrix :math:`M` is the *preconditioner* or
 preconditioning matrix.  Now we need to perform matrix-vector products
 :math:`y = M^{-1}Au`, which is done in two steps: first the matrix-vector
-product :math:`v=Au` is carried out and then the system
-:math:`My=v` must be solved.
-Therefore, :math:`M` must be cheap to compute and systems :math:`My=v`
+product :math:`v=Au` is carried out and then the system :math:`My=v` must be
+solved.  Therefore, :math:`M` must be cheap to compute and systems :math:`My=v`
 must be cheap to solve.
 
 A perfect preconditioner is :math:`M=A`, but in each iteration in the
@@ -6150,6 +6169,8 @@ different algorithms (finite difference stencils and random walk)
 solve the same type of problems. The simplicity of the random walk
 algorithm makes it particularly attractive for solving diffusion
 equations on massively parallel computers.
+The exposition here is as simple as possible, and good thorough
+derivation of the models is provided by Hjorth-Jensen [Ref13]_.
 
 .. _diffu:randomwalk:1D:
 
@@ -7784,10 +7805,10 @@ therefore governed by the Poisson equation
 
 If the medium is heterogeneous, :math:`\rho` will depend on the spatial location :math:`\boldsymbol{r}`.
 Also, :math:`\epsilon_0` must be exchanged with an electric permittivity function
-:math:`\epsilon(\boldsymbol{r})`. 
+:math:`\epsilon(\boldsymbol{r})`.
 
-Each point of the boundary must be accompanied by, either a Dirichlet condition 
-:math:`\varphi(\boldsymbol{r}) = \varphi_D(\boldsymbol{r})`, or a Neumann condition 
+Each point of the boundary must be accompanied by, either a Dirichlet condition
+:math:`\varphi(\boldsymbol{r}) = \varphi_D(\boldsymbol{r})`, or a Neumann condition
 :math:`\frac{\partial\varphi(\boldsymbol{r})}{\partial n} = \varphi_N(\boldsymbol{r})`.
 
 .. _diffu:app:Couette:
@@ -7999,7 +8020,7 @@ Exercise 3.6: Stabilizing the Crank-Nicolson method by Rannacher time stepping
 It is well known that the Crank-Nicolson method may give rise to
 non-physical oscillations in the solution of diffusion equations
 if the initial data exhibit jumps (see the section :ref:`diffu:pde1:analysis:CN`).
-Rannacher [Ref09]_ suggested a stabilizing technique
+Rannacher [Ref14]_ suggested a stabilizing technique
 consisting of using the Backward Euler scheme for the first two
 time steps with step length :math:`\frac{1}{2}\Delta t`. One can generalize
 this idea to taking :math:`2m` time steps of size :math:`\frac{1}{2}\Delta t` with

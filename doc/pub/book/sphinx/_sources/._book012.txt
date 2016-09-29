@@ -8,12 +8,32 @@ Advection-dominated equations
 Wave (the chapter :ref:`ch:wave`) and diffusion (the chapter :ref:`ch:diffu`)
 equations are solved reliably by finite difference methods. As soon as
 we add a first-order derivative in space, representing *advective
-transport* (also known as convective transport), the numerics gets
+transport, also known as *convective* transport, the numerics gets
 more complicated, and intuitively attractive methods no longer work
 well. We shall show how and why such methods fail and provide
 remedies. The present chapter builds on basic knowledge about finite
 difference methods for diffusion and wave equations, including the
 analysis by Fourier components, truncation error analysis ( :ref:`ch:trunc`), and compact difference notation.
+
+
+.. admonition:: Remark on terminology
+
+   It is common to refer to movement of a fluid as convection, while advection
+   is the transport of some material dissolved or suspended in the fluid.
+   We shall mostly choose the word advection here, but both terms are
+   in heavy use, and for mass transport of a substance the PDE has an
+   advection term, while the similar term for the heat equation is a
+   convection term.
+
+
+
+
+Much more comprehensive discussion of dispersion analysis for
+advection problems can be found in the book by Duran [Ref15]_.
+This is a an excellent resource for further studies on the topic of
+advection PDEs, with emphasis on generalizations to real geophysical
+problems. The book by Fletcher [Ref16]_ also has a good
+overview of methods for advection and convection problems.
 
 .. _advec:1D:
 
@@ -74,6 +94,45 @@ infinite domain :math:`(-\infty, \infty)`. The solution is simply
 This is also the solution we expect locally in a finite domain before boundary
 conditions have reflected or modified the wave.
 
+A particular feature of the solution :ref:`(505) <Eq:advec:1D:pde1:sol>` is that
+
+.. _Eq:advec:1D:pde1:uprop1:
+
+.. math::
+
+    \tag{506}
+    u(x_i, t_{n+1}) = u(x_{i-1}, t_n),
+        
+        
+
+if :math:`x_i=i\Delta x` and :math:`t_n=n\Delta t` are points in a uniform mesh.
+We see this relation from
+
+.. math::
+         u(i\Delta x, (n+1)\Delta t) = I(i\Delta x - v(n+1)\Delta t) =
+        I((i-1)\Delta x - vn\Delta t - v\Delta t - \Delta x)
+        = I((i-1)\Delta x - vn\Delta t) = u((i-1)\Delta x, n\Delta t),
+
+provided :math:`v = \Delta x/\Delta t`. So, whenever we see a scheme that
+collapses to
+
+.. _Eq:advec:1D:pde1:uprop2:
+
+.. math::
+
+    \tag{507}
+    u^{n+1}_i = u_{i-1}^n,
+        
+        
+
+for the PDE in question, we have in fact a scheme that reproduces the
+analytical solution, and many of the schemes to be presented possess
+this nice property!
+
+Finally, we add that a discussion of appropriate boundary conditions
+for the advection PDE in multiple dimensions is a challenching topic beyond
+the scope of this text.
+
 .. _advec:1D:FTCS:
 
 Simplest scheme: forward in time, centered in space
@@ -93,7 +152,7 @@ centered differences in space:
 
 .. math::
 
-    \tag{506}
+    \tag{508}
     [D_t^+ u + vD_{2x} u = 0]^n_i
         
         
@@ -101,7 +160,7 @@ centered differences in space:
 Written out, we see that this expression reads
 
 .. math::
-         u^{n+1} = u^n - \frac{1}{2} C (u^n_{i+1}-u_{i-1}),
+         u^{n+1} = u^n - \frac{1}{2} C (u^n_{i+1}-u_{i-1}^n),
 
 with :math:`C` as the Courant number
 
@@ -130,19 +189,19 @@ A solver function for our scheme goes as follows.
         C = v*dt/dx
     
         u   = np.zeros(Nx+1)
-        u_1 = np.zeros(Nx+1)
+        u_n = np.zeros(Nx+1)
     
         # Set initial condition u(x,0) = I(x)
         for i in range(0, Nx+1):
-            u_1[i] = I(x[i])
+            u_n[i] = I(x[i])
     
         if user_action is not None:
-            user_action(u_1, x, t, 0)
+            user_action(u_n, x, t, 0)
     
         for n in range(0, Nt):
             # Compute u at inner mesh points
             for i in range(1, Nx):
-                u[i] = u_1[i] - 0.5*C*(u_1[i+1] - u_1[i-1])
+                u[i] = u_n[i] - 0.5*C*(u_n[i+1] - u_n[i-1])
     
             # Insert boundary condition
             u[0] = U0
@@ -151,7 +210,7 @@ A solver function for our scheme goes as follows.
                 user_action(u, x, t, n+1)
     
             # Switch variables before next step
-            u_1, u = u, u_1
+            u_n, u = u, u_n
 
 Test cases
 ~~~~~~~~~~
@@ -165,7 +224,7 @@ initial conditions, one smooth (Gaussian pulse) and one non-smooth
 
 .. math::
 
-    \tag{507}
+    \tag{509}
     u(x,0) = Ae^{-\frac{1}{2}\left(\frac{x-L/10}{\sigma}\right)^2},
         
         
@@ -174,7 +233,7 @@ initial conditions, one smooth (Gaussian pulse) and one non-smooth
 
 .. math::
 
-    \tag{508}
+    \tag{510}
     u(x,0) = A\cos\left(\frac{5\pi}{L}\left( x - \frac{L}{10}\right)\right),\quad
         x < \frac{L}{5} \hbox{ else } 0{\thinspace .}
         
@@ -200,6 +259,7 @@ To run our test cases and plot the solution, we make the function
 .. code-block:: python
 
     def run_FECS(case):
+        """Special function for the FECS case."""
         if case == 'gaussian':
             def I(x):
                 return np.exp(-0.5*((x-L/10)/sigma)**2)
@@ -269,7 +329,10 @@ It is easy to show that a typical Fourier component
          u(x,t)= B\sin (k(x-ct))
 
 is a solution of our PDE for any spatial wave length :math:`\lambda = 2\pi /k`
-and any amplitude :math:`B`.
+and any amplitude :math:`B`. (Since the PDE to be investigated by this method
+is homogeneous and linear, :math:`B` will always cancel out, so we tend to skip
+this amplitude, but keep it here in the beginning for completeness.)
+
 A general solution can be thought to be build of a collection of long and
 short waves such waves with different amplitudes. Algebraically, the work
 simplifies if we introduce the complex Fourier component
@@ -285,9 +348,10 @@ with
 Note that :math:`|{A_{\small\mbox{e}}}| \leq 1`.
 
 It turns out that many schemes also allow a Fourier wave component as
-solution, and we can use the numerical value of :math:`A` to learn about the
+solution, and we can use the numerically computed values of :math:`{A_{\small\mbox{e}}}`
+(denoted :math:`A`) to learn about the
 quality of the scheme. Hence, to analyze the difference scheme we just
-have implemented, we look at how treats the Fourier component
+have implemented, we look at how it treats the Fourier component
 
 .. math::
          u_q^n = A^n e^{ikq\Delta x}{\thinspace .}
@@ -297,7 +361,7 @@ Inserting the numerical component in the scheme,
 .. math::
          [D_t^+ A^n e^{ikq\Delta x} + v D_{2x}A^n e^{ikq\Delta x}]^n_i,
 
-and making use of :ref:`(627) <Eq:form:exp:fd1c:center>`
+and making use of :ref:`(633) <Eq:form:exp:fd1c:center>`
 results in
 
 .. math::
@@ -334,7 +398,7 @@ time and combine it with central differences in space:
 which results in the updating formula
 
 .. math::
-         u^{n+1} = u^{n-1} - C(u_{i+1}-u_{i-1}){\thinspace .}
+         u^{n+1}_i = u^{n-1}_i - C^2(u_{i+1}^n-u_{i-1}^n){\thinspace .}
 
 A special scheme is needed to compute :math:`u^1`, but we leave that problem for
 now.
@@ -354,10 +418,10 @@ We now need to work with three time levels and must modify our solver a bit:
     u_2 = np.zeros(Nx+1)
     ...
     for n in range(0, Nt):
-        if scheme == 'FECS':
+        if scheme == 'UP':
             for i in range(1, Nx):
                 u[i] = u_1[i] - 0.5*C*(u_1[i+1] - u_1[i-1])
-        elif scheme == 'LFCS':
+        elif scheme == 'LF':
             if n == 0:
                 # Use some scheme for the first step
                 for i in range(1, Nx):
@@ -384,7 +448,103 @@ is in fact identical to the exact solution (!).
 .. figure:: solver_FE_Upw.png
    :width: 500
 
-   Leapfrog scheme with :math:`\Delta t = 0.1` and :math:`C=1`
+   Exact solution obtained by Leapfrog scheme with :math:`\Delta t = 0.1` and :math:`C=1`
+
+Running more test cases
+~~~~~~~~~~~~~~~~~~~~~~~
+
+We can run two types of initial conditions for :math:`C=0.8`: one very
+smooth with a Gaussian function (Figure :ref:`advec:1D:UP:fig1:C08`) and
+one with a discontinuity in the first derivative (Figure
+:ref:`advec:1D:UP:fig2:C08`).  Unless we have a very fine mesh, as in
+the left plots in the figures, we get small ripples behind the main
+wave, and this main wave has the amplitude reduced.
+
+.. _advec:1D:LF:fig1:C08:
+
+.. figure:: gaussian_LF_C08.png
+   :width: 800
+
+   *Advection of a Gaussian function with a leapfrog scheme and :math:`C=0.8`, :math:`\Delta t = 0.001` (left) and :math:`\Delta t=0.01` (right)*
+
+.. raw:: html
+        
+        <div>
+        <video  loop controls width='640' height='365' preload='none'>
+            <source src='mov-advec/gaussian/LF/C08_dt01.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+            <source src='mov-advec/gaussian/LF/C08_dt01.webm' type='video/webm; codecs="vp8, vorbis"'>
+            <source src='mov-advec/gaussian/LF/C08_dt01.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+        </video>
+        </div>
+        <p><em>Advection of a Gaussian function with a leapfrog scheme and :math:`C=0.8`, :math:`\Delta t = 0.01`.</em></p>
+        
+        <!-- Issue warning if in a Safari browser -->
+        <script language="javascript">
+        if (!!(window.safari)) {
+          document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
+        </script>
+        
+
+.. raw:: html
+        
+        <div>
+        <video  loop controls width='640' height='365' preload='none'>
+            <source src='mov-advec/gaussian/LF/C08_dt001.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+            <source src='mov-advec/gaussian/LF/C08_dt001.webm' type='video/webm; codecs="vp8, vorbis"'>
+            <source src='mov-advec/gaussian/LF/C08_dt001.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+        </video>
+        </div>
+        <p><em>Advection of a Gaussian function with a leapfrog scheme and :math:`C=0.8`, :math:`\Delta t = 0.001`.</em></p>
+        
+        <!-- Issue warning if in a Safari browser -->
+        <script language="javascript">
+        if (!!(window.safari)) {
+          document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
+        </script>
+        
+
+.. _advec:1D:LF:fig2:C08:
+
+.. figure:: cosinehat_LF_C08.png
+   :width: 800
+
+   *Advection of half a cosine function with a leapfrog scheme and :math:`C=0.8`, :math:`\Delta t = 0.001` (left) and :math:`\Delta t=0.01` (right)*
+
+.. raw:: html
+        
+        <div>
+        <video  loop controls width='640' height='365' preload='none'>
+            <source src='mov-advec/cosinehat/UP/C08_dt01.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+            <source src='mov-advec/cosinehat/UP/C08_dt01.webm' type='video/webm; codecs="vp8, vorbis"'>
+            <source src='mov-advec/cosinehat/UP/C08_dt01.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+        </video>
+        </div>
+        <p><em>Advection of half a cosine function with a leapfrog scheme and :math:`C=0.8`, :math:`\Delta t = 0.01`.</em></p>
+        
+        <!-- Issue warning if in a Safari browser -->
+        <script language="javascript">
+        if (!!(window.safari)) {
+          document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
+        </script>
+        
+
+.. raw:: html
+        
+        <div>
+        <video  loop controls width='640' height='365' preload='none'>
+            <source src='mov-advec/cosinehat/UP/C08_dt001.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+            <source src='mov-advec/cosinehat/UP/C08_dt001.webm' type='video/webm; codecs="vp8, vorbis"'>
+            <source src='mov-advec/cosinehat/UP/C08_dt001.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+        </video>
+        </div>
+        <p><em>Advection of half a cosine function with a leapfrog scheme and :math:`C=0.8`, :math:`\Delta t = 0.001`.</em></p>
+        
+        <!-- Issue warning if in a Safari browser -->
+        <script language="javascript">
+        if (!!(window.safari)) {
+          document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
+        </script>
+        
 
 Analysis
 ~~~~~~~~
@@ -401,7 +561,7 @@ and
          A = -iC\sin(k\Delta x) \pm \sqrt{1-C^2\sin^2(k\Delta x)}{\thinspace .}
 
 Rewriting to polar form, :math:`A=A_re^{i\phi}`, we see that :math:`A_r=1`, so the
-numerical component is not increasing or decreasing in time, which is
+numerical component is neither increasing nor decreasing in time, which is
 exactly what we want. However, for :math:`C>1`, the square root can become
 complex valued, so stability is obtained only as long as :math:`C\leq 1`.
 
@@ -415,8 +575,8 @@ and is to be compared to the exact amplification factor
 .. math::
          {A_{\small\mbox{e}}} = e^{-ikv\Delta t} = e^{-ikC\Delta x} = e^{-iCp}{\thinspace .}
 
-the section :ref:`advec:1D:disprel` compares many numerical amplification factors
-with the exact expression.
+the section :ref:`advec:1D:disprel` compares numerical amplification factors
+of many schemes with the exact expression.
 
 .. _advec:1D:FTUP:
 
@@ -447,7 +607,7 @@ With an upwind difference,
 
 .. math::
 
-    \tag{509}
+    \tag{511}
     [D^+_t u + vD^-_x u = 0]^n_i,
         
         
@@ -459,22 +619,103 @@ written out as
 
 gives a generally popular and robust scheme that is stable if :math:`C\leq 1`.
 As with the Leapfrog scheme, it becomes exact if :math:`C=1`, exactly as shown in
-Figure :ref:`advec:1D:case_gaussian:fig:LFCS`.
+Figure :ref:`advec:1D:case_gaussian:fig:LFCS`. This is easy to see since
+:math:`C=1` gives the property :ref:`(507) <Eq:advec:1D:pde1:uprop2>`.
 However, any :math:`C<1` gives a significant reduction in the amplitude of the
-solution, which is a purely numerical effect, see Figure
-:ref:`advec:1D:FTUS:fig:C08`. Experiments show, however, that
-reducing :math:`\Delta t` or :math:`\Delta x`, while keeping :math:`C` fixed reduces the
+solution, which is a purely numerical effect, see Figures
+:ref:`advec:1D:UP:fig1:C08` and :ref:`advec:1D:UP:fig2:C08`.
+Experiments show, however, that
+reducing :math:`\Delta t` or :math:`\Delta x`, while keeping :math:`C` reduces the
 error.
 
-.. _advec:1D:FTUS:fig:C08:
+.. _advec:1D:UP:fig1:C08:
 
-.. figure:: gaussian_FTUS_C08.png
+.. figure:: gaussian_UP_C08.png
    :width: 800
 
-   *Forward in time, upwind in space, :math:`C=0.8`, :math:`\Delta t = 0.01` (left) and :math:`\Delta t=0.001` (right)*
+   *Advection of a Gaussian function with a forward in time, upwind in space scheme and :math:`C=0.8`, :math:`\Delta t = 0.001` (left) and :math:`\Delta t=0.01` (right)*
+
+.. raw:: html
+        
+        <div>
+        <video  loop controls width='640' height='365' preload='none'>
+            <source src='mov-advec/gaussian/UP/C08_dt001/movie.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+            <source src='mov-advec/gaussian/UP/C08_dt001/movie.webm' type='video/webm; codecs="vp8, vorbis"'>
+            <source src='mov-advec/gaussian/UP/C08_dt001/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+        </video>
+        </div>
+        <p><em>Forward in time, upwind in space, :math:`C=0.8`, :math:`\Delta t = 0.01`.</em></p>
+        
+        <!-- Issue warning if in a Safari browser -->
+        <script language="javascript">
+        if (!!(window.safari)) {
+          document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
+        </script>
+        
+
+.. raw:: html
+        
+        <div>
+        <video  loop controls width='640' height='365' preload='none'>
+            <source src='mov-advec/gaussian/UP/C08_dt001/movie.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+            <source src='mov-advec/gaussian/UP/C08_dt001/movie.webm' type='video/webm; codecs="vp8, vorbis"'>
+            <source src='mov-advec/gaussian/UP/C08_dt001/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+        </video>
+        </div>
+        <p><em>Forward in time, upwind in space, :math:`C=0.8`, :math:`\Delta t = 0.005`.</em></p>
+        
+        <!-- Issue warning if in a Safari browser -->
+        <script language="javascript">
+        if (!!(window.safari)) {
+          document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
+        </script>
+        
+
+.. _advec:1D:UP:fig2:C08:
+
+.. figure:: cosinehat_UP_08.png
+   :width: 800
+
+   *Advection of half a cosine function with a forward in time, upwind in space scheme and :math:`C=0.8`, :math:`\Delta t = 0.01` (left) and :math:`\Delta t=0.001` (right)*
+
+.. raw:: html
+        
+        <div>
+        <video  loop controls width='640' height='365' preload='none'>
+            <source src='mov-advec/cosinehat/UP/C08_dt01.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+            <source src='mov-advec/cosinehat/UP/C08_dt01.webm' type='video/webm; codecs="vp8, vorbis"'>
+            <source src='mov-advec/cosinehat/UP/C08_dt01.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+        </video>
+        </div>
+        <p><em>Advection of half a cosine function with a forward in time, upwind in space scheme and :math:`C=0.8`, :math:`\Delta t = 0.01`.</em></p>
+        
+        <!-- Issue warning if in a Safari browser -->
+        <script language="javascript">
+        if (!!(window.safari)) {
+          document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
+        </script>
+        
+
+.. raw:: html
+        
+        <div>
+        <video  loop controls width='640' height='365' preload='none'>
+            <source src='mov-advec/cosinehat/UP/C08_dt001.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+            <source src='mov-advec/cosinehat/UP/C08_dt001.webm' type='video/webm; codecs="vp8, vorbis"'>
+            <source src='mov-advec/cosinehat/UP/C08_dt001.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+        </video>
+        </div>
+        <p><em>Advection of half a cosine function with a forward in time, upwind in space scheme and :math:`C=0.8`, :math:`\Delta t = 0.001`.</em></p>
+        
+        <!-- Issue warning if in a Safari browser -->
+        <script language="javascript">
+        if (!!(window.safari)) {
+          document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
+        </script>
+        
 
 The amplification factor can be computed using the
-formula :ref:`(625) <Eq:form:exp:fd1:bw>`,
+formula :ref:`(631) <Eq:form:exp:fd1:bw>`,
 
 .. math::
          \frac{A - 1}{\Delta t} + \frac{v}{\Delta x}(1 - e^{-ik\Delta x}) = 0,
@@ -485,8 +726,10 @@ which means
          A = 1 - C(1 - \cos(p) - i\sin(p)){\thinspace .}
 
 For :math:`C<1` there is, unfortunately,
-non-physical damping of discrete Fourier components. This damping can
-be quite severe.
+non-physical damping of discrete Fourier components, giving rise to reduced
+amplitude of :math:`u^n_i` as in Figures :ref:`advec:1D:UP:fig1:C08`
+and :ref:`advec:1D:UP:fig2:C08`. The damping
+is this figure is seen to be quite severe.
 
 
 .. admonition:: Interpretation of upwind difference as artificial diffusion
@@ -503,11 +746,16 @@ be quite severe.
    .. math::
             D^+_t u + vD_{2x} u = \nu D_xD_x u]^n_i,
    
-   gives actually the upwind scheme :ref:`(509) <Eq:advec:1D:upwind>` if
+   gives actually the upwind scheme :ref:`(511) <Eq:advec:1D:upwind>` if
    :math:`\nu = v\Delta x/2`. That is, solving the PDE :math:`u_t + vu_x=0`
    by centered differences in space and forward difference in time is
    unsuccessful, but by adding some artificial diffusion :math:`\nu u_{xx}`,
-   the method becomes stable.
+   the method becomes stable:
+   
+   .. math::
+            \frac{\partial u}{\partial t} + v
+           \frac{\partial u}{\partial x} = \left({\alpha} + \frac{v\Delta x}{2}\right)
+           \frac{\partial^2 u}{\partial x^2}{\thinspace .}
 
 
 
@@ -520,7 +768,7 @@ Periodic boundary conditions
 So far, we have given then value of on the left boundary, :math:`u_0^n`, and used
 the scheme to propagate the solution signal through the domain.
 Often, we want to follow such signals for long time series, and periodic
-boundary conditions are then relevant since then enable a signal that
+boundary conditions are then relevant since they enable a signal that
 leaves the right boundary to immediately enter the left boundary and propagate
 through the domain again.
 
@@ -552,6 +800,225 @@ For the Leapfrog scheme we must update ``u[0]`` and ``u[Nx]`` using the scheme:
     if periodic_bc:
         u[Nx] = u[0]
 
+Implementation          (11)
+----------------------------
+
+Test condition
+~~~~~~~~~~~~~~
+
+Analytically, we can show that the integral in space under the :math:`u(x,t)` curve
+is constant:
+
+.. math::
+        \begin{align*}
+        \int_0^L \left(\frac{\partial u}{\partial t} + v\frac{\partial u}{\partial x}
+        \right) dx &= 0\\ 
+        \frac{\partial }{\partial t} \int_0^L udx &=
+        - \int_0^L v\frac{\partial u}{\partial x}dx\\ 
+        \frac{\partial u}{\partial t} \int_0^L udx &=
+        [v u]_0^L =0
+        \end{align*}
+
+as long as :math:`u(0)=u(L)=0`. We can therefore use the property
+
+.. math::
+         \int_0^L u(x,t)dx = \hbox{const} 
+
+as a partial verification during the simulation. Now, any numerical method
+with :math:`C\neq 1` will deviate from the constant, expected value, so
+the integral is a measure of the error in the scheme. The integral can
+be computed by the Trapezoidal integration rule
+
+.. code-block:: python
+
+    dx*(0.5*u[0] + 0.5*u[Nx] + np.sum(u[1:-1]))
+
+if ``u`` is an array holding the solution.
+
+The code          (2)
+~~~~~~~~~~~~~~~~~~~~~
+
+An appropriate ``solver`` function for multiple schemes may go as shown
+below.
+
+.. code-block:: python
+
+    def solver(I, U0, v, L, dt, C, T, user_action=None,
+               scheme='FE', periodic_bc=True):
+    
+        Nt = int(round(T/float(dt)))
+        t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points in time
+        dx = v*dt/C
+        Nx = int(round(L/dx))
+        x = np.linspace(0, L, Nx+1)       # Mesh points in space
+        # Make sure dx and dt are compatible with x and t
+        dx = x[1] - x[0]
+        dt = t[1] - t[0]
+        C = v*dt/dx
+        print 'dt=%g, dx=%g, Nx=%d, C=%g' % (dt, dx, Nx, C)
+    
+        u   = np.zeros(Nx+1)
+        u_n = np.zeros(Nx+1)
+        u_nm1 = np.zeros(Nx+1)
+        integral = np.zeros(Nt+1)
+    
+        # Set initial condition u(x,0) = I(x)
+        for i in range(0, Nx+1):
+            u_n[i] = I(x[i])
+    
+        # Insert boundary condition
+        u[0] = U0
+    
+        # Compute the integral under the curve
+        integral[0] = dx*(0.5*u_n[0] + 0.5*u_n[Nx] + np.sum(u_n[1:-1]))
+    
+        if user_action is not None:
+            user_action(u_n, x, t, 0)
+    
+        for n in range(0, Nt):
+            if scheme == 'FE':
+                if periodic_bc:
+                    i = 0
+                    u[i] = u_n[i] - 0.5*C*(u_n[i+1] - u_n[Nx])
+                    u[Nx] = u[0]
+                for i in range(1, Nx):
+                    u[i] = u_n[i] - 0.5*C*(u_n[i+1] - u_n[i-1])
+            elif scheme == 'LF':
+                if n == 0:
+                    # Use upwind for first step
+                    if periodic_bc:
+                        i = 0
+                        u_n[i] = u_n[Nx]
+                    for i in range(1, Nx+1):
+                        u[i] = u_n[i] - C*(u_n[i] - u_n[i-1])
+                else:
+                    if periodic_bc:
+                        i = 0
+                        u[i] = u_nm1[i] - C*(u_n[i+1] - u_n[Nx-1])
+                    for i in range(1, Nx):
+                        u[i] = u_nm1[i] - C*(u_n[i+1] - u_n[i-1])
+                    if periodic_bc:
+                        u[Nx] = u[0]
+            elif scheme == 'UP':
+                if periodic_bc:
+                    u_n[0] = u_n[Nx]
+                for i in range(1, Nx+1):
+                    u[i] = u_n[i] - C*(u_n[i] - u_n[i-1])
+            else:
+                raise ValueError('scheme="%s" not implemented' % scheme)
+    
+            if not periodic_bc:
+                # Insert boundary condition
+                u[0] = U0
+    
+            # Compute the integral under the curve
+            integral[n+1] = dx*(0.5*u[0] + 0.5*u[Nx] + np.sum(u[1:-1]))
+    
+            if user_action is not None:
+                user_action(u, x, t, n+1)
+    
+            # Switch variables before next step
+            u_nm1, u_n, u = u_n, u, u_nm1
+        return integral
+
+Solving a specific problem
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We need to call up the ``solver`` function in some kind of administering
+problem solving function that can solve specific problems and make
+appropriate visualization. The function below makes both static plots,
+screen animation, and hard copy videos in various formats.
+
+.. code-block:: python
+
+    def run(scheme='UP', case='gaussian', C=1, dt=0.01):
+        """General admin routine for explicit and implicit solvers."""
+    
+        if case == 'gaussian':
+            def I(x):
+                return np.exp(-0.5*((x-L/10)/sigma)**2)
+        elif case == 'cosinehat':
+            def I(x):
+                return np.cos(np.pi*5/L*(x - L/10)) if x < L/5 else 0
+    
+        L = 1.0
+        sigma = 0.02
+        global lines  # needs to be saved between calls to plot
+    
+        def plot(u, x, t, n):
+            """Plot t=0 and t=0.6 in the same figure."""
+            plt.figure(1)
+            global lines
+            if n == 0:
+                lines = plt.plot(x, u)
+                plt.axis([x[0], x[-1], -0.5, 1.5])
+                plt.xlabel('x'); plt.ylabel('u')
+                plt.axes().set_aspect(0.15)
+                plt.savefig('tmp_%04d.png' % n)
+                plt.savefig('tmp_%04d.pdf' % n)
+            else:
+                lines[0].set_ydata(u)
+                plt.axis([x[0], x[-1], -0.5, 1.5])
+                plt.title('C=%g, dt=%g, dx=%g' %
+                          (C, t[1]-t[0], x[1]-x[0]))
+                plt.legend(['t=%.3f' % t[n]])
+                plt.xlabel('x'); plt.ylabel('u')
+                plt.draw()
+                plt.savefig('tmp_%04d.png' % n)
+            plt.figure(2)
+            eps = 1E-14
+            if abs(t[n] - 0.6) > eps and abs(t[n] - 0) > eps:
+                return
+            print 't=%g, n=%d, u in [%g, %g] w/%d points' % \ 
+                  (t[n], n, u.min(), u.max(), x.size)
+            if np.abs(u).max() > 3:  # Instability?
+                return
+            plt.plot(x, u)
+            plt.hold('on')
+            plt.draw()
+            if n > 0:
+                y = [I(x_-v*t[n]) for x_ in x]
+                plt.plot(x, y, 'k--')
+                if abs(t[n] - 0.6) < eps:
+                    filename = ('tmp_%s_dt%s_C%s' % \ 
+                                (scheme, t[1]-t[0], C)).replace('.', '')
+                    np.savez(filename, x=x, u=u, u_e=y)
+    
+        plt.ion()
+        U0 = 0
+        T = 0.7
+        v = 1
+        # Define video formats and libraries
+        codecs = dict(flv='flv', mp4='libx264', webm='libvpx',
+                      ogg='libtheora')
+        # Remove video files
+        import glob, os
+        for name in glob.glob('tmp_*.png'):
+            os.remove(name)
+        for ext in codecs:
+            name = 'movie.%s' % ext
+            if os.path.isfile(name):
+                os.remove(name)
+    
+       integral = solver(
+           I=I, U0=U0, v=v, L=L, dt=dt, C=C, T=T,
+           scheme=scheme, user_action=plot)
+        # Finish up figure(2)
+        plt.figure(2)
+        plt.axis([0, L, -0.5, 1.1])
+        plt.xlabel('$x$');  plt.ylabel('$u$')
+        plt.savefig('tmp1.png'); plt.savefig('tmp1.pdf')
+        plt.show()
+        # Make videos from figure(1) animation files
+        for codec in codecs:
+            cmd = 'ffmpeg -i tmp_%%04d.png -r 25 -vcodec %s movie.%s' % \ 
+                  (codecs[codec], codec)
+            os.system(cmd)
+        print 'Integral of u:', integral.max(), integral.min()
+
+The complete code is found in the file
+`advec1D.py <http://tinyurl.com/nu656p2/advec/advec/advec1D.py>`__.
+
 .. _advec:1D:CN:
 
 A Crank-Nicolson discretization in time and centered differences in space
@@ -575,18 +1042,11 @@ This gives rise to an *implicit* scheme,
          u^{n+1}_i + \frac{\theta}{2} C (u^{n+1}_{i+1} - u^{n+1}_{i-1})
         = u^n_i - \frac{1-\theta}{2} C (u^{n}_{i+1} - u^{n}_{i-1})
 
-for :math:`i=1,\ldots,N_x-1`. At the boundaries we use periodic conditions:
+for :math:`i=1,\ldots,N_x-1`. At the boundaries we set :math:`u=0` and simulate just to
+the point of time when the signal hits the boundary (and gets reflected).
 
 .. math::
-         u^{n+1}_0 = u^{n+1}_{N_x},
-
-however, this destroys the tridiagonal structure of the coefficient matrix.
-We therefore try the rough approximation
-
-.. math::
-         u^{n+1}_0 = u^{n}_{N_x},\quad u^{n+1}_{N_x}=u^n_0{\thinspace .}
-
-Otherwise, we need to prescribe :math:`u_0^{n+1}` and :math:`u_{N_x}^{n+1}`.
+         u^{n+1}_0 = u^{n+1}_{N_x} = 0{\thinspace .}
 
 The elements on the diagonal in the matrix become:
 
@@ -609,11 +1069,73 @@ And finally, the right-hand side becomes
         \end{align*}
 
 The dispersion relation follows from inserting :math:`u^n_i = A^ne^{ikx}`
-and using the formula :ref:`(627) <Eq:form:exp:fd1c:center>` for the spatial
+and using the formula :ref:`(633) <Eq:form:exp:fd1c:center>` for the spatial
 differences:
 
 .. math::
          A = \frac{1 - (1-\theta) i C\sin p}{1 + \theta i C\sin p}{\thinspace .}
+
+.. _advec:1D:CN:fig:C08:
+
+.. figure:: gaussian_CN_C08.png
+   :width: 800
+
+   *Crank-Nicolson in time, centered in space, Gaussian profile, :math:`C=0.8`, :math:`\Delta t = 0.01` (left) and :math:`\Delta t=0.005` (right)*
+
+.. _advec:1D:BE:fig:C08:
+
+.. figure:: cosinehat_BE_C08.png
+   :width: 800
+
+   *Backward-Euler in time, centered in space, half a cosine profile, :math:`C=0.8`, :math:`\Delta t = 0.01` (left) and :math:`\Delta t=0.005` (right)*
+
+.. raw:: html
+        
+        <div>
+        <video  loop controls width='640' height='365' preload='none'>
+            <source src='mov-advec/gaussian/CN/C08_dt0005/movie.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+            <source src='mov-advec/gaussian/CN/C08_dt0005/movie.webm' type='video/webm; codecs="vp8, vorbis"'>
+            <source src='mov-advec/gaussian/CN/C08_dt0005/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+        </video>
+        </div>
+        <p><em>Crank-Nicolson in time, centered in space, :math:`C=0.8`, :math:`\Delta t = 0.005`.</em></p>
+        
+        <!-- Issue warning if in a Safari browser -->
+        <script language="javascript">
+        if (!!(window.safari)) {
+          document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
+        </script>
+        
+
+.. raw:: html
+        
+        <div>
+        <video  loop controls width='640' height='365' preload='none'>
+            <source src='mov-advec/cosinehat/BE/C_08_dt005.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+            <source src='mov-advec/cosinehat/BE/C_08_dt005.webm' type='video/webm; codecs="vp8, vorbis"'>
+            <source src='mov-advec/cosinehat/BE/C_08_dt005.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+        </video>
+        </div>
+        <p><em>Backward-Euler in time, centered in space, :math:`C=0.8`, :math:`\Delta t = 0.005`.</em></p>
+        
+        <!-- Issue warning if in a Safari browser -->
+        <script language="javascript">
+        if (!!(window.safari)) {
+          document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
+        </script>
+        
+
+Figure :ref:`advec:1D:CN:fig:C08` depicts a numerical solution for :math:`C=0.8`
+and the Crank-Nicolson
+with severe oscillations behind the main wave. These oscillations are
+damped as the mesh is refined. Switching to the Backward Euler scheme
+helps on the oscillations as they are removed, but the amplitude is
+significantly reduced. One could expect that the discontinuous derivative
+in the initial condition of the half a cosine wave would make even
+stronger demands on producing a smooth profile, but Figure :ref:`advec:1D:BE:fig:C08` shows that also here, Backward-Euler is capable of producing a
+smooth profile. All in all, there are no major differences between the
+Gaussian initial condition and the half a cosine condition for any of
+the schemes.
 
 .. _advec:1D:LaxW:
 
@@ -622,40 +1144,46 @@ The Lax-Wendroff method
 
 The Lax-Wendroff method is based on three ideas:
 
-1. Express :math:`u^{n+1}_i` in terms of quantities at :math:`t=t_n` by
-   means of a Taylor polynomial of second degree.
+1. Express the new unknown :math:`u^{n+1}_i` in terms of known
+   quantities at :math:`t=t_n` by means of a Taylor polynomial of second degree.
 
 2. Replace time-derivatives at :math:`t=t_n` by spatial derivatives,
    using the PDE.
 
-3. Discretize the spatial derivatives by second-order differences.
+3. Discretize the spatial derivatives by second-order differences so we
+   achieve a scheme of accuracy :math:`{\mathcal{O}(\Delta t^2)} + {\mathcal{O}(\Delta x^2)}`.
 
-Let us do this:
+Let us follow the recipe. First we have the three-term Taylor polynomial,
 
 .. math::
          u^{n+1}_i = u^n_i + \Delta t\left(\frac{\partial u}{\partial t}\right)^n_i
         + \frac{1}{2}\Delta t^2\left(\frac{\partial^2 u}{\partial t^2}\right)^n_i{\thinspace .}
 
-From the PDE we have that
+From the PDE we have that temporal derivatives can be substituted by
+spatial derivatives:
 
 .. math::
          \frac{\partial u}{\partial t} = -v\frac{\partial u}{\partial x},
 
-which we may use to replace the time-derivatives by spatial derivatives
-(:math:`\frac{\partial ^2}{\partial t^2} = v^2\frac{partial^2 u}{\partial x^2}`):
+and furthermore,
+
+.. math::
+         \frac{\partial ^2}{\partial t^2} = v^2\frac{\partial^2 u}{\partial x^2}{\thinspace .}
+
+Inserted in the Taylor polynomial formula, we get
 
 .. math::
          u^{n+1}_i = u^n_i -v \Delta t\left(\frac{\partial u}{\partial x}\right)^n_i
         + \frac{1}{2}\Delta t^2 v^2
         \left(\frac{\partial^2 u}{\partial x^2}\right)^n_i{\thinspace .}
 
-A natural spatial discretization is, for instance, central differences:
+To obtain second-order accuracy in space we now use central differences:
 
 .. math::
          u^{n+1}_i = u^n_i -v \Delta t [D_{2x} u]^n_i
         + \frac{1}{2}\Delta t^2 v^2 [D_xD_x u]^n_i,
 
-or
+or written out,
 
 .. math::
          u^{n+1}_i = u^n_i - C (u^{n}_{i+1} - u^{n}_{i-1})
@@ -663,8 +1191,28 @@ or
 
 This is the explicit Lax-Wendroff scheme.
 
+
+.. admonition:: Lax-Wendroff works because of artificial viscosity
+
+   We can immediately from the formulas above
+   see that the Lax-Wendroff method is nothing but
+   a Forward Euler, central difference in space scheme, which we have shown
+   to be useless because of chronic instability, plus an artificial
+   diffusion term of strength :math:`\frac{1}{2}\Delta t v^2`. It means that we can take
+   an unstable scheme and add some diffusion to stabilize it. This is a common
+   trick to deal with advection problems. Sometimes, the real physical diffusion
+   is not sufficiently large to make schemes stable, so then we also add
+   artificial diffusion.
+
+
+
+
+.. FIGURE: [fig-advec/gaussian_LW_C08, width=800 frac=1] Lax-Wendroff scheme, :math:`C=0.8`, :math:`\Delta t = 0.01` (left) and :math:`\Delta t=0.005` (right).
+
+.. MOVIE: [fig-advec/
+
 From an analysis similar to the ones carried out above, we get an
-amplification factor
+amplification factor for the Lax-Wendroff method that equals
 
 .. math::
          A = 1 - iC\sin p - 2C^2\sin^2 (p/2){\thinspace .}
@@ -679,7 +1227,9 @@ Analysis of dispersion relations
 We have developed expressions for :math:`A(C,p)` in the exact solution
 :math:`u_q^n=A^ne^{ikq\Delta x}` of the discrete equations. These
 expressions are valuable for investigating the quality of the numerical
-solutions. Note that the Fourier component that solves the original
+solutions,see the file
+`dispersion_analysis.py <http://tinyurl.com/nu656p2/advec/advec/dispersion_analysis.py>`__.
+Note that the Fourier component that solves the original
 PDE problem has no damping and moves with constant velocity :math:`v`. There
 are two basic errors in the numerical Fourier component: there may be
 damping and the wave velocity may depend on :math:`C` and :math:`p=k\Delta x`.
@@ -722,49 +1272,108 @@ so
 .. math::
          c = \frac{\phi v}{Cp}{\thinspace .}
 
-An appropriate dimensionless quantity to plot is :math:`c/v`:
+An appropriate dimensionless quantity to plot is the scaled wave velocity :math:`c/v`:
 
 .. math::
          \frac{c}{v} = \frac{\phi}{Cp}{\thinspace .}
 
-.. _advec:1D:disprel:C099:
+Figures
+:ref:`advec:1D:disprel:C1:1`--:ref:`advec:1D:disprel:C05:2` contain
+dispersion curves, velocity and damping, for various values of :math:`C`.
+The horizontal axis shows the dimensionless frequency :math:`p` of the wave,
+while the figures to the left illustrate the error in wave velocity :math:`c/v`
+(should ideally be 1 for all :math:`p`), and the figures to the right display
+the absolute value (magnitude) of the damping factor :math:`A_r`.
+The curves are labeled according to the table below.
 
-.. figure:: disprel_C0_99.png
+=====  ====================================================  
+Label                         Method                         
+=====  ====================================================  
+FE     Forward Euler in time, centered difference in space   
+LF     Leapfrog in time, centered difference in space        
+UP     Forward Euler in time, upwind difference in space     
+CN     Crank-Nicolson in time, centered difference in space  
+LW     Lax-Wendroff's method                                 
+BE     Backward Euler in time, centered difference in space  
+=====  ====================================================  
+
+.. _advec:1D:disprel:C1:1:
+
+.. figure:: disprel_C1_LW_UP_LF.png
    :width: 800
 
-   Dispersion relations for :math:`C=0.99`
+   Dispersion relations for :math:`C=1`
 
-.. _advec:1D:disprel:C09:
+.. _advec:1D:disprel:C1:2:
 
-.. figure:: disprel_C0_9.png
+.. figure:: disprel_C1_CN_BE_FE.png
    :width: 800
 
-   Dispersion relations for :math:`C=0.9`
+   Dispersion relations for :math:`C=1`
 
-.. _advec:1D:disprel:C08:
+.. _advec:1D:disprel:C08:1:
 
-.. figure:: disprel_C0_8.png
+.. figure:: disprel_C0_8_LW_UP_LF.png
    :width: 800
 
    Dispersion relations for :math:`C=0.8`
 
-.. _advec:1D:disprel:C05:
+.. _advec:1D:disprel:C08:2:
 
-.. figure:: disprel_C0_5.png
+.. figure:: disprel_C0_8_CN_BE_FE.png
+   :width: 800
+
+   Dispersion relations for :math:`C=0.8`
+
+.. _advec:1D:disprel:C05:1:
+
+.. figure:: disprel_C0_5_LW_UP_LF.png
    :width: 800
 
    Dispersion relations for :math:`C=0.5`
 
-.. _advec:1D:disprel:C99:
+.. _advec:1D:disprel:C05:2:
 
-.. figure:: disprel_C0_99.png
+.. figure:: disprel_C0_5_CN_BE_FE.png
    :width: 800
 
-   Dispersion relations for :math:`C=0.99`
+   Dispersion relations for :math:`C=0.5`
 
 The total damping after some time :math:`T=n\Delta t` is reflected by
 :math:`A_r(C,p)^n`. Since normally :math:`A_r<1`, the damping goes like
 :math:`A_r^{1/\Delta t}` and approaches zero as :math:`\Delta t\rightarrow 0`.
+The only two ways to reduce the damping are to increase :math:`C` and the mesh
+resolution.
+
+We can learn a lot from the dispersion relation plots. For example,
+looking at the plots for :math:`C=1`, the schemes LW, UP, and LF has no
+amplitude reduction, but LF has a wrong phase velocity for the
+shortest wave in the mesh. This wave does not (normally) have enough
+amplitude to be seen, so for all practical purposes, there is no
+damping or wrong velocity of the individual waves, so the total shape
+of the wave is also correct. For the CN scheme, see Figure
+:ref:`advec:1D:CN:fig:C08`, each individual wave has its amplitude, but
+they move with different velocities, so after a while, we see some of
+these waves lagging behind.  For the BE scheme, see Figure
+:ref:`advec:1D:BE:fig:C08`, each of the shorter waves are so heavily
+damped that we cannot see them after a while. All the we see are the
+very longest wave, which have slightly wrong velocity, but visible
+amplitudes are sufficiently equal to produce what looks like a smooth
+profile.
+
+Another feature was that the Leapfrog method produced oscillations,
+while the upwind scheme did not. Since the Leapfrog method does not
+damp the shorter waves, which have wrong wave velocities of order 10
+percent, we can see these waves as noise. The upwind scheme, however,
+damp these waves. The same effect is also present in the Lax-Wendroff
+scheme, but the damping of the intermediate waves is hardly present, so
+there is visible noise in the total signal.
+
+We realize that there is more understanding of the
+behavior of the schemes in the dispersion analysis compared with a
+pure truncation error analysis. The latter just says Lax-Wendroff is
+better than upwind, because of the increased order in time, but
+most people would say upwind is the better by looking at the plots.
 
 .. _advec:1D:stationary:
 
@@ -778,43 +1387,46 @@ is in balance with diffusion:
 
 .. math::
 
-    \tag{510}
+    \tag{512}
     v\frac{du}{dx} = {\alpha}\frac{d^2 u}{dx^2}{\thinspace .}
         
         
 
 For simplicity, we assume :math:`v` and :math:`{\alpha}` to be constant, but the extension to
 the variable-coefficient case is trivial.
-This is equation can be viewed as the stationary limit of the corresponding
+This equation can be viewed as the stationary limit of the corresponding
 time-dependent problem
 
 .. _Eq:advec:1D:stat:pde2:
 
 .. math::
 
-    \tag{511}
+    \tag{513}
     \frac{\partial u}{\partial t} + v\frac{\partial u}{\partial x} =
         {\alpha}\frac{\partial^2 u}{\partial x^2}{\thinspace .}
         
         
 
-Equations of the form :ref:`(510) <Eq:advec:1D:stat:pde1>` or
-:ref:`(511) <Eq:advec:1D:stat:pde2>` arise from transport phenomena, either mass
-or heat transport. One can also view the equations as simple model
-problems for the Navier-Stokes equations. A fundamental difficulty
-with solving these equations is numerical instability if the
-first-derivative spatial term dominates over the second-derivative
-term.
+Equations of the form :ref:`(512) <Eq:advec:1D:stat:pde1>` or
+:ref:`(513) <Eq:advec:1D:stat:pde2>` arise from transport phenomena, either mass
+or heat transport. One can also view the equations as a simple model
+problem for the Navier-Stokes equations. With the chosen boundary
+conditions, the differential equation problem models the phenomenon of
+a *boundary layer*, where the solution changes rapidly very close to
+the boundary. This is a characteristic of many fluid flow problems and
+make strong demands to numerical methods. The fundamental numerical
+difficulty is related to non-physical oscillations of the solution
+(instability) if the first-derivative spatial term dominates over the
+second-derivative term.
 
 .. _advec:1D:stationary:model:
 
 A simple model problem          (1)
 -----------------------------------
 
-We consider :ref:`(510) <Eq:advec:1D:stat:pde1>` on :math:`[0,L]` equipped with the
-boundary conditions :math:`u(0)=U_0`, :math:`u(L)=U_L`.  By scaling we can get rid
-of lots of physical parameter and instead reduce the discussion to
-combinations of physical parameters. We scale :math:`x` by :math:`\bar x = x/L`,
+We consider :ref:`(512) <Eq:advec:1D:stat:pde1>` on :math:`[0,L]` equipped with the
+boundary conditions :math:`u(0)=U_0`, :math:`u(L)=U_L`.  By scaling we can reduce the
+number of parameters in the problem. We scale :math:`x` by :math:`\bar x = x/L`,
 and :math:`u` by
 
 .. math::
@@ -833,24 +1445,22 @@ Dropping the bars is common. We can then simplify to
 
 .. math::
 
-    \tag{512}
+    \tag{514}
     \frac{du}{dx} = \epsilon\frac{d^2 u}{d x^2},\quad u(0)=0,\ u(1)=1{\thinspace .}
         
         
 
 There are two competing effects in this equation: the advection term
-transports signals to the right (with velocity :math:`v`, later with unit
-velocity), while the diffusion term transports signals to the left and
-right )with strength :math:`{\alpha}`, later with strength :math:`\epsilon`). The
-value :math:`u(0)=0` is transported through the domain if :math:`\epsilon` is
-small, and :math:`u\approx 0` except in the vicinity of :math:`x=0`, where
-:math:`u(1)=1` and the diffusion transports some information about :math:`u(1)=1`
-to the left. For large :math:`\epsilon`, diffusion dominates and the :math:`u`
-takes on the "average" value, i.e., :math:`u` gets a linear variation from
-0 to 1 throughout the domain.
+transports signals to the right, while the diffusion term transports
+signals to the left and the right. The value :math:`u(0)=0` is transported
+through the domain if :math:`\epsilon` is small, and :math:`u\approx 0` except in
+the vicinity of :math:`x=0`, where :math:`u(1)=1` and the diffusion transports
+some information about :math:`u(1)=1` to the left. For large :math:`\epsilon`,
+diffusion dominates and the :math:`u` takes on the "average" value, i.e.,
+:math:`u` gets a linear variation from 0 to 1 throughout the domain.
 
 It turns out that we can find an exact solution to the differential
-equation problem and also to many of its discretization. This is one
+equation problem and also to many of its discretizations. This is one
 reason why this model problem has been so successful in designing and
 investigating numerical methods for mixed convection/advection and
 diffusion.  The exact solution reads
@@ -858,12 +1468,15 @@ diffusion.  The exact solution reads
 .. math::
          {u_{\small\mbox{e}}} (x) = \frac{e^{x/\epsilon} - 1}{e^{1/\epsilon} - 1}{\thinspace .}
 
+The forthcoming plots illustrates this function for various values of
+:math:`\epsilon`.
+
 .. _advec:1D:stationary:fdm:
 
 A centered finite difference scheme          (2)
 ------------------------------------------------
 
-The most obvious idea to solve :ref:`(512) <Eq:advec:1D:stat:pde1s>` is to apply
+The most obvious idea to solve :ref:`(514) <Eq:advec:1D:stat:pde1s>` is to apply
 centered differences:
 
 .. math::
@@ -929,7 +1542,52 @@ the next section to overcome the problem!
 
    A suitable solver for doing the experiments is presented below.
    
-   .. @@@CODE src-advec/twopt_BVP.py fromto: import numpy@def u_exact
+   .. code-block:: python
+   
+       import numpy as np
+       
+       def solver(eps, Nx, method='centered'):
+           """
+           Solver for the two point boundary value problem u'=eps*u'',
+           u(0)=0, u(1)=1.
+           """
+           x = np.linspace(0, 1, Nx+1)       # Mesh points in space
+           # Make sure dx and dt are compatible with x and t
+           dx = x[1] - x[0]
+           u   = np.zeros(Nx+1)
+       
+           # Representation of sparse matrix and right-hand side
+           diagonal = np.zeros(Nx+1)
+           lower    = np.zeros(Nx)
+           upper    = np.zeros(Nx)
+           b        = np.zeros(Nx+1)
+       
+           # Precompute sparse matrix (scipy format)
+           if method == 'centered':
+               diagonal[:] = 2*eps/dx**2
+               lower[:] = -1/dx - eps/dx**2
+               upper[:] =  1/dx - eps/dx**2
+           elif method == 'upwind':
+               diagonal[:] = 1/dx + 2*eps/dx**2
+               lower[:] =  1/dx - eps/dx**2
+               upper[:] = - eps/dx**2
+       
+           # Insert boundary conditions
+           upper[0] = 0
+           lower[-1] = 0
+           diagonal[0] = diagonal[-1] = 1
+           b[-1] = 1.0
+       
+           # Set up sparse matrix and solve
+           diags = [0, -1, 1]
+           import scipy.sparse
+           import scipy.sparse.linalg
+           A = scipy.sparse.diags(
+               diagonals=[diagonal, lower, upper],
+               offsets=[0, -1, 1], shape=(Nx+1, Nx+1),
+               format='csr')
+           u[:] = scipy.sparse.linalg.spsolve(A, b)
+           return u, x
 
 
 
@@ -942,7 +1600,7 @@ Remedy: upwind finite difference scheme
 The scheme can be stabilized by letting the advective transport term, which
 is the dominating term, collect its information in the flow direction, i.e.,
 upstream or upwind of the point in question. So, instead of using a
-center difference
+centered difference
 
 .. math::
          \frac{du}{dx}_i\approx \frac{u_{i+1}-u_{i-1}}{2\Delta x},
@@ -1017,13 +1675,86 @@ diffusion into one equation:
 
 .. math::
 
-    \tag{513}
+    \tag{515}
     \frac{\partial u}{\partial t} + v\frac{\partial u}{\partial x} =
         {\alpha}\frac{\partial^2 u}{\partial x^2}{\thinspace .}
         
         
-        seen that upwind has been critical, so that will work, but will centered
-        also work in this case?
+
+Analytical insight
+~~~~~~~~~~~~~~~~~~
+
+The diffusion is now dominated by convection, a wave, and diffusion, a loss
+of amplitude. One possible analytical solution is a traveling Gaussian
+function
+
+.. math::
+         u(x,t) = B\exp{\left(-\left(\frac{x - vt}{4at}\right)\right)}{\thinspace .}
+
+This function moves with velocity :math:`v>0` to the right
+(:math:`v<0` to the left) due to convection, but at the same time we have a damping
+:math:`e^{-16a^2t^2}` from diffusion.
+
+Forward in time, centered in space scheme
+-----------------------------------------
+
+The Forward Euler for the diffusion equation is a successful scheme, but it
+has a very strict stability condition. The similar Forward in time, centered
+in space strategy always gives unstable solutions for the advection PDE.
+What happens when we have both diffusion and advection present at once?
+
+.. math::
+         [D_t u + vD_{2x} u = {\alpha} D_xD_x u + f]_i^n{\thinspace .} 
+
+We expect that diffusion will stabilize the scheme, but that advection will
+destabilize it.
+
+Another problem is non-physical oscillations, but not growing amplitudes,
+due to centered differences in the advection term. There will hence be
+two types of instabilities to consider.
+Our analysis showed that pure advection with centered
+differences in space needs some artificial diffusion to become stable
+(and then it produces upwind differences for the advection term).
+Adding more physical diffusion should further help the numerics to stabilize
+the non-physical oscillations.
+
+The scheme is quickly implemented, but suffers from the need for small
+space and time steps, according to this reasoning. A better approach is
+to get rid of the non-physical oscillations in space by simply applying
+an upwind difference on the advection term.
+
+Forward in time, upwind in space scheme
+---------------------------------------
+
+A good approximation for the pure advection equation is to use upwind
+discretization of the advection term. We also know that centered differences
+are good for the diffusion term, so let us combine these two discretizations:
+
+.. _Eq:_auto211:
+
+.. math::
+
+    \tag{516}
+    [D_t u + vD^-_{x} u = {\alpha} D_xD_x u + f]_i^n,
+        
+        
+
+for :math:`v>0`. Use :math:`vD^+ u` if :math:`v<0`.
+In this case the physical diffusion and the extra numerical diffusion
+:math:`v\Delta x/2` will stabilize the solution, but give an overall too large
+reduction in amplitude compared with the exact solution.
+
+We may also interpret the upwind difference as artificial numerical diffusion
+and centered differences in space everywhere, so the scheme can be expressed as
+
+.. _Eq:_auto212:
+
+.. math::
+
+    \tag{517}
+    [D_t u + vD^-_{2x} u = {\alpha} \frac{v\Delta x}{2}) D_xD_x u + f]_i^n{\thinspace .}
+        
+        
 
 .. _advec:2D:
 
@@ -1034,6 +1765,85 @@ Two-dimensional advection-diffusion equations
 
 Applications of advection equations
 ===================================
+
+There are two major areas where advection and convection applications arises:
+transport of a substance and heat transport *in a fluid*.
+To derive the models, we may look at the similar derivations of
+diffusion models in the section :ref:`diffu:app`,
+but change the assumption from a solid to fluid medium.
+This gives rise to the extra advection or convection term :math:`\boldsymbol{v}\cdot\nabla u`.
+We briefly show how this is done.
+
+Normally, transport in a fluid is dominated by the fluid flow and not
+diffusion, so we can neglect diffusion compared to advection or convection.
+The end result is anyway an equation of the form
+
+.. math::
+         \frac{\partial u}{\partial t} + \boldsymbol{v}\cdot\nabla u = 0{\thinspace .}
+
+.. _advec:app:mass:
+
+Transport of a substance
+------------------------
+
+The diffusion of a substance in the section :ref:`diffu:app:substance` takes place
+in a solid medium, but in a fluid we can have two transport mechanisms:
+one by diffusion and one by advection.
+The letter arises from the fact
+that the substance particles are moved with the fluid velocity :math:`\boldsymbol{v}` such that
+the effective flux now consists of two and not only one component as in
+:ref:`(470) <Eq:diffu:app:substance:Fick>`:
+
+.. math::
+         \boldsymbol{q} = -{\alpha}\nabla c + \boldsymbol{v}\c{\thinspace .}
+
+Inserted in the equation :math:`\nabla\cdot\boldsymbol{q} = 0` we get the extra advection
+term :math:`\nabla\cdot (\boldsymbol{v}\c)`. Very often we deal with incompressible flows,
+:math:`\nabla\cdot\boldsymbol{v} = 0` such that the advective term becomes :math:`\boldsymbol{v}\cdot\nabla c`.
+The mass transport equation for a substance then reads
+
+.. _Eq:_auto213:
+
+.. math::
+
+    \tag{518}
+    \frac{\partial c}{\partial t} + \boldsymbol{v}\cdot\nabla c = {\alpha}\nabla^2 c{\thinspace .}
+        
+        
+
+.. _advec:app:heat:
+
+Transport of a heat
+-------------------
+
+The derivation of the heat equation in the section :ref:`diffu:app:heat` is limited
+to heat transport in solid bodies. If we turn the attention to heat transport
+in fluids, we get a material derivative of the internal energy in
+:ref:`(472) <Eq:diffu:app:heat:PDE1>`,
+
+.. math::
+         \frac{De}{dt} - \nabla\cdot\boldsymbol{q},
+
+and more terms if work by stresses is also included, where
+
+.. math::
+         \frac{De}{dt} = \frac{\partial e}{\partial t} + \boldsymbol{v}\cdot\nabla e,
+
+:math:`\boldsymbol{v}` being the velocity of the fluid. The convective term
+:math:`\boldsymbol{v}\nabla e` must therefore be added to the governing equation,
+resulting typically in
+
+.. _Eq:advec:app:heat:PDE:
+
+.. math::
+
+    \tag{519}
+    \varrho c\left(\frac{\partial T}{\partial t} + \boldsymbol{v}\cdot\nabla T\right)
+        = \nabla\cdot(k\nabla T) + f,
+        
+        
+
+where :math:`f` is some external heating inside the medium.
 
 Exercises          (8)
 ======================
@@ -1071,7 +1881,7 @@ Exercise 4.2: Interpret upwind difference as artificial diffusion
 -----------------------------------------------------------------
 
 Consider an upwind, one-sided difference approximation to
-a term :math:`du/dx` in a differential equation. Show that this this
+a term :math:`du/dx` in a differential equation. Show that this
 formula can be expressed as a centered difference plus an artificial
 diffusion term of strength proportional to :math:`\Delta x`.
 This means that introducing an upwind difference also means introducing
