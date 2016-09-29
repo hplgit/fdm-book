@@ -811,7 +811,9 @@ rate computations are handled:
 <!-- code=python (!bc pycod) typeset with pygments style "default" -->
 <div class="highlight" style="background: #f8f8f8"><pre style="line-height: 125%"><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">convergence_rates</span>(scheme<span style="color: #666666">=</span><span style="color: #BA2121">&#39;diffusion&#39;</span>):
     
-    F <span style="color: #666666">=</span> <span style="color: #666666">0.5</span>
+    F <span style="color: #666666">=</span> <span style="color: #666666">0.5</span>     <span style="color: #408080; font-style: italic"># Upper limit for FE (stability). For CN, this </span>
+                <span style="color: #408080; font-style: italic"># limit does not apply, but for simplicity, we</span>
+                <span style="color: #408080; font-style: italic"># choose F = 0.5 as the initial F value.</span>
     T <span style="color: #666666">=</span> <span style="color: #666666">1.2</span>
     a <span style="color: #666666">=</span> <span style="color: #666666">3.5</span>
     b <span style="color: #666666">=</span> <span style="color: #666666">1</span>
@@ -841,42 +843,62 @@ rate computations are handled:
 
     E <span style="color: #666666">=</span> []
     h <span style="color: #666666">=</span> []
-    Nx_values <span style="color: #666666">=</span> [<span style="color: #666666">10</span>, <span style="color: #666666">20</span>, <span style="color: #666666">40</span>, <span style="color: #666666">80</span>]   
+    Nx_values <span style="color: #666666">=</span> [<span style="color: #666666">10</span>, <span style="color: #666666">20</span>, <span style="color: #666666">40</span>, <span style="color: #666666">80</span>]   <span style="color: #408080; font-style: italic"># i.e., dx halved each time</span>
     <span style="color: #008000; font-weight: bold">for</span> Nx <span style="color: #AA22FF; font-weight: bold">in</span> Nx_values:        
-        dx <span style="color: #666666">=</span> L<span style="color: #666666">/</span>Nx
-        dt <span style="color: #666666">=</span> F<span style="color: #666666">/</span>a<span style="color: #666666">*</span>dx<span style="color: #666666">**2</span>
-        Nt <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(T<span style="color: #666666">/</span><span style="color: #008000">float</span>(dt)))
-        t <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, Nt<span style="color: #666666">*</span>dt, Nt<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># Mesh points, global time</span>
-        
-        <span style="color: #008000; font-weight: bold">if</span> scheme <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;diffusion&#39;</span>:
-            <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Running FE on whole eqn...&#39;</span>
-            diffusion_theta(I, a, f, L, dt, F, t, T,
-                            step_no<span style="color: #666666">=0</span>, theta<span style="color: #666666">=0</span>,
-                            u_L<span style="color: #666666">=0</span>, u_R<span style="color: #666666">=0</span>, user_action<span style="color: #666666">=</span>action)                         
-            h<span style="color: #666666">.</span>append(dx<span style="color: #666666">**2</span>)
-        <span style="color: #008000; font-weight: bold">elif</span> scheme <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;ordinary_splitting&#39;</span>:
-            <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Running ordinary splitting...&#39;</span>
-            ordinary_splitting(I<span style="color: #666666">=</span>I, a<span style="color: #666666">=</span>a, b<span style="color: #666666">=</span>b, f<span style="color: #666666">=</span>f, L<span style="color: #666666">=</span>L, dt<span style="color: #666666">=</span>dt, 
-                               dt_Rfactor<span style="color: #666666">=1</span>, F<span style="color: #666666">=</span>F, t<span style="color: #666666">=</span>t, T<span style="color: #666666">=</span>T,
-                               user_action<span style="color: #666666">=</span>action)        
-            h<span style="color: #666666">.</span>append(dx<span style="color: #666666">**2</span>)
-        <span style="color: #008000; font-weight: bold">elif</span> scheme <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;Strang_splitting_1stOrder&#39;</span>:
-            <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Running Strang splitting with 1st order schemes...&#39;</span>
-            Strang_splitting_1stOrder(I<span style="color: #666666">=</span>I, a<span style="color: #666666">=</span>a, b<span style="color: #666666">=</span>b, f<span style="color: #666666">=</span>f, L<span style="color: #666666">=</span>L, dt<span style="color: #666666">=</span>dt, 
-                                      dt_Rfactor<span style="color: #666666">=1</span>, F<span style="color: #666666">=</span>F, t<span style="color: #666666">=</span>t, T<span style="color: #666666">=</span>T,
-                                      user_action<span style="color: #666666">=</span>action)       
-            h<span style="color: #666666">.</span>append(dx<span style="color: #666666">**2</span>)
-        <span style="color: #008000; font-weight: bold">elif</span> scheme <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;Strang_splitting_2ndOrder&#39;</span>:
-            <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Running Strang splitting with 2nd order schemes...&#39;</span>
+        dx <span style="color: #666666">=</span> L<span style="color: #666666">/</span>Nx           
+        <span style="color: #008000; font-weight: bold">if</span> scheme <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;Strang_splitting_2ndOrder&#39;</span>:
+            <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Strang splitting with 2nd order schemes...&#39;</span>
+            <span style="color: #408080; font-style: italic"># In this case, E = C*h**r (with r = 2) and since </span>
+            <span style="color: #408080; font-style: italic"># h = dx = K*dt, the ratio dt/dx must be constant.</span>
+            <span style="color: #408080; font-style: italic"># To fulfill this demand, we must let F change</span>
+            <span style="color: #408080; font-style: italic"># when dx changes. From F = a*dt/dx**2, it follows</span>
+            <span style="color: #408080; font-style: italic"># that halving dx AND doubling F assures dt/dx const.</span>
+            <span style="color: #408080; font-style: italic"># Initially, we simply choose F = 0.5.</span>
+
+            dt <span style="color: #666666">=</span> F<span style="color: #666666">/</span>a<span style="color: #666666">*</span>dx<span style="color: #666666">**2</span>
+            <span style="color: #408080; font-style: italic">#print &#39;dt/dx:&#39;, dt/dx            </span>
+            Nt <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(T<span style="color: #666666">/</span><span style="color: #008000">float</span>(dt)))
+            t <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, Nt<span style="color: #666666">*</span>dt, Nt<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># global time            </span>
             Strang_splitting_2ndOrder(I<span style="color: #666666">=</span>I, a<span style="color: #666666">=</span>a, b<span style="color: #666666">=</span>b, f<span style="color: #666666">=</span>f, L<span style="color: #666666">=</span>L, dt<span style="color: #666666">=</span>dt, 
                                       dt_Rfactor<span style="color: #666666">=1</span>, F<span style="color: #666666">=</span>F, t<span style="color: #666666">=</span>t, T<span style="color: #666666">=</span>T,
                                       user_action<span style="color: #666666">=</span>action)    
             h<span style="color: #666666">.</span>append(dx)
-        <span style="color: #008000; font-weight: bold">else</span>:
-            <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Unknown scheme requested!&#39;</span>
-            sys<span style="color: #666666">.</span>exit(<span style="color: #666666">0</span>)
+            <span style="color: #408080; font-style: italic"># prepare for next iteration (make F match dx/2)</span>
+            F <span style="color: #666666">=</span> F<span style="color: #666666">*2</span>       <span style="color: #408080; font-style: italic"># assures dt/dx const. when dx = dx/2                                      </span>
+        <span style="color: #008000; font-weight: bold">else</span>:   
+            <span style="color: #408080; font-style: italic"># In these cases, E = C*h**r (with r = 1) and since </span>
+            <span style="color: #408080; font-style: italic"># h = dx**2 = K*dt, the ratio dt/dx**2 must be constant.</span>
+            <span style="color: #408080; font-style: italic"># This is fulfilled by choosing F = 0.5 (for FE stability)</span>
+            <span style="color: #408080; font-style: italic"># and make sure that F, dx and dt comply to F = a*dt/dx**2.            </span>
+            dt <span style="color: #666666">=</span> F<span style="color: #666666">/</span>a<span style="color: #666666">*</span>dx<span style="color: #666666">**2</span>
+            Nt <span style="color: #666666">=</span> <span style="color: #008000">int</span>(<span style="color: #008000">round</span>(T<span style="color: #666666">/</span><span style="color: #008000">float</span>(dt)))
+            t <span style="color: #666666">=</span> np<span style="color: #666666">.</span>linspace(<span style="color: #666666">0</span>, Nt<span style="color: #666666">*</span>dt, Nt<span style="color: #666666">+1</span>)   <span style="color: #408080; font-style: italic"># global time</span>
+            <span style="color: #008000; font-weight: bold">if</span> scheme <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;diffusion&#39;</span>:
+                <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;FE on whole eqn...&#39;</span>
+                diffusion_theta(I, a, f, L, dt, F, t, T,
+                                step_no<span style="color: #666666">=0</span>, theta<span style="color: #666666">=0</span>,
+                                u_L<span style="color: #666666">=0</span>, u_R<span style="color: #666666">=0</span>, user_action<span style="color: #666666">=</span>action)                         
+                h<span style="color: #666666">.</span>append(dx<span style="color: #666666">**2</span>)
+            <span style="color: #008000; font-weight: bold">elif</span> scheme <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;ordinary_splitting&#39;</span>:
+                <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Ordinary splitting...&#39;</span>
+                ordinary_splitting(I<span style="color: #666666">=</span>I, a<span style="color: #666666">=</span>a, b<span style="color: #666666">=</span>b, f<span style="color: #666666">=</span>f, L<span style="color: #666666">=</span>L, dt<span style="color: #666666">=</span>dt, 
+                                   dt_Rfactor<span style="color: #666666">=1</span>, F<span style="color: #666666">=</span>F, t<span style="color: #666666">=</span>t, T<span style="color: #666666">=</span>T,
+                                   user_action<span style="color: #666666">=</span>action)        
+                h<span style="color: #666666">.</span>append(dx<span style="color: #666666">**2</span>)
+            <span style="color: #008000; font-weight: bold">elif</span> scheme <span style="color: #666666">==</span> <span style="color: #BA2121">&#39;Strang_splitting_1stOrder&#39;</span>:
+                <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Strang splitting with 1st order schemes...&#39;</span>
+                Strang_splitting_1stOrder(I<span style="color: #666666">=</span>I, a<span style="color: #666666">=</span>a, b<span style="color: #666666">=</span>b, f<span style="color: #666666">=</span>f, L<span style="color: #666666">=</span>L, dt<span style="color: #666666">=</span>dt, 
+                                          dt_Rfactor<span style="color: #666666">=1</span>, F<span style="color: #666666">=</span>F, t<span style="color: #666666">=</span>t, T<span style="color: #666666">=</span>T,
+                                          user_action<span style="color: #666666">=</span>action)       
+                h<span style="color: #666666">.</span>append(dx<span style="color: #666666">**2</span>)
+            <span style="color: #008000; font-weight: bold">else</span>:
+                <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;Unknown scheme requested!&#39;</span>
+                sys<span style="color: #666666">.</span>exit(<span style="color: #666666">0</span>)
+        
+            <span style="color: #408080; font-style: italic">#print &#39;dt/dx**2:&#39;, dt/dx**2            </span>
         
         E<span style="color: #666666">.</span>append(error)
+        Nx <span style="color: #666666">*=</span> <span style="color: #666666">2</span>         <span style="color: #408080; font-style: italic"># Nx doubled gives dx/2</span>
 
     <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;E:&#39;</span>, E
     <span style="color: #008000; font-weight: bold">print</span> <span style="color: #BA2121">&#39;h:&#39;</span>, h
@@ -898,11 +920,28 @@ rate computations are handled:
         convergence_rates(scheme<span style="color: #666666">=</span>scheme)
 </pre></div>
 <p>
-The Fourier number is kept fixed throughout at \( F = 0.5 \), being the stability 
-limit with explicit schemes. Since \( \alpha \) is considered a known constant and 
-\( F = \frac{\alpha dt}{dx^2} \), \( dt \) (or \( dx \)) is readily computed
-for a given \( dx \) (or \( dt \)). The loop in <code>convergence_rates</code> runs over a chosen
-set of grid points implying a doubling of spatial resolution with each iteration.
+Now, with respect to the error (\( E = C h^r \)), the forward Euler scheme, the 
+ordinary splitting scheme and first order Strang splitting scheme are all
+first order (\( r = 1 \)), with a step \( h = \Delta x^2 = K^{-1}\Delta t \), where 
+\( K \) is some constant. This implies that the <em>ratio</em> \( \frac{\Delta t}{\Delta x^2} \) 
+must be held constant during convergence rate calculations. Furthermore, 
+the Fourier number \( F = \frac{\alpha \Delta t}{\Delta x^2} \) is upwards limited to 
+\( F = 0.5 \), being the stability limit with explicit schemes. Thus, in these cases,
+we use the fixed value of \( F \) and a given (but changing) spatial resolution \( \Delta x \) to
+compute the corresponding value of \( \Delta t \) according to the expression for \( F \).
+This assures that \( \frac{\Delta t}{\Delta x^2} \) is kept constant. The loop in 
+<code>convergence_rates</code> runs over a chosen set of grid points (<code>Nx_values</code>) which gives 
+a doubling of spatial resolution with each iteration (\( \Delta x \) is halved).
+
+<p>
+For the second order Strang splitting scheme, we have \( r = 2 \) and a step 
+\( h = \Delta x = K^{-1}\Delta t \), where \( K \) again is some constant. In this case,
+it is thus the ratio \( \frac{\Delta t}{\Delta x} \) that must be held constant 
+during the convergence rate calculations. From the expression for \( F \), it is 
+clear then that \( F \) must change with each halving of \( \Delta x \). In fact, if 
+\( F \) is doubled each time \( \Delta x \) is halved, the ratio \( \frac{\Delta t}{\Delta x} \) 
+will be constant (this follows, e.g., from the expression for \( F \)). This us utilized
+in our code.
 
 <p>
 A solver <code>diffusion_theta</code> is used in each of the four solution approaches:
@@ -1182,8 +1221,7 @@ same structure as the one for first order Strang splitting and was implemented a
 </pre></div>
 <p>
 When executing <code>split_diffu_react.py</code>, we find that the estimated convergence rates
-are as expected. The second order Strang splitting has second order convergence (\( r = 2 \)), while
-the remaining three approaches have first order convergence (\( r = 1 \)).
+are as expected. The second order Strang splitting gives the least error (about \( 10^{-5} \)) and has second order convergence (\( r = 2 \)), while the remaining three approaches have first order convergence (\( r = 1 \)).
 
 <h2 id="___sec60">Analysis of the splitting method </h2>
 
