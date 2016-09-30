@@ -106,12 +106,12 @@ def solver(I, U0, v, L, dt, C, T, user_action=None,
             if periodic_bc:
                 i = 0
                 # Must have this,
-                u[i] = u_n[i] - C*(u_n[i+1] - u_n[Nx-1]) + \
+                u[i] = u_n[i] - 0.5*C*(u_n[i+1] - u_n[Nx-1]) + \
                        0.5*C*(u_n[i+1] - 2*u_n[i] + u_n[Nx-1])
                 # not this:
                 #u_n[i] = u_n[Nx]
             for i in range(1, Nx):
-                u[i] = u_n[i] - C*(u_n[i+1] - u_n[i-1]) + \
+                u[i] = u_n[i] - 0.5*C*(u_n[i+1] - u_n[i-1]) + \
                        0.5*C*(u_n[i+1] - 2*u_n[i] + u_n[i-1])
             if periodic_bc:
                 u[Nx] = u[0]
@@ -190,8 +190,6 @@ def run(scheme='UP', case='gaussian', C=1, dt=0.01):
         def I(x):
             return np.cos(np.pi*5/L*(x - L/10)) \
                    if 0 < x < L/5 else 0
-    else:
-        raise ValueError('Wrong name of I')
 
     L = 1.0
     sigma = 0.02
@@ -364,7 +362,6 @@ if __name__ == '__main__':
     #run(scheme='LF', case='gaussian', C=1)
     #run(scheme='UP', case='gaussian', C=0.8, dt=0.01)
     #run(scheme='LF', case='gaussian', C=0.8, dt=0.001)
-    run(scheme='BE', case='cosinehat', C=1, dt=0.01)
     #run(scheme='LF', case='cosinehat', C=0.8, dt=0.01)
     #run(scheme='CN', case='gaussian', C=1, dt=0.01)
-    #run(scheme='LW', case='gaussian', C=1, dt=0.01)
+    run(scheme='LW', case='gaussian', C=1, dt=0.01)
