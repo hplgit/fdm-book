@@ -24,8 +24,15 @@ level (x and y are one-dimensional coordinate vectors).
 This function allows the calling code to plot the solution,
 compute errors, etc.
 """
-import time, sys
-from scitools.std import *
+import time, sys, os
+from glob import glob
+import scitools.std as st
+import numpy as np
+try:
+    import mayavi.mlab as mlab
+except:
+    # We don't have mayavi
+    pass
 
 def solver(I, V, f, c, Lx, Ly, Nx, Ny, dt, T,
            user_action=None, version='scalar'):
@@ -34,17 +41,16 @@ def solver(I, V, f, c, Lx, Ly, Nx, Ny, dt, T,
     elif version == 'scalar':
         advance = advance_scalar
 
-    x = linspace(0, Lx, Nx+1)  # Mesh points in x dir
-    y = linspace(0, Ly, Ny+1)  # Mesh points in y dir
-    # Make sure dx, dy, and dt are compatible with x, y and t
+    x = np.linspace(0, Lx, Nx+1)  # Mesh points in x dir
+    y = np.linspace(0, Ly, Ny+1)  # Mesh points in y dir
+    # Make sure dx, dy are compatible with x, y
     dx = x[1] - x[0]
     dy = y[1] - y[0]
-    dt = t[1] - t[0]
 
-    xv = x[:,newaxis]          # For vectorized function evaluations
-    yv = y[newaxis,:]
+    xv = x[:,np.newaxis]          # For vectorized function evaluations
+    yv = y[np.newaxis,:]
 
-    stability_limit = (1/float(c))*(1/sqrt(1/dx**2 + 1/dy**2))
+    stability_limit = (1/float(c))*(1/np.sqrt(1/dx**2 + 1/dy**2))
     if dt <= 0:                # max time step?
         safety_factor = -dt    # use negative dt as safety factor
         dt = safety_factor*stability_limit
@@ -52,25 +58,26 @@ def solver(I, V, f, c, Lx, Ly, Nx, Ny, dt, T,
         print 'error: dt=%g exceeds the stability limit %g' % \
               (dt, stability_limit)
     Nt = int(round(T/float(dt)))
-    t = linspace(0, Nt*dt, Nt+1)    # mesh points in time
+    t = np.linspace(0, Nt*dt, Nt+1)    # mesh points in time
+    dt = t[1] - t[0]                   # ensure compatibility
     Cx2 = (c*dt/dx)**2;  Cy2 = (c*dt/dy)**2    # help variables
     dt2 = dt**2
 
     # Allow f and V to be None or 0
     if f is None or f == 0:
         f = (lambda x, y, t: 0) if version == 'scalar' else \
-            lambda x, y, t: zeros((x.shape[0], y.shape[1]))
+            lambda x, y, t: np.zeros((x.shape[0], y.shape[1]))
         # or simpler: x*y*0
     if V is None or V == 0:
         V = (lambda x, y: 0) if version == 'scalar' else \
-            lambda x, y: zeros((x.shape[0], y.shape[1]))
+            lambda x, y: np.zeros((x.shape[0], y.shape[1]))
 
 
     order = 'Fortran' if version == 'f77' else 'C'
-    u     = zeros((Nx+1,Ny+1), order=order)   # Solution array
-    u_n   = zeros((Nx+1,Ny+1), order=order)   # Solution at t-dt
-    u_nm1 = zeros((Nx+1,Ny+1), order=order)   # Solution at t-2*dt
-    f_a   = zeros((Nx+1,Ny+1), order=order)   # For compiled loops
+    u     = np.zeros((Nx+1,Ny+1), order=order)   # Solution array
+    u_n   = np.zeros((Nx+1,Ny+1), order=order)   # Solution at t-dt
+    u_nm1 = np.zeros((Nx+1,Ny+1), order=order)   # Solution at t-2*dt
+    f_a   = np.zeros((Nx+1,Ny+1), order=order)   # For compiled loops
 
     Ix = range(0, u.shape[0])
     Iy = range(0, u.shape[1])
@@ -167,7 +174,7 @@ def advance_scalar(u, u_n, u_nm1, f, x, y, t, n, Cx2, Cy2, dt2,
 def advance_vectorized(u, u_n, u_nm1, f_a, Cx2, Cy2, dt2,
                        V=None, step1=False):
     if step1:
-        dt = sqrt(dt2)  # save
+        dt = np.sqrt(dt2)  # save
         Cx2 = 0.5*Cx2;  Cy2 = 0.5*Cy2; dt2 = 0.5*dt2  # redefine
         D1 = 1;  D2 = 0
     else:
@@ -232,8 +239,10 @@ def test_quadratic():
                 quadratic(Nx, Ny, version)
 
 def run_efficiency(nrefinements=4):
+    from numpy import pi, sin
+
     def I(x, y):
-        return sin(pi*x/Lx)*sin(pi*y/Ly)
+        return sin(pi*x/Lx)*np.sin(pi*y/Ly)
 
     Lx = 10;  Ly = 10
     c = 1.5
@@ -270,6 +279,8 @@ def gaussian(plot_method=2, version='vectorized', save_plot=True):
     Ly = 10
     c = 1.0
 
+    from numpy import exp
+
     def I(x, y):
         """Gaussian peak at (Lx/2, Ly/2)."""
         return exp(-0.5*(x-Lx/2.0)**2 - 0.5*(y-Ly/2.0)**2)
@@ -283,17 +294,21 @@ def gaussian(plot_method=2, version='vectorized', save_plot=True):
         u_surf = None
 
     def plot_u(u, x, xv, y, yv, t, n):
+        """User action function for plotting."""
         if t[n] == 0:
             time.sleep(2)
         if plot_method == 1:
-            mesh(x, y, u, title='t=%g' % t[n], zlim=[-1,1],
-                 caxis=[-1,1])
+            # Works well with Gnuplot backend, not with Matplotlib
+            st.mesh(x, y, u, title='t=%g' % t[n], zlim=[-1,1],
+                    caxis=[-1,1])
         elif plot_method == 2:
-            surfc(xv, yv, u, title='t=%g' % t[n], zlim=[-1, 1],
-                  colorbar=True, colormap=hot(), caxis=[-1,1],
+            # Works well with Gnuplot backend, not with Matplotlib
+            st.surfc(xv, yv, u, title='t=%g' % t[n], zlim=[-1, 1],
+                  colorbar=True, colormap=st.hot(), caxis=[-1,1],
                   shading='flat')
         elif plot_method == 3:
             print 'Experimental 3D matplotlib...under development...'
+            # Probably too slow
             #plt.clf()
             ax = fig.add_subplot(111, projection='3d')
             u_surf = ax.plot_surface(xv, yv, u, alpha=0.3)
@@ -304,11 +319,38 @@ def gaussian(plot_method=2, version='vectorized', save_plot=True):
                 ax.collections.remove(u_surf)
             plt.draw()
             time.sleep(1)
+        elif plot_method == 4:
+	    # Mayavi visualization
+            mlab.clf()
+            extent1 = (0, 20, 0, 20,-2, 2)
+            s = mlab.surf(x , y, u,
+                          colormap='Blues',
+                          warp_scale=5,extent=extent1)
+            mlab.axes(s, color=(.7, .7, .7), extent=extent1,
+                      ranges=(0, 10, 0, 10, -1, 1),
+                      xlabel='', ylabel='', zlabel='',
+                      x_axis_visibility=False,
+                      z_axis_visibility=False)
+            mlab.outline(s, color=(0.7, .7, .7), extent=extent1)
+            mlab.text(6, -2.5, '', z=-4, width=0.14)
+            mlab.colorbar(object=None, title=None,
+                          orientation='horizontal',
+                          nb_labels=None, nb_colors=None,
+                          label_fmt=None)
+            mlab.title('Gaussian t=%g' % t[n])
+            mlab.view(142, -72, 50)
+            f = mlab.gcf()
+            camera = f.scene.camera
+            camera.yaw(0)
+
         if plot_method > 0:
             time.sleep(0) # pause between frames
             if save_plot:
                 filename = 'tmp_%04d.png' % n
-                savefig(filename)  # time consuming!
+		if plot_method == 4:
+                    mlab.savefig(filename)  # time consuming!
+		elif plot_method in (1,2):
+                    st.savefig(filename)  # time consuming!
 
     Nx = 40; Ny = 40; T = 20
     dt, cpu = solver(I, None, None, c, Lx, Ly, Nx, Ny, -1, T,
@@ -317,4 +359,5 @@ def gaussian(plot_method=2, version='vectorized', save_plot=True):
 
 
 if __name__ == '__main__':
-    test_quadratic()
+    #test_quadratic()
+    gaussian(plot_method=2, version='vectorized', save_plot=True)
