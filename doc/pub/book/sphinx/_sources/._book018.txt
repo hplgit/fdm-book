@@ -452,19 +452,119 @@ splitting methods.
 Example: Reaction-Diffusion with linear reaction term
 -----------------------------------------------------
 
-Section not finished.
-The method above may be explored in detail through a specific
-computational example in which we compute the errors and convergence
-rates associated with four different numerical solution approaches for the
-reaction-diffusion equation with a linear reaction term, i.e. :math:`f(u)=-bu`.
-All code commented below is found in the file
-`split_diffu_react.py <http://tinyurl.com/nu656p2/nonlin/split_diffu_react.py>`__.
+The methods above may be explored in detail through a specific
+computational example in which we compute the convergence
+rates associated with four different solution approaches for the
+reaction-diffusion equation with a linear reaction term, i.e. :math:`f(u)=-bu`. 
+The methods comprise solving without splitting (just straight forward Euler), 
+ordinary splitting, first order Strang splitting, and second order Strang splitting.
+In all four methods, a standard centered difference approximation is
+used for the spatial second derivative. The methods share the error model
+:math:`E = C h^r`, while differing in the step :math:`h` (being either :math:`dx^2` or :math:`dx`) and 
+the convergence rate :math:`r` (being either 1 or 2). 
 
-Must change to theta rule comments.
-In our first solution approach, the equation is solved without any
-splitting, simply using the forward Euler method over the whole time
-interval. This is the simplest numerical method we can use for the
-equation at hand. It was implemented as follows:
+All code commented below is found in the file
+`split_diffu_react.py <http://tinyurl.com/nu656p2/nonlin/split_diffu_react.py>`__. When executed,
+a function ``convergence_rates`` is called, from which all convergence
+rate computations are handled:
+
+.. code-block:: python
+
+    def convergence_rates(scheme='diffusion'):
+        
+        F = 0.5
+        T = 1.2
+        a = 3.5
+        b = 1
+        L = 1.5
+        k = np.pi/L
+        
+        def exact(x, t):
+            '''exact sol. to: du/dt = a*d^2u/dx^2 - b*u'''
+            return np.exp(-(a*k**2 + b)*t) * np.sin(k*x)
+            
+        def f(u, t):
+            return -b*u  
+    
+        def I(x):
+            return exact(x, 0)
+            
+        global error    # error computed in the user action function
+        error = 0  
+    
+        # Convergence study
+        def action(u, x, t, n):
+            global error            
+            if n == 1:      # New simulation, - reset error
+                error = 0
+            else:
+                error = max(error, np.abs(u - exact(x, t[n])).max())        
+    
+        E = []
+        h = []
+        Nx_values = [10, 20, 40, 80]   
+        for Nx in Nx_values:        
+            dx = L/Nx
+            dt = F/a*dx**2
+            Nt = int(round(T/float(dt)))
+            t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points, global time
+            
+            if scheme == 'diffusion':
+                print 'Running FE on whole eqn...'
+                diffusion_theta(I, a, f, L, dt, F, t, T,
+                                step_no=0, theta=0,
+                                u_L=0, u_R=0, user_action=action)                         
+                h.append(dx**2)
+            elif scheme == 'ordinary_splitting':
+                print 'Running ordinary splitting...'
+                ordinary_splitting(I=I, a=a, b=b, f=f, L=L, dt=dt, 
+                                   dt_Rfactor=1, F=F, t=t, T=T,
+                                   user_action=action)        
+                h.append(dx**2)
+            elif scheme == 'Strang_splitting_1stOrder':
+                print 'Running Strang splitting with 1st order schemes...'
+                Strang_splitting_1stOrder(I=I, a=a, b=b, f=f, L=L, dt=dt, 
+                                          dt_Rfactor=1, F=F, t=t, T=T,
+                                          user_action=action)       
+                h.append(dx**2)
+            elif scheme == 'Strang_splitting_2ndOrder':
+                print 'Running Strang splitting with 2nd order schemes...'
+                Strang_splitting_2ndOrder(I=I, a=a, b=b, f=f, L=L, dt=dt, 
+                                          dt_Rfactor=1, F=F, t=t, T=T,
+                                          user_action=action)    
+                h.append(dx)
+            else:
+                print 'Unknown scheme requested!'
+                sys.exit(0)
+            
+            E.append(error)
+    
+        print 'E:', E
+        print 'h:', h
+            
+        # Convergence rates 
+        r = [np.log(E[i]/E[i-1])/np.log(h[i]/h[i-1])
+             for i in range(1,len(Nx_values))]
+        print 'Computed rates:', r
+    
+    
+    if __name__ == '__main__':
+        
+        schemes = ['diffusion', 
+                   'ordinary_splitting', 
+                   'Strang_splitting_1stOrder',
+                   'Strang_splitting_2ndOrder']
+                   
+        for scheme in schemes:
+            convergence_rates(scheme=scheme)
+
+The Fourier number is kept fixed throughout at :math:`F = 0.5`, being the stability 
+limit with explicit schemes. Since :math:`\alpha` is considered a known constant and 
+:math:`F = \frac{\alpha dt}{dx^2}`, :math:`dt` (or :math:`dx`) is readily computed
+for a given :math:`dx` (or :math:`dt`). The loop in ``convergence_rates`` runs over a chosen
+set of grid points implying a doubling of spatial resolution with each iteration.
+
+A solver ``diffusion_theta`` is used in each of the four solution approaches: 
 
 .. code-block:: python
 
@@ -478,12 +578,12 @@ equation at hand. It was implemented as follows:
         Note that t always covers the whole global time interval, whether
         splitting is the case or not. T, on the other hand, is 
         the end of the global time interval if there is no split,
-        but if splitting, we use T=dt or dt/2. When splitting, step_no 
+        but if splitting, we use T=dt. When splitting, step_no 
         keeps track of the time step number (for lookup in t).    
         """
     
         Nt = int(round(T/float(dt)))
-        dx = np.sqrt(a*dt/F)
+        dx = np.sqrt(a*dt/F)   
         Nx = int(round(L/dx))
         x = np.linspace(0, L, Nx+1)       # Mesh points in space
         # Make sure dx and dt are compatible with x and t
@@ -551,33 +651,188 @@ equation at hand. It was implemented as follows:
         # u is now contained in u_1 (swapping)
         return u_1
 
-In the implementation below, the equation is solved first without any
-splitting, simply using the forward Euler method over the whole time
-interval. This is the simplest numerical method we can use for the
-equation at hand. Then, ordinary splitting is introduced, followed by
-Strang splitting in both first and second order versions. A finer time 
-stepping is made possible for the
-reaction part when the original PDE is split. This is advantageous if
-we prefer an implicit method and long time steps for the diffusion
-process. For Forward Euler time stepping also in the PDE, the time step
-governed by stability is most likely small enough for sufficient accuracy
-of the reaction process.
+For the no splitting approach with forward Euler in time, this solver handles both
+the diffusion and the reaction term. When splitting, ``diffusion_theta`` takes care 
+of the diffusion term only, while the reaction
+term is handled either by a forward Euler scheme in ``reaction_FE``, or by a
+second order Adams-Bashforth scheme from Odespy. The ``reaction_FE`` function
+covers one complete time step ``dt`` during ordinary splitting, while Strang
+splitting (both first and second order) applies it with ``dt/2`` twice during 
+each time step ``dt``. Since the reaction term typically represents a much faster
+process than the diffusion term, a further refinement of the time step is made
+possible in ``reaction_FE``. It was implemented as
 
-Running the code gives convergence rates according to expectations. 
-The convergence rate is 1 for the schemes with forward Euler, 
-ordinary splitting and first order Strang splitting, while it is 2 for
-the second order Strang splitting scheme.
- Also, the error gets smaller for the ordinary splitting
-approach compared to the overall Forward Euler method, and still
-smaller for the Strang splitting compared to ordinary splitting. With
-either method, choosing to use an even finer time stepping for the
-reaction term, gives a further reduction in the error.
+.. code-block:: python
 
-The reaction step is here solved with the second order Adams-Bashforth method, which
-in itself contributes to second order convergence. However, since our implementation
-still uses Forward Euler for the diffusion step, the overall convergence rate only
-becomes first order. Switching to, e.g., the Crank-Nicolson scheme will
-allow an overall convergence rate of 2, in theory, in case of Strang splitting.
+    def reaction_FE(I, f, L, Nx, dt, dt_Rfactor, t, step_no, 
+                    user_action=None):
+        """Reaction solver, Forward Euler method.
+        Note the at t covers the whole global time interval. 
+        dt is either one complete,or one half, of the step in the 
+        diffusion part, i.e. there is a local time interval 
+        [0, dt] or [0, dt/2] that the reaction_FE
+        deals with each time it is called. step_no keeps
+        track of the (global) time step number (required 
+        for lookup in t).    
+        """
+    
+        u = np.copy(I)      
+        dt_local = dt/float(dt_Rfactor)    
+        Nt_local = int(round(dt/float(dt_local)))    
+        x = np.linspace(0, L, Nx+1)  
+              
+        for n in range(Nt_local):
+            time = t[step_no] + n*dt_local
+            u[1:Nx] = u[1:Nx] + dt_local*f(u[1:Nx], time)  
+            
+        # BC already inserted in diffusion step, i.e. no action here            
+        return u
+
+With the ordinary splitting approach, each time step ``dt`` is covered twice. First 
+computing the impact of the reaction term, then the contribution from the diffusion term:
+
+.. code-block:: python
+
+    def ordinary_splitting(I, a, b, f, L, dt, 
+                           dt_Rfactor, F, t, T, 
+                           user_action=None):
+        '''1st order scheme, i.e. Forward Euler is enough for both
+        the diffusion and the reaction part. The time step dt is 
+        given for the diffusion step, while the time step for the 
+        reaction part is found as dt/dt_Rfactor, where dt_Rfactor >= 1.
+        '''
+        Nt = int(round(T/float(dt)))
+        dx = np.sqrt(a*dt/F)
+        Nx = int(round(L/dx))
+        x = np.linspace(0, L, Nx+1)       # Mesh points in space
+        u = np.zeros(Nx+1)
+            
+        # Set initial condition u(x,0) = I(x)
+        for i in range(0, Nx+1):
+            u[i] = I(x[i])
+    
+        # In the following loop, each time step is "covered twice", 
+        # first for reaction, then for diffusion
+        for n in range(0, Nt):    
+            # Reaction step (potentially many smaller steps within dt)
+            u_s = reaction_FE(I=u, f=f, L=L, Nx=Nx, 
+                            dt=dt, dt_Rfactor=dt_Rfactor, 
+                            t=t, step_no=n, 
+                            user_action=None)        
+            
+            u = diffusion_theta(I=u_s, a=a, f=0, L=L, dt=dt, F=F,
+                                  t=t, T=dt, step_no=n, theta=0,
+                                  u_L=0, u_R=0, user_action=None)                         
+                               
+            if user_action is not None:
+                user_action(u, x, t, n+1)
+    
+        return
+
+For the two Strang splitting approaches, each time step ``dt`` is handled by first computing
+the reaction step for (the first) ``dt/2``, followed by a diffusion step ``dt``, before the reaction step
+is treated once again for (the remaining) ``dt/2``. Since first order Strang splitting is no better than first order accurate, both the reaction and diffusion steps are computed explicitly. The 
+solver was implemented as 
+
+.. code-block:: python
+
+    def Strang_splitting_1stOrder(I, a, b, f, L, dt, dt_Rfactor, 
+                                  F, t, T, user_action=None):
+        '''Strang splitting while still using FE for the reaction
+        step and for the diffusion step. Gives 1st order scheme.
+        The time step dt is given for the diffusion step, while 
+        the time step for the reaction part is found as 
+        0.5*dt/dt_Rfactor, where dt_Rfactor >= 1. Introduce an 
+        extra time mesh t2 for the reaction part, since it steps dt/2.
+        '''
+        Nt = int(round(T/float(dt)))
+        t2 = np.linspace(0, Nt*dt, (Nt+1)+Nt)   # Mesh points in diff    
+        dx = np.sqrt(a*dt/F)
+        Nx = int(round(L/dx))
+        x = np.linspace(0, L, Nx+1)     
+        u = np.zeros(Nx+1)
+            
+        # Set initial condition u(x,0) = I(x)
+        for i in range(0, Nx+1):
+            u[i] = I(x[i])
+    
+        for n in range(0, Nt):    
+            # Reaction step (1/2 dt: from t_n to t_n+1/2)
+            # (potentially many smaller steps within dt/2)
+            u_s = reaction_FE(I=u, f=f, L=L, Nx=Nx, 
+                            dt=dt/2.0, dt_Rfactor=dt_Rfactor, 
+                            t=t2, step_no=2*n, 
+                            user_action=None)
+            # Diffusion step (1 dt: from t_n to t_n+1)
+            u_sss = diffusion_theta(I=u_s, a=a, f=0, L=L, dt=dt, F=F,
+                                  t=t, T=dt, step_no=n, theta=0,
+                                  u_L=0, u_R=0, user_action=None)                         
+            # Reaction step (1/2 dt: from t_n+1/2 to t_n+1)
+            # (potentially many smaller steps within dt/2)
+            u = reaction_FE(I=u_sss, f=f, L=L, Nx=Nx, 
+                            dt=dt/2.0, dt_Rfactor=dt_Rfactor, 
+                            t=t2, step_no=2*n+1, 
+                            user_action=None)
+            
+            if user_action is not None:
+                user_action(u, x, t, n+1)
+    
+        return
+
+The second order version of the Strang splitting approach utilizes a second order Adams-Bashforth
+solver for the reaction part and a Crank-Nicolson scheme for the diffusion part. The solver has the
+same structure as the one for first order Strang splitting and was implemented as
+
+.. code-block:: python
+
+    def Strang_splitting_2ndOrder(I, a, b, f, L, dt, dt_Rfactor, 
+                                  F, t, T, user_action=None):
+        '''Strang splitting using Crank-Nicolson for the diffusion
+        step (theta-rule) and Adams-Bashforth 2 for the reaction step. 
+        Gives 2nd order scheme. Introduce an extra time mesh t2 for 
+        the reaction part, since it steps dt/2.
+        '''
+        import odespy
+        Nt = int(round(T/float(dt)))
+        t2 = np.linspace(0, Nt*dt, (Nt+1)+Nt)   # Mesh points in diff    
+        dx = np.sqrt(a*dt/F)
+        Nx = int(round(L/dx))
+        x = np.linspace(0, L, Nx+1)     
+        u = np.zeros(Nx+1)
+            
+        # Set initial condition u(x,0) = I(x)
+        for i in range(0, Nx+1):
+            u[i] = I(x[i])
+    
+        reaction_solver = odespy.AdamsBashforth2(f)    
+    
+        for n in range(0, Nt):    
+            # Reaction step (1/2 dt: from t_n to t_n+1/2)
+            # (potentially many smaller steps within dt/2)
+            reaction_solver.set_initial_condition(u)
+            t_points = np.linspace(0, dt/2.0, dt_Rfactor+1)
+            u_AB2, t_ = reaction_solver.solve(t_points) # t_ not needed
+            u_s = u_AB2[-1,:]  # pick sol at last point in time
+    
+            # Diffusion step (1 dt: from t_n to t_n+1)
+            u_sss = diffusion_theta(I=u_s, a=a, f=0, L=L, dt=dt, F=F,
+                                  t=t, T=dt, step_no=n, theta=0.5,
+                                  u_L=0, u_R=0, user_action=None)                         
+            # Reaction step (1/2 dt: from t_n+1/2 to t_n+1)
+            # (potentially many smaller steps within dt/2)
+            reaction_solver.set_initial_condition(u_sss)
+            t_points = np.linspace(0, dt/2.0, dt_Rfactor+1)
+            u_AB2, t_ = reaction_solver.solve(t_points) # t_ not needed
+            u = u_AB2[-1,:]  # pick sol at last point in time
+                   
+            if user_action is not None:
+                user_action(u, x, t, n+1)
+    
+        return
+
+When executing ``split_diffu_react.py``, we find that the estimated convergence rates
+are as expected. The second order Strang splitting has second order convergence (:math:`r = 2`), while
+the remaining three approaches have first order convergence (:math:`r = 1`).
 
 Analysis of the splitting method
 --------------------------------
