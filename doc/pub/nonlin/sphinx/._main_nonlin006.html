@@ -129,7 +129,7 @@ be written as follows.</p>
 \quad u^{{***}}(t_n)=u^{{*}}(t_{n+\frac{1}{2}}),
 \quad t\in [t_n,t_n+\Delta t],\\
 \frac{du^{{**}}}{dt}  &amp;= f_0(u^{{**}}),
-\quad u^{{**}}(t_n+\frac{1}{2})=u^{{***}}(t_{n+\frac{1}{2}}),
+\quad u^{{**}}(t_{n+\frac{1}{2}})=u^{{***}}(t_{n+1}),
 \quad t\in [t_n+\frac{1}{2}\Delta t, t_n+\Delta t]{\thinspace .}\end{split}\]</div>
 <p>The global solution is set as <span class="math">\(u(t_{n+1}) = u^{{**}}(t_{n+1})\)</span>.</p>
 <p>There is no use in combining higher-order methods with
@@ -373,7 +373,7 @@ splitting methods.</p>
 computational example in which we compute the convergence
 rates associated with four different solution approaches for the
 reaction-diffusion equation with a linear reaction term, i.e. <span class="math">\(f(u)=-bu\)</span>.
-The methods comprise solving without splitting (just straight forward Euler),
+The methods comprise solving without splitting (just straight Forward Euler),
 ordinary splitting, first order Strang splitting, and second order Strang splitting.
 In all four methods, a standard centered difference approximation is
 used for the spatial second derivative. The methods share the error model
@@ -385,7 +385,9 @@ a function <tt class="docutils literal"><span class="pre">convergence_rates</spa
 rate computations are handled:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">convergence_rates</span><span class="p">(</span><span class="n">scheme</span><span class="o">=</span><span class="s">&#39;diffusion&#39;</span><span class="p">):</span>
 
-    <span class="n">F</span> <span class="o">=</span> <span class="mf">0.5</span>
+    <span class="n">F</span> <span class="o">=</span> <span class="mf">0.5</span>     <span class="c"># Upper limit for FE (stability). For CN, this</span>
+                <span class="c"># limit does not apply, but for simplicity, we</span>
+                <span class="c"># choose F = 0.5 as the initial F value.</span>
     <span class="n">T</span> <span class="o">=</span> <span class="mf">1.2</span>
     <span class="n">a</span> <span class="o">=</span> <span class="mf">3.5</span>
     <span class="n">b</span> <span class="o">=</span> <span class="mi">1</span>
@@ -415,42 +417,62 @@ rate computations are handled:</p>
 
     <span class="n">E</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">h</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">Nx_values</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">80</span><span class="p">]</span>
+    <span class="n">Nx_values</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">80</span><span class="p">]</span>   <span class="c"># i.e., dx halved each time</span>
     <span class="k">for</span> <span class="n">Nx</span> <span class="ow">in</span> <span class="n">Nx_values</span><span class="p">:</span>
         <span class="n">dx</span> <span class="o">=</span> <span class="n">L</span><span class="o">/</span><span class="n">Nx</span>
-        <span class="n">dt</span> <span class="o">=</span> <span class="n">F</span><span class="o">/</span><span class="n">a</span><span class="o">*</span><span class="n">dx</span><span class="o">**</span><span class="mi">2</span>
-        <span class="n">Nt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dt</span><span class="p">)))</span>
-        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> <span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>   <span class="c"># Mesh points, global time</span>
+        <span class="k">if</span> <span class="n">scheme</span> <span class="o">==</span> <span class="s">&#39;Strang_splitting_2ndOrder&#39;</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;Strang splitting with 2nd order schemes...&#39;</span>
+            <span class="c"># In this case, E = C*h**r (with r = 2) and since</span>
+            <span class="c"># h = dx = K*dt, the ratio dt/dx must be constant.</span>
+            <span class="c"># To fulfill this demand, we must let F change</span>
+            <span class="c"># when dx changes. From F = a*dt/dx**2, it follows</span>
+            <span class="c"># that halving dx AND doubling F assures dt/dx const.</span>
+            <span class="c"># Initially, we simply choose F = 0.5.</span>
 
-        <span class="k">if</span> <span class="n">scheme</span> <span class="o">==</span> <span class="s">&#39;diffusion&#39;</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s">&#39;Running FE on whole eqn...&#39;</span>
-            <span class="n">diffusion_theta</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span>
-                            <span class="n">step_no</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                            <span class="n">u_L</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">u_R</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">user_action</span><span class="o">=</span><span class="n">action</span><span class="p">)</span>
-            <span class="n">h</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dx</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">scheme</span> <span class="o">==</span> <span class="s">&#39;ordinary_splitting&#39;</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s">&#39;Running ordinary splitting...&#39;</span>
-            <span class="n">ordinary_splitting</span><span class="p">(</span><span class="n">I</span><span class="o">=</span><span class="n">I</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">b</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span>
-                               <span class="n">dt_Rfactor</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">F</span><span class="o">=</span><span class="n">F</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
-                               <span class="n">user_action</span><span class="o">=</span><span class="n">action</span><span class="p">)</span>
-            <span class="n">h</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dx</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">scheme</span> <span class="o">==</span> <span class="s">&#39;Strang_splitting_1stOrder&#39;</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s">&#39;Running Strang splitting with 1st order schemes...&#39;</span>
-            <span class="n">Strang_splitting_1stOrder</span><span class="p">(</span><span class="n">I</span><span class="o">=</span><span class="n">I</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">b</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span>
-                                      <span class="n">dt_Rfactor</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">F</span><span class="o">=</span><span class="n">F</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
-                                      <span class="n">user_action</span><span class="o">=</span><span class="n">action</span><span class="p">)</span>
-            <span class="n">h</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dx</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">scheme</span> <span class="o">==</span> <span class="s">&#39;Strang_splitting_2ndOrder&#39;</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s">&#39;Running Strang splitting with 2nd order schemes...&#39;</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="n">F</span><span class="o">/</span><span class="n">a</span><span class="o">*</span><span class="n">dx</span><span class="o">**</span><span class="mi">2</span>
+            <span class="c">#print &#39;dt/dx:&#39;, dt/dx</span>
+            <span class="n">Nt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dt</span><span class="p">)))</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> <span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>   <span class="c"># global time</span>
             <span class="n">Strang_splitting_2ndOrder</span><span class="p">(</span><span class="n">I</span><span class="o">=</span><span class="n">I</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">b</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span>
                                       <span class="n">dt_Rfactor</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">F</span><span class="o">=</span><span class="n">F</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
                                       <span class="n">user_action</span><span class="o">=</span><span class="n">action</span><span class="p">)</span>
             <span class="n">h</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dx</span><span class="p">)</span>
+            <span class="c"># prepare for next iteration (make F match dx/2)</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">F</span><span class="o">*</span><span class="mi">2</span>       <span class="c"># assures dt/dx const. when dx = dx/2</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">print</span> <span class="s">&#39;Unknown scheme requested!&#39;</span>
-            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="c"># In these cases, E = C*h**r (with r = 1) and since</span>
+            <span class="c"># h = dx**2 = K*dt, the ratio dt/dx**2 must be constant.</span>
+            <span class="c"># This is fulfilled by choosing F = 0.5 (for FE stability)</span>
+            <span class="c"># and make sure that F, dx and dt comply to F = a*dt/dx**2.</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="n">F</span><span class="o">/</span><span class="n">a</span><span class="o">*</span><span class="n">dx</span><span class="o">**</span><span class="mi">2</span>
+            <span class="n">Nt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">T</span><span class="o">/</span><span class="nb">float</span><span class="p">(</span><span class="n">dt</span><span class="p">)))</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="o">*</span><span class="n">dt</span><span class="p">,</span> <span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>   <span class="c"># global time</span>
+            <span class="k">if</span> <span class="n">scheme</span> <span class="o">==</span> <span class="s">&#39;diffusion&#39;</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&#39;FE on whole eqn...&#39;</span>
+                <span class="n">diffusion_theta</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span>
+                                <span class="n">step_no</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                <span class="n">u_L</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">u_R</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">user_action</span><span class="o">=</span><span class="n">action</span><span class="p">)</span>
+                <span class="n">h</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dx</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">scheme</span> <span class="o">==</span> <span class="s">&#39;ordinary_splitting&#39;</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&#39;Ordinary splitting...&#39;</span>
+                <span class="n">ordinary_splitting</span><span class="p">(</span><span class="n">I</span><span class="o">=</span><span class="n">I</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">b</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span>
+                                   <span class="n">dt_Rfactor</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">F</span><span class="o">=</span><span class="n">F</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
+                                   <span class="n">user_action</span><span class="o">=</span><span class="n">action</span><span class="p">)</span>
+                <span class="n">h</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dx</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">scheme</span> <span class="o">==</span> <span class="s">&#39;Strang_splitting_1stOrder&#39;</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&#39;Strang splitting with 1st order schemes...&#39;</span>
+                <span class="n">Strang_splitting_1stOrder</span><span class="p">(</span><span class="n">I</span><span class="o">=</span><span class="n">I</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">b</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span>
+                                          <span class="n">dt_Rfactor</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">F</span><span class="o">=</span><span class="n">F</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
+                                          <span class="n">user_action</span><span class="o">=</span><span class="n">action</span><span class="p">)</span>
+                <span class="n">h</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dx</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">print</span> <span class="s">&#39;Unknown scheme requested!&#39;</span>
+                <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="c">#print &#39;dt/dx**2:&#39;, dt/dx**2</span>
 
         <span class="n">E</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+        <span class="n">Nx</span> <span class="o">*=</span> <span class="mi">2</span>         <span class="c"># Nx doubled gives dx/2</span>
 
     <span class="k">print</span> <span class="s">&#39;E:&#39;</span><span class="p">,</span> <span class="n">E</span>
     <span class="k">print</span> <span class="s">&#39;h:&#39;</span><span class="p">,</span> <span class="n">h</span>
@@ -472,11 +494,26 @@ rate computations are handled:</p>
         <span class="n">convergence_rates</span><span class="p">(</span><span class="n">scheme</span><span class="o">=</span><span class="n">scheme</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The Fourier number is kept fixed throughout at <span class="math">\(F = 0.5\)</span>, being the stability
-limit with explicit schemes. Since <span class="math">\(\alpha\)</span> is considered a known constant and
-<span class="math">\(F = \frac{\alpha dt}{dx^2}\)</span>, <span class="math">\(dt\)</span> (or <span class="math">\(dx\)</span>) is readily computed
-for a given <span class="math">\(dx\)</span> (or <span class="math">\(dt\)</span>). The loop in <tt class="docutils literal"><span class="pre">convergence_rates</span></tt> runs over a chosen
-set of grid points implying a doubling of spatial resolution with each iteration.</p>
+<p>Now, with respect to the error (<span class="math">\(E = C h^r\)</span>), the Forward Euler scheme, the
+ordinary splitting scheme and first order Strang splitting scheme are all
+first order (<span class="math">\(r = 1\)</span>), with a step <span class="math">\(h = \Delta x^2 = K^{-1}\Delta t\)</span>, where
+<span class="math">\(K\)</span> is some constant. This implies that the <em>ratio</em> <span class="math">\(\frac{\Delta t}{\Delta x^2}\)</span>
+must be held constant during convergence rate calculations. Furthermore,
+the Fourier number <span class="math">\(F = \frac{\alpha \Delta t}{\Delta x^2}\)</span> is upwards limited to
+<span class="math">\(F = 0.5\)</span>, being the stability limit with explicit schemes. Thus, in these cases,
+we use the fixed value of <span class="math">\(F\)</span> and a given (but changing) spatial resolution <span class="math">\(\Delta x\)</span> to
+compute the corresponding value of <span class="math">\(\Delta t\)</span> according to the expression for <span class="math">\(F\)</span>.
+This assures that <span class="math">\(\frac{\Delta t}{\Delta x^2}\)</span> is kept constant. The loop in
+<tt class="docutils literal"><span class="pre">convergence_rates</span></tt> runs over a chosen set of grid points (<tt class="docutils literal"><span class="pre">Nx_values</span></tt>) which gives
+a doubling of spatial resolution with each iteration (<span class="math">\(\Delta x\)</span> is halved).</p>
+<p>For the second order Strang splitting scheme, we have <span class="math">\(r = 2\)</span> and a step
+<span class="math">\(h = \Delta x = K^{-1}\Delta t\)</span>, where <span class="math">\(K\)</span> again is some constant. In this case,
+it is thus the ratio <span class="math">\(\frac{\Delta t}{\Delta x}\)</span> that must be held constant
+during the convergence rate calculations. From the expression for <span class="math">\(F\)</span>, it is
+clear then that <span class="math">\(F\)</span> must change with each halving of <span class="math">\(\Delta x\)</span>. In fact, if
+<span class="math">\(F\)</span> is doubled each time <span class="math">\(\Delta x\)</span> is halved, the ratio <span class="math">\(\frac{\Delta t}{\Delta x}\)</span>
+will be constant (this follows, e.g., from the expression for <span class="math">\(F\)</span>). This us utilized
+in our code.</p>
 <p>A solver <tt class="docutils literal"><span class="pre">diffusion_theta</span></tt> is used in each of the four solution approaches:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">diffusion_theta</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">step_no</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
                     <span class="n">u_L</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">u_R</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">user_action</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
@@ -562,10 +599,10 @@ set of grid points implying a doubling of spatial resolution with each iteration
     <span class="k">return</span> <span class="n">u_1</span>
 </pre></div>
 </div>
-<p>For the no splitting approach with forward Euler in time, this solver handles both
+<p>For the no splitting approach with Forward Euler in time, this solver handles both
 the diffusion and the reaction term. When splitting, <tt class="docutils literal"><span class="pre">diffusion_theta</span></tt> takes care
 of the diffusion term only, while the reaction
-term is handled either by a forward Euler scheme in <tt class="docutils literal"><span class="pre">reaction_FE</span></tt>, or by a
+term is handled either by a Forward Euler scheme in <tt class="docutils literal"><span class="pre">reaction_FE</span></tt>, or by a
 second order Adams-Bashforth scheme from Odespy. The <tt class="docutils literal"><span class="pre">reaction_FE</span></tt> function
 covers one complete time step <tt class="docutils literal"><span class="pre">dt</span></tt> during ordinary splitting, while Strang
 splitting (both first and second order) applies it with <tt class="docutils literal"><span class="pre">dt/2</span></tt> twice during
@@ -734,8 +771,7 @@ same structure as the one for first order Strang splitting and was implemented a
 </pre></div>
 </div>
 <p>When executing <tt class="docutils literal"><span class="pre">split_diffu_react.py</span></tt>, we find that the estimated convergence rates
-are as expected. The second order Strang splitting has second order convergence (<span class="math">\(r = 2\)</span>), while
-the remaining three approaches have first order convergence (<span class="math">\(r = 1\)</span>).</p>
+are as expected. The second order Strang splitting gives the least error (about <span class="math">\(4e^{-5}\)</span>) and has second order convergence (<span class="math">\(r = 2\)</span>), while the remaining three approaches have first order convergence (<span class="math">\(r = 1\)</span>).</p>
 </div>
 <div class="section" id="analysis-of-the-splitting-method">
 <h2>Analysis of the splitting method<a class="headerlink" href="#analysis-of-the-splitting-method" title="Permalink to this headline">¶</a></h2>

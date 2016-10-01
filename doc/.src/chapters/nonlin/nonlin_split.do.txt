@@ -92,7 +92,7 @@ be written as follows.
 \quad u^{\stephalf}(t_n)=u^{\stepzero}(t_{n+\half}),
 \quad t\in [t_n,t_n+\Delta t],\\
 \frac{du^{\stepone}}{dt}  &= f_0(u^{\stepone}),
-\quad u^{\stepone}(t_n+\half)=u^{\stephalf}(t_{n+\half}),
+\quad u^{\stepone}(t_{n+\half})=u^{\stephalf}(t_{n+1}),
 \quad t\in [t_n+\half\Delta t, t_n+\Delta t]\tp
 \end{align*}
 !et
@@ -300,7 +300,7 @@ The methods above may be explored in detail through a specific
 computational example in which we compute the convergence
 rates associated with four different solution approaches for the
 reaction-diffusion equation with a linear reaction term, i.e. $f(u)=-bu$. 
-The methods comprise solving without splitting (just straight forward Euler), 
+The methods comprise solving without splitting (just straight Forward Euler), 
 ordinary splitting, first order Strang splitting, and second order Strang splitting.
 In all four methods, a standard centered difference approximation is
 used for the spatial second derivative. The methods share the error model
@@ -314,20 +314,36 @@ rate computations are handled:
 
 @@@CODE src-nonlin/split_diffu_react.py fromto: def convergence_rates@
 
-The Fourier number is kept fixed throughout at $F = 0.5$, being the stability 
-limit with explicit schemes. Since $\alpha$ is considered a known constant and 
-$F = \frac{\alpha dt}{dx^2}$, $dt$ (or $dx$) is readily computed
-for a given $dx$ (or $dt$). The loop in `convergence_rates` runs over a chosen
-set of grid points implying a doubling of spatial resolution with each iteration.
+Now, with respect to the error ($E = C h^r$), the Forward Euler scheme, the 
+ordinary splitting scheme and first order Strang splitting scheme are all
+first order ($r = 1$), with a step $h = \Delta x^2 = K^{-1}\Delta t$, where 
+$K$ is some constant. This implies that the *ratio* $\frac{\Delta t}{\Delta x^2}$ 
+must be held constant during convergence rate calculations. Furthermore, 
+the Fourier number $F = \frac{\alpha \Delta t}{\Delta x^2}$ is upwards limited to 
+$F = 0.5$, being the stability limit with explicit schemes. Thus, in these cases,
+we use the fixed value of $F$ and a given (but changing) spatial resolution $\Delta x$ to
+compute the corresponding value of $\Delta t$ according to the expression for $F$.
+This assures that $\frac{\Delta t}{\Delta x^2}$ is kept constant. The loop in 
+`convergence_rates` runs over a chosen set of grid points (`Nx_values`) which gives 
+a doubling of spatial resolution with each iteration ($\Delta x$ is halved).
+
+For the second order Strang splitting scheme, we have $r = 2$ and a step 
+$h = \Delta x = K^{-1}\Delta t$, where $K$ again is some constant. In this case,
+it is thus the ratio $\frac{\Delta t}{\Delta x}$ that must be held constant 
+during the convergence rate calculations. From the expression for $F$, it is 
+clear then that $F$ must change with each halving of $\Delta x$. In fact, if 
+$F$ is doubled each time $\Delta x$ is halved, the ratio $\frac{\Delta t}{\Delta x}$ 
+will be constant (this follows, e.g., from the expression for $F$). This us utilized
+in our code.
 
 A solver `diffusion_theta` is used in each of the four solution approaches: 
 
 @@@CODE src-nonlin/split_diffu_react.py fromto: def diffusion_theta@def reaction_FE
 
-For the no splitting approach with forward Euler in time, this solver handles both
+For the no splitting approach with Forward Euler in time, this solver handles both
 the diffusion and the reaction term. When splitting, `diffusion_theta` takes care 
 of the diffusion term only, while the reaction
-term is handled either by a forward Euler scheme in `reaction_FE`, or by a
+term is handled either by a Forward Euler scheme in `reaction_FE`, or by a
 second order Adams-Bashforth scheme from Odespy. The `reaction_FE` function
 covers one complete time step `dt` during ordinary splitting, while Strang
 splitting (both first and second order) applies it with `dt/2` twice during 
@@ -356,8 +372,7 @@ same structure as the one for first order Strang splitting and was implemented a
 @@@CODE src-nonlin/split_diffu_react.py fromto: def Strang_splitting_2nd@def convergence_rates
 
 When executing `split_diffu_react.py`, we find that the estimated convergence rates
-are as expected. The second order Strang splitting has second order convergence ($r = 2$), while
-the remaining three approaches have first order convergence ($r = 1$).
+are as expected. The second order Strang splitting gives the least error (about $4e^{-5}$) and has second order convergence ($r = 2$), while the remaining three approaches have first order convergence ($r = 1$).
 
 
 

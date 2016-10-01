@@ -115,7 +115,7 @@ be written as follows.
         \quad u^{{***}}(t_n)=u^{{*}}(t_{n+\frac{1}{2}}),
         \quad t\in [t_n,t_n+\Delta t],\\ 
         \frac{du^{{**}}}{dt}  &= f_0(u^{{**}}),
-        \quad u^{{**}}(t_n+\frac{1}{2})=u^{{***}}(t_{n+\frac{1}{2}}),
+        \quad u^{{**}}(t_{n+\frac{1}{2}})=u^{{***}}(t_{n+1}),
         \quad t\in [t_n+\frac{1}{2}\Delta t, t_n+\Delta t]{\thinspace .}
         
 
@@ -454,7 +454,7 @@ The methods above may be explored in detail through a specific
 computational example in which we compute the convergence
 rates associated with four different solution approaches for the
 reaction-diffusion equation with a linear reaction term, i.e. :math:`f(u)=-bu`. 
-The methods comprise solving without splitting (just straight forward Euler), 
+The methods comprise solving without splitting (just straight Forward Euler), 
 ordinary splitting, first order Strang splitting, and second order Strang splitting.
 In all four methods, a standard centered difference approximation is
 used for the spatial second derivative. The methods share the error model
@@ -470,7 +470,9 @@ rate computations are handled:
 
     def convergence_rates(scheme='diffusion'):
         
-        F = 0.5
+        F = 0.5     # Upper limit for FE (stability). For CN, this 
+                    # limit does not apply, but for simplicity, we
+                    # choose F = 0.5 as the initial F value.
         T = 1.2
         a = 3.5
         b = 1
@@ -500,42 +502,62 @@ rate computations are handled:
     
         E = []
         h = []
-        Nx_values = [10, 20, 40, 80]   
+        Nx_values = [10, 20, 40, 80]   # i.e., dx halved each time
         for Nx in Nx_values:        
-            dx = L/Nx
-            dt = F/a*dx**2
-            Nt = int(round(T/float(dt)))
-            t = np.linspace(0, Nt*dt, Nt+1)   # Mesh points, global time
-            
-            if scheme == 'diffusion':
-                print 'Running FE on whole eqn...'
-                diffusion_theta(I, a, f, L, dt, F, t, T,
-                                step_no=0, theta=0,
-                                u_L=0, u_R=0, user_action=action)                         
-                h.append(dx**2)
-            elif scheme == 'ordinary_splitting':
-                print 'Running ordinary splitting...'
-                ordinary_splitting(I=I, a=a, b=b, f=f, L=L, dt=dt, 
-                                   dt_Rfactor=1, F=F, t=t, T=T,
-                                   user_action=action)        
-                h.append(dx**2)
-            elif scheme == 'Strang_splitting_1stOrder':
-                print 'Running Strang splitting with 1st order schemes...'
-                Strang_splitting_1stOrder(I=I, a=a, b=b, f=f, L=L, dt=dt, 
-                                          dt_Rfactor=1, F=F, t=t, T=T,
-                                          user_action=action)       
-                h.append(dx**2)
-            elif scheme == 'Strang_splitting_2ndOrder':
-                print 'Running Strang splitting with 2nd order schemes...'
+            dx = L/Nx           
+            if scheme == 'Strang_splitting_2ndOrder':
+                print 'Strang splitting with 2nd order schemes...'
+                # In this case, E = C*h**r (with r = 2) and since 
+                # h = dx = K*dt, the ratio dt/dx must be constant.
+                # To fulfill this demand, we must let F change
+                # when dx changes. From F = a*dt/dx**2, it follows
+                # that halving dx AND doubling F assures dt/dx const.
+                # Initially, we simply choose F = 0.5.
+    
+                dt = F/a*dx**2
+                #print 'dt/dx:', dt/dx            
+                Nt = int(round(T/float(dt)))
+                t = np.linspace(0, Nt*dt, Nt+1)   # global time            
                 Strang_splitting_2ndOrder(I=I, a=a, b=b, f=f, L=L, dt=dt, 
                                           dt_Rfactor=1, F=F, t=t, T=T,
                                           user_action=action)    
                 h.append(dx)
-            else:
-                print 'Unknown scheme requested!'
-                sys.exit(0)
+                # prepare for next iteration (make F match dx/2)
+                F = F*2       # assures dt/dx const. when dx = dx/2                                      
+            else:   
+                # In these cases, E = C*h**r (with r = 1) and since 
+                # h = dx**2 = K*dt, the ratio dt/dx**2 must be constant.
+                # This is fulfilled by choosing F = 0.5 (for FE stability)
+                # and make sure that F, dx and dt comply to F = a*dt/dx**2.            
+                dt = F/a*dx**2
+                Nt = int(round(T/float(dt)))
+                t = np.linspace(0, Nt*dt, Nt+1)   # global time
+                if scheme == 'diffusion':
+                    print 'FE on whole eqn...'
+                    diffusion_theta(I, a, f, L, dt, F, t, T,
+                                    step_no=0, theta=0,
+                                    u_L=0, u_R=0, user_action=action)                         
+                    h.append(dx**2)
+                elif scheme == 'ordinary_splitting':
+                    print 'Ordinary splitting...'
+                    ordinary_splitting(I=I, a=a, b=b, f=f, L=L, dt=dt, 
+                                       dt_Rfactor=1, F=F, t=t, T=T,
+                                       user_action=action)        
+                    h.append(dx**2)
+                elif scheme == 'Strang_splitting_1stOrder':
+                    print 'Strang splitting with 1st order schemes...'
+                    Strang_splitting_1stOrder(I=I, a=a, b=b, f=f, L=L, dt=dt, 
+                                              dt_Rfactor=1, F=F, t=t, T=T,
+                                              user_action=action)       
+                    h.append(dx**2)
+                else:
+                    print 'Unknown scheme requested!'
+                    sys.exit(0)
+            
+                #print 'dt/dx**2:', dt/dx**2            
             
             E.append(error)
+            Nx *= 2         # Nx doubled gives dx/2
     
         print 'E:', E
         print 'h:', h
@@ -556,11 +578,27 @@ rate computations are handled:
         for scheme in schemes:
             convergence_rates(scheme=scheme)
 
-The Fourier number is kept fixed throughout at :math:`F = 0.5`, being the stability 
-limit with explicit schemes. Since :math:`\alpha` is considered a known constant and 
-:math:`F = \frac{\alpha dt}{dx^2}`, :math:`dt` (or :math:`dx`) is readily computed
-for a given :math:`dx` (or :math:`dt`). The loop in ``convergence_rates`` runs over a chosen
-set of grid points implying a doubling of spatial resolution with each iteration.
+Now, with respect to the error (:math:`E = C h^r`), the Forward Euler scheme, the 
+ordinary splitting scheme and first order Strang splitting scheme are all
+first order (:math:`r = 1`), with a step :math:`h = \Delta x^2 = K^{-1}\Delta t`, where 
+:math:`K` is some constant. This implies that the *ratio* :math:`\frac{\Delta t}{\Delta x^2}` 
+must be held constant during convergence rate calculations. Furthermore, 
+the Fourier number :math:`F = \frac{\alpha \Delta t}{\Delta x^2}` is upwards limited to 
+:math:`F = 0.5`, being the stability limit with explicit schemes. Thus, in these cases,
+we use the fixed value of :math:`F` and a given (but changing) spatial resolution :math:`\Delta x` to
+compute the corresponding value of :math:`\Delta t` according to the expression for :math:`F`.
+This assures that :math:`\frac{\Delta t}{\Delta x^2}` is kept constant. The loop in 
+``convergence_rates`` runs over a chosen set of grid points (``Nx_values``) which gives 
+a doubling of spatial resolution with each iteration (:math:`\Delta x` is halved).
+
+For the second order Strang splitting scheme, we have :math:`r = 2` and a step 
+:math:`h = \Delta x = K^{-1}\Delta t`, where :math:`K` again is some constant. In this case,
+it is thus the ratio :math:`\frac{\Delta t}{\Delta x}` that must be held constant 
+during the convergence rate calculations. From the expression for :math:`F`, it is 
+clear then that :math:`F` must change with each halving of :math:`\Delta x`. In fact, if 
+:math:`F` is doubled each time :math:`\Delta x` is halved, the ratio :math:`\frac{\Delta t}{\Delta x}` 
+will be constant (this follows, e.g., from the expression for :math:`F`). This us utilized
+in our code.
 
 A solver ``diffusion_theta`` is used in each of the four solution approaches: 
 
@@ -649,10 +687,10 @@ A solver ``diffusion_theta`` is used in each of the four solution approaches:
         # u is now contained in u_1 (swapping)
         return u_1
 
-For the no splitting approach with forward Euler in time, this solver handles both
+For the no splitting approach with Forward Euler in time, this solver handles both
 the diffusion and the reaction term. When splitting, ``diffusion_theta`` takes care 
 of the diffusion term only, while the reaction
-term is handled either by a forward Euler scheme in ``reaction_FE``, or by a
+term is handled either by a Forward Euler scheme in ``reaction_FE``, or by a
 second order Adams-Bashforth scheme from Odespy. The ``reaction_FE`` function
 covers one complete time step ``dt`` during ordinary splitting, while Strang
 splitting (both first and second order) applies it with ``dt/2`` twice during 
@@ -829,8 +867,7 @@ same structure as the one for first order Strang splitting and was implemented a
         return
 
 When executing ``split_diffu_react.py``, we find that the estimated convergence rates
-are as expected. The second order Strang splitting has second order convergence (:math:`r = 2`), while
-the remaining three approaches have first order convergence (:math:`r = 1`).
+are as expected. The second order Strang splitting gives the least error (about :math:`4e^{-5}`) and has second order convergence (:math:`r = 2`), while the remaining three approaches have first order convergence (:math:`r = 1`).
 
 Analysis of the splitting method
 --------------------------------
