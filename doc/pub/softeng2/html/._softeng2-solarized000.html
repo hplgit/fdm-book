@@ -94,11 +94,14 @@ div { text-align: justify; text-justify: inter-word; }
                'softeng2:wave1D:filestorage:norerun',
                'softeng2:wave1D:filestorage:norerun'),
               ('Verification', 2, None, '___sec14'),
-              ('Programming the solver with classes', 1, None, '___sec15'),
-              ('Class Problem', 2, None, '___sec16'),
-              ('Class Mesh', 2, None, '___sec17'),
-              ('Class Function', 2, None, '___sec18'),
-              ('Class Solver', 2, None, '___sec19'),
+              ('Vanishing approximation error', 3, None, '___sec15'),
+              ('Convergence rates', 3, None, '___sec16'),
+              ('Programming the solver with classes', 1, None, '___sec17'),
+              ('Class Parameters', 2, None, '___sec18'),
+              ('Class Problem', 2, None, '___sec19'),
+              ('Class Mesh', 2, None, '___sec20'),
+              ('Class Function', 2, None, '___sec21'),
+              ('Class Solver', 2, None, '___sec22'),
               ('Migrating loops to Cython',
                1,
                'wave2D3D:impl:Cython',
@@ -106,36 +109,48 @@ div { text-align: justify; text-justify: inter-word; }
               ('Declaring variables and annotating the code',
                2,
                None,
-               '___sec21'),
-              ('Visual inspection of the C translation', 2, None, '___sec22'),
-              ('Building the extension module', 2, None, '___sec23'),
+               '___sec24'),
+              ('Visual inspection of the C translation', 2, None, '___sec25'),
+              ('Building the extension module', 2, None, '___sec26'),
               ('Calling the Cython function from Python',
                2,
                None,
-               '___sec24'),
-              ('Efficiency', 3, None, '___sec25'),
-              ('Migrating loops to Fortran', 1, None, '___sec26'),
-              ('The Fortran subroutine', 2, None, '___sec27'),
-              ('Building the Fortran module with f2py', 2, None, '___sec28'),
-              ('How to avoid array copying', 2, None, '___sec29'),
-              ('Efficiency', 3, None, '___sec30'),
-              ('Migrating loops to C via Cython', 1, None, '___sec31'),
+               '___sec27'),
+              ('Efficiency', 3, None, '___sec28'),
+              ('Migrating loops to Fortran', 1, None, '___sec29'),
+              ('The Fortran subroutine', 2, None, '___sec30'),
+              ('Building the Fortran module with f2py', 2, None, '___sec31'),
+              ('How to avoid array copying', 2, None, '___sec32'),
+              ('Efficiency', 3, None, '___sec33'),
+              ('Migrating loops to C via Cython', 1, None, '___sec34'),
               ('Translating index pairs to single indices',
                2,
                None,
-               '___sec32'),
-              ('The complete C code', 2, None, '___sec33'),
-              ('The Cython interface file', 2, None, '___sec34'),
-              ('Building the extension module', 2, None, '___sec35'),
-              ('Efficiency', 3, None, '___sec36'),
-              ('Migrating loops to C via f2py', 1, None, '___sec37'),
-              ('Migrating loops to C++ via f2py', 2, None, '___sec38'),
-              ('Exercises', 1, None, '___sec39'),
-              ('Exercise 1: Make an improved `numpy.savez` function',
+               '___sec35'),
+              ('The complete C code', 2, None, '___sec36'),
+              ('The Cython interface file', 2, None, '___sec37'),
+              ('Building the extension module', 2, None, '___sec38'),
+              ('Efficiency', 3, None, '___sec39'),
+              ('Migrating loops to C via f2py', 1, None, '___sec40'),
+              ('Migrating loops to C++ via f2py', 2, None, '___sec41'),
+              ('Exercises', 1, None, '___sec42'),
+              ('Exercise 1: Explore computational efficiency of numpy.sum versus built-in sum',
+               2,
+               'softeng2:exer:sum',
+               'softeng2:exer:sum'),
+              ('Exercise 2: Make an improved `numpy.savez` function',
                2,
                'softeng2:exer:savez',
                'softeng2:exer:savez'),
-              ('Bibliography', 1, None, '___sec41')]}
+              ('Exercise 3: Visualize the impact of the Courant number',
+               2,
+               'softeng2:exer:pulse1D:C',
+               'softeng2:exer:pulse1D:C'),
+              ('Exercise 4: Visualize the impact of the resolution',
+               2,
+               'softeng2:exer:pulse1D:Nx',
+               'softeng2:exer:pulse1D:Nx'),
+              ('Bibliography', 1, None, '___sec47')]}
 end of tocinfo -->
 
 <body>
@@ -157,6 +172,7 @@ MathJax.Hub.Config({
 <!-- newcommands_keep.tex -->
 $$
 \newcommand{\tp}{\thinspace .}
+\newcommand{\Oof}[1]{\mathcal{O}(#1)}
 $$
 
 
@@ -181,10 +197,14 @@ $$
 <center><h1>Scientific software engineering; wave equation model</h1></center>  <!-- document title -->
 
 <p>
-<!-- author(s): Hans Petter Langtangen -->
+<!-- author(s): Hans Petter Langtangen, and Svein Linge -->
 
 <center>
 <b>Hans Petter Langtangen</b> [1, 2]
+</center>
+
+<center>
+<b>Svein Linge</b> [3, 1]
 </center>
 
 <p>
@@ -192,9 +212,10 @@ $$
 
 <center>[1] <b>Center for Biomedical Computing, Simula Research Laboratory</b></center>
 <center>[2] <b>Department of Informatics, University of Oslo</b></center>
+<center>[3] <b>Department of Process, Energy and Environmental Technology, University College of Southeast Norway</b></center>
 <br>
 <p>
-<center><h4>Oct 20, 2015</h4></center> <!-- date -->
+<center><h4>Oct 26, 2016</h4></center> <!-- date -->
 <br>
 <p>
 <!-- Externaldocuments: ../wave/main_wave -->
@@ -222,30 +243,34 @@ This document is in a very incomplete state!
 &nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#softeng2:wave1D:filestorage:hashlib"> Making hash strings from input data </a><br>
 &nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#softeng2:wave1D:filestorage:norerun"> Avoiding rerunning previously run cases </a><br>
 &nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec14"> Verification </a><br>
-<a href="._softeng2-solarized001.html#___sec15"> Programming the solver with classes </a><br>
-&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec16"> Class Problem </a><br>
-&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec17"> Class Mesh </a><br>
-&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec18"> Class Function </a><br>
-&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec19"> Class Solver </a><br>
+<a href="._softeng2-solarized001.html#___sec17"> Programming the solver with classes </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec18"> Class Parameters </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec19"> Class Problem </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec20"> Class Mesh </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec21"> Class Function </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec22"> Class Solver </a><br>
 <a href="._softeng2-solarized001.html#wave2D3D:impl:Cython"> Migrating loops to Cython </a><br>
-&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec21"> Declaring variables and annotating the code </a><br>
-&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec22"> Visual inspection of the C translation </a><br>
-&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec23"> Building the extension module </a><br>
-&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec24"> Calling the Cython function from Python </a><br>
-<a href="._softeng2-solarized001.html#___sec26"> Migrating loops to Fortran </a><br>
-&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec27"> The Fortran subroutine </a><br>
-&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec28"> Building the Fortran module with f2py </a><br>
-&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec29"> How to avoid array copying </a><br>
-<a href="._softeng2-solarized001.html#___sec31"> Migrating loops to C via Cython </a><br>
-&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec32"> Translating index pairs to single indices </a><br>
-&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec33"> The complete C code </a><br>
-&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec34"> The Cython interface file </a><br>
-&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec35"> Building the extension module </a><br>
-<a href="._softeng2-solarized001.html#___sec37"> Migrating loops to C via f2py </a><br>
-&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec38"> Migrating loops to C++ via f2py </a><br>
-<a href="._softeng2-solarized001.html#___sec39"> Exercises </a><br>
-&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#softeng2:exer:savez"> Exercise 1: Make an improved <code>numpy.savez</code> function </a><br>
-<a href="._softeng2-solarized002.html#___sec41"> Bibliography </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec24"> Declaring variables and annotating the code </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec25"> Visual inspection of the C translation </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec26"> Building the extension module </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec27"> Calling the Cython function from Python </a><br>
+<a href="._softeng2-solarized001.html#___sec29"> Migrating loops to Fortran </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec30"> The Fortran subroutine </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec31"> Building the Fortran module with f2py </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec32"> How to avoid array copying </a><br>
+<a href="._softeng2-solarized001.html#___sec34"> Migrating loops to C via Cython </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec35"> Translating index pairs to single indices </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec36"> The complete C code </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec37"> The Cython interface file </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec38"> Building the extension module </a><br>
+<a href="._softeng2-solarized001.html#___sec40"> Migrating loops to C via f2py </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#___sec41"> Migrating loops to C++ via f2py </a><br>
+<a href="._softeng2-solarized001.html#___sec42"> Exercises </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#softeng2:exer:sum"> Exercise 1: Explore computational efficiency of numpy.sum versus built-in sum </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#softeng2:exer:savez"> Exercise 2: Make an improved <code>numpy.savez</code> function </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#softeng2:exer:pulse1D:C"> Exercise 3: Visualize the impact of the Courant number </a><br>
+&nbsp; &nbsp; &nbsp; <a href="._softeng2-solarized001.html#softeng2:exer:pulse1D:Nx"> Exercise 4: Visualize the impact of the resolution </a><br>
+<a href="._softeng2-solarized002.html#___sec47"> Bibliography </a><br>
 </p>
 <p>
 <p>
@@ -258,6 +283,11 @@ This document is in a very incomplete state!
 </p>
 
 <!-- ------------------- end of main content --------------- -->
+
+
+<center style="font-size:80%">
+<!-- copyright --> &copy; 2016, Hans Petter Langtangen, Svein Linge. Released under CC Attribution 4.0 license
+</center>
 
 
 </body>

@@ -452,15 +452,42 @@ of arguments, while a class-based solver naturally has a mix of method
 arguments and user-supplied methods. (Well, to be more precise,
 our solvers have demanded `user_action`
 to be a function provided by the user, so it is possible to mix variables
-and functions in the input also in a solver function.)
+and functions in the input also with a solver function.)
+
+We will next illustrate how some of the functionality in `wave1D_dn_vc.py`
+may be implemented by using classes. Focusing on class implementation aspects,
+we restrict the example case to a simpler wave with constant wave speed $c$.
+Applying the method of manufactured solutions, we test whether the class based
+implementation is able to compute the known exact solution within machine precision.
 
 We will create a class `Problem` to hold the physical parameters of the
-problem and a class `Solver` to hold the numerical parameters and
-the solver function. In addition, it is convenient to collect the
+problem and a class `Solver` to hold the numerical solution parameters besides
+the solver function itself. As the number of parameters increases, so does
+the amount of repetitive code. We therefore take the opportunity to illustrate
+how this may be counteracted by introducing a super class `Parameters` that allows 
+code to be parameterized. In addition, it is convenient to collect the
 arrays that describe the mesh in a special `Mesh` class and make
 a class `Function` for a mesh function (mesh point values and its mesh).
+All the following code is found in "`wave1D_oo.py`": "${src_softeng2}/wave1D_oo.py".
+
+===== Class Parameters =====
+
+The classes `Problem` and `Solver` both inherit class `Parameters`, which
+handles reading of parameters from the command line and has methods 
+for setting and getting parameter values. Since processing dictionaries
+is easier than processing a collection of individual attributes, the class 
+`Parameters` requires each class `Problem` and `Solver` to represent their 
+parameters by dictionaries, one compulsory and two optional ones. The compulsory dictionary, `self.prm`, contains all parameters, while a second and optional dictionary, `self.type`, holds the associated object types, and a third and optional dictionary, `self.help`, stores help strings. The `Parameters` class may be implemented as follows:
+
+@@@CODE src-softeng2/wave1D_oo.py fromto: class Parameters@class Problem
+
 
 ===== Class Problem =====
+
+Inheriting the `Parameters` class, our class `Problem` is defined as:
+
+@@@CODE src-softeng2/wave1D_oo.py fromto: class Problem@class Solver
+
 
 ===== Class Mesh =====
 
@@ -510,9 +537,22 @@ should explain the functionality.
 ===== Class Solver =====
 
 With the `Mesh` and `Function` classes in place, we can rewrite
-the `solver` function, but we put it as a method in class `Solver`:
+the `solver` function, but we make it a method in class `Solver`:
 
 [hpl: Rewrite solver!]
+
+@@@CODE src-softeng2/wave1D_oo.py fromto: class Solver@def test
+
+Observe that the solutions from all time steps are stored in the mesh function, 
+which allows error assessment (in `assert_no_error`) to take place after all 
+solutions have been found. Of course, in 2D or 3D, such a strategy may place too
+high demands on available computer memory, in which case intermediate results
+could be stored on file.
+
+Running `wave1D_oo.py` gives a printout showing that the class-based 
+implementation performs as expected, i.e. that the known exact solution
+is reproduced (within machine precision).
+
 
 ======= Migrating loops to Cython =======
 label{wave2D3D:impl:Cython}
