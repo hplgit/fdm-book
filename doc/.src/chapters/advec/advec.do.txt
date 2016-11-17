@@ -45,7 +45,7 @@ label{advec:1D:pde1:I}
 !et
 In (ref{advec:1D:pde1:u}), $v$ is a given parameter, typically reflecting
 the velocity of transport of a quantity $u$ with a flow.
-There is only one boundary condition (ref{advec:1D:pde1:U0}) since
+There is only one boundary condition (ref{advec:1D:pde1:I}) since
 the spatial derivative is only first order in the PDE (ref{advec:1D:pde1:u}).
 The information at $x=0$ and the initial condition get
 transported in the positive $x$ direction
@@ -76,9 +76,12 @@ if $x_i=i\Delta x$ and $t_n=n\Delta t$ are points in a uniform mesh.
 We see this relation from
 
 !bt
-\[ u(i\Delta x, (n+1)\Delta t) = I(i\Delta x - v(n+1)\Delta t) =
-I((i-1)\Delta x - vn\Delta t - v\Delta t - \Delta x)
-= I((i-1)\Delta x - vn\Delta t) = u((i-1)\Delta x, n\Delta t),\]
+\begin{align}
+u(i\Delta x, (n+1)\Delta t) &= I(i\Delta x - v(n+1)\Delta t) \nonumber \\
+&= I((i-1)\Delta x - vn\Delta t - v\Delta t - \Delta x) \nonumber \\
+&= I((i-1)\Delta x - vn\Delta t) \nonumber \\
+&= u((i-1)\Delta x, n\Delta t), \nonumber
+\end{align}
 !et
 provided $v = \Delta x/\Delta t$. So, whenever we see a scheme that
 collapses to
@@ -94,7 +97,7 @@ analytical solution, and many of the schemes to be presented possess
 this nice property!
 
 Finally, we add that a discussion of appropriate boundary conditions
-for the advection PDE in multiple dimensions is a challenching topic beyond
+for the advection PDE in multiple dimensions is a challenging topic beyond
 the scope of this text.
 
 ===== Simplest scheme: forward in time, centered in space =====
@@ -191,12 +194,12 @@ and any amplitude $B$. (Since the PDE to be investigated by this method
 is homogeneous and linear, $B$ will always cancel out, so we tend to skip
 this amplitude, but keep it here in the beginning for completeness.)
 
-A general solution can be thought to be build of a collection of long and
+A general solution may be viewed as a collection of long and
 short waves with different amplitudes. Algebraically, the work
 simplifies if we introduce the complex Fourier component
 
 !bt
-\[ u(x,t)=\Aex^n e^{ikx},\]
+\[ u(x,t)=\Aex e^{ikx},\]
 !et
 with
 
@@ -218,13 +221,13 @@ have implemented, we look at how it treats the Fourier component
 Inserting the numerical component in the scheme,
 
 !bt
-\[ [D_t^+ A^n e^{ikq\Delta x} + v D_{2x}A^n e^{ikq\Delta x}]^n_i,\]
+\[ [D_t^+ A e^{ikq\Delta x} + v D_{2x}A e^{ikq\Delta x} = 0]^n_i,\]
 !et
 and making use of (ref{form:exp:fd1c:center})
 results in
 
 !bt
-\[ [e^{ikq\Delta x} (\frac{A-1}{\Delta t} + v\frac{1}{\Delta x}i\sin (k\Delta x))]^n_i,\]
+\[ [e^{ikq\Delta x} (\frac{A-1}{\Delta t} + v\frac{1}{\Delta x}i\sin (k\Delta x)) = 0]^n_i,\]
 !et
 which implies
 
@@ -254,10 +257,11 @@ time and combine it with central differences in space:
 which results in the updating formula
 
 !bt
-\[ u^{n+1}_i = u^{n-1}_i - C^2(u_{i+1}^n-u_{i-1}^n)\tp\]
+\[ u^{n+1}_i = u^{n-1}_i - C(u_{i+1}^n-u_{i-1}^n)\tp\]
 !et
 A special scheme is needed to compute $u^1$, but we leave that problem for
-now.
+now. Anyway, this special scheme can be found in 
+"`advec1D.py`": "${src_advec}/advec/advec1D.py".
 
 === Implementation ===
 
@@ -272,7 +276,7 @@ u_1 = np.zeros(Nx+1)
 u_2 = np.zeros(Nx+1)
 ...
 for n in range(0, Nt):
-    if scheme == 'UP':
+    if scheme == 'FE':
         for i in range(1, Nx):
             u[i] = u_1[i] - 0.5*C*(u_1[i+1] - u_1[i-1])
     elif scheme == 'LF':
@@ -302,9 +306,9 @@ FIGURE: [fig-advec/solver_FE_Upw, width=500 frac=0.8] Exact solution obtained by
 === Running more test cases ===
 
 We can run two types of initial conditions for $C=0.8$: one very
-smooth with a Gaussian function (Figure ref{advec:1D:UP:fig1:C08}) and
+smooth with a Gaussian function (Figure ref{advec:1D:LF:fig1:C08}) and
 one with a discontinuity in the first derivative (Figure
-ref{advec:1D:UP:fig2:C08}).  Unless we have a very fine mesh, as in
+ref{advec:1D:LF:fig2:C08}).  Unless we have a very fine mesh, as in
 the left plots in the figures, we get small ripples behind the main
 wave, and this main wave has the amplitude reduced.
 
@@ -410,13 +414,13 @@ Experiments show, however, that
 reducing $\Delta t$ or $\Delta x$, while keeping $C$ reduces the
 error.
 
-FIGURE: [fig-advec/gaussian_UP_C08, width=800 frac=1] Advection of a Gaussian function with a forward in time, upwind in space scheme and $C=0.8$, $\Delta t = 0.001$ (left) and $\Delta t=0.01$ (right). label{advec:1D:UP:fig1:C08}
+FIGURE: [fig-advec/gaussian_UP_C08, width=800 frac=1] Advection of a Gaussian function with a forward in time, upwind in space scheme and $C=0.8$, $\Delta t = 0.01$ (left) and $\Delta t=0.001$ (right). label{advec:1D:UP:fig1:C08}
 
 MOVIE: [mov-advec/gaussian/UP/C08_dt001/movie.ogg] Forward in time, upwind in space, $C=0.8$, $\Delta t = 0.01$. label{advec:1D:UP:mov1:C08:dt1}
 
 MOVIE: [mov-advec/gaussian/UP/C08_dt001/movie.ogg] Forward in time, upwind in space, $C=0.8$, $\Delta t = 0.005$. label{advec:1D:UP:mov1:C08:dt2}
 
-FIGURE: [fig-advec/cosinehat_UP_08, width=800 frac=1] Advection of half a cosine function with a forward in time, upwind in space scheme and $C=0.8$, $\Delta t = 0.01$ (left) and $\Delta t=0.001$ (right). label{advec:1D:UP:fig2:C08}
+FIGURE: [fig-advec/cosinehat_UP_08, width=800 frac=1] Advection of half a cosine function with a forward in time, upwind in space scheme and $C=0.8$, $\Delta t = 0.001$ (left) and $\Delta t=0.01$ (right). label{advec:1D:UP:fig2:C08}
 
 MOVIE: [mov-advec/cosinehat/UP/C08_dt01.ogg] Advection of half a cosine function with a forward in time, upwind in space scheme and $C=0.8$, $\Delta t = 0.01$. label{advec:1D:UP:mov2:C08:dt1}
 
@@ -867,7 +871,7 @@ amplification factor for the Lax-Wendroff method that equals
 !bt
 \[ A = 1 - iC\sin p - 2C^2\sin^2 (p/2)\tp\]
 !et
-This means that $|A|=1$ and also that we have an exact solution of $C=1$!
+This means that $|A|=1$ and also that we have an exact solution if $C=1$!
 
 
 ===== Analysis of dispersion relations =====
