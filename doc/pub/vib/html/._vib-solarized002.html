@@ -7,7 +7,7 @@ Automatically generated HTML file from DocOnce source
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="DocOnce: https://github.com/hplgit/doconce/" />
 <meta name="description" content="Finite Difference Computing for Oscillatory Phenomena">
-<meta name="keywords" content="vibration ODE,oscillations,mechanical vibrations,period (of oscillations),frequency (of oscillations),Hz (unit),mesh finite differences,mesh function,centered difference,finite differences centered,vectorization,test function,pytest,nose,verification hand calculations,unit testing,verification polynomial solutions,verification convergence rates,slope marker (in convergence plots),making movies,animation,WebM (video format),Ogg (video format),MP4 (video format),Flash (video format),video formats,HTML5 video tag,error global,stability criterion,phase plane plot,mechanical energy,energy principle,forward-backward Euler-Cromer scheme,Euler-Cromer scheme,symplectic scheme,Stoermer-Verlet algorithm,staggered mesh,staggered Euler-Cromer scheme,alternating mesh,nonlinear restoring force,nonlinear spring,forced vibrations,geometric mean,averaging geometric,DOF (degree of freedom),resonance">
+<meta name="keywords" content="vibration ODE,oscillations,mechanical vibrations,angular frequency,period (of oscillations),frequency (of oscillations),Hz (unit),mesh finite differences,mesh function,discretization of domain,centered difference,finite differences centered,Verlet integration,Stoermer's method,Leapfrog method,FD operator notation,vectorization,test function,pytest,nose,verification hand calculations,unit testing,zeros,verification polynomial solutions,assert,verification convergence rates,error norm,slope marker (in convergence plots),SciTools,making movies,animation,WebM (video format),Ogg (video format),MP4 (video format),Flash (video format),video formats,HTML5 video tag,ImageMagic,Bokeh,sympy,error mesh function,error global,error norm,norm,stability criterion,1st-order ODE,2nd-order ODE,Odespy,phase plane plot,mechanical energy,energy principle,kinetic energy,potential energy,spring constant,stiffness,Newton's 2nd law,error norm,forward-backward scheme,Euler-Cromer scheme,semi-implicit Euler,semi-explicit Euler,symplectic scheme,verification  convergence rates,Stoermer-Verlet algorithm,staggered mesh,staggered Euler-Cromer scheme,alternating mesh,nonlinear restoring force,nonlinear spring,forced vibrations,geometric mean,averaging geometric,DOF (degree of freedom),resonance">
 
 <title>Finite Difference Computing for Oscillatory Phenomena</title>
 
@@ -1062,7 +1062,7 @@ In the present problem, computing convergence rates means that we must
    \( E_i=\sqrt{\Delta t_i\sum_{n=0}^{N_t-1}(u^n-\uex(t_n))^2} \) in each case;</li>
  <li> estimate the convergence rates \( r_i \) based on two consecutive
    experiments \( (\Delta t_{i-1}, E_{i-1}) \) and \( (\Delta t_{i}, E_{i}) \),
-   assuming \( E_i=C(\Delta t_i)^{r} \) and \( E_{i-1}=C(\Delta t_{i-1})^{r} \).
+   assuming \( E_i=C(\Delta t_i)^{r} \) and \( E_{i-1}=C(\Delta t_{i-1})^{r} \), where \( C \) is a constant.
    From these equations it follows that
    \( r = \ln (E_{i-1}/E_i)/\ln (\Delta t_{i-1}/\Delta t_i) \). Since this \( r \)
    will vary with \( i \), we equip it with an index and call it \( r_{i-1} \),
@@ -1132,8 +1132,9 @@ error model \( E_i = C(\Delta t_i)^r \) is valid.
 <p>
 We can now construct a proper test function that computes convergence rates
 and checks that the final (and usually the best) estimate is sufficiently
-close to 2. Here, a rough tolerance of 0.1 is enough. This unit test
-goes like
+close to 2. Here, a rough tolerance of 0.1 is enough. Later, we will argue
+for an improvement by adjusting omega and include also that case in our test
+function here. The unit test goes like
 
 <p>
 
@@ -1578,7 +1579,7 @@ the mouse inside one of the plots to scroll into the future!
 <p>
 A function for creating a Bokeh plot, given a list of <code>u</code> arrays
 and corresponding <code>t</code> arrays, is implemented below.
-The code combines data fro different simulations, described
+The code combines data from different simulations, described
 compactly in a list of strings <code>legends</code>.
 
 <p>
@@ -1978,7 +1979,7 @@ $$
 <h2 id="vib:ode1:analysis:numfreq">The error in the numerical frequency</h2>
 
 <p>
-The first observation of <a href="#mjx-eqn-18">(18)</a> tells that there
+The first observation following <a href="#mjx-eqn-18">(18)</a> tells that there
 is a phase error since the numerical frequency \( \tilde\omega \) never
 equals the exact frequency \( \omega \). But how good is the approximation
 <a href="#mjx-eqn-18">(18)</a>? That is, what is the error \( \omega -
@@ -2051,7 +2052,7 @@ error grows linearly with time (see <a href="#vib:exer:phase:err:growth">Exercis
 <h2 id="___sec31">Empirical convergence rates and adjusted \( \omega \) </h2>
 
 <p>
-The expression <a href="#mjx-eqn-19">(19)</a> suggest that
+The expression <a href="#mjx-eqn-19">(19)</a> suggests that
 adjusting omega to
 
 $$ \omega\left( 1 - \frac{1}{24}\omega^2\Delta t^2\right),$$
@@ -2117,8 +2118,8 @@ by doing <a href="#vib:exer:discrete:omega">Exercise 11: Use an exact discrete s
 <h2 id="vib:ode1:analysis:conv">Convergence</h2>
 
 <p>
-We can use <a href="#mjx-eqn-19">(19)</a>, <a href="#mjx-eqn-21">(21)</a>, or
-<a href="#mjx-eqn-22">(22)</a> to show <em>convergence</em> of the numerical scheme,
+We can use <a href="#mjx-eqn-19">(19)</a> and <a href="#mjx-eqn-21">(21)</a>, or
+<a href="#mjx-eqn-22">(22)</a>, to show <em>convergence</em> of the numerical scheme,
 i.e., \( e^n\rightarrow 0 \) as \( \Delta t\rightarrow 0 \), which implies
 that the numerical solution approaches the exact solution as \( \Delta
 t \) approaches to zero.  We have that
@@ -2992,8 +2993,8 @@ $$
 <h3 id="___sec47">Growth of energy in the Forward Euler scheme </h3>
 
 <p>
-The energy at time level \( n+1 \) in the Forward Euler scheme can easily
-be shown to increase:
+It is easy to show that the energy in the Forward Euler scheme increases
+when stepping from time level \( n \) to \( n+1 \).
 
 $$
 \begin{align*}
@@ -3150,7 +3151,7 @@ the second-order equation \( u^{\prime\prime}+\omega^2u=0 \). However,
 there is a similarly successful scheme available for the first-order
 system \( u^{\prime}=v \), \( v^{\prime}=-\omega^2u \), to be presented below.
 The ideas of the scheme and their further developments have become
-very popular in particle and rigid body dynamics and hence widely
+very popular in particle and rigid body dynamics and hence are widely
 used by physicists.
 
 <h2 id="___sec50">Forward-backward discretization </h2>
@@ -3244,12 +3245,6 @@ Euler method</a>,
 semi-explicit Euler, symplectic Euler,
 Newton-Stoermer-Verlet,
 and Euler-Cromer.  We shall stick to the latter name.
-Since both time
-discretizations are based on first-order difference approximation, one
-may think that the scheme is only of first-order, but this is not
-true: the use of a forward and then a backward difference make errors
-cancel so that the overall error in the scheme is \( \Oof{\Delta
-t^2} \). This is explained below.
 
 <p>
 How does the Euler-Cromer method preserve the total energy?
@@ -3319,7 +3314,7 @@ method.
 <p>
 Although the Euler-Cromer scheme and the method <a href="#mjx-eqn-7">(7)</a>
 are equivalent, there could be differences in the way they handle the
-initial conditions. Let is look into this topic.  The initial
+initial conditions. Let us look into this topic.  The initial
 condition \( u^{\prime}=0 \) means \( u^{\prime}=v=0 \).  From
 <a href="#mjx-eqn-54">(54)</a> we get
 
@@ -3476,9 +3471,9 @@ Euler-Cromer method, see the <code>convergence_rate</code> function in the file
 <code>vib_undamped_EulerCromer.py</code>.  Since we could eliminate \( v \) to get a
 scheme for \( u \) that is equivalent to the finite difference method for
 the second-order equation in \( u \), we would expect the convergence
-rates to be the same, i.e., \( \mathcal{O}(\Delta t^2) \). However,
+rates to be the same, i.e., \( r = 2 \). However,
 measuring the convergence rate of \( u \) in the Euler-Cromer scheme shows
-that it is \( \mathcal{O}(\Delta t) \)!  Adjusting the initial condition
+that \( r = 1 \) only!  Adjusting the initial condition
 does not change the rate. Adjusting \( \omega \), as outlined in the section <a href="#vib:ode1:analysis:numfreq">The error in the numerical frequency</a>, gives a 4th-order method there, while
 there is no increase in the measured rate in the Euler-Cromer
 scheme. It is obvious that the Euler-Cromer scheme is dramatically
@@ -3520,14 +3515,14 @@ $$
 \begin{align*}
 \frac{v^{n+\half}-v^n}{\half\Delta t} &= -\omega^2 u^n,\\ 
 \frac{u^{n+\half}-u^n}{\half\Delta t} &= v^{n+\half},\\ 
-\frac{u^{n+1}-u^{n-\half}}{\half\Delta t} &= v^{n+\half},\\ 
+\frac{u^{n+1}-u^{n+\half}}{\half\Delta t} &= v^{n+\half},\\ 
 \frac{v^{n+1}-v^{n+\half}}{\half\Delta t} &= -\omega^2 u^{n+1}\tp
 \end{align*}
 $$
 
 The two steps in the middle can be combined to
 
-$$ \frac{u^{n+1}-u^{n-1}}{\Delta t} = v^{n+\half},$$
+$$ \frac{u^{n+1}-u^{n}}{\Delta t} = v^{n+\half},$$
 
 and consequently
 
@@ -3562,14 +3557,14 @@ the section <a href="#vib:model2x2:staggered">The Euler-Cromer scheme on a stagg
 four different reasonings (discretizing \( u^{\prime\prime}+\omega^2 u \)
 directly, using Euler-Cromer, using
 Stoermer-Verlet,
-and using centered differences for the \( 2times 2 \) system on a staggered
+and using centered differences for the \( 2\times 2 \) system on a staggered
 mesh) all end up with the same equations! The main difference is that
 the traditional Euler-Cromer displays first-order convergence in \( \Delta t \)
 (due to less symmetry in the way \( u \) and \( v \) are treated)
 while the others are \( \Oof{\Delta t^2} \) schemes.
 
 <p>
-The most numerical stable scheme, with respect to accumulation of
+The most numerically stable scheme, with respect to accumulation of
 rounding errors, is
 <a href="#mjx-eqn-61">(61)</a>-<a href="#mjx-eqn-62">(62)</a>.
 It has, according to <a href="._vib-solarized003.html#Hairer_Wanner_Norsett_bookI">[3]</a>, better

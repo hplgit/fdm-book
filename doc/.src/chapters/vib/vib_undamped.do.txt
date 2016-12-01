@@ -38,7 +38,7 @@ point for method development, implementation, and analysis.
 
 ===== A basic model for vibrations =====
 
-idx{vibration ODE} idx{oscillations} idx{mechanical vibrations}
+idx{vibration ODE} idx{oscillations} idx{mechanical vibrations} idx{angular frequency}
 
 The simplest model of a vibrating mechanical system has the following form:
 
@@ -90,7 +90,7 @@ To formulate a finite difference method for the model
 problem  (ref{vib:ode1}) we follow the ref[four steps explained in Section
 ref{decay:schemes:FE}][ in cite{Langtangen_decay}]["four steps": "${doc_notes}/sphinx-decay/main_decay.html#the-forward-euler-scheme" explained in cite{Langtangen_decay}].
 
-idx{mesh!finite differences} idx{mesh function}
+idx{mesh!finite differences} idx{mesh function} idx{discretization of domain}
 
 === Step 1: Discretizing the domain ===
 
@@ -184,6 +184,8 @@ method, "Verlet integration":
 that Leapfrog is used for many quite different methods for quite
 different differential equations!).
 
+idx{Verlet integration} idx{Stoermer's method} idx{Leapfrog method}
+
 === Computing the first step ===
 
 We observe that (ref{vib:ode1:step4}) cannot be used for $n=0$ since
@@ -235,6 +237,8 @@ The reason is that the authors prefer `w` for readability
 and comparison with the mathematical $\omega$ instead of
 the full word `omega` as variable name.
 !ewarning
+
+idx{FD operator notation}
 
 === Operator notation ===
 
@@ -412,7 +416,7 @@ idx{pytest}
 idx{nose}
 idx{verification!hand calculations}
 idx{unit testing}
-
+idx{zeros}
 
 === Manual calculation ===
 
@@ -457,7 +461,8 @@ vib_undamped.py::test_convergence_rates PASSED
 =========================== 2 passed in 0.19 seconds ===...
 !ec
 
-idx{verification!polynomial solutions}
+idx{verification!polynomial solutions} 
+idx{assert}
 
 === Testing very simple polynomial solutions ===
 
@@ -477,6 +482,7 @@ of the discrete equations. Such results are very useful for debugging
 and verification. You are strongly encouraged to do this problem now!
 
 idx{verification!convergence rates}
+idx{error norm}
 
 === Checking convergence rates ===
 
@@ -498,7 +504,7 @@ In the present problem, computing convergence rates means that we must
    $E_i=\sqrt{\Delta t_i\sum_{n=0}^{N_t-1}(u^n-\uex(t_n))^2}$ in each case;
  * estimate the convergence rates $r_i$ based on two consecutive
    experiments $(\Delta t_{i-1}, E_{i-1})$ and $(\Delta t_{i}, E_{i})$,
-   assuming $E_i=C(\Delta t_i)^{r}$ and $E_{i-1}=C(\Delta t_{i-1})^{r}$.
+   assuming $E_i=C(\Delta t_i)^{r}$ and $E_{i-1}=C(\Delta t_{i-1})^{r}$, where $C$ is a constant.
    From these equations it follows that
    $r = \ln (E_{i-1}/E_i)/\ln (\Delta t_{i-1}/\Delta t_i)$. Since this $r$
    will vary with $i$, we equip it with an index and call it $r_{i-1}$,
@@ -540,8 +546,9 @@ error model $E_i = C(\Delta t_i)^r$ is valid.
 
 We can now construct a proper test function that computes convergence rates
 and checks that the final (and usually the best) estimate is sufficiently
-close to 2. Here, a rough tolerance of 0.1 is enough. This unit test
-goes like
+close to 2. Here, a rough tolerance of 0.1 is enough. Later, we will argue
+for an improvement by adjusting omega and include also that case in our test
+function here. The unit test goes like
 
 @@@CODE src-vib/vib_undamped.py fromto: def test_convergence@def plot_convergence_rates
 The complete code appears in the file `vib_undamped.py`.
@@ -644,6 +651,8 @@ quantify this numerical angular frequency $\tilde\omega$.
 FIGURE: [fig-vib/vib_freq_err1, width=800 frac=1.0] Effect of halving the time step. label{vib:ode1:2dt}
 
 ===== Using a moving plot window =====
+
+idx{SciTools}
 
 In vibration problems it is often of interest to investigate the system's
 behavior over long time intervals. Errors in the angular frequency accumulate
@@ -796,6 +805,8 @@ Terminal> mv vib.html vib_dt0.1/index.html
 
 === Making animated GIF files ===
 
+idx{ImageMagic} idx{Bokeh}
+
 The `convert` program from the ImageMagick software suite can be
 used to produce animated GIF files from a set of PNG files:
 
@@ -849,7 +860,7 @@ FIGURE: [fig-vib/bokeh_gridplot_interactive, width=800 frac=1] Interactive Bokeh
 
 A function for creating a Bokeh plot, given a list of `u` arrays
 and corresponding `t` arrays, is implemented below.
-The code combines data fro different simulations, described
+The code combines data from different simulations, described
 compactly in a list of strings `legends`.
 
 @@@CODE src-vib/vib_undamped.py fromto: def bokeh_plot@def demo_bokeh
@@ -1109,7 +1120,9 @@ label{vib:ode1:tildeomega}
 ===== The error in the numerical frequency =====
 label{vib:ode1:analysis:numfreq}
 
-The first observation of (ref{vib:ode1:tildeomega}) tells that there
+idx{sympy}
+
+The first observation following (ref{vib:ode1:tildeomega}) tells that there
 is a phase error since the numerical frequency $\tilde\omega$ never
 equals the exact frequency $\omega$. But how good is the approximation
 (ref{vib:ode1:tildeomega})? That is, what is the error $\omega -
@@ -1171,7 +1184,7 @@ FIGURE: [fig-vib/discrete_freq, width=400] Exact discrete frequency and its seco
 
 ===== Empirical convergence rates and adjusted $\omega$ =====
 
-The expression (ref{vib:ode1:tildeomega:series}) suggest that
+The expression (ref{vib:ode1:tildeomega:series}) suggests that
 adjusting omega to
 
 !bt
@@ -1198,6 +1211,8 @@ impact on $\omega$, and therefore we cannot use the trick.
 
 ===== Exact discrete solution =====
 label{vib:ode1:analysis:sol}
+
+idx{error mesh function}
 
 Perhaps more important than the $\tilde\omega = \omega + {\cal O}(\Delta t^2)$
 result found above is the fact that we have an exact discrete solution of
@@ -1240,8 +1255,8 @@ by doing Exercise ref{vib:exer:discrete:omega}.
 label{vib:ode1:analysis:conv}
 
 
-We can use (ref{vib:ode1:tildeomega:series}), (ref{vib:ode1:en}), or
-(ref{vib:ode1:en2}) to show *convergence* of the numerical scheme,
+We can use (ref{vib:ode1:tildeomega:series}) and (ref{vib:ode1:en}), or
+(ref{vib:ode1:en2}), to show *convergence* of the numerical scheme,
 i.e., $e^n\rightarrow 0$ as $\Delta t\rightarrow 0$, which implies
 that the numerical solution approaches the exact solution as $\Delta
 t$ approaches to zero.  We have that
@@ -1269,7 +1284,7 @@ It then follows from the expression(s) for $e^n$ that $e^n\rightarrow 0$.
 
 ===== The global error =====
 
-idx{error!global}
+idx{error!global} idx{error norm} idx{norm}
 
 To achieve more analytical insight into the nature of the global
 error, we can Taylor expand the error mesh function
@@ -1457,6 +1472,8 @@ analysis we can draw three important conclusions:
 
 ======= Alternative schemes based on 1st-order equations =======
 label{vib:model2x2}
+
+idx{1st-order ODE} idx{2nd-order ODE}
 
 A standard technique for solving second-order ODEs is to rewrite them
 as a system of first-order ODEs and then choose a solution strategy
@@ -1690,6 +1707,8 @@ terms at the same time point $t_n$.
 
 ===== Comparison of schemes =====
 label{vib:model2x2:compare}
+
+idx{Odespy}
 
 We can easily compare methods like the ones above (and many more!)
 with the aid of the
@@ -1932,6 +1951,9 @@ dive into this subject.
 ===== Derivation of the energy expression =====
 label{vib:model1:energy:expr}
 
+idx{kinetic energy} idx{potential energy} idx{spring constant} idx{stiffness}
+idx{Newton's 2nd law}
+
 We start out with multiplying
 
 !bt
@@ -2039,8 +2061,8 @@ is constant:
 
 === Growth of energy in the Forward Euler scheme ===
 
-The energy at time level $n+1$ in the Forward Euler scheme can easily
-be shown to increase:
+It is easy to show that the energy in the Forward Euler scheme increases
+when stepping from time level $n$ to $n+1$.
 
 !bt
 \begin{align*}
@@ -2133,6 +2155,8 @@ is subtracted.
 
 ===== An error measure based on energy =====
 label{vib:model1:energy:measure}
+
+idx{error norm}
 
 The constant energy is well expressed by its initial value $E(0)$, so that
 the error in mechanical energy can be computed as a mesh function by
@@ -2309,12 +2333,14 @@ the second-order equation $u^{\prime\prime}+\omega^2u=0$. However,
 there is a similarly successful scheme available for the first-order
 system $u^{\prime}=v$, $v^{\prime}=-\omega^2u$, to be presented below.
 The ideas of the scheme and their further developments have become
-very popular in particle and rigid body dynamics and hence widely
+very popular in particle and rigid body dynamics and hence are widely
 used by physicists.
 
 
-idx{forward-backward Euler-Cromer scheme}
+idx{forward-backward scheme}
 idx{Euler-Cromer scheme}
+idx{semi-implicit Euler}
+idx{semi-explicit Euler}
 
 ===== Forward-backward discretization =====
 
@@ -2406,12 +2432,6 @@ Newton-St\"{o}rmer-Verlet,
 Newton-Stoermer-Verlet,
 # #endif
 and Euler-Cromer.  We shall stick to the latter name.
-Since both time
-discretizations are based on first-order difference approximation, one
-may think that the scheme is only of first-order, but this is not
-true: the use of a forward and then a backward difference make errors
-cancel so that the overall error in the scheme is $\Oof{\Delta
-t^2}$. This is explained below. [hpl: This is not correct!]
 
 How does the Euler-Cromer method preserve the total energy?
 We may run the example from Section ref{vib:model1:energy:measure}:
@@ -2474,7 +2494,7 @@ method.
 
 Although the Euler-Cromer scheme and the method (ref{vib:ode1:step4})
 are equivalent, there could be differences in the way they handle the
-initial conditions. Let is look into this topic.  The initial
+initial conditions. Let us look into this topic.  The initial
 condition $u^{\prime}=0$ means $u^{\prime}=v=0$.  From
 (ref{vib:model2x2:EulerCromer:veq1b}) we get
 
@@ -2586,15 +2606,17 @@ u = u[:,1]  # Extract displacement
 
 === Convergence rates ===
 
+idx{verification! convergence rates}
+
 We may use the `convergence_rates` function in the file
 `vib_undamped.py` to investigate the convergence rate of the
 Euler-Cromer method, see the `convergence_rate` function in the file
 `vib_undamped_EulerCromer.py`.  Since we could eliminate $v$ to get a
 scheme for $u$ that is equivalent to the finite difference method for
 the second-order equation in $u$, we would expect the convergence
-rates to be the same, i.e., $\mathcal{O}(\Delta t^2)$. However,
+rates to be the same, i.e., $r = 2$. However,
 measuring the convergence rate of $u$ in the Euler-Cromer scheme shows
-that it is $\mathcal{O}(\Delta t)$!  Adjusting the initial condition
+that $r = 1$ only!  Adjusting the initial condition
 does not change the rate. Adjusting $\omega$, as outlined in Section
 ref{vib:ode1:analysis:numfreq}, gives a 4th-order method there, while
 there is no increase in the measured rate in the Euler-Cromer
@@ -2622,7 +2644,7 @@ idx{Stoermer-Verlet algorithm}
 Another very popular algorithm for vibration problems, especially
 for long time simulations, is the
 # #if FORMAT in ("pdflatex", "latex")
-St\"{o}mer-Verlet
+St\"{o}rmer-Verlet
 # #else
 Stoermer-Verlet
 # #endif
@@ -2643,14 +2665,14 @@ With mathematics,
 \begin{align*}
 \frac{v^{n+\half}-v^n}{\half\Delta t} &= -\omega^2 u^n,\\
 \frac{u^{n+\half}-u^n}{\half\Delta t} &= v^{n+\half},\\
-\frac{u^{n+1}-u^{n-\half}}{\half\Delta t} &= v^{n+\half},\\
+\frac{u^{n+1}-u^{n+\half}}{\half\Delta t} &= v^{n+\half},\\
 \frac{v^{n+1}-v^{n+\half}}{\half\Delta t} &= -\omega^2 u^{n+1}\tp
 \end{align*}
 !et
 The two steps in the middle can be combined to
 
 !bt
-\[ \frac{u^{n+1}-u^{n-1}}{\Delta t} = v^{n+\half},\]
+\[ \frac{u^{n+1}-u^{n}}{\Delta t} = v^{n+\half},\]
 !et
 and consequently
 
@@ -2684,7 +2706,7 @@ St\"{o}mer-Verlet,
 # #else
 Stoermer-Verlet,
 # #endif
-and using centered differences for the $2times 2$ system on a staggered
+and using centered differences for the $2\times 2$ system on a staggered
 mesh) all end up with the same equations! The main difference is that
 the traditional Euler-Cromer displays first-order convergence in $\Delta t$
 (due to less symmetry in the way $u$ and $v$ are treated)
@@ -2700,7 +2722,7 @@ of explaining it, we must give in too. At least we have shown that
 the popular Stoermer-Verlet method is nothing but our staggered mesh very
 natural scheme.]
 
-The most numerical stable scheme, with respect to accumulation of
+The most numerically stable scheme, with respect to accumulation of
 rounding errors, is
 (ref{vib:model2x2:StormerVerlet:eqv})-(ref{vib:model2x2:StormerVerlet:equ}).
 It has, according to cite{Hairer_Wanner_Norsett_bookI}, better
