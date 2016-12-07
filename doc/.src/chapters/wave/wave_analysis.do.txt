@@ -11,6 +11,8 @@ label{wave:pde1:analysis}
 ===== Properties of the solution of the wave equation =====
 label{wave:pde1:properties}
 idx{wave equation!1D, analytical properties}
+idx{mesh! parameters}
+idx{wave! complex component}
 
 The wave equation
 
@@ -150,6 +152,8 @@ label{wave:pde1:Fourier}
 idx{Fourier series}
 idx{Fourier transform}
 idx{discrete Fourier transform}
+idx{fast Fourier transform (FFT)}
+idx{Nyquist frequency}
 
 The above introduction to function representation by sine and cosine
 waves was quick and intuitive, but will suffice as background
@@ -207,10 +211,10 @@ the "discrete Fourier transform": "http://en.wikipedia.org/wiki/Discrete_Fourier
 
 !bt
 \begin{align}
-I_q &= \frac{1}{N_x+1}\sum_{k=0}^{N_x} A_k e^{i2\pi k j/(N_x+1)},\quad
-i=0,\ldots,N_x,\\
+I_q &= \frac{1}{N_x+1}\sum_{k=0}^{N_x} A_k e^{i2\pi k q/(N_x+1)},\quad
+q=0,\ldots,N_x,\\
 A_k &= \sum_{q=0}^{N_x} I_q e^{-i2\pi k q/(N_x+1)},
-\quad k=0,\ldots,N_x+1\tp
+\quad k=0,\ldots,N_x\tp
 \end{align}
 !et
 The $A_k$ values represent the discrete Fourier transform of the $I_q$ values,
@@ -347,16 +351,16 @@ solution $\tilde\omega$ of (ref{wave:pde1:analysis:sineq2}).
 The right-hand side of
 (ref{wave:pde1:analysis:sineq2}) must then be in $[-1,1]$ because
 the sine function on the left-hand side has values in $[-1,1]$
-for real $\tilde\omega$. The sine function on
-the right-hand side can attain the value 1 when
+for real $\tilde\omega$. The magnitude of the sine function on
+the right-hand side attains the value 1 when
 
 !bt
 \begin{equation*}
-\frac{k\Delta x}{2} = m\frac{\pi}{2},\quad m\in\Integer
+\frac{k\Delta x}{2} = \frac{\pi}{2} + m\pi,\quad m\in\Integer
 \tp
 \end{equation*}
 !et
-With $m=1$ we have $k\Delta x = \pi$, which means that
+With $m=0$ we have $k\Delta x = \pi$, which means that
 the wavelength $\lambda = 2\pi/k$ becomes $2\Delta x$. This is
 the absolutely shortest wavelength that can be represented on the mesh:
 the wave jumps up and down between each mesh point. Larger values of $|m|$
@@ -401,6 +405,9 @@ therefore grow with time and destroy the whole solution.
 
 ===== Numerical dispersion relation =====
 label{wave:pde1:num:dispersion}
+
+idx{dispersion relation! analytical}
+idx{dispersion relation! numerical}
 
 Equation (ref{wave:pde1:analysis:sineq2}) can be solved with respect
 to $\tilde\omega$:
@@ -489,6 +496,15 @@ $C$, see Figure ref{wave:pde1:fig:disprel}. Note that the shortest
 waves have the most erroneous velocity, and that short waves move
 more slowly than they should.
 
+idx{Taylor series}
+idx{`series`}
+idx{`removeO`}
+idx{`lambdify`}
+idx{`extract_leading_order`}
+idx{leading order term}
+idx{`as_ordered_terms`}
+idx{`factor`}
+
 We can also easily make a Taylor series expansion in the
 discretization parameter $p$:
 
@@ -575,7 +591,7 @@ The typical analytical solution of a 2D wave equation
 !et
 is a wave traveling in the direction of $\kk = k_x\ii + k_y\jj$, where
 $\ii$ and $\jj$ are unit vectors in the $x$ and $y$ directions, respectively
-($\ii$ must not be confused with $i=\sqrt{-1}$).
+($\ii$ should not be confused with $i=\sqrt{-1}$ here).
 Such a wave can be expressed by
 
 !bt

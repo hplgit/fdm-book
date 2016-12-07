@@ -280,7 +280,7 @@ the CPU time in simulations is spent in this function.
    described in the section :ref:`wave:pde1:impl:ref:switch`. Any use of ``u`` on the
    user's side is assumed to take place in the user action function. However,
    should the code be changed such that ``u`` is returned and used as solution,
-   have in mind that you must return ``u_n`` after the time lime, otherwise
+   have in mind that you must return ``u_n`` after the time limit, otherwise
    a ``return u`` will actually return ``u_nm1`` (due to the switching of array
    indices in the loop)!
 
@@ -291,6 +291,12 @@ the CPU time in simulations is spent in this function.
 
 Vectorized computations
 -----------------------
+
+.. index:: newaxis
+
+.. index:: reshape
+
+.. index:: array slices (2D)
 
 The scalar code above turns out to be extremely slow for large 2D
 meshes, and probably useless in 3D beyond debugging of small test cases.
@@ -342,7 +348,7 @@ evaluation. This is the case with the computational scheme for
     def advance_vectorized(u, u_n, u_nm1, f_a, Cx2, Cy2, dt2,
                            V=None, step1=False):
         if step1:
-            dt = sqrt(dt2)  # save
+            dt = np.sqrt(dt2)  # save
             Cx2 = 0.5*Cx2;  Cy2 = 0.5*Cy2; dt2 = 0.5*dt2  # redefine
             D1 = 1;  D2 = 0
         else:
@@ -380,7 +386,7 @@ accompanied by a ``1:-1`` slice in the other direction. The reason is
 that we only work with the internal points for the index that is
 kept constant in a difference.
 
-The boundary conditions along the four sides makes use of
+The boundary conditions along the four sides make use of
 a slice consisting of all indices along a boundary:
 
 .. code-block:: python
@@ -460,6 +466,261 @@ The ``test_quadratic`` function in the
 `wave2D_u0.py <http://tinyurl.com/nu656p2/wave/wave2D_u0/wave2D_u0.py>`__
 program implements this verification as a proper test function
 for the pytest and nose frameworks.
+
+Visualization
+-------------
+
+.. index:: 3D visualization
+
+.. index:: visualization of 2D scalar fields
+
+Eventually, we are ready with a real application with our code!
+Look at the ``wave2D_u0.py`` and the ``gaussian`` function. It
+starts with a Gaussian function to see how it propagates in a square
+with :math:`u=0` on the boundaries:
+
+.. code-block:: python
+
+    def gaussian(plot_method=2, version='vectorized', save_plot=True):
+        """
+        Initial Gaussian bell in the middle of the domain.
+        plot_method=1 applies mesh function,
+        =2 means surf, =3 means Matplotlib, =4 means mayavi,
+        =0 means no plot.
+        """
+        # Clean up plot files
+        for name in glob('tmp_*.png'):
+            os.remove(name)
+    
+        Lx = 10
+        Ly = 10
+        c = 1.0
+    
+        from numpy import exp
+    
+        def I(x, y):
+            """Gaussian peak at (Lx/2, Ly/2)."""
+            return exp(-0.5*(x-Lx/2.0)**2 - 0.5*(y-Ly/2.0)**2)
+    
+        def plot_u(u, x, xv, y, yv, t, n):
+            """User action function for plotting."""
+    	...
+    
+        Nx = 40; Ny = 40; T = 20
+        dt, cpu = solver(I, None, None, c, Lx, Ly, Nx, Ny, -1, T,
+                         user_action=plot_u, version=version)
+
+Matplotlib
+~~~~~~~~~~
+
+We want to animate a 3D surface in Matplotlib, but this is a really
+slow process and not recommended, so we consider Matplotlib not an
+option as long as on-screen animation is desired. One can use the
+recipes for single shots of :math:`u`, where it does produce high-quality
+3D plots.
+
+.. index:: Gnuplot
+
+Gnuplot
+~~~~~~~
+
+Let us look at different ways for visualization. We import SciTools as
+``st`` and can access ``st.mesh`` and ``st.surf`` in Matplotlib or Gnuplot,
+but this is not supported except for the Gnuplot package, where it
+works really well (Figure :ref:`wave2D3D:impl:viz:fig:gnuplot1`).  Then
+we choose ``plot_method=2`` (or less relevant ``plot_method=1``) and force
+the backend for SciTools to be Gnuplot (if you have the C package
+Gnuplot and the ``Gnuplot.py`` Python interface module installed):
+
+.. code-block:: text
+
+    Terminal> python wave2D_u0.py --SCITOOLS_easyviz_backend gnuplot
+
+It gives a nice visualization with lifted surface and contours beneath.
+Figure :ref:`wave2D3D:impl:viz:fig:gnuplot1` shows four plots of :math:`u`.
+
+.. _wave2D3D:impl:viz:fig:gnuplot1:
+
+.. figure:: wave2D_u0_gnuplot_gaussian.png
+   :width: 800
+
+   *Snapshots of the surface plotted by Gnuplot*
+
+Video files can be made of the PNG frames:
+
+.. code-block:: text
+
+    Terminal> ffmpeg -i tmp_%04d.png -r 25 -vcodec flv movie.flv
+    Terminal> ffmpeg -i tmp_%04d.png -r 25 -vcodec linx264 movie.mp4
+    Terminal> ffmpeg -i tmp_%04d.png -r 25 -vcodec libvpx movie.webm
+    Terminal> ffmpeg -i tmp_%04d.png -r 25 -vcodec libtheora movie.ogg
+
+It is wise to use a high frame rate - a low one will just skip many
+frames. There may also be considerable quality differences between the
+different formats.
+
+.. raw:: html
+        
+        <div>
+        <video  loop controls width='640' height='365' preload='none'>
+            <source src='mov-wave/gnuplot/wave2D_u0_gaussian/movie25.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+            <source src='mov-wave/gnuplot/wave2D_u0_gaussian/movie25.webm' type='video/webm; codecs="vp8, vorbis"'>
+            <source src='mov-wave/gnuplot/wave2D_u0_gaussian/movie25.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+        </video>
+        </div>
+        <p><em></em></p>
+        
+        <!-- Issue warning if in a Safari browser -->
+        <script language="javascript">
+        if (!!(window.safari)) {
+          document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
+        </script>
+        
+
+.. index:: Mayavi
+
+.. index:: mlab
+
+Mayavi
+~~~~~~
+
+The best option for doing visualization of 2D and 3D scalar and vector fields
+in Python programs is Mayavi, which is an interface to the high-quality
+package VTK in C++. There is good online documentation and also
+an introduction in Chapter 5 of [Ref4]_.
+
+To obtain Mayavi on Ubuntu platforms you can write
+
+.. code-block:: text
+
+    pip install mayavi --upgrade
+
+For Mac OS X and Windows, we recommend using Anaconda.
+To obtain Mayavi for Anaconda you can write
+
+.. code-block:: text
+
+    conda install mayavi
+
+Mayavi has a MATLAB-like interface called ``mlab``. We can do
+
+.. code-block:: python
+
+    import mayavi.mlab as plt
+    # or
+    from mayavi import mlab
+
+and have ``plt`` (as usual) or ``mlab``
+as a kind of MATLAB visualization access inside our program (just
+more powerful and with higher visual quality).
+
+The official documentation of the ``mlab`` module is provided in two
+places, one for the `basic functionality <http://docs.enthought.com/mayavi/mayavi/auto/mlab_helper_functions.html>`__
+and one for `further functionality <http://docs.enthought.com/mayavi/mayavi/auto/mlab_other_functions.html>`__.
+Basic `figure
+handling <http://docs.enthought.com/mayavi/mayavi/auto/mlab_figure.html>`__
+is very similar to the one we know from Matplotlib.  Just as for
+Matplotlib, all plotting commands you do in ``mlab`` will go into the
+same figure, until you manually change to a new figure.
+
+Back to our application, the following code for the user action
+function with plotting in Mayavi is relevant to add.
+
+.. code-block:: python
+
+    # Top of the file
+    try:
+        import mayavi.mlab as mlab
+    except:
+        # We don't have mayavi
+        pass
+    
+    def solver(...):
+        ...
+    
+    def gaussian(...):
+        ...
+        if plot_method == 3:
+            from mpl_toolkits.mplot3d import axes3d
+            import matplotlib.pyplot as plt
+            from matplotlib import cm
+            plt.ion()
+            fig = plt.figure()
+            u_surf = None
+    
+        def plot_u(u, x, xv, y, yv, t, n):
+            """User action function for plotting."""
+            if t[n] == 0:
+                time.sleep(2)
+            if plot_method == 1:
+                # Works well with Gnuplot backend, not with Matplotlib
+                st.mesh(x, y, u, title='t=%g' % t[n], zlim=[-1,1],
+                        caxis=[-1,1])
+            elif plot_method == 2:
+                # Works well with Gnuplot backend, not with Matplotlib
+                st.surfc(xv, yv, u, title='t=%g' % t[n], zlim=[-1, 1],
+                      colorbar=True, colormap=st.hot(), caxis=[-1,1],
+                      shading='flat')
+            elif plot_method == 3:
+                print 'Experimental 3D matplotlib...not recommended'
+            elif plot_method == 4:
+    	    # Mayavi visualization
+                mlab.clf()
+                extent1 = (0, 20, 0, 20,-2, 2)
+                s = mlab.surf(x , y, u,
+                              colormap='Blues',
+                              warp_scale=5,extent=extent1)
+                mlab.axes(s, color=(.7, .7, .7), extent=extent1,
+                          ranges=(0, 10, 0, 10, -1, 1),
+                          xlabel='', ylabel='', zlabel='',
+                          x_axis_visibility=False,
+                          z_axis_visibility=False)
+                mlab.outline(s, color=(0.7, .7, .7), extent=extent1)
+                mlab.text(6, -2.5, '', z=-4, width=0.14)
+                mlab.colorbar(object=None, title=None,
+                              orientation='horizontal',
+                              nb_labels=None, nb_colors=None,
+                              label_fmt=None)
+                mlab.title('Gaussian t=%g' % t[n])
+                mlab.view(142, -72, 50)
+                f = mlab.gcf()
+                camera = f.scene.camera
+                camera.yaw(0)
+    
+            if plot_method > 0:
+                time.sleep(0) # pause between frames
+                if save_plot:
+                    filename = 'tmp_%04d.png' % n
+    		if plot_method == 4:
+                        mlab.savefig(filename)  # time consuming!
+    		elif plot_method in (1,2):
+                        st.savefig(filename)  # time consuming!
+
+This is a point to get started - visualization is as always a very
+time-consuming and experimental discipline. With the PNG files we
+can use ``ffmpeg`` to create videos.
+
+.. figure:: mayavi2D_gaussian1.png
+   :width: 600
+
+   Plot with Mayavi
+
+.. raw:: html
+        
+        <div>
+        <video  loop controls width='640' height='365' preload='none'>
+            <source src='mov-wave/mayavi/wave2D_u0_gaussian/movie.mp4'  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+            <source src='mov-wave/mayavi/wave2D_u0_gaussian/movie.ogg'  type='video/ogg;  codecs="theora, vorbis"'>
+        </video>
+        </div>
+        <p><em></em></p>
+        
+        <!-- Issue warning if in a Safari browser -->
+        <script language="javascript">
+        if (!!(window.safari)) {
+          document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
+        </script>
+        
 
 Exercises          (3)
 ======================

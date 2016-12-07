@@ -75,7 +75,7 @@ if the user returns ``True``. For example,
     def my_user_action_function(u, x, t, n):
         return np.abs(u).max() > 10
 
-is a callback function that will terminate the solver function of the
+is a callback function that will terminate the solver function (given below) of the
 amplitude of the waves exceed 10, which is here considered as a numerical
 instability.
 
@@ -160,7 +160,7 @@ A couple of remarks about the above code is perhaps necessary:
    because of rounding errors. To explicitly ensure that ``dx`` and ``dt``
    correspond to the cell sizes in ``x`` and ``t``, we recompute the values.
 
- * According to the convention described in the section :ref:`wave:pde1:impl:useraction`, a true value returned from ``user_action`` should terminate the simulation, here implemented by a ``break`` statement inside the for loop in the solver.
+ * According to the particular choice made in the section :ref:`wave:pde1:impl:useraction`, a true value returned from ``user_action`` should terminate the simulation. This is here implemented by a ``break`` statement inside the for loop in the solver.
 
 .. Too trivial here:
 
@@ -189,6 +189,8 @@ Verification: exact quadratic solution
 .. index:: unit testing
 
 .. index:: test function
+
+.. index:: quadratic solution
 
 We use the test problem derived in the section :ref:`wave:pde2:fd` for
 verification. Below is a unit test based on this test problem
@@ -241,6 +243,9 @@ in this file work:
 Verification: convergence rates
 -------------------------------
 
+.. index::
+   single: verification;  convergence rates
+
 A more general method, but not so reliable as a verification method,
 is to compute the convergence rates and see if they coincide with
 theoretical estimates. Here we expect a rate of 2 according to
@@ -289,7 +294,7 @@ this:
              for i in range(1,num_meshes)]
         return r
 
-Using the analytical solution from the section :ref:`wave:pde2:fd:standing:waves`, we can call ``convergece_rates`` to
+Using the analytical solution from the section :ref:`wave:pde2:fd:standing:waves`, we can call ``convergence_rates`` to
 see if we get a convergence rate that approaches 2 and use the final
 estimate of the rate in an ``assert`` statement such that this function becomes
 a proper test function:
@@ -317,7 +322,7 @@ a proper test function:
         assert abs(r[-1] - 2) < 0.002
 
 Doing ``py.test -s -v wave1D_u0.py`` will run also this test function and
-show the rates 2.05, 1.98, 2.0, 2.0, and 2.0 (to two decimals).
+show the rates 2.05, 1.98, 2.00, 2.00, and 2.00 (to two decimals).
 
 .. _wave:pde1:impl:animate:
 
@@ -418,6 +423,16 @@ The following ``viz`` function
 
 Dissection of the code
 ~~~~~~~~~~~~~~~~~~~~~~
+
+.. index:: padding zeros
+
+.. index:: special method
+
+.. index:: __call__
+
+.. index:: skipping frames
+
+.. index:: animation speed
 
 The ``viz`` function can either use SciTools or Matplotlib for
 visualizing the solution. The ``user_action`` function based on SciTools
@@ -638,6 +653,8 @@ somewhat wavy due to numerical approximation. Run the case with the
 Working with a scaled PDE model
 -------------------------------
 
+.. index:: scaling equations
+
 Depending on the model, it may be a substantial job to establish
 consistent and relevant physical parameter values for a case.  The
 guitar string example illustrates the point.  However, by *scaling*
@@ -755,6 +772,17 @@ Vectorization
 
 .. index:: parallelism
 
+.. index:: Numba
+
+.. index::
+   single: vectorized;  computing
+
+.. index::
+   single: vectorized;  loops
+
+.. index::
+   single: vectorized;  code
+
 The computational algorithm for solving the wave equation visits one
 mesh point at a time and evaluates a formula for the new value
 :math:`u_i^{n+1}` at that point. Technically, this is implemented by a loop
@@ -798,9 +826,9 @@ Consider this calculation of differences :math:`d_i = u_{i+1}-u_i`:
 
 All the differences here are independent of each other.
 The computation of ``d`` can therefore alternatively be done by
-subtracting the array :math:`(u_0,u_n,\ldots,u_{n-1})` from
+subtracting the array :math:`(u_0,u_1,\ldots,u_{n-1})` from
 the array where the elements are shifted one index upwards:
-:math:`(u_n,u_nm1,\ldots,u_n)`, see Figure :ref:`wave:pde1:vec:fig1`.
+:math:`(u_1,u_2,\ldots,u_n)`, see Figure :ref:`wave:pde1:vec:fig1`.
 The former subset of the array can be
 expressed by ``u[0:n-1]``,
 ``u[0:-1]``, or just
@@ -914,7 +942,7 @@ such temporary arrays.
    right when they use ``-1`` or ``-2`` or empty limit rather than
    expressions involving the length.
    
-   Another common mistake is to forget the slice in the array on the
+   Another common mistake, when ``u2`` has length ``n``, is to forget the slice in the array on the
    left-hand side,
    
    .. code-block:: python
@@ -962,7 +990,8 @@ and through code in the section :ref:`wave:pde1:impl:solver`.  There are
 three loops: one for the initial condition, one for the first time
 step, and finally the loop that is repeated for all subsequent time
 levels. Since only the latter is repeated a potentially large number
-of times, we limit our vectorization efforts to this loop:
+of times, we limit our vectorization efforts to this loop. Within the time
+loop, the space loop reads:
 
 .. code-block:: python
 
@@ -1002,6 +1031,8 @@ Verification          (2)
 -------------------------
 
 .. index:: lambda function (Python)
+
+.. index:: quadratic solution
 
 We may reuse the quadratic solution :math:`{u_{\small\mbox{e}}}(x,t)=x(L-x)(1+{\frac{1}{2}}t)` for
 verifying also the vectorized code. A test function can now verify
@@ -1075,6 +1106,10 @@ solution at each time level and performs a test:
 
 Efficiency measurements
 -----------------------
+
+.. index:: efficiency measurements
+
+.. index:: functools
 
 The ``wave1D_u0v.py`` contains our new ``solver`` function with both
 scalar and vectorized code. For comparing the efficiency
@@ -1201,6 +1236,10 @@ code runs substantially faster: the vectorized code runs approximately
 Remark on the updating of arrays
 --------------------------------
 
+.. index:: array updating
+
+.. index:: switching references
+
 At the end of each time step we need to update the ``u_nm1`` and ``u_n``
 arrays such that they have the right content for the next time step:
 
@@ -1241,10 +1280,9 @@ has two references, ``u_n`` and ``u``, while our third array, originally
 referred to by ``u_nm1``, has no more references and is lost.
 This means that the variables ``u``, ``u_n``, and ``u_nm1`` refer to two
 arrays and not three. Consequently, the computations at the next
-time level will be messed up since updating the elements in
-``u`` will imply updating the elements in ``u_n`` too so the solution
-at the previous time step, which is crucial in our formulas, is
-destroyed.
+time level will be messed up, since updating the elements in
+``u`` will imply updating the elements in ``u_n`` too, thereby destroying
+the solution at the previous time step.
 
 While ``u_nm1 = u_n`` is fine, ``u_n = u`` is problematic, so
 the solution to this problem is to ensure that ``u``

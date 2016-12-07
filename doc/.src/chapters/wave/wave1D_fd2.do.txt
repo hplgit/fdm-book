@@ -55,7 +55,6 @@ idx{homogeneous Dirichlet conditions}
 idx{boundary conditions!Neumann}
 idx{boundary conditions!Dirichlet}
 
-
 When a wave hits a boundary and is to be reflected back, one applies
 the condition
 
@@ -103,7 +102,7 @@ $x=0$ and $t=t_n$ by the difference
 
 !bt
 \begin{equation}
-[D_{2x} u]^n_0 = \frac{u_{-1}^n - u_n^n}{2\Delta x} = 0
+[D_{2x} u]^n_0 = \frac{u_{-1}^n - u_1^n}{2\Delta x} = 0
 \tp
 label{wave:pde1:Neumann:0:cd}
 \end{equation}
@@ -112,7 +111,6 @@ The problem is that $u_{-1}^n$ is not a $u$ value that is being
 computed since the point is outside the mesh. However, if we combine
 (ref{wave:pde1:Neumann:0:cd}) with the scheme
 # (ref{wave:pde1:step4})
-for $i=0$,
 
 !bt
 \begin{equation}
@@ -121,8 +119,8 @@ u^{n+1}_i = -u^{n-1}_i + 2u^n_i + C^2
 label{wave:pde1:Neumann:0:scheme}
 \end{equation}
 !et
-we can eliminate the fictitious value $u_{-1}^n$. We see that
-$u_{-1}^n=u_n^n$ from (ref{wave:pde1:Neumann:0:cd}), which
+for $i=0$, we can eliminate the fictitious value $u_{-1}^n$. We see that
+$u_{-1}^n=u_1^n$ from (ref{wave:pde1:Neumann:0:cd}), which
 can be used in (ref{wave:pde1:Neumann:0:scheme}) to
 arrive at a modified scheme for the boundary point $u_0^{n+1}$:
 
@@ -359,7 +357,7 @@ A lot of test examples are also included in the program:
    typical initial shape of a guitar string.
  * A sinusoidal variation of $u$ at $x=0$ and either $u=0$ or
    $u_x=0$ at $x=L$.
- * An exact analytical solution $u(x,t)=\cos(m\pi t/L)\sin({\half}m\pi x/L)$, which can be used for convergence rate tests.
+ * An analytical solution $u(x,t)=\cos(m\pi t/L)\sin({\half}m\pi x/L)$, which can be used for convergence rate tests.
 !enotice
 
 [hpl: Should include some experiments here or make exercises. Qualitative
@@ -401,6 +399,8 @@ we are left with tests on the convergence rate.
 label{wave:pde1:Neumann:ghost}
 
 === Idea ===
+
+idx{ghost! cells} idx{ghost! points} idx{ghost! values}
 
 Instead of modifying the scheme at the boundary, we can introduce
 extra points outside the domain such that the fictitious values
@@ -483,7 +483,7 @@ for i in Ix:
            0.5*dt2*f(x[i-Ix[0]], t[0])
 !ec
 
-It remains to update the solution at ghost points, i.e, `u[0]`
+It remains to update the solution at ghost points, i.e., `u[0]`
 and `u[-1]` (or `u[Nx+2]`). For a boundary condition $u_x=0$,
 the ghost value must equal the value at the associated inner mesh
 point. Computer code makes this statement precise:
@@ -556,6 +556,8 @@ or (as always) `u[Ix[0]:Ix[-1]+1]`.
 
 ======= Generalization: variable wave velocity =======
 label{wave:pde2:var:c}
+
+idx{wave! variable velocity} idx{wave! reflected} idx{wave! transmitted}
 
 Our next generalization of the 1D wave equation (ref{wave:pde1}) or
 (ref{wave:pde2}) is to allow for a variable wave velocity $c$:
@@ -704,7 +706,7 @@ terms $qu_{xx} + q_xu_x$. The typical discretization is
 
 !bt
 \begin{equation}
-D_x q D_x u + D_{2x}q D_{2x} u]_i^n,
+[D_x q D_x u + D_{2x}q D_{2x} u]_i^n,
 label{wave:pde2:var:c:chainrule_scheme}
 \end{equation}
 !et
@@ -717,7 +719,7 @@ $[D_x(q D_x u)]^n_i$ with harmonic averaging of $q$ yields
 a better solution than arithmetic averaging or
 (ref{wave:pde2:var:c:chainrule_scheme}).
 In the literature, the discretization $[D_x(q D_x u)]^n_i$ totally
-dominates and very few mention the possibility of
+dominates and very few mention the alternative in
 (ref{wave:pde2:var:c:chainrule_scheme}).
 !ewarning
 
@@ -729,6 +731,8 @@ dominates and very few mention the possibility of
 
 ===== Computing the coefficient between mesh points =====
 label{wave:pde2:var:c:means}
+
+idx{interpolation}
 
 If $q$ is a known function of $x$, we can easily evaluate
 $q_{i+\half}$ simply as $q(x_{i+\half})$ with $x_{i+\half} = x_i +
@@ -810,10 +814,12 @@ label{wave:pde2:var:c:scheme:impl}
 ===== How a variable coefficient affects the stability =====
 label{wave:pde2:var:c:stability}
 
-The stability criterion derived in Section ref{wave:pde1:stability}
+idx{time step! spatially varying}
+
+The stability criterion derived later (Section ref{wave:pde1:stability})
 reads $\Delta t\leq \Delta x/c$. If $c=c(x)$, the criterion will depend
 on the spatial location. We must therefore choose a $\Delta t$ that
-is small enough such that no mesh cell has $\Delta x/c(x) >\Delta t$.
+is small enough such that no mesh cell has $\Delta t > \Delta x/c(x)$.
 That is, we must use the largest $c$ value in the criterion:
 
 !bt
@@ -971,6 +977,8 @@ u[1:-1] = - u_nm1[1:-1] + 2*u_n[1:-1] + \
 
 ===== A more general PDE model with variable coefficients =====
 
+idx{coefficients! variable}
+
 Sometimes a wave PDE has a variable coefficient in front of
 the time-derivative term:
 
@@ -1008,6 +1016,8 @@ also without any difficulty:
 !et
 
 ===== Generalization: damping =====
+
+idx{wave! damping}
 
 Waves die out by two mechanisms. In 2D and 3D the energy of the wave
 spreads out in space, and energy conservation then requires
@@ -1078,8 +1088,8 @@ label{wave:pde2:software:bcL}
 \end{align}
 !et
 
-The only new feature here is the time-dependent Dirichlet conditions.
-These are trivial to implement:
+The only new feature here is the time-dependent Dirichlet conditions, but
+they are trivial to implement:
 
 !bc pycod
 i = Ix[0]  # x=0
@@ -1168,6 +1178,9 @@ the document
 cite{Langtangen_deqbook_softeng2}].
 
 ===== Pulse propagation in two media =====
+
+idx{pulse propagation} idx{plug} idx{Gaussian function} idx{cosine hat}
+idx{discontinuous medium} idx{discretization parameters}
 
 The function `pulse` in `wave1D_dn_vc.py` demonstrates wave motion in
 heterogeneous media where $c$ varies. One can specify an interval

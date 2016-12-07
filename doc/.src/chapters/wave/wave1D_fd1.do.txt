@@ -39,6 +39,7 @@ in the forthcoming text by finite difference methods.
 label{wave:string}
 idx{waves!on a string}
 idx{wave equation!1D}
+idx{wave! velocity}
 
 We begin our study of wave equations by simulating one-dimensional
 waves on a string, say on a guitar or violin.
@@ -107,6 +108,8 @@ idx{mesh!finite differences}
 ===== Discretizing the domain =====
 label{wave:string:mesh}
 
+idx{mesh! uniform}
+
 The temporal domain $[0,T]$ is represented by a finite number of mesh points
 
 !bt
@@ -155,6 +158,9 @@ develop algebraic equations for computing the mesh function.
 
 ===== Fulfilling the equation at the mesh points =====
 label{wave:string:samplingPDE}
+
+idx{PDE! algebraic version}
+idx{finite difference scheme}
 
 In the finite difference method, we relax
 the condition that (ref{wave:pde1}) holds at all points in
@@ -222,14 +228,18 @@ label{wave:pde1:step3a}
 
 === Interpretation of the equation as a stencil ===
 
+idx{finite difference scheme}
+idx{difference equations}
+idx{sampling (a PDE)}
+
 A characteristic feature of (ref{wave:pde1:step3b}) is that it
 involves $u$ values from neighboring points only: $u_i^{n+1}$,
 $u^n_{i\pm 1}$, $u^n_i$, and $u^{n-1}_i$.  The circles in Figure
 ref{wave:pde1:fig:mesh} illustrate such neighboring mesh points that
 contribute to an algebraic equation. In this particular case, we have
 sampled the PDE at the point $(2,2)$ and constructed
-(ref{wave:pde1:step3b}), which then involves a coupling of $u_nm1^1$,
-$u_n^2$, $u_nm1^2$, $u_3^2$, and $u_nm1^3$.  The term *stencil* is often
+(ref{wave:pde1:step3b}), which then involves a coupling of $u_1^2$,
+$u_2^3$, $u_2^2$, $u_2^1$, and $u_3^2$.  The term *stencil* is often
 used about the algebraic equation at a mesh point, and the geometry of
 a typical stencil is illustrated in Figure
 ref{wave:pde1:fig:mesh}. One also often refers to the algebraic
@@ -268,6 +278,8 @@ The other initial condition can be computed by
 
 ===== Formulating a recursive algorithm =====
 label{wave:string:alg}
+
+idx{wave equation! 1D, discrete}
 
 We assume that $u^n_i$ and $u^{n-1}_i$ are available for
 $i=0,\ldots,N_x$.  The only unknown quantity in
@@ -333,18 +345,18 @@ label{wave:pde1:step4:1}
 \end{equation}
 !et
 Figure ref{wave:pde1:fig:stencil:u1} illustrates how (ref{wave:pde1:step4:1})
-connects four instead of five points: $u^1_2$, $u_n^0$, $u_nm1^0$, and $u_3^0$.
+connects four instead of five points: $u^1_2$, $u_1^0$, $u_2^0$, and $u_3^0$.
 
 FIGURE: [mov-wave/D_stencil_gpl/stencil_n0_interior, width=500] Modified stencil for the first time step. label{wave:pde1:fig:stencil:u1}
 
 We can now summarize the computational algorithm:
 
  o Compute $u^0_i=I(x_i)$ for $i=0,\ldots,N_x$
- o Compute $u^1_i$ by (ref{wave:pde1:step4:1}) and set $u_i^1=0$
-   for the boundary points $i=0$ and $i=N_x$, for $n=1,2,\ldots,N-1$,
+ o Compute $u^1_i$ by (ref{wave:pde1:step4:1}) for $i=1,2,\ldots,N_x-1$ and set $u_i^1=0$
+   for the boundary points given by $i=0$ and $i=N_x$,
  o For each time level $n=1,2,\ldots,N_t-1$
    o apply (ref{wave:pde1:step4}) to find $u^{n+1}_i$ for $i=1,\ldots,N_x-1$
-   o set $u^{n+1}_i=0$ for the boundary points $i=0$, $i=N_x$.
+   o set $u^{n+1}_i=0$ for the boundary points having $i=0$, $i=N_x$.
 
 The algorithm essentially consists of moving a finite difference
 stencil through all the mesh points, which can be seen as an animation
@@ -369,10 +381,6 @@ memory at as few time levels as possible.
 In a Python implementation of this algorithm, we use the array
 elements `u[i]` to store $u^{n+1}_i$, `u_n[i]` to store $u^n_i$, and
 `u_nm1[i]` to store $u^{n-1}_i$.
-Our naming convention is to use `u` for the
-unknown new spatial field to be computed and have all previous time
-levels in a list `u_n` that we index as `u_n`, `u_nm1`, `u_n[-2]`
-and so on. For the wave equation, `u_n` has just length 2.
 
 The following Python snippet realizes the steps in the computational
 algorithm.
@@ -412,6 +420,8 @@ for n in range(1, Nt):
 !ec
 
 ======= Verification =======
+
+idx{source term}
 
 Before implementing the algorithm, it is convenient to add a source
 term to the PDE (ref{wave:pde1}), since that gives us more freedom in
@@ -484,6 +494,8 @@ label{wave:pde2:step3c}
 ===== Using an analytical solution of physical significance =====
 label{wave:pde2:fd:standing:waves}
 
+idx{verification! convergence rates}
+
 Many wave problems feature sinusoidal oscillations in time
 and space. For example, the original PDE problem
 (ref{wave:pde1})-(ref{wave:pde1:bc:L}) allows an exact solution
@@ -539,6 +551,8 @@ label{wave:pde2:fd:MMS}
 
 === Specifying the solution and computing corresponding data ===
 
+idx{manufactured solution}
+
 One problem with the exact solution (ref{wave:pde2:test:ue}) is
 that it requires a simplification ($V=0, f=0$) of the implemented problem
 (ref{wave:pde2})-(ref{wave:pde2:bc:L}). An advantage of using
@@ -568,6 +582,9 @@ u_t(x,0) &= V(x) = x(L-x)\tp
 !et
 
 === Defining a single discretization parameter ===
+
+idx{verification! convergence rates}
+idx{discretization parameter}
 
 To verify the code, we compute the convergence rates in a series of
 simulations, letting each simulation use a finer mesh than the
@@ -609,8 +626,8 @@ C_t h^r + C_x\left(\frac{c}{C}\right)^r h^r
 We choose an initial discretization parameter $h_0$ and run
 experiments with decreasing $h$: $h_i=2^{-i}h_0$, $i=1,2,\ldots,m$.
 Halving $h$ in each experiment is not necessary, but it is a common
-choice.  For each experiment we must record $E$ and $h$.  A standard
-choice of error measure is the $\ell^2$ or $\ell^\infty$ norm of the
+choice.  For each experiment we must record $E$ and $h$.  Standard
+choices of error measure are the $\ell^2$ and $\ell^\infty$ norms of the
 error mesh function $e^n_i$:
 
 !bt
@@ -619,7 +636,7 @@ E &= ||e^n_i||_{\ell^2} = \left( \Delta t\Delta x
 \sum_{n=0}^{N_t}\sum_{i=0}^{N_x}
 (e^n_i)^2\right)^{\half},\quad e^n_i = \uex(x_i,t_n)-u^n_i,
 label{wave:pde2:fd:MMS:E:l2}\\
-E &= ||e^n_i||_{\ell^\infty} = \max_{i,n} |e^i_n|\tp
+E &= ||e^n_i||_{\ell^\infty} = \max_{i,n} |e^n_i|\tp
 label{wave:pde2:fd:MMS:E:linf}
 \end{align}
 !et
@@ -641,12 +658,12 @@ E &= ||e^n_i||_{\ell^2} = \left( \Delta x\sum_{i=0}^{N_x}
 E &= ||e^n_i||_{\ell^\infty} = \max_{0\leq i\leq N_x} |e^{n}_i|\tp
 \end{align}
 !et
-The important issue is that our error measure $E$ must be one number
-that represents the error in the simulation.
+The important point is that the error measure ($E$) for the simulation is represented by a single number.
 
 === Computing rates ===
 
-Let $E_i$ be the error measure in experiment (mesh) number $i$ and
+Let $E_i$ be the error measure in experiment (mesh) number $i$ 
+(not to be confused with the spatial index $i$) and
 let $h_i$ be the corresponding discretization parameter ($h$).
 With the error model $E_i = Dh_i^r$, we can
 estimate $r$ by comparing two consecutive
@@ -714,8 +731,7 @@ and $V(x)={\half}x(L-x)$.
 
 To realize that the chosen $\uex$ is also an exact
 solution of the discrete equations,
-we first remind ourselves that $t_n=n\Delta t$ before we
-establish that
+we first remind ourselves that $t_n=n\Delta t$ so that
 
 !bt
 \begin{align}

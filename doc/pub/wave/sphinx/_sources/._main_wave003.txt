@@ -103,7 +103,7 @@ scheme, it is tempting to implement :ref:`(35) <Eq:wave:pde1:Neumann:0>` at
 .. math::
 
     \tag{36}
-    [D_{2x} u]^n_0 = \frac{u_{-1}^n - u_n^n}{2\Delta x} = 0
+    [D_{2x} u]^n_0 = \frac{u_{-1}^n - u_1^n}{2\Delta x} = 0
         {\thinspace .}
         
         
@@ -113,8 +113,6 @@ computed since the point is outside the mesh. However, if we combine
 :ref:`(36) <Eq:wave:pde1:Neumann:0:cd>` with the scheme
 
 .. :ref:`(14) <Eq:wave:pde1:step4>`
-
-for :math:`i=0`,
 
 .. _Eq:wave:pde1:Neumann:0:scheme:
 
@@ -126,8 +124,8 @@ for :math:`i=0`,
         
         
 
-we can eliminate the fictitious value :math:`u_{-1}^n`. We see that
-:math:`u_{-1}^n=u_n^n` from :ref:`(36) <Eq:wave:pde1:Neumann:0:cd>`, which
+for :math:`i=0`, we can eliminate the fictitious value :math:`u_{-1}^n`. We see that
+:math:`u_{-1}^n=u_1^n` from :ref:`(36) <Eq:wave:pde1:Neumann:0:cd>`, which
 can be used in :ref:`(37) <Eq:wave:pde1:Neumann:0:scheme>` to
 arrive at a modified scheme for the boundary point :math:`u_0^{n+1}`:
 
@@ -389,7 +387,7 @@ The corresponding implementation becomes
     * A sinusoidal variation of :math:`u` at :math:`x=0` and either :math:`u=0` or
       :math:`u_x=0` at :math:`x=L`.
    
-    * An exact analytical solution :math:`u(x,t)=\cos(m\pi t/L)\sin({\frac{1}{2}}m\pi x/L)`, which can be used for convergence rate tests.
+    * An analytical solution :math:`u(x,t)=\cos(m\pi t/L)\sin({\frac{1}{2}}m\pi x/L)`, which can be used for convergence rate tests.
 
 
 
@@ -494,6 +492,15 @@ Alternative implementation via ghost cells
 Idea
 ~~~~
 
+.. index::
+   single: ghost;  cells
+
+.. index::
+   single: ghost;  points
+
+.. index::
+   single: ghost;  values
+
 Instead of modifying the scheme at the boundary, we can introduce
 extra points outside the domain such that the fictitious values
 :math:`u_{-1}^n` and :math:`u_{N_x+1}^n` are defined in the mesh.  Adding the
@@ -579,7 +586,7 @@ The indexing becomes a bit more complicated when we call functions like
                0.5*C2*(u_n[i-1] - 2*u_n[i] + u_n[i+1]) + \ 
                0.5*dt2*f(x[i-Ix[0]], t[0])
 
-It remains to update the solution at ghost points, i.e, ``u[0]``
+It remains to update the solution at ghost points, i.e., ``u[0]``
 and ``u[-1]`` (or ``u[Nx+2]``). For a boundary condition :math:`u_x=0`,
 the ghost value must equal the value at the associated inner mesh
 point. Computer code makes this statement precise:
@@ -660,6 +667,15 @@ or (as always) ``u[Ix[0]:Ix[-1]+1]``.
 
 Generalization: variable wave velocity
 ======================================
+
+.. index::
+   single: wave;  variable velocity
+
+.. index::
+   single: wave;  reflected
+
+.. index::
+   single: wave;  transmitted
 
 Our next generalization of the 1D wave equation :ref:`(1) <Eq:wave:pde1>` or
 :ref:`(17) <Eq:wave:pde2>` is to allow for a variable wave velocity :math:`c`:
@@ -832,7 +848,7 @@ With operator notation we can write the discretization as
 .. math::
 
     \tag{45}
-    D_x q D_x u + D_{2x}q D_{2x} u]_i^n,
+    [D_x q D_x u + D_{2x}q D_{2x} u]_i^n,
            
            
    
@@ -845,7 +861,7 @@ With operator notation we can write the discretization as
    a better solution than arithmetic averaging or
    :ref:`(45) <Eq:wave:pde2:var:c:chainrule_scheme>`.
    In the literature, the discretization :math:`[D_x(q D_x u)]^n_i` totally
-   dominates and very few mention the possibility of
+   dominates and very few mention the alternative in
    :ref:`(45) <Eq:wave:pde2:var:c:chainrule_scheme>`.
 
 
@@ -863,6 +879,8 @@ With operator notation we can write the discretization as
 
 Computing the coefficient between mesh points
 ---------------------------------------------
+
+.. index:: interpolation
 
 If :math:`q` is a known function of :math:`x`, we can easily evaluate
 :math:`q_{i+\frac{1}{2}}` simply as :math:`q(x_{i+\frac{1}{2}})` with :math:`x_{i+\frac{1}{2}} = x_i +
@@ -984,10 +1002,13 @@ Before implementing, it remains to solve
 How a variable coefficient affects the stability
 ------------------------------------------------
 
-The stability criterion derived in the section :ref:`wave:pde1:stability`
+.. index::
+   single: time step;  spatially varying
+
+The stability criterion derived later (the section :ref:`wave:pde1:stability`)
 reads :math:`\Delta t\leq \Delta x/c`. If :math:`c=c(x)`, the criterion will depend
 on the spatial location. We must therefore choose a :math:`\Delta t` that
-is small enough such that no mesh cell has :math:`\Delta x/c(x) >\Delta t`.
+is small enough such that no mesh cell has :math:`\Delta t > \Delta x/c(x)`.
 That is, we must use the largest :math:`c` value in the criterion:
 
 .. _Eq:_auto14:
@@ -1206,6 +1227,9 @@ at internal mesh points becomes
 A more general PDE model with variable coefficients
 ---------------------------------------------------
 
+.. index::
+   single: coefficients;  variable
+
 Sometimes a wave PDE has a variable coefficient in front of
 the time-derivative term:
 
@@ -1254,6 +1278,9 @@ also without any difficulty:
 
 Generalization: damping
 -----------------------
+
+.. index::
+   single: wave;  damping
 
 Waves die out by two mechanisms. In 2D and 3D the energy of the wave
 spreads out in space, and energy conservation then requires
@@ -1368,8 +1395,8 @@ targets the following initial-boundary value problem
         
         
 
-The only new feature here is the time-dependent Dirichlet conditions.
-These are trivial to implement:
+The only new feature here is the time-dependent Dirichlet conditions, but
+they are trivial to implement:
 
 .. code-block:: python
 
@@ -1558,6 +1585,18 @@ the document
 
 Pulse propagation in two media
 ------------------------------
+
+.. index:: pulse propagation
+
+.. index:: plug
+
+.. index:: Gaussian function
+
+.. index:: cosine hat
+
+.. index:: discontinuous medium
+
+.. index:: discretization parameters
 
 The function ``pulse`` in ``wave1D_dn_vc.py`` demonstrates wave motion in
 heterogeneous media where :math:`c` varies. One can specify an interval

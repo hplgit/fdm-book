@@ -253,7 +253,7 @@ updates arrays for the next time step by switching references as
 described in the section <a class="reference internal" href="._main_wave002.html#wave-pde1-impl-ref-switch"><em>Remark on the updating of arrays</em></a>. Any use of <tt class="docutils literal"><span class="pre">u</span></tt> on the
 user&#8217;s side is assumed to take place in the user action function. However,
 should the code be changed such that <tt class="docutils literal"><span class="pre">u</span></tt> is returned and used as solution,
-have in mind that you must return <tt class="docutils literal"><span class="pre">u_n</span></tt> after the time lime, otherwise
+have in mind that you must return <tt class="docutils literal"><span class="pre">u_n</span></tt> after the time limit, otherwise
 a <tt class="docutils literal"><span class="pre">return</span> <span class="pre">u</span></tt> will actually return <tt class="docutils literal"><span class="pre">u_nm1</span></tt> (due to the switching of array
 indices in the loop)!</p>
 </div>
@@ -261,7 +261,7 @@ indices in the loop)!</p>
 </div>
 <div class="section" id="vectorized-computations">
 <span id="wave2d3d-impl-vectorized"></span><h2>Vectorized computations<a class="headerlink" href="#vectorized-computations" title="Permalink to this headline">¶</a></h2>
-<p>The scalar code above turns out to be extremely slow for large 2D
+<span class="target" id="index-2"></span><span class="target" id="index-3"></span><p id="index-4">The scalar code above turns out to be extremely slow for large 2D
 meshes, and probably useless in 3D beyond debugging of small test cases.
 Vectorization is therefore a must for multi-dimensional
 finite difference computations in Python. For example,
@@ -302,7 +302,7 @@ evaluation. This is the case with the computational scheme for
 <div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">advance_vectorized</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">u_n</span><span class="p">,</span> <span class="n">u_nm1</span><span class="p">,</span> <span class="n">f_a</span><span class="p">,</span> <span class="n">Cx2</span><span class="p">,</span> <span class="n">Cy2</span><span class="p">,</span> <span class="n">dt2</span><span class="p">,</span>
                        <span class="n">V</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">step1</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">step1</span><span class="p">:</span>
-        <span class="n">dt</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">dt2</span><span class="p">)</span>  <span class="c"># save</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dt2</span><span class="p">)</span>  <span class="c"># save</span>
         <span class="n">Cx2</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">Cx2</span><span class="p">;</span>  <span class="n">Cy2</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">Cy2</span><span class="p">;</span> <span class="n">dt2</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">dt2</span>  <span class="c"># redefine</span>
         <span class="n">D1</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>  <span class="n">D2</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">else</span><span class="p">:</span>
@@ -339,7 +339,7 @@ because each displaced slice in one direction is
 accompanied by a <tt class="docutils literal"><span class="pre">1:-1</span></tt> slice in the other direction. The reason is
 that we only work with the internal points for the index that is
 kept constant in a difference.</p>
-<p>The boundary conditions along the four sides makes use of
+<p>The boundary conditions along the four sides make use of
 a slice consisting of all indices along a boundary:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">u</span><span class="p">[:</span> <span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="n">u</span><span class="p">[:,</span><span class="n">Ny</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
@@ -399,6 +399,216 @@ The <tt class="docutils literal"><span class="pre">test_quadratic</span></tt> fu
 program implements this verification as a proper test function
 for the pytest and nose frameworks.</p>
 </div>
+</div>
+<div class="section" id="visualization">
+<h2>Visualization<a class="headerlink" href="#visualization" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="index-5"></span><p id="index-6">Eventually, we are ready with a real application with our code!
+Look at the <tt class="docutils literal"><span class="pre">wave2D_u0.py</span></tt> and the <tt class="docutils literal"><span class="pre">gaussian</span></tt> function. It
+starts with a Gaussian function to see how it propagates in a square
+with <span class="math">\(u=0\)</span> on the boundaries:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">gaussian</span><span class="p">(</span><span class="n">plot_method</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s">&#39;vectorized&#39;</span><span class="p">,</span> <span class="n">save_plot</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Initial Gaussian bell in the middle of the domain.</span>
+<span class="sd">    plot_method=1 applies mesh function,</span>
+<span class="sd">    =2 means surf, =3 means Matplotlib, =4 means mayavi,</span>
+<span class="sd">    =0 means no plot.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># Clean up plot files</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">glob</span><span class="p">(</span><span class="s">&#39;tmp_*.png&#39;</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="n">Lx</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">Ly</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+    <span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">exp</span>
+
+    <span class="k">def</span> <span class="nf">I</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gaussian peak at (Lx/2, Ly/2).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">Lx</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">y</span><span class="o">-</span><span class="n">Ly</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">plot_u</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">xv</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">yv</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;User action function for plotting.&quot;&quot;&quot;</span>
+    <span class="o">...</span>
+
+    <span class="n">Nx</span> <span class="o">=</span> <span class="mi">40</span><span class="p">;</span> <span class="n">Ny</span> <span class="o">=</span> <span class="mi">40</span><span class="p">;</span> <span class="n">T</span> <span class="o">=</span> <span class="mi">20</span>
+    <span class="n">dt</span><span class="p">,</span> <span class="n">cpu</span> <span class="o">=</span> <span class="n">solver</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">Lx</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">Nx</span><span class="p">,</span> <span class="n">Ny</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span>
+                     <span class="n">user_action</span><span class="o">=</span><span class="n">plot_u</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="matplotlib">
+<h3>Matplotlib<a class="headerlink" href="#matplotlib" title="Permalink to this headline">¶</a></h3>
+<p>We want to animate a 3D surface in Matplotlib, but this is a really
+slow process and not recommended, so we consider Matplotlib not an
+option as long as on-screen animation is desired. One can use the
+recipes for single shots of <span class="math">\(u\)</span>, where it does produce high-quality
+3D plots.</p>
+</div>
+<div class="section" id="gnuplot">
+<span id="index-7"></span><h3>Gnuplot<a class="headerlink" href="#gnuplot" title="Permalink to this headline">¶</a></h3>
+<p>Let us look at different ways for visualization. We import SciTools as
+<tt class="docutils literal"><span class="pre">st</span></tt> and can access <tt class="docutils literal"><span class="pre">st.mesh</span></tt> and <tt class="docutils literal"><span class="pre">st.surf</span></tt> in Matplotlib or Gnuplot,
+but this is not supported except for the Gnuplot package, where it
+works really well (Figure <a class="reference internal" href="#wave2d3d-impl-viz-fig-gnuplot1"><em>Snapshots of the surface plotted by Gnuplot</em></a>).  Then
+we choose <tt class="docutils literal"><span class="pre">plot_method=2</span></tt> (or less relevant <tt class="docutils literal"><span class="pre">plot_method=1</span></tt>) and force
+the backend for SciTools to be Gnuplot (if you have the C package
+Gnuplot and the <tt class="docutils literal"><span class="pre">Gnuplot.py</span></tt> Python interface module installed):</p>
+<div class="highlight-text"><div class="highlight"><pre>Terminal&gt; python wave2D_u0.py --SCITOOLS_easyviz_backend gnuplot
+</pre></div>
+</div>
+<p>It gives a nice visualization with lifted surface and contours beneath.
+Figure <a class="reference internal" href="#wave2d3d-impl-viz-fig-gnuplot1"><em>Snapshots of the surface plotted by Gnuplot</em></a> shows four plots of <span class="math">\(u\)</span>.</p>
+<div class="figure" id="wave2d3d-impl-viz-fig-gnuplot1">
+<a class="reference internal image-reference" href="_images/wave2D_u0_gnuplot_gaussian.png"><img alt="_images/wave2D_u0_gnuplot_gaussian.png" src="_images/wave2D_u0_gnuplot_gaussian.png" style="width: 800px;" /></a>
+<p class="caption"><em>Snapshots of the surface plotted by Gnuplot</em></p>
+</div>
+<p>Video files can be made of the PNG frames:</p>
+<div class="highlight-text"><div class="highlight"><pre>Terminal&gt; ffmpeg -i tmp_%04d.png -r 25 -vcodec flv movie.flv
+Terminal&gt; ffmpeg -i tmp_%04d.png -r 25 -vcodec linx264 movie.mp4
+Terminal&gt; ffmpeg -i tmp_%04d.png -r 25 -vcodec libvpx movie.webm
+Terminal&gt; ffmpeg -i tmp_%04d.png -r 25 -vcodec libtheora movie.ogg
+</pre></div>
+</div>
+<p>It is wise to use a high frame rate - a low one will just skip many
+frames. There may also be considerable quality differences between the
+different formats.</p>
+<div>
+<video  loop controls width='640' height='365' preload='none'>
+    <source src="_static/mov-wave/gnuplot/wave2D_u0_gaussian/movie25.mp4"  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+    <source src="_static/mov-wave/gnuplot/wave2D_u0_gaussian/movie25.webm" type='video/webm; codecs="vp8, vorbis"'>
+    <source src="_static/mov-wave/gnuplot/wave2D_u0_gaussian/movie25.ogg"  type='video/ogg;  codecs="theora, vorbis"'>
+</video>
+</div>
+<p><em></em></p>
+
+<!-- Issue warning if in a Safari browser -->
+<script language="javascript">
+if (!!(window.safari)) {
+  document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
+</script><span class="target" id="index-8"></span></div>
+<div class="section" id="mayavi">
+<span id="index-9"></span><h3>Mayavi<a class="headerlink" href="#mayavi" title="Permalink to this headline">¶</a></h3>
+<p>The best option for doing visualization of 2D and 3D scalar and vector fields
+in Python programs is Mayavi, which is an interface to the high-quality
+package VTK in C++. There is good online documentation and also
+an introduction in Chapter 5 of <a class="reference internal" href="._main_wave008.html#ref4" id="id1">[Ref4]</a>.</p>
+<p>To obtain Mayavi on Ubuntu platforms you can write</p>
+<div class="highlight-text"><div class="highlight"><pre>pip install mayavi --upgrade
+</pre></div>
+</div>
+<p>For Mac OS X and Windows, we recommend using Anaconda.
+To obtain Mayavi for Anaconda you can write</p>
+<div class="highlight-text"><div class="highlight"><pre>conda install mayavi
+</pre></div>
+</div>
+<p>Mayavi has a MATLAB-like interface called <tt class="docutils literal"><span class="pre">mlab</span></tt>. We can do</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">mayavi.mlab</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="c"># or</span>
+<span class="kn">from</span> <span class="nn">mayavi</span> <span class="kn">import</span> <span class="n">mlab</span>
+</pre></div>
+</div>
+<p>and have <tt class="docutils literal"><span class="pre">plt</span></tt> (as usual) or <tt class="docutils literal"><span class="pre">mlab</span></tt>
+as a kind of MATLAB visualization access inside our program (just
+more powerful and with higher visual quality).</p>
+<p>The official documentation of the <tt class="docutils literal"><span class="pre">mlab</span></tt> module is provided in two
+places, one for the <a class="reference external" href="http://docs.enthought.com/mayavi/mayavi/auto/mlab_helper_functions.html">basic functionality</a>
+and one for <a class="reference external" href="http://docs.enthought.com/mayavi/mayavi/auto/mlab_other_functions.html">further functionality</a>.
+Basic <a class="reference external" href="http://docs.enthought.com/mayavi/mayavi/auto/mlab_figure.html">figure
+handling</a>
+is very similar to the one we know from Matplotlib.  Just as for
+Matplotlib, all plotting commands you do in <tt class="docutils literal"><span class="pre">mlab</span></tt> will go into the
+same figure, until you manually change to a new figure.</p>
+<p>Back to our application, the following code for the user action
+function with plotting in Mayavi is relevant to add.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Top of the file</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">mayavi.mlab</span> <span class="kn">as</span> <span class="nn">mlab</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="c"># We don&#39;t have mayavi</span>
+    <span class="k">pass</span>
+
+<span class="k">def</span> <span class="nf">solver</span><span class="p">(</span><span class="o">...</span><span class="p">):</span>
+    <span class="o">...</span>
+
+<span class="k">def</span> <span class="nf">gaussian</span><span class="p">(</span><span class="o">...</span><span class="p">):</span>
+    <span class="o">...</span>
+    <span class="k">if</span> <span class="n">plot_method</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">mpl_toolkits.mplot3d</span> <span class="kn">import</span> <span class="n">axes3d</span>
+        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+        <span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">cm</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ion</span><span class="p">()</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">u_surf</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">plot_u</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">xv</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">yv</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;User action function for plotting.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">plot_method</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c"># Works well with Gnuplot backend, not with Matplotlib</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">mesh</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&#39;t=</span><span class="si">%g</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">],</span> <span class="n">zlim</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">caxis</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="n">plot_method</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c"># Works well with Gnuplot backend, not with Matplotlib</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">surfc</span><span class="p">(</span><span class="n">xv</span><span class="p">,</span> <span class="n">yv</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s">&#39;t=</span><span class="si">%g</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">],</span> <span class="n">zlim</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                  <span class="n">colorbar</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">colormap</span><span class="o">=</span><span class="n">st</span><span class="o">.</span><span class="n">hot</span><span class="p">(),</span> <span class="n">caxis</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span>
+                  <span class="n">shading</span><span class="o">=</span><span class="s">&#39;flat&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">plot_method</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&#39;Experimental 3D matplotlib...not recommended&#39;</span>
+        <span class="k">elif</span> <span class="n">plot_method</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="c"># Mayavi visualization</span>
+            <span class="n">mlab</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+            <span class="n">extent1</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">mlab</span><span class="o">.</span><span class="n">surf</span><span class="p">(</span><span class="n">x</span> <span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span>
+                          <span class="n">colormap</span><span class="o">=</span><span class="s">&#39;Blues&#39;</span><span class="p">,</span>
+                          <span class="n">warp_scale</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span><span class="n">extent</span><span class="o">=</span><span class="n">extent1</span><span class="p">)</span>
+            <span class="n">mlab</span><span class="o">.</span><span class="n">axes</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="o">.</span><span class="mi">7</span><span class="p">,</span> <span class="o">.</span><span class="mi">7</span><span class="p">,</span> <span class="o">.</span><span class="mi">7</span><span class="p">),</span> <span class="n">extent</span><span class="o">=</span><span class="n">extent1</span><span class="p">,</span>
+                      <span class="n">ranges</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                      <span class="n">xlabel</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">zlabel</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span>
+                      <span class="n">x_axis_visibility</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                      <span class="n">z_axis_visibility</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+            <span class="n">mlab</span><span class="o">.</span><span class="n">outline</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mf">0.7</span><span class="p">,</span> <span class="o">.</span><span class="mi">7</span><span class="p">,</span> <span class="o">.</span><span class="mi">7</span><span class="p">),</span> <span class="n">extent</span><span class="o">=</span><span class="n">extent1</span><span class="p">)</span>
+            <span class="n">mlab</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.5</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">z</span><span class="o">=-</span><span class="mi">4</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mf">0.14</span><span class="p">)</span>
+            <span class="n">mlab</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="nb">object</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                          <span class="n">orientation</span><span class="o">=</span><span class="s">&#39;horizontal&#39;</span><span class="p">,</span>
+                          <span class="n">nb_labels</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nb_colors</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                          <span class="n">label_fmt</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+            <span class="n">mlab</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&#39;Gaussian t=</span><span class="si">%g</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
+            <span class="n">mlab</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">142</span><span class="p">,</span> <span class="o">-</span><span class="mi">72</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">mlab</span><span class="o">.</span><span class="n">gcf</span><span class="p">()</span>
+            <span class="n">camera</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">camera</span>
+            <span class="n">camera</span><span class="o">.</span><span class="n">yaw</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">plot_method</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="c"># pause between frames</span>
+            <span class="k">if</span> <span class="n">save_plot</span><span class="p">:</span>
+                <span class="n">filename</span> <span class="o">=</span> <span class="s">&#39;tmp_</span><span class="si">%04d</span><span class="s">.png&#39;</span> <span class="o">%</span> <span class="n">n</span>
+            <span class="k">if</span> <span class="n">plot_method</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+                    <span class="n">mlab</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>  <span class="c"># time consuming!</span>
+            <span class="k">elif</span> <span class="n">plot_method</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">):</span>
+                    <span class="n">st</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>  <span class="c"># time consuming!</span>
+</pre></div>
+</div>
+<p>This is a point to get started - visualization is as always a very
+time-consuming and experimental discipline. With the PNG files we
+can use <tt class="docutils literal"><span class="pre">ffmpeg</span></tt> to create videos.</p>
+<div class="figure">
+<a class="reference internal image-reference" href="_images/mayavi2D_gaussian1.png"><img alt="_images/mayavi2D_gaussian1.png" src="_images/mayavi2D_gaussian1.png" style="width: 600px;" /></a>
+<p class="caption">Plot with Mayavi</p>
+</div>
+<div>
+<video  loop controls width='640' height='365' preload='none'>
+    <source src="_static/mov-wave/mayavi/wave2D_u0_gaussian/movie.mp4"  type='video/mp4;  codecs="avc1.42E01E, mp4a.40.2"'>
+    <source src="_static/mov-wave/mayavi/wave2D_u0_gaussian/movie.ogg"  type='video/ogg;  codecs="theora, vorbis"'>
+</video>
+</div>
+<p><em></em></p>
+
+<!-- Issue warning if in a Safari browser -->
+<script language="javascript">
+if (!!(window.safari)) {
+  document.write("<div style=\"width: 95%%; padding: 10px; border: 1px solid #100; border-radius: 4px;\"><p><font color=\"red\">The above movie will not play in Safari - use Chrome, Firefox, or Opera.</font></p></div>")}
+</script></div>
 </div>
 </div>
 <div class="section" id="exercises-3">
@@ -511,6 +721,12 @@ Filename: <tt class="docutils literal"><span class="pre">wave3D_u0</span></tt>.<
 <li><a class="reference internal" href="#vectorized-computations">Vectorized computations</a></li>
 <li><a class="reference internal" href="#verification-3">Verification</a><ul>
 <li><a class="reference internal" href="#testing-a-quadratic-solution">Testing a quadratic solution</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#visualization">Visualization</a><ul>
+<li><a class="reference internal" href="#matplotlib">Matplotlib</a></li>
+<li><a class="reference internal" href="#gnuplot">Gnuplot</a></li>
+<li><a class="reference internal" href="#mayavi">Mayavi</a></li>
 </ul>
 </li>
 </ul>
