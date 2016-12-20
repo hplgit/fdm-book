@@ -21,7 +21,7 @@ label{diffu:pde2:bc:L}
 \end{alignat}
 !et
 A short form of the diffusion equation with variable coefficients is
-$u_t = (\alpha u_x)_x$.
+$u_t = (\alpha u_x)_x + f$.
 
 ===== Discretization =====
 label{diffu:varcoeff:discr}
@@ -42,10 +42,10 @@ Written out, this becomes
 \frac{u^{n+1}_i-u^{n}_i}{\Delta t} &=
 \theta\frac{1}{\Delta x^2}
 (\dfc_{i+\half}(u^{n+1}_{i+1} - u^{n+1}_{i})
-- \dfc_{i-\half}(u^{n+1}_i - u^{n+1}_{i+1})) +\\
+- \dfc_{i-\half}(u^{n+1}_i - u^{n+1}_{i-1})) +\\
 &\quad (1-\theta)\frac{1}{\Delta x^2}
 (\dfc_{i+\half}(u^{n}_{i+1} - u^{n}_{i})
-- \dfc_{i-\half}(u^{n}_i - u^{n}_{i+1})) +\\
+- \dfc_{i-\half}(u^{n}_i - u^{n}_{i-1})) +\\
 &\quad \theta f_i^{n+1} + (1-\theta)f_i^{n},
 \end{align*}
 !et
@@ -58,6 +58,8 @@ where, e.g., an arithmetic mean can to be used for $\dfc_{i+\half}$:
 ===== Implementation =====
 label{diffu:varcoeff:impl}
 idx{diffusion equation! 1D, Implementation}
+idx{`sparse`} idx{`diags`} idx{`linalg`} idx{`spsolve`}
+idx{`diffu1D_vc.py`}
 
 Suitable code for solving the discrete equations is very similar to
 what we created for a constant $\dfc$.
@@ -143,7 +145,7 @@ equation is then
 label{diffu:fd2:pde:st}
 \end{equation}
 !et
-with boundary conditions $u(0)=U_0$ and $u(L)=u_L$.
+with boundary conditions $u(0)=U_0$ and $u(L)=U_L$.
 It is possible to obtain an exact solution of (ref{diffu:fd2:pde:st})
 for any $\alpha$. Integrating twice and applying the boundary conditions
 to determine the integration constants gives
@@ -205,6 +207,7 @@ continuous and therefore can be differentiated as $(\alpha u_x)_x$.
 ===== Implementation of diffusion in a piecewise constant medium =====
 label{diffu:varcoeff:impl:piecewise}
 idx{diffusion equation! implementation}
+idx{`class serial layers`}
 
 Programming with piecewise function definitions quickly becomes
 cumbersome as the most naive approach is to test for which interval
@@ -316,12 +319,13 @@ FIGURE: [fig-diffu/flow_in_layers_case1_eps, width=400 frac=1.0] Solution of the
 ===== Axi-symmetric diffusion =====
 label{diffu:fd2:radial}
 idx{diffusion equation!axi-symmetric diffusion}
+idx{cylindrical coordinates}
 
 ## http://www.ewp.rpi.edu/hartford/~ernesto/S2004/CHT/Notes/s06.pdf
 
 Suppose we have a diffusion process taking place in a straight tube
 with radius $R$. We assume axi-symmetry such that $u$ is just a
-function of $r$ and $t$, $r$ being the radial distance from the center
+function of $r$ and $t$, with $r$ being the radial distance from the center
 axis of the tube to a point. With such axi-symmetry it is
 advantageous to introduce *cylindrical coordinates* $r$, $\theta$, and
 $z$, where $z$ is in the direction of the tube and $(r,\theta)$ are
@@ -424,7 +428,7 @@ is discretized in the usual way.
 
 !bt
 \[ 2\dfc\frac{\partial^2}{\partial r^2}u(r_0,t_n) \approx
-[2\dfc 2D_rD_r u]^n_0 =
+[2\dfc D_rD_r u]^n_0 =
 2\dfc \frac{u^{n}_{1} - 2u^{n}_0 + u^n_{-1}}{\Delta r^2}\tp\]
 !et
 The fictitious value $u^n_{-1}$ can be eliminated using the discrete
@@ -462,6 +466,7 @@ be done as before and does not interfere with the discretization in space.
 ===== Spherically-symmetric diffusion =====
 label{diffu:fd2:spherical}
 idx{diffusion equation!spherically-symmetric diffusion}
+idx{spherical coordinates}
 
 === Discretization in spherical coordinates ===
 

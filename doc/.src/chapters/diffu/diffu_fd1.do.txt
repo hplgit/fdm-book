@@ -33,7 +33,7 @@ recognize the initial shape of $u$. This is in sharp contrast to
 solutions of the wave equation where the initial shape is preserved in
 homogeneous media -- the solution is then basically a moving initial
 condition. The standard wave equation $u_{tt}=c^2u_{xx}$ has solutions
-that propagates with speed $c$ forever, without changing shape, while
+that propagate with speed $c$ forever, without changing shape, while
 the diffusion equation converges to a *stationary solution* $\bar
 u(x)$ as $t\rightarrow\infty$. In this limit, $u_t=0$, and $\bar u$ is
 governed by $\bar u''(x)=0$.  This stationary limit of the diffusion
@@ -274,6 +274,10 @@ Section ref{diffu:pde1:analysis}.
 ===== Implementation =====
 label{diffu:pde1:FE:code}
 idx{diffusion equation! 1D, implementation (FE)}
+idx{`diffu1D_u0.py`}
+idx{`solver_FE_simple`}
+idx{`time`}
+idx{`clock`}
 
 The file "`diffu1D_u0.py`": "${src_diffu}/diffu1D_u0.py"
 contains a complete function `solver_FE_simple`
@@ -282,8 +286,8 @@ as specified in the algorithm above:
 
 @@@CODE src-diffu/diffu1D_u0.py fromto: import numpy@def solver_FE\(
 
-A faster version, based on vectorization of the finite difference
-scheme, is available in the function `solver_FE`.
+A faster alternative is available in the function `solver_FE`, which 
+adds the possibility of solving the finite difference scheme by vectorization.
 The vectorized version replaces the explicit loop
 
 !bc pycod
@@ -309,19 +313,21 @@ user can process the solution at each time level. The callback
 function looks like `user_action(u, x, t, n)`, where `u` is the array
 containing the solution at time level `n`, `x` holds all the
 spatial mesh points, while `t` holds all the temporal mesh points.
-Apart from the vectorized loop over the spatial mesh points, the
-callback function, and a bit more complicated setting of the source
-`f` it is not specified (`None`), the `solver_FE` function is identical to
-`solver_FE_simple` above:
+The `solver_FE` function is very similar to `solver_FE_simple` above:
 
 @@@CODE src-diffu/diffu1D_u0.py fromto: def solver_FE\(@def solver_BE_simple
 
 ===== Verification =====
 label{diffu:pde1:FE:verify}
 idx{diffusion equation! 1D, verification (FE)}
+idx{`solver_FE`}
 
 === Exact solution of discrete equations ===
 label{diffu:pde1:FE:verify:exact}
+idx{`diff`}
+idx{`simplify`}
+idx{`subs`}
+idx{test function}
 
 Before thinking about running the functions in the previous section,
 we need to construct a suitable test example for verification. It
@@ -451,6 +457,8 @@ to keep $F$ away from the limiting value 0.5.
 === Checking convergence rates ===
 label{diffu:pde1:FE:verify:convrates}
 
+idx{verification! convergence rates}
+
 If our chosen exact solution does not satisfy the discrete equations
 exactly, we are left with checking the convergence rates, just as we did
 previously for the wave equation. However, with the Euler scheme here,
@@ -475,7 +483,7 @@ discretization parameter $h$ from the formula:
 
 !bt
 \[
-E = C_t h + C_x (K^{r/p})^p = \tilde C h^r,\quad
+E = C_t h + C_x (Kh^{r/p})^p = \tilde C h^r,\quad
 \tilde C = C_t + C_sK^r\tp\]
 !et
 The computed rate $r$ should approach 1 with increasing resolution.
@@ -492,7 +500,6 @@ which means
 !et
 implying that $K=\sqrt{2\dfc}$ is our choice in experiments where we
 lie on the stability limit $F=1/2$.
-
 
 
 ===== Numerical experiments =====
@@ -618,11 +625,11 @@ important observations:
 label{diffu:pde1:implicit}
 idx{diffusion equation! 1D, implicit schemes}
 
-Simulations with the Forward Euler scheme shows that the time step
+Simulations with the Forward Euler scheme show that the time step
 restriction, $F\leq\half$, which means $\Delta t \leq \Delta x^2/(2\dfc)$,
 may be relevant in the beginning of the diffusion process, when the
 solution changes quite fast, but as time increases, the process slows
-down, and a small $\Delta t$ may be inconvenient. By using
+down, and a small $\Delta t$ may be inconvenient. With 
 *implicit schemes*, which lead to coupled systems of linear equations
 to be solved at each time level, any size of $\Delta t$ is possible
 (but the accuracy decreases with increasing $\Delta t$).
@@ -632,7 +639,7 @@ simplest implicit scheme for the diffusion equation.
 ===== Backward Euler scheme =====
 label{diffu:pde1:BE}
 
-We now apply a backward difference in time in (ref{diffu:pde1:step2}),
+In (ref{diffu:pde1:step2}), we now apply a backward difference in time,
 but the same central difference in space:
 
 !bt
@@ -649,7 +656,7 @@ which written out reads
 label{diffu:pde1:step3bBE}
 \end{equation}
 !et
-Now we assume $u^{n-1}_i$ is already computed, but all quantities at the ``new''
+Now we assume $u^{n-1}_i$ is already computed, but that all quantities at the ``new''
 time level $n$ are unknown. This time it is not possible to solve
 with respect to $u_i^{n}$ because this value couples to its neighbors
 in space, $u^n_{i-1}$ and $u^n_{i+1}$, which are also unknown.
@@ -711,6 +718,12 @@ time step is governed by accuracy and not by stability. This is the great
 advantage of implicit schemes.
 !enotice
 
+idx{coupled system}
+idx{interior spatial points}
+idx{ready-made software}
+idx{matrix! equation}
+idx{matrix! form}
+
 In the general case, (ref{diffu:pde1:step3bBE}) gives rise to
 a coupled $(N_x-1)\times (N_x-1)$ system of algebraic equations for
 all the unknown $u^n_i$ at the interior spatial points $i=1,\ldots,N_x-1$.
@@ -725,7 +738,7 @@ label{diffu:pde1:step4BE}
 \end{equation}
 !et
 for $i=1,\ldots,N_x-1$.
-One can either view these equations as a system for where the
+One can either view these equations as a system where the
 $u^{n}_i$ values at the internal mesh points, $i=1,\ldots,N_x-1$, are
 unknown, or we may append the boundary values $u^n_0$ and $u^n_{N_x}$
 to the system. In the latter case, all $u^n_i$ for $i=0,\ldots,N_x$
@@ -869,6 +882,13 @@ idx{diffusion equation! 1D, verification (BE)}
 ===== Sparse matrix implementation =====
 label{diffu:pde1:impl:sparse}
 idx{diffusion equation! 1D, tridiagonal matrix}
+idx{diffusion equation! 1D, dense matrix}
+idx{diffusion equation! 1D, sparse matrix}
+idx{diffusion equation! 1D, implementation (sparse)}
+idx{`sparse`} idx{`diags`} idx{`todense`} idx{`spsolve`}
+idx{`linalg`} idx{`solver_BE`} idx{Gaussian elimination}
+idx{`diffu1D_u0.py`}
+idx{smooth Gaussian function} idx{discontinuous plug}
 
 We have seen from (ref{diffu:pde1:matrix:sparsity}) that the matrix
 $A$ is tridiagonal. The code segment above used a full, dense matrix
@@ -931,7 +951,7 @@ contains a function `solver_BE`, which implements the Backward Euler scheme
 sketched above.
 As mentioned in Section ref{diffu:pde1:FE},
 the functions `plug` and `gaussian`
-runs the case with $I(x)$ as a discontinuous plug or a smooth
+run the case with $I(x)$ as a discontinuous plug or a smooth
 Gaussian function. All experiments point to two characteristic
 features of the Backward Euler scheme: 1) it is always stable, and
 2) it always gives a smooth, decaying solution.
@@ -939,6 +959,7 @@ features of the Backward Euler scheme: 1) it is always stable, and
 ===== Crank-Nicolson scheme =====
 label{diffu:pde1:CN}
 idx{diffusion equation! 1D, Crank-Nicolson scheme}
+idx{linear system}
 
 The idea in the Crank-Nicolson scheme is to apply centered
 differences in space and time, combined with an average in time.
@@ -1080,7 +1101,7 @@ In the compact difference notation, we write the $\theta$ rule
 as
 
 !bt
-\[ [D_t u = \dfc D_xD_x u]^{n+\theta}\tp\]
+\[ [\overline{D}_t u = \dfc D_xD_x u]^{n+\theta}\tp\]
 !et
 We have that $t_{n+\theta} = \theta t_{n+1} + (1-\theta)t_n$.
 
@@ -1130,6 +1151,8 @@ second order convergence (as outlined in previous sections).
 ===== Experiments =====
 label{diffu:pde1:theta:experiments}
 
+idx{sawtooth-like noise} idx{discontinuous initial condition}
+
 We can repeat the experiments from Section ref{diffu:pde1:FE:experiments}
 to see if the Backward Euler or Crank-Nicolson schemes have problems
 with sawtooth-like noise when starting with a discontinuous initial
@@ -1142,8 +1165,8 @@ The Backward Euler scheme always produces smooth solutions for any $F$.
 Figure ref{diffu:pde1:BE:fig:F=0.5} shows one example.
 Note that the mathematical discontinuity at $t=0$ leads to a linear
 variation on a mesh, but the approximation to a jump becomes better
-as $N_x$ increases. In our simulation we specify $\Delta t$ and $F$,
-and $N_x$ is set to $L/\sqrt{\dfc\Delta t/F}$. Since $N_x\sim\sqrt{F}$,
+as $N_x$ increases. In our simulation, we specify $\Delta t$ and $F$,
+and set $N_x$ to $L/\sqrt{\dfc\Delta t/F}$. Since $N_x\sim\sqrt{F}$,
 the discontinuity looks sharper in the Crank-Nicolson
 simulations with larger $F$.
 
@@ -1160,6 +1183,8 @@ FIGURE: [fig-diffu/plug_CN_F10, width=800 frac=1] Crank-Nicolson scheme for $F=1
 
 
 ===== The Laplace and Poisson equation =====
+
+idx{steady state} idx{Laplace equation} idx{Poisson equation}
 
 The Laplace equation, $\nabla^2 u = 0$, and the Poisson equation,
 $-\nabla^2 u = f$, occur in numerous applications throughout science and

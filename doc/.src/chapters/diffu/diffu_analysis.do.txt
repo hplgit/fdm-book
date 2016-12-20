@@ -2,6 +2,8 @@
 ======= Analysis of schemes for the diffusion equation =======
 label{diffu:pde1:analysis}
 
+idx{noise! sawtooth-like}
+
 The numerical experiments in Sections
 ref{diffu:pde1:FE:experiments} and ref{diffu:pde1:theta:experiments}
 reveal that there are some
@@ -24,6 +26,9 @@ Figures ref{diffu:pde1:FE:fig:F=0.5}-ref{diffu:pde1:CN:fig:F=10}.
 
 ===== Properties of the solution =====
 label{diffu:pde1:analysis:uex}
+
+idx{error function (erf)!} idx{step function}
+idx{error function (erf)! complementary}
 
 A particular characteristic of diffusive processes, governed
 by an equation like
@@ -102,10 +107,12 @@ label{diffu:analysis:pde1:p1:erf:uR}
 \tp
 \end{align}
 !et
-For small enough $t$, $u(0,t)\approx 1$ and $u(1,t)\approx 1$, but as
+For small enough $t$, $u(0,t)\approx 1$ and $u(1,t)\approx 0$, but as
 $t\rightarrow\infty$, $u(x,t)\rightarrow 1/2$ on $[0,1]$.
 
 === Solution for a Gaussian pulse ===
+
+idx{Dirac delta function}
 
 The standard diffusion equation $u_t = \dfc u_{xx}$ admits a
 Gaussian function as solution:
@@ -132,6 +139,8 @@ the pulse diffuse and flatten out.
 
 === Solution for a sine component ===
 
+idx{smoothing} idx{noise! removing} idx{signal processing}
+
 Also, (ref{diffu:pde1:eq}) admits a solution of the form
 
 !bt
@@ -150,8 +159,7 @@ inserting (ref{diffu:pde1:sol1}) in (ref{diffu:pde1:eq}) gives the constraint
 \end{equation*}
 !et
 
-
-A very important feature is that the initial shape $I(x)=Q\sin kx$
+A very important feature is that the initial shape $I(x)=Q\sin\left( kx\right)$
 undergoes a damping $\exp{(-\dfc k^2t)}$, meaning that
 rapid oscillations in space, corresponding to large $k$, are very much
 faster dampened than slow oscillations in space, corresponding to small
@@ -273,6 +281,8 @@ denotes $u$ at time $t_n$.
 
 === Stability ===
 
+idx{stability}
+
 The exact amplification factor is $\Aex=\exp{(-\dfc^2 k^2\Delta t)}$.
 We should therefore require $|A| < 1$ to have a decaying numerical
 solution as well. If
@@ -283,6 +293,8 @@ solutions that are not present in the exact solution.
 idx{amplification factor}
 
 === Accuracy ===
+
+idx{accuracy}
 
 To determine how accurately a finite difference scheme treats one
 wave component (ref{diffu:pde1:analysis:uni}), we see that the basic
@@ -296,6 +308,8 @@ make Taylor expansions of $A/\Aex$ to see the error more analytically.
 #amplification factor.
 
 === Truncation error ===
+
+idx{diffusion equation! truncation error}
 
 As an alternative to examining the accuracy of the damping of a wave
 component, we can perform a general truncation error analysis as
@@ -311,6 +325,8 @@ verifying codes based on empirical estimation of convergence rates.
 
 ===== Analysis of the Forward Euler scheme =====
 label{diffu:pde1:analysis:FE}
+
+idx{diffusion equation! numerical Fourier number}
 
 # 2DO: refer to vib and wave
 
@@ -401,6 +417,8 @@ The method hence becomes very expensive for fine spatial meshes.
 # 2DO: verification based on exact solutions
 
 === Accuracy ===
+
+idx{Taylor series}
 
 Since $A$ is expressed in terms of $F$ and the parameter we now call
 $p=k\Delta x/2$, we should also express $\Aex$ by $F$ and $p$. The exponent
@@ -578,7 +596,7 @@ The exact numerical solution is hence
 
 !bt
 \begin{equation}
-u^n_q = \left(\frac{ 1 - 2F\sin^2p}{1 + 2F\sin^2p}\right)^ne^{ikp\Delta x}
+u^n_q = \left(\frac{ 1 - 2F\sin^2p}{1 + 2F\sin^2p}\right)^ne^{ikq\Delta x}
 \tp
 \end{equation}
 !et
@@ -605,21 +623,23 @@ cite{Langtangen_deqbook_trunc}]:
 ===== Analysis of the Leapfrog scheme =====
 label{diffu:pde1:analysis:leapfrog}
 
+idx{Leapfrog scheme}
+
 An attractive feature of the Forward Euler scheme is the explicit
 time stepping and no need for solving linear systems. However, the
 accuracy in time is only $\Oof{\Delta t}$. We can get an explicit
 *second-order* scheme in time by using the Leapfrog method:
 
 !bt
-\[ [D_{2t} u = \dfc D_xDx u + f]^n_i\tp\]
+\[ [D_{2t} u = \dfc D_xDx u + f]^n_q\tp\]
 !et
 Written out,
 
 !bt
-\[ u^{n+1} = u^{n-1} + \frac{2\dfc\Delta t}{\Delta x^2}
-(u^{n}_{i+1} - 2u^n_i + u^n_{i-1}) + f(x_i,t_n)\tp\]
+\[ u_q^{n+1} = u_q^{n-1} + \frac{2\dfc\Delta t}{\Delta x^2}
+(u^{n}_{q+1} - 2u^n_q + u^n_{q-1}) + f(x_q,t_n)\tp\]
 !et
-We need some formula for the first step, $u^1_i$, but for that we can use
+We need some formula for the first step, $u^1_q$, but for that we can use
 a Forward Euler step.
 
 Unfortunately, the Leapfrog scheme is always unstable for the
@@ -690,7 +710,8 @@ respectively, and we see how short waves pollute the overall solution.
 ===== Analysis of the 2D diffusion equation =====
 label{diffu:2D:analysis}
 
-We first consider the 2D diffusion equation
+Diffusion in several dimensions is treated later, but it is appropriate to
+include the analysis here. We first consider the 2D diffusion equation
 
 !bt
 \[ u_{t} = \dfc(u_{xx} + u_{yy}),\]
@@ -711,7 +732,7 @@ and the schemes have discrete versions of this Fourier component:
 For the Forward Euler discretization,
 
 !bt
-\[ [D_t^+u = \dfc(D_xD_x u + D_yD_y u)]_{i,j}^n,\]
+\[ [D_t^+u = \dfc(D_xD_x u + D_yD_y u)]_{q,r}^n,\]
 !et
 we get
 
@@ -752,7 +773,7 @@ The complete numerical solution for a wave component is
 !bt
 \begin{equation}
 u^{n}_{q,r} = A(1 - 4F_x\sin^2 p_x - 4F_y\sin^2 p_y)^n
-e^{i(k_xp\Delta x + k_yq\Delta y)}\tp
+e^{i(k_xq\Delta x + k_yr\Delta y)}\tp
 label{diffu:2D:analysis:FE:numexact}
 \end{equation}
 !et
@@ -781,7 +802,7 @@ where $d$ is the number of space dimensions: $d=1,2,3$.
 The Backward Euler method,
 
 !bt
-\[ [D_t^-u = \dfc(D_xD_x u + D_yD_y u)]_{i,j}^n,\]
+\[ [D_t^-u = \dfc(D_xD_x u + D_yD_y u)]_{q,r}^n,\]
 !et
 results in
 
@@ -809,9 +830,9 @@ label{diffu:2D:analysis:BN:numexact}
 With a Crank-Nicolson discretization,
 
 !bt
-\[ [D_tu]^{n+\half}_{i,j} =
-\half [\dfc(D_xD_x u + D_yD_y u)]_{i,j}^{n+1} +
-\half [\dfc(D_xD_x u + D_yD_y u)]_{i,j}^n,\]
+\[ [D_tu]^{n+\half}_{q,r} =
+\half [\dfc(D_xD_x u + D_yD_y u)]_{q,r}^{n+1} +
+\half [\dfc(D_xD_x u + D_yD_y u)]_{q,r}^n,\]
 !et
 we have, after some algebra,
 
@@ -853,8 +874,8 @@ label{diffu:2D:analysis:CN:numexact}
 
 The behavior of the solution generated by Forward Euler discretization in time (and centered
 differences in space) is summarized at the end of
-Section ref{diffu:pde1:FE:experiments}. Can we from the analysis
-above explain the behavior?
+Section ref{diffu:pde1:FE:experiments}. Can we, from the analysis
+above, explain the behavior?
 
 We may start by looking at Figure ref{diffu:pde1:FE:fig:F=0.51}
 where $F=0.51$. The figure shows that the solution is unstable and
