@@ -5,6 +5,12 @@
 Operator splitting methods
 ==========================
 
+.. index:: ADI methods
+
+.. index:: split-step methods
+
+.. index:: dimensional splitting
+
 Operator splitting is a natural and old idea. When a PDE or system of PDEs
 contains different terms expressing different physics, it is natural to
 use different numerical methods for different physical processes. This can
@@ -143,6 +149,10 @@ with global solution set as :math:`u(t_{n+1}) = u^{{**}}(t_{n+1})`.
 
 Example: Logistic growth
 ------------------------
+
+.. index:: logistic growth
+
+.. index:: split_logistic.py
 
 Let us split the (scaled) logistic equation
 
@@ -438,7 +448,7 @@ The algorithm goes like this:
 
 2. Solve the reaction ODEs at each mesh point in :math:`[t_n,t_n+\Delta t]`,
    using the diffusion solution in 1. as initial condition.
-   The solution of the ODEs constitute the solution of the original problem
+   The solution of the ODEs constitutes the solution of the original problem
    at the end of each time step.
 
 We may use a much smaller time step when solving the reaction part, adapted
@@ -450,16 +460,26 @@ splitting methods.
 Example: Reaction-Diffusion with linear reaction term
 -----------------------------------------------------
 
+.. index:: split_diffu_react.py
+
+.. index::
+   single: verification;  convergence rates
+
+.. index:: Adams-Bashforth
+
+.. index:: Odespy
+
 The methods above may be explored in detail through a specific
-computational example in which we compute the convergence
-rates associated with four different solution approaches for the
-reaction-diffusion equation with a linear reaction term, i.e. :math:`f(u)=-bu`. 
-The methods comprise solving without splitting (just straight Forward Euler), 
-ordinary splitting, first order Strang splitting, and second order Strang splitting.
-In all four methods, a standard centered difference approximation is
-used for the spatial second derivative. The methods share the error model
-:math:`E = C h^r`, while differing in the step :math:`h` (being either :math:`dx^2` or :math:`dx`) and 
-the convergence rate :math:`r` (being either 1 or 2). 
+computational example in which we compute the convergence rates
+associated with four different solution approaches for the
+reaction-diffusion equation with a linear reaction term,
+i.e. :math:`f(u)=-bu`.  The methods comprise solving without splitting (just
+straight Forward Euler), ordinary splitting, first order Strang
+splitting, and second order Strang splitting.  In all four methods, a
+standard centered difference approximation is used for the spatial
+second derivative. The methods share the error model :math:`E = C h^r`,
+while differing in the step :math:`h` (being either :math:`\Delta x^2` or :math:`\Delta
+x`) and the convergence rate :math:`r` (being either 1 or 2).
 
 All code commented below is found in the file
 `split_diffu_react.py <http://tinyurl.com/nu656p2/nonlin/split_diffu_react.py>`__. When executed,
@@ -578,29 +598,32 @@ rate computations are handled:
         for scheme in schemes:
             convergence_rates(scheme=scheme)
 
-Now, with respect to the error (:math:`E = C h^r`), the Forward Euler scheme, the 
-ordinary splitting scheme and first order Strang splitting scheme are all
-first order (:math:`r = 1`), with a step :math:`h = \Delta x^2 = K^{-1}\Delta t`, where 
-:math:`K` is some constant. This implies that the *ratio* :math:`\frac{\Delta t}{\Delta x^2}` 
-must be held constant during convergence rate calculations. Furthermore, 
-the Fourier number :math:`F = \frac{\alpha \Delta t}{\Delta x^2}` is upwards limited to 
-:math:`F = 0.5`, being the stability limit with explicit schemes. Thus, in these cases,
-we use the fixed value of :math:`F` and a given (but changing) spatial resolution :math:`\Delta x` to
-compute the corresponding value of :math:`\Delta t` according to the expression for :math:`F`.
-This assures that :math:`\frac{\Delta t}{\Delta x^2}` is kept constant. The loop in 
-``convergence_rates`` runs over a chosen set of grid points (``Nx_values``) which gives 
-a doubling of spatial resolution with each iteration (:math:`\Delta x` is halved).
+Now, with respect to the error (:math:`E = C h^r`), the Forward Euler
+scheme, the ordinary splitting scheme and first order Strang splitting
+scheme are all first order (:math:`r = 1`), with a step :math:`h = \Delta x^2 =
+K^{-1}\Delta t`, where :math:`K` is some constant. This implies that the
+*ratio* :math:`\frac{\Delta t}{\Delta x^2}` must be held constant during
+convergence rate calculations. Furthermore, the Fourier number :math:`F =
+\frac{\alpha \Delta t}{\Delta x^2}` is upwards limited to :math:`F = 0.5`,
+being the stability limit with explicit schemes. Thus, in these cases,
+we use the fixed value of :math:`F` and a given (but changing) spatial
+resolution :math:`\Delta x` to compute the corresponding value of :math:`\Delta t`
+according to the expression for :math:`F`.  This assures that :math:`\frac{\Delta
+t}{\Delta x^2}` is kept constant. The loop in ``convergence_rates`` runs
+over a chosen set of grid points (``Nx_values``) which gives a doubling
+of spatial resolution with each iteration (:math:`\Delta x` is halved).
 
-For the second order Strang splitting scheme, we have :math:`r = 2` and a step 
-:math:`h = \Delta x = K^{-1}\Delta t`, where :math:`K` again is some constant. In this case,
-it is thus the ratio :math:`\frac{\Delta t}{\Delta x}` that must be held constant 
-during the convergence rate calculations. From the expression for :math:`F`, it is 
-clear then that :math:`F` must change with each halving of :math:`\Delta x`. In fact, if 
-:math:`F` is doubled each time :math:`\Delta x` is halved, the ratio :math:`\frac{\Delta t}{\Delta x}` 
-will be constant (this follows, e.g., from the expression for :math:`F`). This us utilized
-in our code.
+For the second order Strang splitting scheme, we have :math:`r = 2` and a
+step :math:`h = \Delta x = K^{-1}\Delta t`, where :math:`K` again is some
+constant. In this case, it is thus the ratio :math:`\frac{\Delta t}{\Delta
+x}` that must be held constant during the convergence rate
+calculations. From the expression for :math:`F`, it is clear then that :math:`F`
+must change with each halving of :math:`\Delta x`. In fact, if :math:`F` is
+doubled each time :math:`\Delta x` is halved, the ratio :math:`\frac{\Delta
+t}{\Delta x}` will be constant (this follows, e.g., from the
+expression for :math:`F`). This is utilized in our code.
 
-A solver ``diffusion_theta`` is used in each of the four solution approaches: 
+A solver ``diffusion_theta`` is used in each of the four solution approaches:
 
 .. code-block:: python
 
@@ -687,16 +710,17 @@ A solver ``diffusion_theta`` is used in each of the four solution approaches:
         # u is now contained in u_1 (swapping)
         return u_1
 
-For the no splitting approach with Forward Euler in time, this solver handles both
-the diffusion and the reaction term. When splitting, ``diffusion_theta`` takes care 
-of the diffusion term only, while the reaction
-term is handled either by a Forward Euler scheme in ``reaction_FE``, or by a
-second order Adams-Bashforth scheme from Odespy. The ``reaction_FE`` function
-covers one complete time step ``dt`` during ordinary splitting, while Strang
-splitting (both first and second order) applies it with ``dt/2`` twice during 
-each time step ``dt``. Since the reaction term typically represents a much faster
-process than the diffusion term, a further refinement of the time step is made
-possible in ``reaction_FE``. It was implemented as
+For the no splitting approach with Forward Euler in time, this solver
+handles both the diffusion and the reaction term. When splitting,
+``diffusion_theta`` takes care of the diffusion term only, while the
+reaction term is handled either by a Forward Euler scheme in
+``reaction_FE``, or by a second order Adams-Bashforth scheme from
+Odespy. The ``reaction_FE`` function covers one complete time step ``dt``
+during ordinary splitting, while Strang splitting (both first and
+second order) applies it with ``dt/2`` twice during each time step
+``dt``. Since the reaction term typically represents a much faster
+process than the diffusion term, a further refinement of the time step
+is made possible in ``reaction_FE``. It was implemented as
 
 .. code-block:: python
 
@@ -724,8 +748,9 @@ possible in ``reaction_FE``. It was implemented as
         # BC already inserted in diffusion step, i.e. no action here            
         return u
 
-With the ordinary splitting approach, each time step ``dt`` is covered twice. First 
-computing the impact of the reaction term, then the contribution from the diffusion term:
+With the ordinary splitting approach, each time step ``dt`` is covered
+twice. First computing the impact of the reaction term, then the
+contribution from the diffusion term:
 
 .. code-block:: python
 
@@ -765,10 +790,13 @@ computing the impact of the reaction term, then the contribution from the diffus
     
         return
 
-For the two Strang splitting approaches, each time step ``dt`` is handled by first computing
-the reaction step for (the first) ``dt/2``, followed by a diffusion step ``dt``, before the reaction step
-is treated once again for (the remaining) ``dt/2``. Since first order Strang splitting is no better than first order accurate, both the reaction and diffusion steps are computed explicitly. The 
-solver was implemented as 
+For the two Strang splitting approaches, each time step ``dt`` is
+handled by first computing the reaction step for (the first) ``dt/2``,
+followed by a diffusion step ``dt``, before the reaction step is treated
+once again for (the remaining) ``dt/2``. Since first order Strang
+splitting is no better than first order accurate, both the reaction
+and diffusion steps are computed explicitly. The solver was
+implemented as
 
 .. code-block:: python
 
@@ -815,9 +843,11 @@ solver was implemented as
     
         return
 
-The second order version of the Strang splitting approach utilizes a second order Adams-Bashforth
-solver for the reaction part and a Crank-Nicolson scheme for the diffusion part. The solver has the
-same structure as the one for first order Strang splitting and was implemented as
+The second order version of the Strang splitting approach utilizes a
+second order Adams-Bashforth solver for the reaction part and a
+Crank-Nicolson scheme for the diffusion part. The solver has the same
+structure as the one for first order Strang splitting and was
+implemented as
 
 .. code-block:: python
 
@@ -866,8 +896,11 @@ same structure as the one for first order Strang splitting and was implemented a
     
         return
 
-When executing ``split_diffu_react.py``, we find that the estimated convergence rates
-are as expected. The second order Strang splitting gives the least error (about :math:`4e^{-5}`) and has second order convergence (:math:`r = 2`), while the remaining three approaches have first order convergence (:math:`r = 1`).
+When executing ``split_diffu_react.py``, we find that the estimated
+convergence rates are as expected. The second order Strang splitting
+gives the least error (about :math:`4e^{-5}`) and has second order
+convergence (:math:`r = 2`), while the remaining three approaches have first
+order convergence (:math:`r = 1`).
 
 Analysis of the splitting method
 --------------------------------
@@ -904,7 +937,7 @@ diffusion problem solved by a Forward Euler method one has
 where :math:`F={\alpha}\Delta t/\Delta x^2` is the mesh Fourier number and :math:`p=k\Delta x/2`
 is a dimensionless number reflecting the spatial resolution (number of points
 per wave length in space). For the decay problem :math:`u'=-\beta u`, we have
-:math:`A=1 - q`, where :math:`q` is a dimensionless parameter reflecting the resolution
+:math:`A=1 - q`, where :math:`q` is a dimensionless parameter for the resolution
 in the decay problem: :math:`q = \beta\Delta t`.
 
 The original model problem can also be discretized by a Forward Euler scheme,
@@ -935,5 +968,5 @@ Then we use this as input to the decay algorithm and arrive at
 The splitting approximation over one step is therefore
 
 .. math::
-         E = 1 - 4F\sin^p -q - (1-q)(1-4F\sin^2 p) = -q(2 - F\sin^2 p)) 
+         E = 1 - 4F\sin^p -q - (1-q)(1-4F\sin^2 p) = -q(2 - F\sin^2 p)){\thinspace .} 
 

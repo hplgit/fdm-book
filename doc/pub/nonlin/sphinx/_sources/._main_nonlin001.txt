@@ -11,6 +11,8 @@ Linear versus nonlinear equations
 Algebraic equations
 ~~~~~~~~~~~~~~~~~~~
 
+.. index:: iterative methods
+
 A linear, scalar, algebraic equation in :math:`x` has the form
 
 .. math::
@@ -198,7 +200,7 @@ equation for the unknown value :math:`u^{n+1}` that we can easily solve:
 .. math::
          u^{n+1} = u^n + \Delta t\,u^n(1 - u^n){\thinspace .}
 
-The nonlinearity in the original equation poses in this case no difficulty
+In this case, the nonlinearity in the original equation poses no difficulty
 in the discrete algebraic equation.
 Any other explicit scheme in time will also give only linear
 algebraic equations
@@ -221,6 +223,12 @@ known in the next step, which is linear in the unknown :math:`u^{n+1}` .
 
 Exact solution of nonlinear algebraic equations
 -----------------------------------------------
+
+.. index:: sympy
+
+.. index:: Taylor series
+
+.. index:: limit
 
 Switching to a Backward Euler scheme for
 :ref:`(1) <Eq:nonlin:timediscrete:logistic:eq>`,
@@ -289,7 +297,7 @@ In the present simple case, however, we can analyze the roots mathematically
 and provide an answer. The idea is to expand the roots
 in a series in :math:`\Delta t` and truncate after the linear term since
 the Backward Euler scheme will introduce an error proportional to
-:math:`\Delta t` anyway. Using ``sympy`` we find the following Taylor series
+:math:`\Delta t` anyway. Using ``sympy``, we find the following Taylor series
 expansions of the roots:
 
 .. code-block:: python
@@ -475,7 +483,7 @@ proper values for :math:`a`, :math:`b`, and :math:`c`)
 
 which is a linear algebraic equation in the unknown :math:`u^n`, making
 it easy to solve for :math:`u^n` without any need for
-any alternative notation.
+an alternative notation.
 
 We shall later refer to the strategy of taking one Picard step, or
 equivalently, linearizing terms with use of the solution at the
@@ -504,6 +512,10 @@ approach in science and technology, but with some limitations if
 Linearization by a geometric mean
 ---------------------------------
 
+.. index:: geometric mean
+
+.. index:: arithmetic mean
+
 We consider now a Crank-Nicolson discretization of
 :ref:`(1) <Eq:nonlin:timediscrete:logistic:eq>`. This means that the
 time derivative is approximated by a centered
@@ -531,7 +543,7 @@ mean,
          u^{n+\frac{1}{2}}\approx \frac{1}{2}(u^n + u^{n+1}),
 
 such that the scheme involves the unknown function only at the time levels
-where we actually compute it.
+where we actually intend to compute it.
 The same arithmetic mean applied to the nonlinear term gives
 
 .. math::
@@ -604,6 +616,8 @@ compactly expressed as
 
 Newton's method          (1)
 ----------------------------
+
+.. index:: quadratic convergence
 
 The Backward Euler scheme :ref:`(2) <Eq:nonlin:timediscrete:logistic:eq:BE>`
 for the logistic equation leads to a nonlinear algebraic equation
@@ -703,6 +717,8 @@ Relaxation
 
 .. index:: relaxation (nonlinear equations)
 
+.. index:: relaxation parameter
+
 One iteration in Newton's method or
 Picard iteration consists of solving a linear problem :math:`\hat F(u)=0`.
 Sometimes convergence problems arise because the new solution :math:`u`
@@ -735,6 +751,8 @@ in the basic iteration formula:
 
 Implementation and experiments
 ------------------------------
+
+.. index:: logistic.py
 
 The program `logistic.py <http://tinyurl.com/nu656p2/nonlin/logistic.py>`__ contains
 implementations of all the methods described above.
@@ -897,13 +915,15 @@ where :math:`f` is a nonlinear function of :math:`u`.
 Explicit time discretization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Explicit ODE methods like the Forward Euler scheme, Runge-Kutta methods,
+Explicit ODE methods like the Forward Euler scheme, Runge-Kutta methods and
 Adams-Bashforth methods all evaluate :math:`f` at time levels where
 :math:`u` is already computed, so nonlinearities in :math:`f` do not
 pose any difficulties.
 
 Backward Euler discretization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. index:: ODE_Picard_tricks.py
 
 Approximating :math:`u^{\prime}` by a backward difference leads to a Backward Euler
 scheme, which can be written as
@@ -935,8 +955,8 @@ until a stopping criterion is fulfilled.
 
    Evaluating :math:`f` for a known :math:`u^{-}` is referred to as *explicit* treatment of
    :math:`f`, while if :math:`f(u,t)` has some structure, say :math:`f(u,t) = u^3`, parts of
-   :math:`f` can involve the known :math:`u`, as in the manual linearization
-   like :math:`(u^{-})^2u`, and then the treatment of :math:`f` is "more implicit"
+   :math:`f` can involve the unknown :math:`u`, as in the manual linearization
+   :math:`(u^{-})^2u`, and then the treatment of :math:`f` is "more implicit"
    and "less explicit". This terminology is inspired by time discretization
    of :math:`u^{\prime}=f(u,t)`, where evaluating :math:`f` for known :math:`u` values gives
    explicit schemes, while treating :math:`f` or parts of :math:`f` implicitly,
@@ -966,7 +986,7 @@ until a stopping criterion is fulfilled.
    
    A trick to treat :math:`f` implicitly in Picard iteration is to
    evaluate it as :math:`f(u^{-},t)u/u^{-}`. For a polynomial :math:`f`, :math:`f(u,t)=u^m`,
-   this corresponds to :math:`(u^{-})^{m}u/u^{-1}=(u^{-})^{m-1}u`. Sometimes this more implicit
+   this corresponds to :math:`(u^{-})^{m}u/u^{-}=(u^{-})^{m-1}u`. Sometimes this more implicit
    treatment has no effect, as with :math:`f(u,t)=\exp(-u)` and :math:`f(u,t)=\ln (1+u)`,
    but with :math:`f(u,t)=\sin(2(u+1))`, the :math:`f(u^{-},t)u/u^{-}` trick
    leads to 7, 9, and 11 iterations during the first three steps, while
@@ -978,7 +998,7 @@ until a stopping criterion is fulfilled.
 
 Newton's method applied to a Backward Euler discretization of
 :math:`u^{\prime}=f(u,t)`
-requires the computation of the derivative
+requires computation of the derivative
 
 .. math::
          F^{\prime}(u) = 1 - \Delta t\frac{\partial f}{\partial u}(u,t_n){\thinspace .}
@@ -1051,6 +1071,10 @@ while Newton's method can apply the general formula
 
 Systems of ODEs
 ---------------
+
+.. index:: system of algebraic equations
+
+.. index:: coupled system
 
 We may write a system of ODEs
 

@@ -5,6 +5,8 @@ label{nonlin:timediscrete:logistic}
 
 === Algebraic equations ===
 
+idx{iterative methods}
+
 A linear, scalar, algebraic equation in $x$ has the form
 
 !bt
@@ -177,7 +179,7 @@ equation for the unknown value $u^{n+1}$ that we can easily solve:
 !bt
 \[ u^{n+1} = u^n + \Delta t\,u^n(1 - u^n)\tp\]
 !et
-The nonlinearity in the original equation poses in this case no difficulty
+In this case, the nonlinearity in the original equation poses no difficulty
 in the discrete algebraic equation.
 Any other explicit scheme in time will also give only linear
 algebraic equations
@@ -199,6 +201,8 @@ known in the next step, which is linear in the unknown $u^{n+1}$ .
 
 ===== Exact solution of nonlinear algebraic equations =====
 label{nonlin:timediscrete:logistic:roots}
+
+idx{`sympy`} idx{Taylor series} idx{`limit`}
 
 Switching to a Backward Euler scheme for
 (ref{nonlin:timediscrete:logistic:eq}),
@@ -259,7 +263,7 @@ In the present simple case, however, we can analyze the roots mathematically
 and provide an answer. The idea is to expand the roots
 in a series in $\Delta t$ and truncate after the linear term since
 the Backward Euler scheme will introduce an error proportional to
-$\Delta t$ anyway. Using `sympy` we find the following Taylor series
+$\Delta t$ anyway. Using `sympy`, we find the following Taylor series
 expansions of the roots:
 
 !bc pyshell
@@ -431,7 +435,7 @@ label{nonlin:timediscrete:logistic:BE:Picard:1it}
 !et
 which is a linear algebraic equation in the unknown $u^n$, making
 it easy to solve for $u^n$ without any need for
-any alternative notation.
+an alternative notation.
 
 We shall later refer to the strategy of taking one Picard step, or
 equivalently, linearizing terms with use of the solution at the
@@ -455,6 +459,8 @@ level as start for the Picard iteration.
 
 ===== Linearization by a geometric mean =====
 label{nonlin:timediscrete:logistic:geometric:mean}
+
+idx{geometric mean} idx{arithmetic mean}
 
 We consider now a Crank-Nicolson discretization of
 (ref{nonlin:timediscrete:logistic:eq}). This means that the
@@ -480,7 +486,7 @@ mean,
 \[ u^{n+\half}\approx \half(u^n + u^{n+1}),\]
 !et
 such that the scheme involves the unknown function only at the time levels
-where we actually compute it.
+where we actually intend to compute it.
 The same arithmetic mean applied to the nonlinear term gives
 
 !bt
@@ -549,6 +555,7 @@ u^\prime u$, i.e., a difference of size $\Delta t^2$).
 ===== Newton's method =====
 label{nonlin:timediscrete:logistic:Newton}
 
+idx{quadratic convergence}
 
 The Backward Euler scheme (ref{nonlin:timediscrete:logistic:eq:BE})
 for the logistic equation leads to a nonlinear algebraic equation
@@ -639,7 +646,7 @@ notation used in the literature.
 ===== Relaxation =====
 label{nonlin:timediscrete:logistic:relaxation}
 
-idx{relaxation (nonlinear equations)}
+idx{relaxation (nonlinear equations)} idx{relaxation parameter}
 
 One iteration in Newton's method or
 Picard iteration consists of solving a linear problem $\hat F(u)=0$.
@@ -670,6 +677,7 @@ label{nonlin:timediscrete:logistic:relaxation:Newton:formula}
 ===== Implementation and experiments =====
 label{nonlin:timediscrete:logistic:impl}
 
+idx{`logistic.py`}
 
 The program "`logistic.py`": "${src_nonlin}/logistic.py" contains
 implementations of all the methods described above.
@@ -828,12 +836,14 @@ where $f$ is a nonlinear function of $u$.
 
 === Explicit time discretization ===
 
-Explicit ODE methods like the Forward Euler scheme, Runge-Kutta methods,
+Explicit ODE methods like the Forward Euler scheme, Runge-Kutta methods and
 Adams-Bashforth methods all evaluate $f$ at time levels where
 $u$ is already computed, so nonlinearities in $f$ do not
 pose any difficulties.
 
 === Backward Euler discretization ===
+
+idx{`ODE_Picard_tricks.py`}
 
 Approximating $u^{\prime}$ by a backward difference leads to a Backward Euler
 scheme, which can be written as
@@ -863,8 +873,8 @@ until a stopping criterion is fulfilled.
 !bnotice Explicit vs implicit treatment of nonlinear terms
 Evaluating $f$ for a known $u^{-}$ is referred to as *explicit* treatment of
 $f$, while if $f(u,t)$ has some structure, say $f(u,t) = u^3$, parts of
-$f$ can involve the known $u$, as in the manual linearization
-like $(u^{-})^2u$, and then the treatment of $f$ is ``more implicit''
+$f$ can involve the unknown $u$, as in the manual linearization
+$(u^{-})^2u$, and then the treatment of $f$ is ``more implicit''
 and ``less explicit''. This terminology is inspired by time discretization
 of $u^{\prime}=f(u,t)$, where evaluating $f$ for known $u$ values gives
 explicit schemes, while treating $f$ or parts of $f$ implicitly,
@@ -894,7 +904,7 @@ implicitly.
 
 A trick to treat $f$ implicitly in Picard iteration is to
 evaluate it as $f(u^{-},t)u/u^{-}$. For a polynomial $f$, $f(u,t)=u^m$,
-this corresponds to $(u^{-})^{m}u/u^{-1}=(u^{-})^{m-1}u$. Sometimes this more implicit
+this corresponds to $(u^{-})^{m}u/u^{-}=(u^{-})^{m-1}u$. Sometimes this more implicit
 treatment has no effect, as with $f(u,t)=\exp(-u)$ and $f(u,t)=\ln (1+u)$,
 but with $f(u,t)=\sin(2(u+1))$, the $f(u^{-},t)u/u^{-}$ trick
 leads to 7, 9, and 11 iterations during the first three steps, while
@@ -904,7 +914,7 @@ $f(u^{-},t)$ demands 17, 21, and 20 iterations.
 
 Newton's method applied to a Backward Euler discretization of
 $u^{\prime}=f(u,t)$
-requires the computation of the derivative
+requires computation of the derivative
 
 !bt
 \[ F^{\prime}(u) = 1 - \Delta t\frac{\partial f}{\partial u}(u,t_n)\tp\]
@@ -965,6 +975,8 @@ while Newton's method can apply the general formula
 
 ===== Systems of ODEs =====
 label{nonlin:ode:generic:sys:pendulum}
+
+idx{system of algebraic equations} idx{coupled system}
 
 We may write a system of ODEs
 
@@ -1094,7 +1106,7 @@ compactly as
 where $u$ is a vector of unknowns $u=(u_0,\ldots,u_N)$, and
 $F$ is a vector function: $F=(F_0,\ldots,F_N)$.
 The system at the end of Section ref{nonlin:ode:generic:sys:pendulum} fits
-this notation with $N=2$, $F_0(u)$ given by the left-hand side of
+this notation with $N=1$, $F_0(u)$ given by the left-hand side of
 (ref{nonlin:ode:generic:sys:pendulum:u0}), while $F_1(u)$ is
 the left-hand side of (ref{nonlin:ode:generic:sys:pendulum:u1}).
 
@@ -1117,6 +1129,8 @@ of these methods, can be found in Kelley cite{Kelley_1995}.
 
 ===== Picard iteration =====
 label{nonlin:systems:alg:Picard}
+
+idx{linear system}
 
 We cannot apply Picard iteration to nonlinear equations unless there is
 some special structure. For the commonly arising case
@@ -1152,6 +1166,8 @@ more details.
 
 ===== Newton's method =====
 label{nonlin:systems:alg:Newton}
+
+idx{Jacobian}
 
 The natural starting point for Newton's method is the general
 nonlinear vector equation $F(u)=0$.
@@ -1316,7 +1332,7 @@ k>k_{\max}\tp
 ===== Example: A nonlinear ODE model from epidemiology =====
 label{nonlin:systems:alg:SI}
 
-The simplest model spreading of a disease, such as a flu, takes
+A very simple model for the spreading of a disease, such as a flu, takes
 the form of a $2\times 2$ ODE system
 
 !bt
@@ -1345,7 +1361,7 @@ algebraic equations in the unknowns $S^{n+1}$ and $I^{n+1}$:
 \frac{\nu}{2}(I^n + I^{n+1})\tp
 \end{align}
 !et
-Introducing $S$ for $S^{n+1}$, $S^{(1)}$ for $S^n$, $I$ for $I^{n+1}$,
+Introducing $S$ for $S^{n+1}$, $S^{(1)}$ for $S^n$, $I$ for $I^{n+1}$ and
 $I^{(1)}$ for $I^n$, we can rewrite the system as
 
 !bt
