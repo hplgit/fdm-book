@@ -3,8 +3,8 @@ label{ch:advec}
 Wave (Chapter ref{ch:wave}) and diffusion (Chapter ref{ch:diffu})
 equations are solved reliably by finite difference methods. As soon as
 we add a first-order derivative in space, representing *advective*
-transport, also known as *convective* transport, the numerics gets
-more complicated, and intuitively attractive methods no longer work
+transport (also known as *convective* transport), the numerics gets
+more complicated and intuitively attractive methods no longer work
 well. We shall show how and why such methods fail and provide
 remedies. The present chapter builds on basic knowledge about finite
 difference methods for diffusion and wave equations, including the
@@ -44,7 +44,7 @@ label{advec:1D:pde1:I}
 \end{align}
 !et
 In (ref{advec:1D:pde1:u}), $v$ is a given parameter, typically reflecting
-the velocity of transport of a quantity $u$ with a flow.
+the transport velocity of a quantity $u$ with a flow.
 There is only one boundary condition (ref{advec:1D:pde1:I}) since
 the spatial derivative is only first order in the PDE (ref{advec:1D:pde1:u}).
 The information at $x=0$ and the initial condition get
@@ -78,7 +78,7 @@ We see this relation from
 !bt
 \begin{align}
 u(i\Delta x, (n+1)\Delta t) &= I(i\Delta x - v(n+1)\Delta t) \nonumber \\
-&= I((i-1)\Delta x - vn\Delta t - v\Delta t - \Delta x) \nonumber \\
+&= I((i-1)\Delta x - vn\Delta t - v\Delta t + \Delta x) \nonumber \\
 &= I((i-1)\Delta x - vn\Delta t) \nonumber \\
 &= u((i-1)\Delta x, n\Delta t), \nonumber
 \end{align}
@@ -130,6 +130,8 @@ with $C$ as the Courant number
 
 === Implementation ===
 
+idx{`solver_FECS`} idx{Gaussian pulse} idx{cosine pulse! half-truncated}
+
 A solver function for our scheme goes as follows.
 
 @@@CODE src-advec/advec1D.py fromto: import numpy@def solver\(
@@ -176,9 +178,9 @@ the printout of $u$ values in the `plot` function reveals that
 $u$ grows very quickly. We may reduce $\Delta t$ and make it
 very small, yet the solution just grows.
 Such behavior points to a bug in the code.
-However, choosing a coarse mesh and performing a time step by
-hand calculations produce the same numbers as in the code, so
-it seems that the implementation is correct.
+However, choosing a coarse mesh and performing one time step by
+hand calculations produces the same numbers as the code, so
+the implementation seems to be correct.
 The hypothesis is therefore that the solution is unstable.
 
 ===== Analysis of the scheme =====
@@ -204,15 +206,15 @@ simplifies if we introduce the complex Fourier component
 with
 
 !bt
-\[ \Aex=Be^{-ikv\Delta t} = Be^{iCkx}\tp\]
+\[ \Aex=Be^{-ikv\Delta t} = Be^{-iCk\Delta x}\tp\]
 !et
 Note that $|\Aex| \leq 1$.
 
 It turns out that many schemes also allow a Fourier wave component as
 solution, and we can use the numerically computed values of $\Aex$
 (denoted $A$) to learn about the
-quality of the scheme. Hence, to analyze the difference scheme we just
-have implemented, we look at how it treats the Fourier component
+quality of the scheme. Hence, to analyze the difference scheme we have just
+implemented, we look at how it treats the Fourier component
 
 !bt
 \[ u_q^n = A^n e^{ikq\Delta x}\tp\]
@@ -221,13 +223,13 @@ have implemented, we look at how it treats the Fourier component
 Inserting the numerical component in the scheme,
 
 !bt
-\[ [D_t^+ A e^{ikq\Delta x} + v D_{2x}A e^{ikq\Delta x} = 0]^n_i,\]
+\[ [D_t^+ A e^{ikq\Delta x} + v D_{2x}A e^{ikq\Delta x} = 0]^n_q,\]
 !et
 and making use of (ref{form:exp:fd1c:center})
 results in
 
 !bt
-\[ [e^{ikq\Delta x} (\frac{A-1}{\Delta t} + v\frac{1}{\Delta x}i\sin (k\Delta x)) = 0]^n_i,\]
+\[ [e^{ikq\Delta x} (\frac{A-1}{\Delta t} + v\frac{1}{\Delta x}i\sin (k\Delta x)) = 0]^n_q,\]
 !et
 which implies
 
@@ -247,6 +249,8 @@ numerical solutions.
 label{advec:1D:leapfrog}
 
 === Method ===
+
+idx{`advec1D.py`}
 
 Another explicit scheme is to do a ``leapfrog'' jump over $2\Delta t$ in
 time and combine it with central differences in space:
@@ -294,6 +298,8 @@ for n in range(0, Nt):
 
 === Running a test case ===
 
+idx{initial condition! triangular}
+
 Let us try a coarse mesh such that the smooth Gaussian initial condition
 is represented by 1 at mesh node 1 and 0 at all other nodes. This
 triangular initial condition should then be advected to the right.
@@ -326,6 +332,8 @@ MOVIE: [mov-advec/cosinehat/UP/C08_dt001.ogg] Advection of half a cosine functio
 
 
 === Analysis ===
+
+idx{stability} idx{CFL condition}
 
 We can perform a Fourier analysis again. Inserting the numerical
 Fourier component in the Leapfrog scheme, we get
@@ -373,12 +381,12 @@ of many schemes with the exact expression.
 
 ===== Upwind differences in space =====
 label{advec:1D:FTUP}
-idx{upwind difference}
+idx{upwind difference} idx{diffusion! artificial}
 
 Since the PDE reflects transport of information along with a flow in
 positive $x$ direction, when $v>0$, it could be natural to go (what is called)
 upstream and not
-downstream in a spatial derivative to collect information about the
+downstream in the spatial derivative to collect information about the
 change of the function. That is, we approximate
 
 !bt
@@ -401,7 +409,7 @@ label{advec:1D:upwind}
 written out as
 
 !bt
-\[ u^{n+1} = u^n_i - C(u^{n}_{i}-u^{n}_{i-1}),\]
+\[ u^{n+1}_i = u^n_i - C(u^{n}_{i}-u^{n}_{i-1}),\]
 !et
 gives a generally popular and robust scheme that is stable if $C\leq 1$.
 As with the Leapfrog scheme, it becomes exact if $C=1$, exactly as shown in
@@ -440,8 +448,8 @@ which means
 For $C<1$ there is, unfortunately,
 non-physical damping of discrete Fourier components, giving rise to reduced
 amplitude of $u^n_i$ as in Figures ref{advec:1D:UP:fig1:C08}
-and ref{advec:1D:UP:fig2:C08}. The damping
-is this figure is seen to be quite severe. Stability requires $C\leq 1$.
+and ref{advec:1D:UP:fig2:C08}. The damping seen
+in this figure is quite severe. Stability requires $C\leq 1$.
 
 !bnotice Interpretation of upwind difference as artificial diffusion
 One can interpret the upwind difference as extra, artificial diffusion
@@ -456,7 +464,7 @@ by a forward difference in time and centered differences in space,
 !bt
 \[ D^+_t u + vD_{2x} u = \nu D_xD_x u]^n_i,\]
 !et
-gives actually the upwind scheme (ref{advec:1D:upwind}) if
+actually gives the upwind scheme (ref{advec:1D:upwind}) if
 $\nu = v\Delta x/2$. That is, solving the PDE $u_t + vu_x=0$
 by centered differences in space and forward difference in time is
 unsuccessful, but by adding some artificial diffusion $\nu u_{xx}$,
@@ -491,8 +499,8 @@ Normally, we can do this in the simple way that `u_1[0]` is updated as
 
 In some schemes we may need $u^{n}_{N_x+1}$ and $u^{n}_{-1}$. Periodicity
 then means that these values are equal to $u^n_1$ and $u^n_{N_x-1}$,
-respectively. For the upwind scheme it is sufficient to set
-`u_1[0]=u_1[Nx]` at a new time level before computing `u[1]`, which ensures
+respectively. For the upwind scheme, it is sufficient to set
+`u_1[0]=u_1[Nx]` at a new time level before computing `u[1]`. This ensures
 that `u[1]` becomes right and at the next time level `u[0]` at the current
 time level is correctly updated.
 For the Leapfrog scheme we must update `u[0]` and `u[Nx]` using the scheme:
@@ -723,6 +731,8 @@ The complete code is found in the file
 ===== A Crank-Nicolson discretization in time and centered differences in space =====
 label{advec:1D:CN}
 
+idx{dispersion relation}
+
 Another obvious candidate for time discretization is the Crank-Nicolson
 method combined with centered differences in space:
 
@@ -735,7 +745,7 @@ $\theta$-rule,
 !bt
 \[ [D_t u]^n_i + v\theta [D_{2x} u]^{n+1}_i + v(1-\theta)[D_{2x} u]^{n}_i = 0\tp\]
 !et
-This gives rise to an *implicit* scheme,
+When $\theta$ is different from zero, this gives rise to an *implicit* scheme,
 
 !bt
 \[ u^{n+1}_i + \frac{\theta}{2} C (u^{n+1}_{i+1} - u^{n+1}_{i-1})
@@ -768,7 +778,7 @@ b_{N_x} &= u^n_0
 \end{align*}
 !et
 
-The dispersion relation follows from inserting $u^n_i = A^ne^{ikx}$
+The dispersion relation follows from inserting $u^n_q = A^ne^{ikx}$
 and using the formula (ref{form:exp:fd1c:center}) for the spatial
 differences:
 
@@ -788,7 +798,7 @@ Figure ref{advec:1D:CN:fig:C08} depicts a numerical solution for $C=0.8$
 and the Crank-Nicolson
 with severe oscillations behind the main wave. These oscillations are
 damped as the mesh is refined. Switching to the Backward Euler scheme
-helps on the oscillations as they are removed, but the amplitude is
+removes the oscillations, but the amplitude is
 significantly reduced. One could expect that the discontinuous derivative
 in the initial condition of the half a cosine wave would make even
 stronger demands on producing a smooth profile, but Figure ref{advec:1D:BE:fig:C08} shows that also here, Backward-Euler is capable of producing a
@@ -848,8 +858,7 @@ or written out,
 This is the explicit Lax-Wendroff scheme.
 
 !bnotice Lax-Wendroff works because of artificial viscosity
-We can immediately from the formulas above
-see that the Lax-Wendroff method is nothing but
+From the formulas above, we notice that the Lax-Wendroff method is nothing but
 a Forward Euler, central difference in space scheme, which we have shown
 to be useless because of chronic instability, plus an artificial
 diffusion term of strength $\half\Delta t v^2$. It means that we can take
@@ -858,8 +867,6 @@ trick to deal with advection problems. Sometimes, the real physical diffusion
 is not sufficiently large to make schemes stable, so then we also add
 artificial diffusion.
 !enotice
-
-[hpl: Lax-Wendroff does work! It's even unstable for $C=1$.]
 
 #FIGURE: [fig-advec/gaussian_LW_C08, width=800 frac=1] Lax-Wendroff scheme, $C=0.8$, $\Delta t = 0.01$ (left) and $\Delta t=0.005$ (right). label{advec:1D:LW:fig:C08}
 
@@ -876,6 +883,8 @@ This means that $|A|=1$ and also that we have an exact solution if $C=1$!
 
 ===== Analysis of dispersion relations =====
 label{advec:1D:disprel}
+
+idx{`dispersion_analysis.py`}
 
 We have developed expressions for $A(C,p)$ in the exact solution
 $u_q^n=A^ne^{ikq\Delta x}$ of the discrete equations. These
@@ -900,12 +909,12 @@ velocity of the wave. The Fourier component
 \[ D^n e^{ik(x-ct)}\]
 !et
 has damping $D$ and wave velocity $c$. Let us express our $A$ in
-polar form, $A = A_re^{i\phi}$, and insert this expression in
+polar form, $A = A_re^{-i\phi}$, and insert this expression in
 our discrete component $u_q^n = A^ne^{ikq\Delta x} = A^ne^{ikx}$:
 
 !bt
 \[
-u^n_q = A_r^n e^{i\phi n} e^{ikx} = A_r^n e^{i(kx - n\phi)} =
+u^n_q = A_r^n e^{-i\phi n} e^{ikx} = A_r^n e^{i(kx - n\phi)} =
 A_r^ne^{i(k(x - ct))},\]
 !et
 for
@@ -966,12 +975,11 @@ FIGURE: [fig-advec/disprel_C0_5_CN_BE_FE, width=800 frac=1] Dispersion relations
 The total damping after some time $T=n\Delta t$ is reflected by
 $A_r(C,p)^n$. Since normally $A_r<1$, the damping goes like
 $A_r^{1/\Delta t}$ and approaches zero as $\Delta t\rightarrow 0$.
-The only two ways to reduce the damping are to increase $C$ and the mesh
-resolution.
+The only way to reduce damping is to increase $C$ and/or the mesh resolution.
 
 We can learn a lot from the dispersion relation plots. For example,
 looking at the plots for $C=1$, the schemes LW, UP, and LF has no
-amplitude reduction, but LF has a wrong phase velocity for the
+amplitude reduction, but LF has wrong phase velocity for the
 shortest wave in the mesh. This wave does not (normally) have enough
 amplitude to be seen, so for all practical purposes, there is no
 damping or wrong velocity of the individual waves, so the total shape
@@ -993,14 +1001,16 @@ dampens these waves. The same effect is also present in the Lax-Wendroff
 scheme, but the damping of the intermediate waves is hardly present, so
 there is visible noise in the total signal.
 
-We realize that there is more understanding of the
-behavior of the schemes in the dispersion analysis compared with a
-pure truncation error analysis. The latter just says Lax-Wendroff is
+We realize that, compared to pure truncation error analysis, dispersion 
+analysis sheds more light on the behavior of the computational schemes. 
+Truncation analysis just says that Lax-Wendroff is
 better than upwind, because of the increased order in time, but
-most people would say upwind is the better by looking at the plots.
+most people would say upwind is the better one when looking at the plots.
 
 ======= One-dimensional stationary advection-diffusion equation =======
 label{advec:1D:stationary}
+
+idx{transport phenomena} idx{boundary layer}
 
 Now we pay attention to a physical process where advection (or convection)
 is in balance with diffusion:
@@ -1030,8 +1040,8 @@ or heat transport. One can also view the equations as a simple model
 problem for the Navier-Stokes equations. With the chosen boundary
 conditions, the differential equation problem models the phenomenon of
 a *boundary layer*, where the solution changes rapidly very close to
-the boundary. This is a characteristic of many fluid flow problems and
-make strong demands to numerical methods. The fundamental numerical
+the boundary. This is a characteristic of many fluid flow problems, which
+makes strong demands to numerical methods. The fundamental numerical
 difficulty is related to non-physical oscillations of the solution
 (instability) if the first-derivative spatial term dominates over the
 second-derivative term.
@@ -1045,13 +1055,13 @@ number of parameters in the problem. We scale $x$ by $\bar x = x/L$,
 and $u$ by
 
 !bt
-\[ \bar u = \frac{u - u_0}{u_L-u_0}\tp\]
+\[ \bar u = \frac{u - U_0}{U_L-U_0}\tp\]
 !et
 Inserted in the governing equation we get
 
 !bt
-\[ \frac{v(u_L-u_0)}{L}\frac{d\bar u}{d\bar x} =
-\frac{\dfc(u_L-u_0)}{L^2}\frac{d^2\bar u}{d\bar x^2},\quad
+\[ \frac{v(U_L-U_0)}{L}\frac{d\bar u}{d\bar x} =
+\frac{\dfc(U_L-U_0)}{L^2}\frac{d^2\bar u}{d\bar x^2},\quad
 \bar u(0)=0,\ \bar u(1)=1\tp\]
 !et
 Dropping the bars is common. We can then simplify to
@@ -1081,11 +1091,13 @@ diffusion.  The exact solution reads
 !bt
 \[ \uex (x) = \frac{e^{x/\epsilon} - 1}{e^{1/\epsilon} - 1}\tp\]
 !et
-The forthcoming plots illustrates this function for various values of
+The forthcoming plots illustrate this function for various values of
 $\epsilon$.
 
 ===== A centered finite difference scheme =====
 label{advec:1D:stationary:fdm}
+
+idx{viscous boundary layer}
 
 The most obvious idea to solve (ref{advec:1D:stat:pde1s}) is to apply
 centered differences:
@@ -1158,12 +1170,12 @@ centered difference
 we use the one-sided *upwind* difference
 
 !bt
-\[ \frac{du}{dx}_i\approx \frac{u_{i}-u_{i-1}}{2\Delta x},\]
+\[ \frac{du}{dx}_i\approx \frac{u_{i}-u_{i-1}}{\Delta x},\]
 !et
 in case $v>0$. For $v<0$ we set
 
 !bt
-\[ \frac{du}{dx}_i\approx \frac{u_{i+1}-u_{i}}{2\Delta x},\]
+\[ \frac{du}{dx}_i\approx \frac{u_{i+1}-u_{i}}{\Delta x},\]
 !et
 On compact operator notation form, our upwind scheme can be expressed
 as
@@ -1274,7 +1286,7 @@ and centered differences in space everywhere, so the scheme can be expressed as
 
 !bt
 \begin{equation}
-[D_t u + vD^-_{2x} u = \dfc \frac{v\Delta x}{2}) D_xD_x u + f]_i^n\tp
+[D_t u + vD^-_{2x} u = \dfc \frac{v\Delta x}{2} D_xD_x u + f]_i^n\tp
 \end{equation}
 !et
 
@@ -1323,8 +1335,10 @@ The mass transport equation for a substance then reads
 \end{equation}
 !et
 
-===== Transport of a heat =====
+===== Transport of heat in fluids =====
 label{advec:app:heat}
+
+idx{material derivative} idx{stress}
 
 The derivation of the heat equation in Section ref{diffu:app:heat} is limited
 to heat transport in solid bodies. If we turn the attention to heat transport
