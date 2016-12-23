@@ -34,7 +34,7 @@ We shall be concerned with computing truncation errors arising in
 finite difference formulas and in finite difference discretizations
 of differential equations.
 
-idx{truncation error!general}
+idx{truncation error!general} idx{verification! convergence rates}
 
 ======= Overview of truncation error analysis =======
 
@@ -150,6 +150,7 @@ label{trunc:fd:backward}
 
 idx{finite differences!backward}
 idx{truncation error!Backward Euler scheme}
+idx{discrete derivative}
 
 Consider a backward
 finite difference approximation of the first-order derivative $u'$:
@@ -207,7 +208,7 @@ the lowest power is $\Delta t^3$. We assume that $\Delta t$ is small such that
 $\Delta t^p \gg \Delta t^q$ if $p$ is smaller than $q$.
 The details of higher-order terms
 in $\Delta t$ are therefore not of much interest.
-Inserting the Taylor series above in the right-hand side of1
+Inserting the Taylor series above in the right-hand side of
 (ref{trunc:fd:bw3}) gives rise to some algebra:
 
 !bt
@@ -473,7 +474,7 @@ idx{decay ODE}
 We shall now compute the truncation error of a finite difference
 scheme for a differential equation.
 Our first problem involves the following
-the linear ODE modeling exponential decay,
+linear ODE that models exponential decay,
 
 !bt
 \begin{equation}
@@ -683,6 +684,8 @@ The results are in correspondence with our hand-derived expressions.
 
 ===== Empirical verification of the truncation error =====
 label{trunc:decay:estimate:R}
+
+idx{`trunc_decay_FE.py`}
 
 The task of this section is to demonstrate how we can compute
 the truncation error $R$ numerically. For example, the truncation
@@ -955,7 +958,7 @@ which after some algebra can be written as
 !et
 This is the same formula as the one arising from a Crank-Nicolson
 scheme applied to $u'=-au$!
-It now recommended to do Exercise ref{trunc:exer:decay:corr:BE} and
+It is now recommended to do Exercise ref{trunc:exer:decay:corr:BE} and
 repeat the above steps to see what kind of correction term is needed
 in the Backward Euler scheme to make it second order.
 
@@ -1038,7 +1041,7 @@ Because of the ODE,
 !bt
 \[ \uex'(t_n) + a(t_n)\uex(t_n) - b(t_n) =0,\]
 !et
-so we are left with the result
+we are left with the result
 
 !bt
 \begin{equation}
@@ -1056,7 +1059,7 @@ analysis above one step further to the Crank-Nicolson scheme.
 idx{verification}
 
 Having a mathematical expression for the numerical solution is very
-valuable in program verification since we then know the exact numbers
+valuable in program verification, since we then know the exact numbers
 that the program should produce. Looking at the various
 formulas for the truncation errors in
 (ref{trunc:table:fd1:center:eq})-(ref{trunc:table:fd1:center}) and
@@ -1245,7 +1248,7 @@ experiment to investigate this question.
 === Truncation error of the equation for the first step ===
 
 We have shown that the truncation error of the difference used to
-approximate the initial condition $u'(0)=0$ is $\Oof{\Delta t^2}$, but
+approximate the initial condition $u'(0)=0$ is $\Oof{\Delta t^2}$, but we
 can also investigate the difference equation used for the first
 step. In a truncation error setting, the right way to view this
 equation is not to use the initial condition $[D_{2t}u=V]^0$ to
@@ -1395,7 +1398,7 @@ label{trunc:vib:gen:ode1}
 \end{equation}
 !et
 The coefficient $m$ usually represents the mass of the system.
-This governing equation can by discretized by centered differences:
+This governing equation can be discretized by centered differences:
 !bt
 \begin{equation}
 [mD_tD_t u + \beta D_{2t} u + s(u)=F]^n
@@ -1548,6 +1551,8 @@ geometric mean approximation is also $\Oof{\Delta t^2}$.
 
 ===== The general model formulated as first-order ODEs =====
 label{trunc:vib:gen:staggered}
+
+idx{Euler-Cromer scheme} idx{staggered mesh}
 
 The second-order model (ref{trunc:vib:gen:ode2}) can be
 formulated as a first-order system,
@@ -1959,7 +1964,7 @@ $[D_xD_x (D_tD_t u)]^n_i$ gives
 Now the unknown values $u^{n+1}_{i+1}$, $u^{n+1}_{i}$,
 and $u^{n+1}_{i-1}$ are *coupled*, and we must solve a tridiagonal
 system to find them. This is in principle straightforward, but it
-results in an implicit finite difference schemes, while we had
+results in an implicit finite difference scheme, while we had
 a convenient explicit scheme without the correction terms.
 
 ===== Extension to variable coefficients =====
@@ -2130,9 +2135,10 @@ and space also in this variable coefficient case. The key ingredients
 for second order are the centered differences and the arithmetic
 mean for $\lambda$: all those building blocks feature second-order accuracy.
 
-===== 1D wave equation on a staggered mesh =====
 
-[hpl: Write out.]
+[sl: HP planned 1D wave equation on a staggered mesh here, five equal signs heading]
+[hpl: Write out 1D wave equation on a staggered mesh]
+
 
 ===== Linear wave equation in 2D/3D =====
 label{trunc:wave:2D}
@@ -2147,7 +2153,7 @@ label{trunc:wave:pde2D}
 \end{equation}
 !et
 where now $c(x,y)$ is the constant wave velocity of the physical medium
-$[0,L]\times [0,H]$. In the compact notation, the PDE
+$[0,L]\times [0,H]$. In compact notation, the PDE
 (ref{trunc:wave:pde2D}) can be written
 
 !bt
@@ -2174,7 +2180,7 @@ yields the scheme
 
 !bt
 \begin{equation}
-[D_t D_t u = c^2(D_xD_x u + D_yD_y u) + f]^n_{i,j,k}
+[D_t D_t u = c^2(D_xD_x u + D_yD_y u + D_zD_z u) + f]^n_{i,j,k}
 \tp
 \end{equation}
 !et
@@ -2182,11 +2188,11 @@ The truncation error is found from
 
 !bt
 \begin{equation}
-[D_t D_t \uex = c^2(D_xD_x \uex + D_yD_y \uex) + f + R]^n
+[D_t D_t \uex = c^2(D_xD_x \uex + D_yD_y \uex + D_zD_z \uex) + f + R]^n_{i,j,k}
 \tp
 \end{equation}
 !et
-The calculations from the 1D case can be repeated to the
+The calculations from the 1D case can be repeated with the
 terms in the $y$ and $z$ directions. Collecting terms that
 fulfill the PDE, we end up with
 
@@ -2216,7 +2222,7 @@ The standard, linear, 1D diffusion equation takes the form
 label{trunc:diffu:pde1D}
 \end{equation}
 !et
-where $\dfc > 0$ is the constant diffusion coefficient. A more
+where $\dfc > 0$ is a constant diffusion coefficient. A more
 compact form of the diffusion equation is $u_t = \dfc u_{xx}+f$.
 
 The spatial derivative in the diffusion equation, $\dfc u_{xx}$,
@@ -2229,7 +2235,7 @@ Let us start
 with the simple Forward Euler scheme:
 
 !bt
-\[ [D_t^+ u = \dfc D_xD_x u + f]^n\tp\]
+\[ [D_t^+ u = \dfc D_xD_x u + f]^n_i\tp\]
 !et
 The truncation error arises as the residual $R$ when
 inserting the exact solution
@@ -2359,13 +2365,13 @@ We use a Backward Euler scheme with arithmetic mean for $\dfc(u)$,
 Inserting $\uex$ defines the truncation error $R$:
 
 !bt
-\[ [D^-\uex = D_x\overline{\dfc(\uex)}^{x}D_x \uex + f(\uex)]_i^n\tp\]
+\[ [D^-\uex = D_x\overline{\dfc(\uex)}^{x}D_x \uex + f(\uex) + R]_i^n\tp\]
 !et
 
 The most computationally challenging part is the variable coefficient with
 $\dfc(u)$, but we can use the same setup as in Section
 ref{trunc:wave:1D:varcoeff} and arrive at a truncation error $\Oof{\Delta x^2}$
-for the $x$-derivative term. The nonlinear term $[f(\uex)]=^n_{i} =
+for the $x$-derivative term. The nonlinear term $[f(\uex)]^n_{i} =
 f(\uex(x_i, t_n))$ matches $x$ and $t$ derivatives of $\uex$ in the PDE.
 We end up with
 

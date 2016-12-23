@@ -22,6 +22,8 @@ A 1D wave equation simulator
 Mathematical model
 ------------------
 
+.. index:: wave1D_dn_vc.py
+
 Let :math:`u_t`, :math:`u_{tt}`, :math:`u_x`, :math:`u_{xx}` denote derivatives of :math:`u` with
 respect to the subscript, i.e., :math:`u_{tt}` is a second-order time
 derivative and :math:`u_x` is a first-order space derivative.  The
@@ -320,6 +322,14 @@ Using ``savez`` to store arrays in files
 Storing individual arrays
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. index:: savez
+
+.. index:: storez
+
+.. index:: load
+
+.. index:: zip archive
+
 The ``numpy.storez`` function can store a set of arrays to a named
 file in a zip archive. An associated function
 ``numpy.load`` can be used to read the file later.
@@ -413,6 +423,12 @@ can be conveniently read by the ``numpy.load`` function:
 
 Using ``joblib`` to store arrays in files
 -----------------------------------------
+
+.. index:: joblib
+
+.. index:: memoize function
+
+.. index:: hash
 
 The Python package ``joblib`` has nice functionality for efficient storage
 of arrays on disk. The following class applies this functionality so that
@@ -704,6 +720,9 @@ the document `Finite difference methods for wave motion <http://tinyurl.com/k3sd
 Convergence rates
 ~~~~~~~~~~~~~~~~~
 
+.. index::
+   single: verification;  convergence rates
+
 A more general method for verification is to check the convergence rates.
 We must introduce one discretization parameter :math:`h` and assume an error
 model :math:`E=Ch^r`, where :math:`C` and :math:`r` are constants to be determine (i.e.,
@@ -711,7 +730,7 @@ model :math:`E=Ch^r`, where :math:`C` and :math:`r` are constants to be determin
 different resolutions :math:`h_i` and :math:`h_i{-1}`, we can estimate :math:`r` by
 
 .. math::
-         r = \frac{\ln(E_{i}/E_{i-1})}{\ln(h_{i}h_{i-1}},tp
+         r = \frac{\ln(E_{i}/E_{i-1})}{\ln(h_{i}/h_{i-1})},
 
 where :math:`E_i` is the error corresponding to :math:`h_i` and :math:`E_{i-1}` corresponds to
 :math:`h_{i-1}`. The
@@ -722,7 +741,7 @@ for some constant :math:`\hat c`. To compute the error, we had to rely on
 a global variable in the user action function. Below is an implementation
 where we have a more elegant solution in terms of a class: the ``error``
 variable is not a class attribute and there is no need for a global
-error (which is always considered as an advantage).
+error (which is always considered an advantage).
 
 .. code-block:: python
 
@@ -775,6 +794,8 @@ in the section "Verification: convergence rates": "" in
 
 Programming the solver with classes
 ===================================
+
+.. index:: wave1D_oo.py
 
 Many who know about class programming prefer to organize their software
 in terms of classes. This gives a richer application programming interface
@@ -1101,7 +1122,7 @@ documentation and a doc test should now be self-explanatory:
 
 .. admonition:: We rely on attribute access - not get/set functions
 
-   Java programmers in particular are used to get/set functions in
+   Java programmers, in particular, are used to get/set functions in
    classes to access internal data. In Python, we usually apply direct
    access of the attribute, such as ``m.N[i]`` if ``m`` is a ``Mesh`` object.
    A widely used convention is to do this as long as access to
@@ -1505,6 +1526,10 @@ Migrating loops to Cython
 
 .. index:: Cython
 
+.. index:: wave2D_u0.py
+
+.. index:: wave2D_u0_adv.py
+
 We now consider the `wave2D_u0.py <http://tinyurl.com/nu656p2/wave/wave2D_u0/wave2D_u0.py>`__
 code for solving the 2D linear wave equation with constant wave
 velocity and homogeneous Dirichlet boundary conditions :math:`u=0`.
@@ -1537,6 +1562,8 @@ in one or more separate files with extension ``.pyx``.
 
 Declaring variables and annotating the code
 -------------------------------------------
+
+.. index:: wave2D_u0_loop_cy.pyx
 
 Our starting point is the plain ``advance_scalar`` function for a scalar
 implementation of the updating algorithm for new values
@@ -1830,6 +1857,8 @@ the Cython version.
 Migrating loops to Fortran
 ==========================
 
+.. index:: Fortran 77
+
 Instead of relying on Cython's (excellent) ability to translate Python to C,
 we can invoke a compiled language directly and write the loops ourselves.
 Let us start with Fortran 77, because this is a language with more
@@ -1837,7 +1866,7 @@ convenient array handling than C (or plain C++), because
 we can use the same multi-dimensional indices
 in the Fortran code as in the ``numpy``
 arrays in the Python code, while in C these arrays are
-one-dimensional and requires us to reduce multi-dimensional indices
+one-dimensional and require us to reduce multi-dimensional indices
 to a single index.
 
 .. Fortran compilers
@@ -1852,6 +1881,8 @@ The Fortran subroutine
 .. index:: wrapper code
 
 .. index:: Fortran subroutine
+
+.. index:: wave2D_u0_loop_f77.f
 
 We write a Fortran subroutine ``advance`` in a file
 `wave2D_u0_loop_f77.f <http://tinyurl.com/nu656p2/wave/wave2D_u0/wave2D_u0_loop_f77.f>`__
@@ -1932,6 +1963,8 @@ to the calling Python code.
 
 Building the Fortran module with f2py
 -------------------------------------
+
+.. index:: Fortran 90
 
 The nice feature of writing loops in Fortran is that, without
 much effort, the tool ``f2py``
@@ -2189,10 +2222,10 @@ easier to debug.
 
    Macros just perform simple text substitutions:
    ``idx(hello,world)`` is expanded to ``(hello)*(Ny+1) + world``.
-   The parenthesis in ``(i)`` are essential - using the natural mathematical
+   The parentheses in ``(i)`` are essential - using the natural mathematical
    formula ``i*(Ny+1) + j`` in the macro definition,
    ``idx(i-1,j)`` would expand to ``i-1*(Ny+1) + j``, which is the wrong
-   formula. Macros are handy, but requires careful use.
+   formula. Macros are handy, but require careful use.
    In C++, inline functions are safer and replace the need for macros.
 
 
@@ -2230,6 +2263,10 @@ The C version of our function ``advance`` can be coded as follows.
 
 The Cython interface file
 -------------------------
+
+.. index:: wave2D_u0_loop_c.c
+
+.. index:: wave2D_u0_loop_c.h
 
 All the code above appears in a file `wave2D_u0_loop_c.c <http://tinyurl.com/nu656p2/wave//wave2D_u0/wave2D_u0_loop_c.c>`__.
 We need to compile this file together with C wrapper code such that
@@ -2343,6 +2380,8 @@ words, that we work with small meshes.
 
 Migrating loops to C via f2py
 =============================
+
+.. index:: wave2D_u0_loop_c_f2py_signature.f
 
 An alternative to using Cython for interfacing C code is to apply
 ``f2py``. The C code is the same, just the details of specifying how
