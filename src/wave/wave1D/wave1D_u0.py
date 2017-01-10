@@ -206,9 +206,9 @@ def guitar(C):
     freq = 440
     wavelength = 2*L
     c = freq*wavelength
-    omega = 2*pi*freq
+    omega = 2*np.pi*freq
     num_periods = 1
-    T = 2*pi/omega*num_periods
+    T = 2*np.pi/omega*num_periods
     # Choose dt the same as the stability limit for Nx=50
     dt = L/50./c
 
