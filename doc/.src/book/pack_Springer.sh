@@ -25,13 +25,23 @@ for dir in ../fig-*; do  # Assume all figures in ../fig-* directories
 done
 doconce subst '\{fig-.+?/' '{figs/' $book.tex
 
+mkdir mov
+for dir in ../mov-*; do  # Assume all figures in ../mov-* directories
+  echo "KAM $dir " 
+  cp -r $dir/* mov
+done
+doconce subst '\{mov-.+?/' '{mov/' $book.tex
+
 # Copy ready-made discription of how this directory is organized
 cp ../README_Springer_dir.txt 00README.txt
 
 # Copy .bib file and newcommands
-cp ../papers.bib .
+#cp ../papers.bib .
 #doconce replace '{../chapters/papers}' '{papers}' $book.tex
 cp ../newcommands_keep.tex .
+cp ../svmonodo.cls  .
+cp ../t4do.sty . 
+cp ../book.bbl . 
 
 # Test that the book can be compiled in this subdir
 rm -rf tmp.txt
@@ -59,12 +69,14 @@ sh ./tmpcp.sh  # copy all style files
 rm tmpcp.sh
 rm *~ tmp*
 
+
+
 # Use most recently compiled PDF in the parent dir as official PDF
 cd ..
 cp ${name}.pdf $author_name/${name}.pdf
 
 # Make tarfile of the directory tree
-tarfile=tutorial.tar.gz
+tarfile=fdm_book.tar.gz
 tar czf $tarfile $author_name
 #cp ${author_name}/${book}_*.tex $tarfile "~/Dropbox/Springer/Scaling"
 exit
