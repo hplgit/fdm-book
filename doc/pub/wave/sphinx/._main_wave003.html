@@ -64,8 +64,8 @@
 <span id="wave-pde2-neumann"></span><h1>Generalization: reflecting boundaries<a class="headerlink" href="#generalization-reflecting-boundaries" title="Permalink to this headline">¶</a></h1>
 <p>The boundary condition <span class="math">\(u=0\)</span> in a wave equation reflects the wave, but
 <span class="math">\(u\)</span> changes sign at the boundary, while the condition <span class="math">\(u_x=0\)</span> reflects
-the wave as a mirror and preserves the sign, see a <a class="reference external" href="http://tinyurl.com/gmw2yrj/pub/wave/html/mov-wave/demo_BC_gaussian/index.html">web page</a> or a
-<a class="reference external" href="http://tinyurl.com/gmw2yrj/pub/wave/html/mov-wave/demo_BC_gaussian/movie.flv">movie file</a> for
+the wave as a mirror and preserves the sign, see a <a class="reference external" href="http://tinyurl.com/hbcasmj/book/html/mov-wave/demo_BC_gaussian/index.html">web page</a> or a
+<a class="reference external" href="http://tinyurl.com/gokgkov/mov-wave/demo_BC_gaussian/movie.flv">movie file</a> for
 demonstration.</p>
 <p>Our next task is to explain how to implement the boundary
 condition <span class="math">\(u_x=0\)</span>, which is
@@ -150,8 +150,8 @@ u^{n+1}_i = -u^{n-1}_i + 2u^n_i + 2C^2
 <p>The modification of the scheme at the boundary is also required for
 the special formula for the first time step. How the stencil moves
 through the mesh and is modified at the boundary can be illustrated by
-an animation in a <a class="reference external" href="http://tinyurl.com/gmw2yrj/pub/wave/html/mov-wave/N_stencil_gpl/index.html">web page</a>
-or a <a class="reference external" href="http://tinyurl.com/gmw2yrj/pub/wave/html/mov-wave/N_stencil_gpl/movie.ogg">movie file</a>.</p>
+an animation in a <a class="reference external" href="http://tinyurl.com/hbcasmj/book/html/mov-wave/N_stencil_gpl/index.html">web page</a>
+or a <a class="reference external" href="http://tinyurl.com/gokgkov/mov-wave/N_stencil_gpl/movie.ogg">movie file</a>.</p>
 </div>
 <div class="section" id="implementation-of-neumann-conditions">
 <span id="wave-pde2-neumann-impl"></span><h2>Implementation of Neumann conditions<a class="headerlink" href="#implementation-of-neumann-conditions" title="Permalink to this headline">¶</a></h2>
@@ -170,20 +170,20 @@ At the boundary we can easily define <tt class="docutils literal"><span class="p
 <tt class="docutils literal"><span class="pre">im1=i-1</span></tt> in the internal parts of the mesh. Here are the details
 of the implementation (note that the updating formula for <tt class="docutils literal"><span class="pre">u[i]</span></tt>
 is the general stencil formula):</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="n">ip1</span> <span class="o">=</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span>
-<span class="n">im1</span> <span class="o">=</span> <span class="n">ip1</span>  <span class="c"># i-1 -&gt; i+1</span>
+<span class="n">im1</span> <span class="o">=</span> <span class="n">ip1</span>  <span class="c1"># i-1 -&gt; i+1</span>
 <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">C2</span><span class="o">*</span><span class="p">(</span><span class="n">u_n</span><span class="p">[</span><span class="n">im1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">u_n</span><span class="p">[</span><span class="n">ip1</span><span class="p">])</span>
 
 <span class="n">i</span> <span class="o">=</span> <span class="n">Nx</span>
 <span class="n">im1</span> <span class="o">=</span> <span class="n">i</span><span class="o">-</span><span class="mi">1</span>
-<span class="n">ip1</span> <span class="o">=</span> <span class="n">im1</span>  <span class="c"># i+1 -&gt; i-1</span>
+<span class="n">ip1</span> <span class="o">=</span> <span class="n">im1</span>  <span class="c1"># i+1 -&gt; i-1</span>
 <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">C2</span><span class="o">*</span><span class="p">(</span><span class="n">u_n</span><span class="p">[</span><span class="n">im1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">u_n</span><span class="p">[</span><span class="n">ip1</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>We can in fact create one loop over both the internal and boundary
 points and use only one updating formula:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
     <span class="n">ip1</span> <span class="o">=</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">Nx</span> <span class="k">else</span> <span class="n">i</span><span class="o">-</span><span class="mi">1</span>
     <span class="n">im1</span> <span class="o">=</span> <span class="n">i</span><span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span>  <span class="k">else</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span>
     <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">C2</span><span class="o">*</span><span class="p">(</span><span class="n">u_n</span><span class="p">[</span><span class="n">im1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">u_n</span><span class="p">[</span><span class="n">ip1</span><span class="p">])</span>
@@ -282,7 +282,7 @@ the index sets</p>
 \[\tag{41}
 {\mathcal{I}_x} = \{0,\ldots,N_x\},\quad {\mathcal{I}_t} = \{0,\ldots,N_t\},\]</div>
 <p>defined in Python as</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">Ix</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">Ix</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">It</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nt</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -299,17 +299,17 @@ u_i^{n+1} &amp;= 0,
 u_i^{n+1} &amp;= 0,
 \quad i={\mathcal{I^{-1}_x}},\ n\in{{\mathcal{I^-}_t}}{\thinspace .}\end{split}\]</div>
 <p>The corresponding implementation becomes</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># Initial condition</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Initial condition</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">Ix</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
     <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">C2</span><span class="o">*</span><span class="p">(</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
 
-<span class="c"># Time loop</span>
+<span class="c1"># Time loop</span>
 <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">It</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
-    <span class="c"># Compute internal points</span>
+    <span class="c1"># Compute internal points</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">Ix</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
         <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">u_nm1</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> \
                <span class="n">C2</span><span class="o">*</span><span class="p">(</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
-    <span class="c"># Compute boundary conditions</span>
+    <span class="c1"># Compute boundary conditions</span>
     <span class="n">i</span> <span class="o">=</span> <span class="n">Ix</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>  <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">i</span> <span class="o">=</span> <span class="n">Ix</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">];</span> <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
 </pre></div>
@@ -358,7 +358,7 @@ of the discrete equations if a Neumann condition is implemented on
 the boundary. A linear solution does not help since we only have
 homogeneous Neumann conditions in <tt class="docutils literal"><span class="pre">wave1D_dn.py</span></tt>, and we are
 consequently left with testing just a constant solution: <span class="math">\(u=\hbox{const}\)</span>.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">test_constant</span><span class="p">():</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">test_constant</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Check the scalar and vectorized versions for</span>
 <span class="sd">    a constant u(x,t). We simulate in [0, L] and apply</span>
@@ -373,7 +373,7 @@ consequently left with testing just a constant solution: <span class="math">\(u=
     <span class="k">def</span> <span class="nf">assert_no_error</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
         <span class="n">u_e</span> <span class="o">=</span> <span class="n">u_exact</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
         <span class="n">diff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">u</span> <span class="o">-</span> <span class="n">u_e</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="s">&#39;diff=</span><span class="si">%E</span><span class="s">, t_</span><span class="si">%d</span><span class="s">=</span><span class="si">%g</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s1">&#39;diff=</span><span class="si">%E</span><span class="s1">, t_</span><span class="si">%d</span><span class="s1">=</span><span class="si">%g</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
         <span class="n">tol</span> <span class="o">=</span> <span class="mf">1E-13</span>
         <span class="k">assert</span> <span class="n">diff</span> <span class="o">&lt;</span> <span class="n">tol</span><span class="p">,</span> <span class="n">msg</span>
 
@@ -382,16 +382,16 @@ consequently left with testing just a constant solution: <span class="math">\(u=
             <span class="n">L</span> <span class="o">=</span> <span class="mf">2.5</span>
             <span class="n">c</span> <span class="o">=</span> <span class="mf">1.5</span>
             <span class="n">C</span> <span class="o">=</span> <span class="mf">0.75</span>
-            <span class="n">Nx</span> <span class="o">=</span> <span class="mi">3</span>  <span class="c"># Very coarse mesh for this exact test</span>
+            <span class="n">Nx</span> <span class="o">=</span> <span class="mi">3</span>  <span class="c1"># Very coarse mesh for this exact test</span>
             <span class="n">dt</span> <span class="o">=</span> <span class="n">C</span><span class="o">*</span><span class="p">(</span><span class="n">L</span><span class="o">/</span><span class="n">Nx</span><span class="p">)</span><span class="o">/</span><span class="n">c</span>
-            <span class="n">T</span> <span class="o">=</span> <span class="mi">18</span>  <span class="c"># long time integration</span>
+            <span class="n">T</span> <span class="o">=</span> <span class="mi">18</span>  <span class="c1"># long time integration</span>
 
             <span class="n">solver</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">U_0</span><span class="p">,</span> <span class="n">U_L</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span>
                    <span class="n">user_action</span><span class="o">=</span><span class="n">assert_no_error</span><span class="p">,</span>
-                   <span class="n">version</span><span class="o">=</span><span class="s">&#39;scalar&#39;</span><span class="p">)</span>
+                   <span class="n">version</span><span class="o">=</span><span class="s1">&#39;scalar&#39;</span><span class="p">)</span>
             <span class="n">solver</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">U_0</span><span class="p">,</span> <span class="n">U_L</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span>
                    <span class="n">user_action</span><span class="o">=</span><span class="n">assert_no_error</span><span class="p">,</span>
-                   <span class="n">version</span><span class="o">=</span><span class="s">&#39;vectorized&#39;</span><span class="p">)</span>
+                   <span class="n">version</span><span class="o">=</span><span class="s1">&#39;vectorized&#39;</span><span class="p">)</span>
             <span class="k">print</span> <span class="n">U_0</span><span class="p">,</span> <span class="n">U_L</span>
 </pre></div>
 </div>
@@ -404,21 +404,21 @@ one in each direction, and check that the two plug waves come back and
 form the initial condition again after &#8220;one period&#8221; of the solution
 process. Neumann conditions can be applied at both ends. A proper
 test function reads</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">test_plug</span><span class="p">():</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">test_plug</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;Check that an initial plug is correct back after one period.&quot;&quot;&quot;</span>
     <span class="n">L</span> <span class="o">=</span> <span class="mf">1.0</span>
     <span class="n">c</span> <span class="o">=</span> <span class="mf">0.5</span>
-    <span class="n">dt</span> <span class="o">=</span> <span class="p">(</span><span class="n">L</span><span class="o">/</span><span class="mi">10</span><span class="p">)</span><span class="o">/</span><span class="n">c</span>  <span class="c"># Nx=10</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="p">(</span><span class="n">L</span><span class="o">/</span><span class="mi">10</span><span class="p">)</span><span class="o">/</span><span class="n">c</span>  <span class="c1"># Nx=10</span>
     <span class="n">I</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="mi">0</span> <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">L</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.1</span> <span class="k">else</span> <span class="mi">1</span>
 
     <span class="n">u_s</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">cpu</span> <span class="o">=</span> <span class="n">solver</span><span class="p">(</span>
         <span class="n">I</span><span class="o">=</span><span class="n">I</span><span class="p">,</span>
         <span class="n">V</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">U_0</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">U_L</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
-        <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">user_action</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s">&#39;scalar&#39;</span><span class="p">)</span>
+        <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">user_action</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s1">&#39;scalar&#39;</span><span class="p">)</span>
     <span class="n">u_v</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">cpu</span> <span class="o">=</span> <span class="n">solver</span><span class="p">(</span>
         <span class="n">I</span><span class="o">=</span><span class="n">I</span><span class="p">,</span>
         <span class="n">V</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">U_0</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">U_L</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="n">L</span><span class="p">,</span>
-        <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">user_action</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s">&#39;vectorized&#39;</span><span class="p">)</span>
+        <span class="n">dt</span><span class="o">=</span><span class="n">dt</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">user_action</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s1">&#39;vectorized&#39;</span><span class="p">)</span>
     <span class="n">tol</span> <span class="o">=</span> <span class="mf">1E-13</span>
     <span class="n">diff</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">u_s</span> <span class="o">-</span> <span class="n">u_v</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
     <span class="k">assert</span> <span class="n">diff</span> <span class="o">&lt;</span> <span class="n">tol</span>
@@ -455,13 +455,13 @@ cells as a general technique, because in some problems there is a
 completely different medium with different physics and equations right
 outside of a boundary. Nevertheless, one should view the ghost cell
 technique as a purely mathematical technique, which is valid in the
-limit <span class="math">\(\Delta xrightarrow 0\)</span> and helps us to implement derivatives.</p>
+limit <span class="math">\(\Delta x \rightarrow 0\)</span> and helps us to implement derivatives.</p>
 </div>
 <div class="section" id="implementation-2">
 <h3>Implementation<a class="headerlink" href="#implementation-2" title="Permalink to this headline">¶</a></h3>
 <p id="index-13">The <tt class="docutils literal"><span class="pre">u</span></tt> array now needs extra elements corresponding to the ghost
 points. Two new point values are needed:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">u</span>   <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">3</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">u</span>   <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">3</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The arrays <tt class="docutils literal"><span class="pre">u_n</span></tt> and <tt class="docutils literal"><span class="pre">u_nm1</span></tt> must be defined accordingly.</p>
@@ -481,14 +481,14 @@ we hide the specific index value in an index set and operate with
 inner and boundary points using the index set notation.</p>
 <p>To this end, we define <tt class="docutils literal"><span class="pre">u</span></tt> with proper length and <tt class="docutils literal"><span class="pre">Ix</span></tt> to be the corresponding
 indices for the real physical mesh points (<span class="math">\(1,2,\ldots,N_x+1\)</span>):</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">u</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">3</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">u</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">3</span><span class="p">)</span>
 <span class="n">Ix</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>That is, the boundary points have indices <tt class="docutils literal"><span class="pre">Ix[0]</span></tt> and <tt class="docutils literal"><span class="pre">Ix[-1]</span></tt> (as before).
 We first update the solution at all physical mesh points (i.e., interior
 points in the mesh):</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">Ix</span><span class="p">:</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">Ix</span><span class="p">:</span>
     <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">u_nm1</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> \
            <span class="n">C2</span><span class="o">*</span><span class="p">(</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
 </pre></div>
@@ -496,7 +496,7 @@ points in the mesh):</p>
 <p>The indexing becomes a bit more complicated when we call functions like
 <tt class="docutils literal"><span class="pre">V(x)</span></tt> and <tt class="docutils literal"><span class="pre">f(x,</span> <span class="pre">t)</span></tt>, as we must remember that the appropriate
 <span class="math">\(x\)</span> coordinate is given as <tt class="docutils literal"><span class="pre">x[i-Ix[0]]</span></tt>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">Ix</span><span class="p">:</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">Ix</span><span class="p">:</span>
     <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">dt</span><span class="o">*</span><span class="n">V</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="n">Ix</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span> <span class="o">+</span> \
            <span class="mf">0.5</span><span class="o">*</span><span class="n">C2</span><span class="o">*</span><span class="p">(</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> \
            <span class="mf">0.5</span><span class="o">*</span><span class="n">dt2</span><span class="o">*</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="n">Ix</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
@@ -506,9 +506,9 @@ points in the mesh):</p>
 and <tt class="docutils literal"><span class="pre">u[-1]</span></tt> (or <tt class="docutils literal"><span class="pre">u[Nx+2]</span></tt>). For a boundary condition <span class="math">\(u_x=0\)</span>,
 the ghost value must equal the value at the associated inner mesh
 point. Computer code makes this statement precise:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">i</span> <span class="o">=</span> <span class="n">Ix</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>          <span class="c"># x=0 boundary</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">i</span> <span class="o">=</span> <span class="n">Ix</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>          <span class="c1"># x=0 boundary</span>
 <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
-<span class="n">i</span> <span class="o">=</span> <span class="n">Ix</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>         <span class="c"># x=L boundary</span>
+<span class="n">i</span> <span class="o">=</span> <span class="n">Ix</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>         <span class="c1"># x=L boundary</span>
 <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 </pre></div>
 </div>
@@ -521,18 +521,18 @@ A complete implementation appears in the program
 <p class="first admonition-title">Warning</p>
 <p>We have to be careful with how the spatial and temporal mesh
 points are stored. Say we let <tt class="docutils literal"><span class="pre">x</span></tt> be the physical mesh points,</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">x</span> <span class="o">=</span> <span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>&#8220;Standard coding&#8221; of the initial condition,</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">Ix</span><span class="p">:</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">Ix</span><span class="p">:</span>
     <span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">I</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 </pre></div>
 </div>
 <p>becomes wrong, since <tt class="docutils literal"><span class="pre">u_n</span></tt> and <tt class="docutils literal"><span class="pre">x</span></tt> have different lengths and the index <tt class="docutils literal"><span class="pre">i</span></tt>
 corresponds to two different mesh points. In fact, <tt class="docutils literal"><span class="pre">x[i]</span></tt> corresponds
 to <tt class="docutils literal"><span class="pre">u[1+i]</span></tt>. A correct implementation is</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">Ix</span><span class="p">:</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">Ix</span><span class="p">:</span>
     <span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">I</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="n">Ix</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
 </pre></div>
 </div>
@@ -548,7 +548,7 @@ a homogeneous Neumann condition at <span class="math">\(x=0\)</span>. One ghost 
 is added to the mesh, so the index set for the physical points
 becomes <span class="math">\(\{1,\ldots,N_x+1\}\)</span>. A relevant implementation
 is</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">u</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">u</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">Nx</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span>
 <span class="n">Ix</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">u</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 <span class="o">...</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">Ix</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
@@ -556,9 +556,9 @@ is</p>
            <span class="n">C2</span><span class="o">*</span><span class="p">(</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> \
            <span class="n">dt2</span><span class="o">*</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="n">Ix</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
 <span class="n">i</span> <span class="o">=</span> <span class="n">Ix</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-<span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">U_0</span>       <span class="c"># set Dirichlet value</span>
+<span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">U_0</span>       <span class="c1"># set Dirichlet value</span>
 <span class="n">i</span> <span class="o">=</span> <span class="n">Ix</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>  <span class="c"># update ghost value</span>
+<span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># update ghost value</span>
 </pre></div>
 </div>
 <p>The physical solution to be plotted is now in <tt class="docutils literal"><span class="pre">u[1:]</span></tt>
@@ -577,7 +577,7 @@ will depend on the position in space.
 Figure <a class="reference internal" href="#wave-pde1-fig-pulse1-two-media"><em>Left: wave entering another medium; right: transmitted and reflected wave</em></a> shows a wave
 propagating in one medium <span class="math">\([0, 0.7]\cup [0.9,1]\)</span> with wave
 velocity <span class="math">\(c_1\)</span> (left) before it enters a second medium <span class="math">\((0.7,0.9)\)</span>
-with wave velocity <span class="math">\(c_2\)</span> (right). When the wave passes the boundary
+with wave velocity <span class="math">\(c_2\)</span> (right). When the wave meets the boundary
 where <span class="math">\(c\)</span> jumps from <span class="math">\(c_1\)</span> to <span class="math">\(c_2\)</span>, a part of the wave is reflected back
 into the first medium (the <em>reflected</em> wave), while one part is
 transmitted through the second medium (the <em>transmitted</em> wave).</p>
@@ -848,7 +848,7 @@ q_{i-\frac{1}{2}}(u_{i}^n - u_{i-1}^n)\right)
 may assume that <span class="math">\(q\)</span> is available as an array <tt class="docutils literal"><span class="pre">q[i]</span></tt> at
 the spatial mesh points. The following loop is a straightforward
 implementation of the scheme <a class="reference internal" href="#eq-wave-pde2-var-c-scheme-impl"><em>(50)</em></a>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">Nx</span><span class="p">):</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">Nx</span><span class="p">):</span>
     <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">u_nm1</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> \
            <span class="n">C2</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">q</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="p">(</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>  <span class="o">-</span> \
                <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">q</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="p">(</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span> <span class="o">+</span> \
@@ -866,7 +866,7 @@ interior points and just modify the indices <tt class="docutils literal"><span c
 as we did in the section <a class="reference internal" href="#wave-pde2-neumann-impl"><em>Implementation of Neumann conditions</em></a>. Assuming
 <span class="math">\(dq/dx=0\)</span> at the boundaries, we can implement the scheme at
 the boundary with the following code.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="n">ip1</span> <span class="o">=</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span>
 <span class="n">im1</span> <span class="o">=</span> <span class="n">ip1</span>
 <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">u_nm1</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> \
@@ -880,7 +880,7 @@ points also at the boundary, provided that the ghost values of both
 <span class="math">\(u\)</span> and <span class="math">\(q\)</span> are correctly updated to ensure <span class="math">\(u_x=0\)</span> and <span class="math">\(q_x=0\)</span>.</p>
 <p>A vectorized version of the scheme with a variable coefficient
 at internal mesh points becomes</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">u_nm1</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">u_n</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> \
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span> <span class="n">u_nm1</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">u_n</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> \
           <span class="n">C2</span><span class="o">*</span><span class="p">(</span><span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">q</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span><span class="o">*</span><span class="p">(</span><span class="n">u_n</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span> <span class="o">-</span> <span class="n">u_n</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span>
               <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">q</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span><span class="o">*</span><span class="p">(</span><span class="n">u_n</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">u_n</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]))</span> <span class="o">+</span> \
           <span class="n">dt2</span><span class="o">*</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
@@ -973,10 +973,10 @@ u(0,t) = U_0(t)\hbox{ or } u_x(0,t)=0,\quad t\in (0,T]\]</div>
 u(L,t) = U_L(t)\hbox{ or } u_x(L,t)=0,\quad t\in (0,T]\]</div>
 <p>The only new feature here is the time-dependent Dirichlet conditions, but
 they are trivial to implement:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">i</span> <span class="o">=</span> <span class="n">Ix</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c"># x=0</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">i</span> <span class="o">=</span> <span class="n">Ix</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># x=0</span>
 <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">U_0</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
 
-<span class="n">i</span> <span class="o">=</span> <span class="n">Ix</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="c"># x=L</span>
+<span class="n">i</span> <span class="o">=</span> <span class="n">Ix</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># x=L</span>
 <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">U_L</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
 </pre></div>
 </div>
@@ -1009,101 +1009,101 @@ function, which is exactly what a class offers.</p>
 <h3>The code<a class="headerlink" href="#the-code" title="Permalink to this headline">¶</a></h3>
 <p>A class for flexible plotting, cleaning up files, making movie
 files, like the function <tt class="docutils literal"><span class="pre">wave1D_u0.viz</span></tt> did, can be coded as follows:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">PlotAndStoreSolution</span><span class="p">:</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">PlotAndStoreSolution</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Class for the user_action function in solver.</span>
 <span class="sd">    Visualizes the solution only.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">casename</span><span class="o">=</span><span class="s">&#39;tmp&#39;</span><span class="p">,</span>    <span class="c"># Prefix in filenames</span>
-        <span class="n">umin</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">umax</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>   <span class="c"># Fixed range of y axis</span>
-        <span class="n">pause_between_frames</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>  <span class="c"># Movie speed</span>
-        <span class="n">backend</span><span class="o">=</span><span class="s">&#39;matplotlib&#39;</span><span class="p">,</span>       <span class="c"># or &#39;gnuplot&#39; or None</span>
-        <span class="n">screen_movie</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="c"># Show movie on screen?</span>
-        <span class="n">title</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span>          <span class="c"># Extra message in title</span>
-        <span class="n">skip_frame</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>      <span class="c"># Skip every skip_frame frame</span>
-        <span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>    <span class="c"># Name of file with solutions</span>
+        <span class="n">casename</span><span class="o">=</span><span class="s1">&#39;tmp&#39;</span><span class="p">,</span>    <span class="c1"># Prefix in filenames</span>
+        <span class="n">umin</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">umax</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>   <span class="c1"># Fixed range of y axis</span>
+        <span class="n">pause_between_frames</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>  <span class="c1"># Movie speed</span>
+        <span class="n">backend</span><span class="o">=</span><span class="s1">&#39;matplotlib&#39;</span><span class="p">,</span>       <span class="c1"># or &#39;gnuplot&#39; or None</span>
+        <span class="n">screen_movie</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="c1"># Show movie on screen?</span>
+        <span class="n">title</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>          <span class="c1"># Extra message in title</span>
+        <span class="n">skip_frame</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>      <span class="c1"># Skip every skip_frame frame</span>
+        <span class="n">filename</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>    <span class="c1"># Name of file with solutions</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">casename</span> <span class="o">=</span> <span class="n">casename</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">yaxis</span> <span class="o">=</span> <span class="p">[</span><span class="n">umin</span><span class="p">,</span> <span class="n">umax</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pause</span> <span class="o">=</span> <span class="n">pause_between_frames</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="n">backend</span>
         <span class="k">if</span> <span class="n">backend</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="c"># Use native matplotlib</span>
+            <span class="c1"># Use native matplotlib</span>
             <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
-        <span class="k">elif</span> <span class="n">backend</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;matplotlib&#39;</span><span class="p">,</span> <span class="s">&#39;gnuplot&#39;</span><span class="p">):</span>
-            <span class="n">module</span> <span class="o">=</span> <span class="s">&#39;scitools.easyviz.&#39;</span> <span class="o">+</span> <span class="n">backend</span> <span class="o">+</span> <span class="s">&#39;_&#39;</span>
-            <span class="k">exec</span><span class="p">(</span><span class="s">&#39;import </span><span class="si">%s</span><span class="s"> as plt&#39;</span> <span class="o">%</span> <span class="n">module</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">backend</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;matplotlib&#39;</span><span class="p">,</span> <span class="s1">&#39;gnuplot&#39;</span><span class="p">):</span>
+            <span class="n">module</span> <span class="o">=</span> <span class="s1">&#39;scitools.easyviz.&#39;</span> <span class="o">+</span> <span class="n">backend</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span>
+            <span class="k">exec</span><span class="p">(</span><span class="s1">&#39;import </span><span class="si">%s</span><span class="s1"> as plt&#39;</span> <span class="o">%</span> <span class="n">module</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">plt</span> <span class="o">=</span> <span class="n">plt</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">screen_movie</span> <span class="o">=</span> <span class="n">screen_movie</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">skip_frame</span> <span class="o">=</span> <span class="n">skip_frame</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>
         <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="c"># Store time points when u is written to file</span>
+            <span class="c1"># Store time points when u is written to file</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">filenames</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">+</span> <span class="s">&#39;*.dat.npz&#39;</span><span class="p">)</span>
+            <span class="n">filenames</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;*.dat.npz&#39;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
                 <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
 
-        <span class="c"># Clean up old movie frames</span>
-        <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s">&#39;frame_*.png&#39;</span><span class="p">):</span>
+        <span class="c1"># Clean up old movie frames</span>
+        <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;frame_*.png&#39;</span><span class="p">):</span>
             <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Callback function user_action, call by solver:</span>
 <span class="sd">        Store solution, plot on screen and save to file.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c"># Save solution u to a file using numpy.savez</span>
+        <span class="c1"># Save solution u to a file using numpy.savez</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">name</span> <span class="o">=</span> <span class="s">&#39;u</span><span class="si">%04d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">n</span>  <span class="c"># array name</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;u</span><span class="si">%04d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">n</span>  <span class="c1"># array name</span>
             <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">u</span><span class="p">}</span>
-            <span class="n">fname</span> <span class="o">=</span> <span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">+</span> <span class="s">&#39;_&#39;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s">&#39;.dat&#39;</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.dat&#39;</span>
             <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>  <span class="c"># store corresponding time value</span>
-            <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>           <span class="c"># save x once</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">+</span> <span class="s">&#39;_x.dat&#39;</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>  <span class="c1"># store corresponding time value</span>
+            <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>           <span class="c1"># save x once</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">savez</span><span class="p">(</span><span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;_x.dat&#39;</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
 
-        <span class="c"># Animate</span>
+        <span class="c1"># Animate</span>
         <span class="k">if</span> <span class="n">n</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">skip_frame</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span>
-        <span class="n">title</span> <span class="o">=</span> <span class="s">&#39;t=</span><span class="si">%.3f</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;t=</span><span class="si">%.3f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">:</span>
-            <span class="n">title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">+</span> <span class="s">&#39; &#39;</span> <span class="o">+</span> <span class="n">title</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">title</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="c"># native matplotlib animation</span>
+            <span class="c1"># native matplotlib animation</span>
             <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">ion</span><span class="p">()</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="s">&#39;r-&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="s1">&#39;r-&#39;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">axis</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
                                <span class="bp">self</span><span class="o">.</span><span class="n">yaxis</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">yaxis</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;u&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;u&#39;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s">&#39;t=</span><span class="si">%.3f</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">]])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s1">&#39;t=</span><span class="si">%.3f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">]])</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c"># Update new solution</span>
+                <span class="c1"># Update new solution</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ydata</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s">&#39;t=</span><span class="si">%.3f</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">]])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s1">&#39;t=</span><span class="si">%.3f</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">]])</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="c"># scitools.easyviz animation</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="s">&#39;r-&#39;</span><span class="p">,</span>
-                          <span class="n">xlabel</span><span class="o">=</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s">&#39;u&#39;</span><span class="p">,</span>
+            <span class="c1"># scitools.easyviz animation</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="s1">&#39;r-&#39;</span><span class="p">,</span>
+                          <span class="n">xlabel</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s1">&#39;u&#39;</span><span class="p">,</span>
                           <span class="n">axis</span><span class="o">=</span><span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
                                 <span class="bp">self</span><span class="o">.</span><span class="n">yaxis</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">yaxis</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
                           <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
                           <span class="n">show</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">screen_movie</span><span class="p">)</span>
-        <span class="c"># pause</span>
+        <span class="c1"># pause</span>
         <span class="k">if</span> <span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c"># let initial condition stay 2 s</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># let initial condition stay 2 s</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pause</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
                 <span class="n">pause</span> <span class="o">=</span> <span class="mf">0.2</span> <span class="k">if</span> <span class="n">u</span><span class="o">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="mi">100</span> <span class="k">else</span> <span class="mi">0</span>
             <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">pause</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">&#39;frame_</span><span class="si">%04d</span><span class="s">.png&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">n</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s1">&#39;frame_</span><span class="si">%04d</span><span class="s1">.png&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">n</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -1165,18 +1165,18 @@ various wave shapes and jumps in the wave velocity (i.e.,
 discontinuous media).  The code is shown to demonstrate how easy it is
 to reach this flexibility with the building blocks we have already
 developed:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">pulse</span><span class="p">(</span>
-    <span class="n">C</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>            <span class="c"># Maximum Courant number</span>
-    <span class="n">Nx</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>         <span class="c"># spatial resolution</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">pulse</span><span class="p">(</span>
+    <span class="n">C</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>            <span class="c1"># Maximum Courant number</span>
+    <span class="n">Nx</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>         <span class="c1"># spatial resolution</span>
     <span class="n">animate</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
-    <span class="n">version</span><span class="o">=</span><span class="s">&#39;vectorized&#39;</span><span class="p">,</span>
-    <span class="n">T</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>            <span class="c"># end time</span>
-    <span class="n">loc</span><span class="o">=</span><span class="s">&#39;left&#39;</span><span class="p">,</span>     <span class="c"># location of initial condition</span>
-    <span class="n">pulse_tp</span><span class="o">=</span><span class="s">&#39;gaussian&#39;</span><span class="p">,</span>  <span class="c"># pulse/init.cond. type</span>
-    <span class="n">slowness_factor</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="c"># inverse of wave vel. in right medium</span>
-    <span class="n">medium</span><span class="o">=</span><span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">],</span> <span class="c"># interval for right medium</span>
-    <span class="n">skip_frame</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>      <span class="c"># skip frames in animations</span>
-    <span class="n">sigma</span><span class="o">=</span><span class="mf">0.05</span>         <span class="c"># width measure of the pulse</span>
+    <span class="n">version</span><span class="o">=</span><span class="s1">&#39;vectorized&#39;</span><span class="p">,</span>
+    <span class="n">T</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>            <span class="c1"># end time</span>
+    <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span>     <span class="c1"># location of initial condition</span>
+    <span class="n">pulse_tp</span><span class="o">=</span><span class="s1">&#39;gaussian&#39;</span><span class="p">,</span>  <span class="c1"># pulse/init.cond. type</span>
+    <span class="n">slowness_factor</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="c1"># inverse of wave vel. in right medium</span>
+    <span class="n">medium</span><span class="o">=</span><span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">],</span> <span class="c1"># interval for right medium</span>
+    <span class="n">skip_frame</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>      <span class="c1"># skip frames in animations</span>
+    <span class="n">sigma</span><span class="o">=</span><span class="mf">0.05</span>         <span class="c1"># width measure of the pulse</span>
     <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Various peaked-shaped initial conditions on [0,1].</span>
@@ -1185,53 +1185,53 @@ developed:</p>
 <span class="sd">    depending on where the initial pulse is to be located.</span>
 <span class="sd">    The sigma parameter governs the width of the pulse.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c"># Use scaled parameters: L=1 for domain length, c_0=1</span>
-    <span class="c"># for wave velocity outside the domain.</span>
+    <span class="c1"># Use scaled parameters: L=1 for domain length, c_0=1</span>
+    <span class="c1"># for wave velocity outside the domain.</span>
     <span class="n">L</span> <span class="o">=</span> <span class="mf">1.0</span>
     <span class="n">c_0</span> <span class="o">=</span> <span class="mf">1.0</span>
-    <span class="k">if</span> <span class="n">loc</span> <span class="o">==</span> <span class="s">&#39;center&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">loc</span> <span class="o">==</span> <span class="s1">&#39;center&#39;</span><span class="p">:</span>
         <span class="n">xc</span> <span class="o">=</span> <span class="n">L</span><span class="o">/</span><span class="mi">2</span>
-    <span class="k">elif</span> <span class="n">loc</span> <span class="o">==</span> <span class="s">&#39;left&#39;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">loc</span> <span class="o">==</span> <span class="s1">&#39;left&#39;</span><span class="p">:</span>
         <span class="n">xc</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="k">if</span> <span class="n">pulse_tp</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;gaussian&#39;</span><span class="p">,</span><span class="s">&#39;Gaussian&#39;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">pulse_tp</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;gaussian&#39;</span><span class="p">,</span><span class="s1">&#39;Gaussian&#39;</span><span class="p">):</span>
         <span class="k">def</span> <span class="nf">I</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="p">((</span><span class="n">x</span><span class="o">-</span><span class="n">xc</span><span class="p">)</span><span class="o">/</span><span class="n">sigma</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">pulse_tp</span> <span class="o">==</span> <span class="s">&#39;plug&#39;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">pulse_tp</span> <span class="o">==</span> <span class="s1">&#39;plug&#39;</span><span class="p">:</span>
         <span class="k">def</span> <span class="nf">I</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
             <span class="k">return</span> <span class="mi">0</span> <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">xc</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">sigma</span> <span class="k">else</span> <span class="mi">1</span>
-    <span class="k">elif</span> <span class="n">pulse_tp</span> <span class="o">==</span> <span class="s">&#39;cosinehat&#39;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">pulse_tp</span> <span class="o">==</span> <span class="s1">&#39;cosinehat&#39;</span><span class="p">:</span>
         <span class="k">def</span> <span class="nf">I</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-            <span class="c"># One period of a cosine</span>
+            <span class="c1"># One period of a cosine</span>
             <span class="n">w</span> <span class="o">=</span> <span class="mi">2</span>
             <span class="n">a</span> <span class="o">=</span> <span class="n">w</span><span class="o">*</span><span class="n">sigma</span>
             <span class="k">return</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">xc</span><span class="p">)</span><span class="o">/</span><span class="n">a</span><span class="p">))</span> \
                    <span class="k">if</span> <span class="n">xc</span> <span class="o">-</span> <span class="n">a</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">xc</span> <span class="o">+</span> <span class="n">a</span> <span class="k">else</span> <span class="mi">0</span>
 
-    <span class="k">elif</span> <span class="n">pulse_tp</span> <span class="o">==</span> <span class="s">&#39;half-cosinehat&#39;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">pulse_tp</span> <span class="o">==</span> <span class="s1">&#39;half-cosinehat&#39;</span><span class="p">:</span>
         <span class="k">def</span> <span class="nf">I</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-            <span class="c"># Half a period of a cosine</span>
+            <span class="c1"># Half a period of a cosine</span>
             <span class="n">w</span> <span class="o">=</span> <span class="mi">4</span>
             <span class="n">a</span> <span class="o">=</span> <span class="n">w</span><span class="o">*</span><span class="n">sigma</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">xc</span><span class="p">)</span><span class="o">/</span><span class="n">a</span><span class="p">)</span> \
                    <span class="k">if</span> <span class="n">xc</span> <span class="o">-</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">a</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">xc</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">a</span> <span class="k">else</span> <span class="mi">0</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Wrong pulse_tp=&quot;</span><span class="si">%s</span><span class="s">&quot;&#39;</span> <span class="o">%</span> <span class="n">pulse_tp</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Wrong pulse_tp=&quot;</span><span class="si">%s</span><span class="s1">&quot;&#39;</span> <span class="o">%</span> <span class="n">pulse_tp</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">c</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">c_0</span><span class="o">/</span><span class="n">slowness_factor</span> \
                <span class="k">if</span> <span class="n">medium</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">medium</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">else</span> <span class="n">c_0</span>
 
     <span class="n">umin</span><span class="o">=-</span><span class="mf">0.5</span><span class="p">;</span> <span class="n">umax</span><span class="o">=</span><span class="mf">1.5</span><span class="o">*</span><span class="n">I</span><span class="p">(</span><span class="n">xc</span><span class="p">)</span>
-    <span class="n">casename</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">_Nx</span><span class="si">%s</span><span class="s">_sf</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> \
+    <span class="n">casename</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">_Nx</span><span class="si">%s</span><span class="s1">_sf</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> \
                <span class="p">(</span><span class="n">pulse_tp</span><span class="p">,</span> <span class="n">Nx</span><span class="p">,</span> <span class="n">slowness_factor</span><span class="p">)</span>
     <span class="n">action</span> <span class="o">=</span> <span class="n">PlotMediumAndSolution</span><span class="p">(</span>
         <span class="n">medium</span><span class="p">,</span> <span class="n">casename</span><span class="o">=</span><span class="n">casename</span><span class="p">,</span> <span class="n">umin</span><span class="o">=</span><span class="n">umin</span><span class="p">,</span> <span class="n">umax</span><span class="o">=</span><span class="n">umax</span><span class="p">,</span>
         <span class="n">skip_frame</span><span class="o">=</span><span class="n">skip_frame</span><span class="p">,</span> <span class="n">screen_movie</span><span class="o">=</span><span class="n">animate</span><span class="p">,</span>
-        <span class="n">backend</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s">&#39;tmpdata&#39;</span><span class="p">)</span>
+        <span class="n">backend</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;tmpdata&#39;</span><span class="p">)</span>
 
-    <span class="c"># Choose the stability limit with given Nx, worst case c</span>
-    <span class="c"># (lower C will then use this dt, but smaller Nx)</span>
+    <span class="c1"># Choose the stability limit with given Nx, worst case c</span>
+    <span class="c1"># (lower C will then use this dt, but smaller Nx)</span>
     <span class="n">dt</span> <span class="o">=</span> <span class="p">(</span><span class="n">L</span><span class="o">/</span><span class="n">Nx</span><span class="p">)</span><span class="o">/</span><span class="n">c_0</span>
     <span class="n">cpu</span><span class="p">,</span> <span class="n">hashed_input</span> <span class="o">=</span> <span class="n">solver</span><span class="p">(</span>
         <span class="n">I</span><span class="o">=</span><span class="n">I</span><span class="p">,</span> <span class="n">V</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">c</span><span class="p">,</span>
@@ -1241,44 +1241,44 @@ developed:</p>
         <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span>
         <span class="n">stability_safety_factor</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">cpu</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c"># did we generate new data?</span>
+    <span class="k">if</span> <span class="n">cpu</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># did we generate new data?</span>
         <span class="n">action</span><span class="o">.</span><span class="n">close_file</span><span class="p">(</span><span class="n">hashed_input</span><span class="p">)</span>
         <span class="n">action</span><span class="o">.</span><span class="n">make_movie_file</span><span class="p">()</span>
-    <span class="k">print</span> <span class="s">&#39;cpu (-1 means no new data generated):&#39;</span><span class="p">,</span> <span class="n">cpu</span>
+    <span class="k">print</span> <span class="s1">&#39;cpu (-1 means no new data generated):&#39;</span><span class="p">,</span> <span class="n">cpu</span>
 
 <span class="k">def</span> <span class="nf">convergence_rates</span><span class="p">(</span>
     <span class="n">u_exact</span><span class="p">,</span>
     <span class="n">I</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">U_0</span><span class="p">,</span> <span class="n">U_L</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span>
     <span class="n">dt0</span><span class="p">,</span> <span class="n">num_meshes</span><span class="p">,</span>
-    <span class="n">C</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s">&#39;scalar&#39;</span><span class="p">,</span>
+    <span class="n">C</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="s1">&#39;scalar&#39;</span><span class="p">,</span>
     <span class="n">stability_safety_factor</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Half the time step and estimate convergence rates for</span>
 <span class="sd">    for num_meshes simulations.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">class</span> <span class="nc">ComputeError</span><span class="p">:</span>
-        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">norm_type</span><span class="p">):</span>
+        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">norm_type</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
             <span class="sd">&quot;&quot;&quot;Store norm of the error in self.E.&quot;&quot;&quot;</span>
             <span class="n">error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">u</span> <span class="o">-</span> <span class="n">u_exact</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">[</span><span class="n">n</span><span class="p">]))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">error</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
 
     <span class="n">E</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">h</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c"># dt, solver adjusts dx such that C=dt*c/dx</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># dt, solver adjusts dx such that C=dt*c/dx</span>
     <span class="n">dt</span> <span class="o">=</span> <span class="n">dt0</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_meshes</span><span class="p">):</span>
-        <span class="n">error_calculator</span> <span class="o">=</span> <span class="n">ComputeError</span><span class="p">(</span><span class="s">&#39;Linf&#39;</span><span class="p">)</span>
+        <span class="n">error_calculator</span> <span class="o">=</span> <span class="n">ComputeError</span><span class="p">(</span><span class="s1">&#39;Linf&#39;</span><span class="p">)</span>
         <span class="n">solver</span><span class="p">(</span><span class="n">I</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">U_0</span><span class="p">,</span> <span class="n">U_L</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">C</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span>
                <span class="n">user_action</span><span class="o">=</span><span class="n">error_calculator</span><span class="p">,</span>
-               <span class="n">version</span><span class="o">=</span><span class="s">&#39;scalar&#39;</span><span class="p">,</span>
+               <span class="n">version</span><span class="o">=</span><span class="s1">&#39;scalar&#39;</span><span class="p">,</span>
                <span class="n">stability_safety_factor</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
         <span class="n">E</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">error_calculator</span><span class="o">.</span><span class="n">error</span><span class="p">)</span>
         <span class="n">h</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
-        <span class="n">dt</span> <span class="o">/=</span> <span class="mi">2</span>  <span class="c"># halve the time step for next simulation</span>
-    <span class="k">print</span> <span class="s">&#39;E:&#39;</span><span class="p">,</span> <span class="n">E</span>
-    <span class="k">print</span> <span class="s">&#39;h:&#39;</span><span class="p">,</span> <span class="n">h</span>
+        <span class="n">dt</span> <span class="o">/=</span> <span class="mi">2</span>  <span class="c1"># halve the time step for next simulation</span>
+    <span class="k">print</span> <span class="s1">&#39;E:&#39;</span><span class="p">,</span> <span class="n">E</span>
+    <span class="k">print</span> <span class="s1">&#39;h:&#39;</span><span class="p">,</span> <span class="n">h</span>
     <span class="n">r</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">E</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="n">E</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="n">h</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
          <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">num_meshes</span><span class="p">)]</span>
     <span class="k">return</span> <span class="n">r</span>
@@ -1301,9 +1301,9 @@ developed:</p>
         <span class="n">num_meshes</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
         <span class="n">C</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span>
         <span class="n">T</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-        <span class="n">version</span><span class="o">=</span><span class="s">&#39;scalar&#39;</span><span class="p">,</span>
+        <span class="n">version</span><span class="o">=</span><span class="s1">&#39;scalar&#39;</span><span class="p">,</span>
         <span class="n">stability_safety_factor</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
-    <span class="k">print</span> <span class="s">&#39;rates sin(x)*cos(t) solution:&#39;</span><span class="p">,</span> \
+    <span class="k">print</span> <span class="s1">&#39;rates sin(x)*cos(t) solution:&#39;</span><span class="p">,</span> \
           <span class="p">[</span><span class="nb">round</span><span class="p">(</span><span class="n">r_</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">r_</span> <span class="ow">in</span> <span class="n">r</span><span class="p">]</span>
     <span class="k">assert</span> <span class="nb">abs</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.002</span>
 </pre></div>
@@ -1328,14 +1328,14 @@ value of <span class="math">\(C\)</span> (i.e., <span class="math">\(\Delta x\)<
 Courant number varies).</p>
 </div>
 <p>The reader is encouraged to play around with the <tt class="docutils literal"><span class="pre">pulse</span></tt> function:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">wave1D_dn_vc</span> <span class="kn">as</span> <span class="nn">w</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">w</span><span class="o">.</span><span class="n">pulse</span><span class="p">(</span><span class="n">Nx</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s">&#39;left&#39;</span><span class="p">,</span> <span class="n">pulse_tp</span><span class="o">=</span><span class="s">&#39;cosinehat&#39;</span><span class="p">,</span> <span class="n">slowness_factor</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">wave1D_dn_vc</span> <span class="kn">as</span> <span class="nn">w</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">w</span><span class="o">.</span><span class="n">pulse</span><span class="p">(</span><span class="n">Nx</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span> <span class="n">pulse_tp</span><span class="o">=</span><span class="s1">&#39;cosinehat&#39;</span><span class="p">,</span> <span class="n">slowness_factor</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>To easily kill the graphics by Ctrl-C and restart a new simulation it might be
 easier to run the above two statements from the command line
 with</p>
-<div class="highlight-text"><div class="highlight"><pre>Terminal&gt; python -c &#39;import wave1D_dn_vc as w; w.pulse(...)&#39;
+<div class="highlight-text"><div class="highlight"><pre><span></span>Terminal&gt; python -c &#39;import wave1D_dn_vc as w; w.pulse(...)&#39;
 </pre></div>
 </div>
 </div>
@@ -1374,7 +1374,7 @@ and its solution.</p>
 <span class="math">\(u_t(x,0)=0\)</span> and there is no source term <span class="math">\(f\)</span>.
 The boundary conditions can be set to <span class="math">\(u=0\)</span>.
 The solution to this problem is symmetric around <span class="math">\(x=0\)</span>.
-This means that we can simulate the wave process in only the half
+This means that we can simulate the wave process in only half
 of the domain <span class="math">\([0,L]\)</span>.</p>
 <p><strong>a)</strong>
 Argue why the symmetry boundary condition
@@ -1418,7 +1418,7 @@ half a &#8220;cosine hat&#8221; pulse, and a plug pulse for resolutions
 considerable numerical noise in the form of non-physical waves,
 especially for <span class="math">\(s_f=4\)</span> and the plug pulse or the half a &#8220;cosinehat&#8221;
 pulse. The noise is much less visible for a Gaussian pulse. Run the
-case with the plug and half a &#8220;cosinehat&#8221; pulses for <span class="math">\(s_f=1\)</span>, <span class="math">\(C=0.9,
+case with the plug and half a &#8220;cosinehat&#8221; pulse for <span class="math">\(s_f=1\)</span>, <span class="math">\(C=0.9,
 0.25\)</span>, and <span class="math">\(N_x=40,80,160\)</span>. Use the numerical dispersion relation to
 explain the observations.
 Filename: <tt class="docutils literal"><span class="pre">pulse1D_analysis</span></tt>.</p>
@@ -1653,7 +1653,7 @@ by this choice of <span class="math">\(u\)</span>. The reason is that</p>
 \[\tag{74}
 [D_{2x}u]^n_i = u_{x}(x_i,t_n) + \frac{1}{6}u_{xxx}(x_i,t_n)\Delta x^2
     + {\mathcal{O}(\Delta x^4)}{\thinspace .}\]</div>
-<p>At the boundary two boundary points, we must demand that
+<p>At the two boundary points, we must demand that
 the derivative <span class="math">\(X_x(x)=0\)</span> such that <span class="math">\(u_x=0\)</span>.
 However, <span class="math">\(u_{xxx}\)</span> is a constant and not zero
 when <span class="math">\(X(x)\)</span> is a cubic polynomial.
@@ -1688,15 +1688,15 @@ simplicity and then determine <span class="math">\(a_2\)</span> and <span class=
 <span class="math">\(\Delta x\)</span> and <span class="math">\(\Delta t\)</span>.</p>
 <p>Use <tt class="docutils literal"><span class="pre">sympy</span></tt> to perform analytical computations.
 A starting point is to define <span class="math">\(u\)</span> as follows:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">test_cubic1</span><span class="p">():</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">test_cubic1</span><span class="p">():</span>
     <span class="kn">import</span> <span class="nn">sympy</span> <span class="kn">as</span> <span class="nn">sm</span>
-    <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dt</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s">&#39;x t c L dx dt&#39;</span><span class="p">)</span>
-    <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s">&#39;i n&#39;</span><span class="p">,</span> <span class="n">integer</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dt</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s1">&#39;x t c L dx dt&#39;</span><span class="p">)</span>
+    <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s1">&#39;i n&#39;</span><span class="p">,</span> <span class="n">integer</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
-    <span class="c"># Assume discrete solution is a polynomial of degree 3 in x</span>
-    <span class="n">T</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">sm</span><span class="o">.</span><span class="n">Rational</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">t</span>  <span class="c"># Temporal term</span>
-    <span class="n">a</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s">&#39;a_0 a_1 a_2 a_3&#39;</span><span class="p">)</span>
-    <span class="n">X</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">q</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="o">**</span><span class="n">q</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>  <span class="c"># Spatial term</span>
+    <span class="c1"># Assume discrete solution is a polynomial of degree 3 in x</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">sm</span><span class="o">.</span><span class="n">Rational</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">t</span>  <span class="c1"># Temporal term</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s1">&#39;a_0 a_1 a_2 a_3&#39;</span><span class="p">)</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">q</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="o">**</span><span class="n">q</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>  <span class="c1"># Spatial term</span>
     <span class="n">u</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">X</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">*</span><span class="n">T</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -1710,17 +1710,17 @@ for the equations <span class="math">\([D_{2x}u]^n_0=0\)</span> and <span class=
 where <span class="math">\(N_x=L/\Delta x\)</span>. Call the residuals <tt class="docutils literal"><span class="pre">R_0</span></tt> and <tt class="docutils literal"><span class="pre">R_L</span></tt>.
 Substitute <span class="math">\(a_0\)</span> and <span class="math">\(a_1\)</span> by 0 and 1, respectively, in
 <tt class="docutils literal"><span class="pre">R_0</span></tt>, <tt class="docutils literal"><span class="pre">R_L</span></tt>, and <tt class="docutils literal"><span class="pre">a</span></tt>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">R_0</span> <span class="o">=</span> <span class="n">R_0</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">R_0</span> <span class="o">=</span> <span class="n">R_0</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
 <span class="n">R_L</span> <span class="o">=</span> <span class="n">R_L</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">subs</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
-<span class="n">a</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>  <span class="c"># enable in-place assignment</span>
+<span class="n">a</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>  <span class="c1"># enable in-place assignment</span>
 <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span>
 </pre></div>
 </div>
 <p>Determining <span class="math">\(a_2\)</span> and <span class="math">\(a_3\)</span> from the discretized boundary conditions
 is then about solving two equations with respect to <span class="math">\(a_2\)</span> and <span class="math">\(a_3\)</span>,
 i.e., <tt class="docutils literal"><span class="pre">a[2:]</span></tt>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">s</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">solve</span><span class="p">([</span><span class="n">R_0</span><span class="p">,</span> <span class="n">R_L</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span>
-<span class="c"># s is dictionary with the unknowns a[2] and a[3] as keys</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">s</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">solve</span><span class="p">([</span><span class="n">R_0</span><span class="p">,</span> <span class="n">R_L</span><span class="p">],</span> <span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span>
+<span class="c1"># s is dictionary with the unknowns a[2] and a[3] as keys</span>
 <span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="n">a</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span> <span class="n">s</span><span class="p">[</span><span class="n">a</span><span class="p">[</span><span class="mi">3</span><span class="p">]]</span>
 </pre></div>
 </div>
@@ -1742,7 +1742,7 @@ solution <span class="math">\(u\)</span> of the discrete PDE problem.</p>
 To turn a <tt class="docutils literal"><span class="pre">sympy</span></tt> expression <tt class="docutils literal"><span class="pre">e</span></tt>, depending on a series of
 symbols, say <tt class="docutils literal"><span class="pre">x</span></tt>, <tt class="docutils literal"><span class="pre">t</span></tt>, <tt class="docutils literal"><span class="pre">dx</span></tt>, <tt class="docutils literal"><span class="pre">dt</span></tt>, <tt class="docutils literal"><span class="pre">L</span></tt>, and <tt class="docutils literal"><span class="pre">c</span></tt>, into a plain
 Python function <tt class="docutils literal"><span class="pre">e_exact(x,t,L,dx,dt,c)</span></tt>, one can write</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">e_exact</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">lambdify</span><span class="p">([</span><span class="n">x</span><span class="p">,</span><span class="n">t</span><span class="p">,</span><span class="n">L</span><span class="p">,</span><span class="n">dx</span><span class="p">,</span><span class="n">dt</span><span class="p">,</span><span class="n">c</span><span class="p">],</span> <span class="n">e</span><span class="p">,</span> <span class="s">&#39;numpy&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">e_exact</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">lambdify</span><span class="p">([</span><span class="n">x</span><span class="p">,</span><span class="n">t</span><span class="p">,</span><span class="n">L</span><span class="p">,</span><span class="n">dx</span><span class="p">,</span><span class="n">dt</span><span class="p">,</span><span class="n">c</span><span class="p">],</span> <span class="n">e</span><span class="p">,</span> <span class="s1">&#39;numpy&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The <tt class="docutils literal"><span class="pre">'numpy'</span></tt> argument is a good habit as the <tt class="docutils literal"><span class="pre">e_exact</span></tt> function
@@ -1761,30 +1761,30 @@ condition, we seek <span class="math">\(u\)</span> such that</p>
 Assuming <span class="math">\(u=T(t)\sum_{j=0}^3a_jx^j\)</span>, we can use the above equation to
 determine the coefficients <span class="math">\(a_1,a_2,a_3\)</span>. A value, e.g., 1 can be used for
 <span class="math">\(a_0\)</span>. The following <tt class="docutils literal"><span class="pre">sympy</span></tt> code computes this <span class="math">\(u\)</span>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">test_cubic2</span><span class="p">():</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">test_cubic2</span><span class="p">():</span>
     <span class="kn">import</span> <span class="nn">sympy</span> <span class="kn">as</span> <span class="nn">sm</span>
-    <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s">&#39;x t c L dx&#39;</span><span class="p">)</span>
-    <span class="n">T</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">sm</span><span class="o">.</span><span class="n">Rational</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">t</span>  <span class="c"># Temporal term</span>
-    <span class="c"># Set u as a 3rd-degree polynomial in space</span>
+    <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s1">&#39;x t c L dx&#39;</span><span class="p">)</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">sm</span><span class="o">.</span><span class="n">Rational</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">t</span>  <span class="c1"># Temporal term</span>
+    <span class="c1"># Set u as a 3rd-degree polynomial in space</span>
     <span class="n">X</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="o">**</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
-    <span class="n">a</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s">&#39;a_0 a_1 a_2 a_3&#39;</span><span class="p">)</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">symbols</span><span class="p">(</span><span class="s1">&#39;a_0 a_1 a_2 a_3&#39;</span><span class="p">)</span>
     <span class="n">u</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">X</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">*</span><span class="n">T</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-    <span class="c"># Force discrete boundary condition to be zero by adding</span>
-    <span class="c"># a correction term the analytical suggestion x*(L-x)*T</span>
-    <span class="c"># u_x = x*(L-x)*T(t) - 1/6*u_xxx*dx**2</span>
+    <span class="c1"># Force discrete boundary condition to be zero by adding</span>
+    <span class="c1"># a correction term the analytical suggestion x*(L-x)*T</span>
+    <span class="c1"># u_x = x*(L-x)*T(t) - 1/6*u_xxx*dx**2</span>
     <span class="n">R</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">u</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">t</span><span class="p">),</span> <span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span>
         <span class="n">x</span><span class="o">*</span><span class="p">(</span><span class="n">L</span><span class="o">-</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="n">sm</span><span class="o">.</span><span class="n">Rational</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">)</span><span class="o">*</span><span class="n">sm</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">u</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">t</span><span class="p">),</span> <span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span><span class="o">*</span><span class="n">dx</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
-    <span class="c"># R is a polynomial: force all coefficients to vanish.</span>
-    <span class="c"># Turn R to Poly to extract coefficients:</span>
+    <span class="c1"># R is a polynomial: force all coefficients to vanish.</span>
+    <span class="c1"># Turn R to Poly to extract coefficients:</span>
     <span class="n">R</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">poly</span><span class="p">(</span><span class="n">R</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
     <span class="n">coeff</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="n">all_coeffs</span><span class="p">()</span>
-    <span class="n">s</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">coeff</span><span class="p">,</span> <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>  <span class="c"># a[0] is not present in R</span>
-    <span class="c"># s is dictionary with a[i] as keys</span>
-    <span class="c"># Fix a[0] as 1</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">coeff</span><span class="p">,</span> <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>  <span class="c1"># a[0] is not present in R</span>
+    <span class="c1"># s is dictionary with a[i] as keys</span>
+    <span class="c1"># Fix a[0] as 1</span>
     <span class="n">s</span><span class="p">[</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="n">X</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">sm</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="o">*</span><span class="n">x</span><span class="o">**</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)))</span>
     <span class="n">u</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">X</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">*</span><span class="n">T</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-    <span class="k">print</span> <span class="s">&#39;u:&#39;</span><span class="p">,</span> <span class="n">u</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">t</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s1">&#39;u:&#39;</span><span class="p">,</span> <span class="n">u</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">t</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The next step is to find the source term <tt class="docutils literal"><span class="pre">f_e</span></tt> by inserting <tt class="docutils literal"><span class="pre">u_e</span></tt>

@@ -73,7 +73,7 @@ in the forthcoming text by finite difference methods.</p>
 <span id="wave-string"></span><h1>Simulation of waves on a string<a class="headerlink" href="#simulation-of-waves-on-a-string" title="Permalink to this headline">¶</a></h1>
 <span class="target" id="index-0"></span><span class="target" id="index-1"></span><p id="index-2">We begin our study of wave equations by simulating one-dimensional
 waves on a string, say on a guitar or violin.
-Let the string in the deformed state
+Let the string in the undeformed state
 coincide with the interval
 <span class="math">\([0,L]\)</span> on the <span class="math">\(x\)</span> axis, and let <span class="math">\(u(x,t)\)</span> be the displacement at
 time <span class="math">\(t\)</span> in the <span class="math">\(y\)</span> direction of a point initially at <span class="math">\(x\)</span>.
@@ -316,8 +316,8 @@ for the boundary points given by <span class="math">\(i=0\)</span> and <span cla
 </div></blockquote>
 <p>The algorithm essentially consists of moving a finite difference
 stencil through all the mesh points, which can be seen as an animation
-in a <a class="reference external" href="http://tinyurl.com/gmw2yrj/mov-wave/D_stencil_gpl/index.html">web page</a>
-or a <a class="reference external" href="http://tinyurl.com/gmw2yrj/mov-wave/D_stencil_gpl/movie.ogg">movie file</a>.</p>
+in a <a class="reference external" href="http://tinyurl.com/hbcasmj/book/html/mov-wave/D_stencil_gpl/index.html">web page</a>
+or a <a class="reference external" href="http://tinyurl.com/gokgkov/mov-wave/D_stencil_gpl/movie.ogg">movie file</a>.</p>
 </div>
 <div class="section" id="sketch-of-an-implementation">
 <span id="wave-string-impl"></span><h2>Sketch of an implementation<a class="headerlink" href="#sketch-of-an-implementation" title="Permalink to this headline">¶</a></h2>
@@ -334,36 +334,36 @@ elements <tt class="docutils literal"><span class="pre">u[i]</span></tt> to stor
 <tt class="docutils literal"><span class="pre">u_nm1[i]</span></tt> to store <span class="math">\(u^{n-1}_i\)</span>.</p>
 <p>The following Python snippet realizes the steps in the computational
 algorithm.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="c"># Given mesh points as arrays x and t (x[i], t[n])</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Given mesh points as arrays x and t (x[i], t[n])</span>
 <span class="n">dx</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 <span class="n">dt</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<span class="n">C</span> <span class="o">=</span> <span class="n">c</span><span class="o">*</span><span class="n">dt</span><span class="o">/</span><span class="n">dx</span>            <span class="c"># Courant number</span>
+<span class="n">C</span> <span class="o">=</span> <span class="n">c</span><span class="o">*</span><span class="n">dt</span><span class="o">/</span><span class="n">dx</span>            <span class="c1"># Courant number</span>
 <span class="n">Nt</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
-<span class="n">C2</span> <span class="o">=</span> <span class="n">C</span><span class="o">**</span><span class="mi">2</span>              <span class="c"># Help variable in the scheme</span>
+<span class="n">C2</span> <span class="o">=</span> <span class="n">C</span><span class="o">**</span><span class="mi">2</span>              <span class="c1"># Help variable in the scheme</span>
 
-<span class="c"># Set initial condition u(x,0) = I(x)</span>
+<span class="c1"># Set initial condition u(x,0) = I(x)</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Nx</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
     <span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">I</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 
-<span class="c"># Apply special formula for first step, incorporating du/dt=0</span>
+<span class="c1"># Apply special formula for first step, incorporating du/dt=0</span>
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">Nx</span><span class="p">):</span>
     <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> \
            <span class="mf">0.5</span><span class="o">*</span><span class="n">C</span><span class="o">**</span><span class="mi">2</span><span class="p">(</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-<span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>  <span class="n">u</span><span class="p">[</span><span class="n">Nx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>   <span class="c"># Enforce boundary conditions</span>
+<span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>  <span class="n">u</span><span class="p">[</span><span class="n">Nx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>   <span class="c1"># Enforce boundary conditions</span>
 
-<span class="c"># Switch variables before next step</span>
+<span class="c1"># Switch variables before next step</span>
 <span class="n">u_nm1</span><span class="p">[:],</span> <span class="n">u_n</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">u_n</span><span class="p">,</span> <span class="n">u</span>
 
 <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">Nt</span><span class="p">):</span>
-    <span class="c"># Update all inner mesh points at time t[n+1]</span>
+    <span class="c1"># Update all inner mesh points at time t[n+1]</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">Nx</span><span class="p">):</span>
         <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">u_nm1</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> \
                <span class="n">C</span><span class="o">**</span><span class="mi">2</span><span class="p">(</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span><span class="o">*</span><span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">u_n</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
 
-    <span class="c"># Insert boundary conditions</span>
+    <span class="c1"># Insert boundary conditions</span>
     <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>  <span class="n">u</span><span class="p">[</span><span class="n">Nx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="c"># Switch variables before next step</span>
+    <span class="c1"># Switch variables before next step</span>
     <span class="n">u_nm1</span><span class="p">[:],</span> <span class="n">u_n</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">u_n</span><span class="p">,</span> <span class="n">u</span>
 </pre></div>
 </div>
@@ -428,7 +428,7 @@ and space. For example, the original PDE problem
 {u_{\small\mbox{e}}}(x,t) = A\sin\left(\frac{\pi}{L}x\right)
     \cos\left(\frac{\pi}{L}ct\right){\thinspace .}\]</div>
 <p>This <span class="math">\({u_{\small\mbox{e}}}\)</span> fulfills the PDE with <span class="math">\(f=0\)</span>, boundary conditions
-<span class="math">\({u_{\small\mbox{e}}}(0,t)={u_{\small\mbox{e}}}(L,0)=0\)</span>, as well as initial
+<span class="math">\({u_{\small\mbox{e}}}(0,t)={u_{\small\mbox{e}}}(L,t)=0\)</span>, as well as initial
 conditions <span class="math">\(I(x)=A\sin\left(\frac{\pi}{L}x\right)\)</span> and <span class="math">\(V=0\)</span>.</p>
 <div class="admonition-how-to-use-exact-solutions-for-verification admonition">
 <p class="first admonition-title">How to use exact solutions for verification</p>
